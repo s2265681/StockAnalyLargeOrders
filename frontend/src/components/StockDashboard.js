@@ -5,7 +5,6 @@ import {
   Col, 
   Input, 
   Button, 
-  Select, 
   Spin,
   Alert
 } from 'antd';
@@ -77,10 +76,10 @@ const StockDashboard = ({ onStockCodeChange }) => {
   // 大单金额筛选状态
   const [amountFilters, setAmountFilters] = React.useState([300, 100, 30]);
 
-  // 触发数据验证
-  const handleValidateData = () => {
-    validateStockData(stockCode);
-  };
+  // 触发数据验证（暂时禁用）
+  // const handleValidateData = () => {
+  //   validateStockData(stockCode);
+  // };
 
   // 获取数据质量状态
   const getDataQualityStatus = () => {
@@ -107,39 +106,33 @@ const StockDashboard = ({ onStockCodeChange }) => {
     }
   };
 
-  // 刷新数据
-  const handleRefresh = () => {
-    fetchStockBasic(stockCode);
-    fetchLargeOrders({ code: stockCode, minAmount: filterAmount });
-    fetchTimeshareData(stockCode);
-    fetchRealtimeData(stockCode);
-  };
+  // 刷新数据（暂时禁用）
+  // const handleRefresh = () => {
+  //   fetchStockBasic(stockCode);
+  //   fetchLargeOrders({ code: stockCode, minAmount: filterAmount });
+  //   fetchTimeshareData(stockCode);
+  //   fetchRealtimeData(stockCode);
+  // };
 
-  // 过滤金额变化（只改变状态，让useEffect处理数据获取）
-  const handleFilterChange = (value) => {
-    setFilterAmount(value);
-  };
+  // 过滤金额变化（暂时禁用）
+  // const handleFilterChange = (value) => {
+  //   setFilterAmount(value);
+  // };
 
-  // 组件加载时获取数据
+  // 组件加载时获取数据（不包括大单数据，大单数据由filterAmount变化触发）
   useEffect(() => {
     if (stockCode) {
       fetchStockBasic(stockCode);
       fetchTimeshareData(stockCode);
-      fetchLargeOrders({ code: stockCode, minAmount: filterAmount });
     }
-  }, [stockCode, fetchStockBasic, fetchTimeshareData, fetchLargeOrders, filterAmount]); // 添加所有依赖项
+  }, [stockCode, fetchStockBasic, fetchTimeshareData]); // 移除大单数据获取，避免重复调用
 
-  // 过滤金额变化时单独处理（使用ref避免初始化时重复请求）
-  const initialLoad = useRef(true);
+  // 获取大单数据（处理filterAmount和stockCode变化）
   useEffect(() => {
-    if (initialLoad.current) {
-      initialLoad.current = false;
-      return; // 跳过初始化时的调用
-    }
     if (stockCode && filterAmount) {
       fetchLargeOrders({ code: stockCode, minAmount: filterAmount });
     }
-  }, [filterAmount, stockCode, fetchLargeOrders]); // 添加所有依赖项
+  }, [filterAmount, stockCode, fetchLargeOrders]);
 
   // 定时更新数据（只在交易时间内，间隔60秒，防止过于频繁）
   const lastUpdateTime = useRef(0);
@@ -679,53 +672,53 @@ const StockDashboard = ({ onStockCodeChange }) => {
     };
   };
 
-  // 获取大单统计分析数据
-  const getLargeOrderAnalysis = () => {
-    if (!largeOrdersData || !largeOrdersData.summary) return null;
-    
-    const { summary } = largeOrdersData;
-    const categoryStats = summary.categoryStats || {};
-    
-    return {
-      categories: [
-        {
-          label: '大于300万',
-          key: 'D300',
-          count: categoryStats.D300 || 0,
-          description: '超大单(主力机构)',
-          color: '#ff4d4f',
-          threshold: 3000000
-        },
-        {
-          label: '大于100万',
-          key: 'D100', 
-          count: categoryStats.D100 || 0,
-          description: '大单(中等资金)',
-          color: '#fa8c16',
-          threshold: 1000000
-        },
-        {
-          label: '大于50万',
-          key: 'D50',
-          count: categoryStats.D50 || 0,
-          description: '中单(活跃资金)', 
-          color: '#fadb14',
-          threshold: 500000
-        },
-        {
-          label: '小于30万',
-          key: 'D30',
-          count: categoryStats.D30 || 0,
-          description: '小单(散户资金)',
-          color: '#52c41a',
-          threshold: 300000
-        }
-      ],
-      netInflow: summary.netInflow || 0,
-      totalCount: summary.buyCount + summary.sellCount,
-      buyRatio: summary.buyCount / (summary.buyCount + summary.sellCount) * 100
-    };
-  };
+  // 获取大单统计分析数据（暂时禁用）
+  // const getLargeOrderAnalysis = () => {
+  //   if (!largeOrdersData || !largeOrdersData.summary) return null;
+  //   
+  //   const { summary } = largeOrdersData;
+  //   const categoryStats = summary.categoryStats || {};
+  //   
+  //   return {
+  //     categories: [
+  //       {
+  //         label: '大于300万',
+  //         key: 'D300',
+  //         count: categoryStats.D300 || 0,
+  //         description: '超大单(主力机构)',
+  //         color: '#ff4d4f',
+  //         threshold: 3000000
+  //       },
+  //       {
+  //         label: '大于100万',
+  //         key: 'D100', 
+  //         count: categoryStats.D100 || 0,
+  //         description: '大单(中等资金)',
+  //         color: '#fa8c16',
+  //         threshold: 1000000
+  //       },
+  //       {
+  //         label: '大于50万',
+  //         key: 'D50',
+  //         count: categoryStats.D50 || 0,
+  //         description: '中单(活跃资金)', 
+  //         color: '#fadb14',
+  //         threshold: 500000
+  //       },
+  //       {
+  //         label: '小于30万',
+  //         key: 'D30',
+  //         count: categoryStats.D30 || 0,
+  //         description: '小单(散户资金)',
+  //         color: '#52c41a',
+  //         threshold: 300000
+  //       }
+  //     ],
+  //     netInflow: summary.netInflow || 0,
+  //     totalCount: summary.buyCount + summary.sellCount,
+  //     buyRatio: summary.buyCount / (summary.buyCount + summary.sellCount) * 100
+  //   };
+  // };
 
   // 获取大单汇总数据（使用新的接口数据格式）
   const getLargeOrderSummaryData = () => {

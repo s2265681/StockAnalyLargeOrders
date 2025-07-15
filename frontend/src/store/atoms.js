@@ -157,7 +157,7 @@ export const fetchLargeOrdersAtom = atom(
         };
         
         set(largeOrdersDataAtom, combinedData);
-        set(filterAmountAtom, minAmount);
+        // 移除设置filterAmountAtom，避免循环调用
       } else {
         set(errorAtom, statsData.msg || dadanData.message || '获取大单数据失败');
       }

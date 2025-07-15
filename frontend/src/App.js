@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Layout, Typography, Alert } from 'antd';
+import { Layout, Alert } from 'antd';
 import { useAtom } from 'jotai';
 import { useSearchParams } from 'react-router-dom';
 import StockDashboard from './components/StockDashboard';
@@ -8,8 +8,7 @@ import {
   errorAtom
 } from './store/atoms';
 
-const { Header, Content } = Layout;
-const { Title } = Typography;
+const { Content } = Layout;
 
 function App() {
   const [searchParams, setSearchParams] = useSearchParams();

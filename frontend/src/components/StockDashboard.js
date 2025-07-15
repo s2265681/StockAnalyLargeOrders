@@ -6,11 +6,10 @@ import {
   Input, 
   Button, 
   Select, 
-  Spin, 
-  Space,
+  Spin,
   Alert
 } from 'antd';
-import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
+import { SearchOutlined } from '@ant-design/icons';
 import { useAtom } from 'jotai';
 import ReactEChartsCore from 'echarts-for-react/lib/core';
 import * as echarts from 'echarts/core';
@@ -58,8 +57,6 @@ echarts.use([
   BarChart,
   CanvasRenderer
 ]);
-
-const { Option } = Select;
 
 const StockDashboard = ({ onStockCodeChange }) => {
   const [stockCode, setStockCode] = useAtom(stockCodeAtom);
@@ -192,39 +189,7 @@ const StockDashboard = ({ onStockCodeChange }) => {
     });
   };
 
-  // 生成大单标记点
-  const generateLargeOrderMarkers = (timeshare, largeOrders) => {
-    if (!timeshare || !largeOrders || largeOrders.length === 0) return [];
-    
-    const markers = [];
-    largeOrders.forEach(order => {
-      // 找到对应时间点的价格
-      const timePoint = timeshare.find(t => 
-        t.time.includes(order.time.split(' ')[1]?.substring(0, 5) || order.time)
-      );
-      
-      if (timePoint) {
-        markers.push({
-          name: `${order.type === 'buy' ? '大买单' : '大卖单'}`,
-          coord: [timePoint.time, timePoint.price],
-          value: `${(order.amount / 10000).toFixed(2)}万`,
-          symbol: order.type === 'buy' ? 'triangle' : 'triangle',
-          symbolRotate: order.type === 'buy' ? 0 : 180,
-          itemStyle: {
-            color: order.type === 'buy' ? '#ff4d4f' : '#52c41a'
-          },
-          label: {
-            show: true,
-            position: 'top',
-            color: order.type === 'buy' ? '#ff4d4f' : '#52c41a',
-            fontSize: 10
-          }
-        });
-      }
-    });
-    
-    return markers;
-  };
+
 
   // 生成主力线和散户线数据（转换为百分比坐标）
   const generateInstitutionalAndRetailData = (timeshare, largeOrders, yesterdayClose) => {
@@ -364,14 +329,9 @@ const StockDashboard = ({ onStockCodeChange }) => {
     const tradingTimePoints = ['09:30', '10:30', '11:30', '14:00', '15:00'];
     
     return {
-      backgroundColor: '#1a1a1a',
+      backgroundColor: '#141213',
       tooltip: {
         show: false  // 完全禁用tooltip
-      },
-      legend: {
-        data: ['价格', '均价', '主力线', '散户线', '成交量'],
-        top: 10,
-        textStyle: { color: '#ffffff' }
       },
       grid: [
         {
@@ -656,7 +616,7 @@ const StockDashboard = ({ onStockCodeChange }) => {
     const { buyCount, sellCount } = largeOrdersData.summary;
     
     return {
-      backgroundColor: '#1a1a1a',
+      backgroundColor: '#141213',
       title: {
         text: '买卖比例',
         left: 'center',
@@ -688,7 +648,7 @@ const StockDashboard = ({ onStockCodeChange }) => {
           avoidLabelOverlap: false,
           itemStyle: {
             borderRadius: 10,
-            borderColor: '#1a1a1a',
+            borderColor: '#141213',
             borderWidth: 2
           },
           label: {
@@ -1115,31 +1075,8 @@ const StockDashboard = ({ onStockCodeChange }) => {
 
       {/* 分时图 */}
       <Card className="stock-card chart-container">
-        <Spin spinning={loading}>
-          {error && (
-            <Alert
-              message="错误"
-              description={error}
-              type="error"
-              showIcon
-              style={{ marginBottom: 16 }}
-            />
-          )}
-          <ReactEChartsCore
-            echarts={echarts}
-            option={getTimeshareChartOption()}
-            style={{ height: '500px' }}
-            opts={{ 
-              renderer: 'canvas',
-              devicePixelRatio: window.devicePixelRatio || 1
-            }}
-            notMerge={true}
-            lazyUpdate={false}
-          />
-        </Spin>
-
-        {/* 图例和导航区域 */}
-        <div className="chart-legend-nav">
+          {/* 图例和导航区域 */}
+          <div className="chart-legend-nav">
           {/* 时间导航 */}
           <div className="date-navigation">
             <Button type="text" size="small" style={{ color: '#888' }}>&lt;&lt;</Button>
@@ -1170,6 +1107,30 @@ const StockDashboard = ({ onStockCodeChange }) => {
             </div>
           </div>
         </div>
+        <Spin spinning={loading}>
+          {error && (
+            <Alert
+              message="错误"
+              description={error}
+              type="error"
+              showIcon
+              style={{ marginBottom: 16 }}
+            />
+          )}
+          <ReactEChartsCore
+            echarts={echarts}
+            option={getTimeshareChartOption()}
+            style={{ height: '500px' }}
+            opts={{ 
+              renderer: 'canvas',
+              devicePixelRatio: window.devicePixelRatio || 1
+            }}
+            notMerge={true}
+            lazyUpdate={false}
+          />
+        </Spin>
+
+      
       </Card>
 
       {/* 大单数据分析 */}

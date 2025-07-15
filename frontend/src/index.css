@@ -5,8 +5,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #0f0f0f;
-  color: #ffffff;
+  background-color: #141213;
+  color: #aaa;
 }
 
 code {
@@ -16,12 +16,12 @@ code {
 
 #root {
   min-height: 100vh;
-  background-color: #0f0f0f;
+  background-color: #141213;
 }
 
 .ant-layout-content {
   padding: 16px;
-  background-color: #0f0f0f;
+  background-color: #141213;
 }
 
 /* 卡片样式 */
@@ -43,7 +43,7 @@ code {
 }
 
 .stock-card .ant-card-head-title {
-  color: #ffffff;
+  color: #aaa;
   font-weight: 600;
 }
 
@@ -72,7 +72,7 @@ code {
 .stock-name {
   font-size: 24px;
   font-weight: bold;
-  color: #ffffff;
+  color: #aaa;
   margin-bottom: 4px;
 }
 
@@ -215,7 +215,7 @@ code {
 .stat-value {
   /* font-size: 14px; */
   font-weight: 600;
-  color: #ffffff;
+  color: #aaa;
   font-family: 'Courier New', monospace;
 }
 
@@ -244,7 +244,7 @@ code {
 .summary-value {
   font-size: 20px;
   font-weight: bold;
-  color: #ffffff;
+  color: #aaa;
   font-family: 'Courier New', monospace;
 }
 
@@ -342,7 +342,7 @@ code {
   color: #ffffff;
 }
 
-/* 确保表格中所有文本都是白色 */
+/* 确保表格中所有文本都是指定颜色 */
 .ant-table .ant-typography, 
 .ant-table .ant-typography-caption,
 .ant-table span,
@@ -351,20 +351,20 @@ code {
 .stock-card .ant-table td,
 .stock-card .ant-table th,
 .stock-card .ant-table .ant-typography {
-  color: #ffffff !important;
+  color: #aaa !important;
 }
 
-/* 标签颜色保持原有的红绿区分，但文字为白色 */
+/* 标签颜色保持原有的红绿区分，但文字为指定颜色 */
 .ant-table .ant-tag-red {
   background-color: rgba(255, 77, 79, 0.2);
   border-color: #ff4d4f;
-  color: #ffffff !important;
+  color: #aaa !important;
 }
 
 .ant-table .ant-tag-green {
   background-color: rgba(82, 196, 26, 0.2);
   border-color: #52c41a;
-  color: #ffffff !important;
+  color: #aaa !important;
 }
 
 /* 分页组件文字颜色 */
@@ -379,12 +379,12 @@ code {
 .ant-pagination .ant-pagination-jump-next,
 .ant-pagination .ant-pagination-prev,
 .ant-pagination .ant-pagination-next {
-  color: #ffffff !important;
+  color: #aaa !important;
 }
 
 /* 表格内选择器下拉选项 */
 .ant-select-dropdown .ant-select-item {
-  color: #ffffff !important;
+  color: #aaa !important;
   background-color: #2a2a2a !important;
 }
 
@@ -394,14 +394,14 @@ code {
 
 /* 表格空状态文字 */
 .ant-table-tbody .ant-empty-description {
-  color: #ffffff !important;
+  color: #aaa !important;
 }
 
 /* 分页输入框样式 */
 .ant-pagination .ant-pagination-options-quick-jumper input {
   background-color: #2a2a2a !important;
   border-color: #444 !important;
-  color: #ffffff !important;
+  color: #aaa !important;
 }
 
 .ant-pagination .ant-pagination-options-quick-jumper input:focus {
@@ -426,7 +426,7 @@ code {
 
 /* 统计数字样式 */
 .ant-statistic {
-  color: #ffffff;
+  color: #aaa;
 }
 
 .ant-statistic-title {
@@ -435,7 +435,7 @@ code {
 }
 
 .ant-statistic-content {
-  color: #ffffff;
+  color: #aaa;
   font-family: 'Courier New', monospace;
 }
 
@@ -482,7 +482,7 @@ code {
 .analysis-title {
   font-size: 16px;
   font-weight: 600;
-  color: #ffffff;
+  color: #aaa;
   margin-bottom: 16px;
   padding-bottom: 8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -562,7 +562,7 @@ code {
 .indicator-value {
   font-size: 18px;
   font-weight: bold;
-  color: #ffffff;
+  color: #aaa;
   font-family: 'Courier New', monospace;
 }
 
@@ -628,7 +628,7 @@ code {
 .validation-title {
   font-size: 16px;
   font-weight: 600;
-  color: #ffffff;
+  color: #aaa;
 }
 
 .validation-time {
@@ -691,7 +691,7 @@ code {
 .analysis-value {
   font-size: 14px;
   font-weight: 600;
-  color: #ffffff;
+  color: #aaa;
   font-family: 'Courier New', monospace;
 }
 
@@ -721,7 +721,7 @@ code {
 
 .source-name {
   font-size: 13px;
-  color: #ffffff;
+  color: #aaa;
   font-weight: 500;
 }
 
@@ -762,7 +762,7 @@ code {
 .source-price {
   font-size: 13px;
   font-weight: 600;
-  color: #ffffff;
+  color: #aaa;
   font-family: 'Courier New', monospace;
 }
 
@@ -778,7 +778,7 @@ code {
 .recommendations-title {
   font-size: 14px;
   font-weight: 600;
-  color: #ffffff;
+  color: #aaa;
   margin-bottom: 12px;
 }
 
@@ -790,7 +790,7 @@ code {
 
 .recommendation-item {
   font-size: 12px;
-  color: #ffffff;
+  color: #aaa;
   padding: 8px 12px;
   background: rgba(24, 144, 255, 0.1);
   border-radius: 4px;
@@ -815,7 +815,7 @@ code {
 
 .status-details {
   font-size: 12px;
-  color: #ffffff;
+  color: #aaa;
   opacity: 0.8;
 }
 
@@ -838,7 +838,7 @@ code {
 
 .order-level {
   flex: 0 0 120px;
-  color: #ffffff;
+  color: #aaa;
   font-weight: 500;
 }
 
@@ -903,7 +903,7 @@ code {
 .stock-name-code .stock-name {
   font-size: 20px;
   font-weight: bold;
-  color: #ffffff;
+  color: #aaa;
 }
 
 .stock-name-code .stock-code {
@@ -921,7 +921,7 @@ code {
 
 .search-box input {
   background-color: transparent;
-  color: #ffffff;
+  color: #aaa;
   border: 1px solid #333;
   border-radius: 4px;
 }
@@ -987,7 +987,7 @@ code {
 }
 
 .stats-row .stat-item .value {
-  color: #ffffff;
+  color: #aaa;
   font-weight: 500;
   font-family: 'Courier New', monospace;
 }
@@ -1083,7 +1083,7 @@ code {
   gap: 8px;
   cursor: pointer;
   font-size: 14px;
-  color: #ffffff;
+  color: #aaa;
 }
 
 .filter-checkbox input[type="checkbox"] {

@@ -35,7 +35,7 @@ function App() {
 
   return (
     <Layout className="layout" style={{ minHeight: '100vh' }}>
-      <Header style={{ 
+      {/* <Header style={{ 
         display: 'flex', 
         alignItems: 'center', 
         background: '#fff', 
@@ -49,7 +49,7 @@ function App() {
           📈 股票大单数据分析
         </Title>
       </Header>
-      
+       */}
       <Content style={{ padding: '24px 50px' }}>
         {error && (
           <Alert

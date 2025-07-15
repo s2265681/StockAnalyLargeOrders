@@ -23,9 +23,6 @@ jobs:
       with:
         node-version: ${{ env.NODE_VERSION }}
         
-    - name: 📦 Install pnpm
-      run: npm install -g pnpm
-      
     - name: 🔨 Build Frontend
       working-directory: frontend
       run: |
@@ -34,18 +31,18 @@ jobs:
         ls -la
         
         # 安装依赖
-        pnpm install
+        npm install
         
         # 创建生产环境配置
         cat > .env.production << EOF
-        VITE_API_BASE_URL=http://${{ env.SERVER_IP }}:9001
-        VITE_APP_ENV=production
-        VITE_API_TIMEOUT=300000
-        VITE_DEBUG=false
+        REACT_APP_API_BASE_URL=http://${{ env.SERVER_IP }}:9001
+        REACT_APP_ENV=production
+        REACT_APP_API_TIMEOUT=300000
+        REACT_APP_DEBUG=false
         EOF
         
         # 构建项目
-        pnpm build
+        npm run build:prod
         
     - name: 🗂️ Prepare Deployment Files
       run: |
@@ -65,7 +62,7 @@ jobs:
         
         # 复制前端构建文件
         mkdir -p deployment/frontend-dist
-        cp -r frontend/dist/* deployment/frontend-dist/ 2>/dev/null || true
+        cp -r frontend/build/* deployment/frontend-dist/ 2>/dev/null || true
         
         # 显示部署文件结构
         echo "📁 部署文件结构："

@@ -1,0 +1,185 @@
+name: 🚀 Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: # 允许手动触发
+
+env:
+  SERVER_IP: "18.141.179.222"
+  APP_DIR: "/var/www/app/StockAnalyLargeOrders"
+  NODE_VERSION: "18"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+      
+    - name: 🟢 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        
+    - name: 📦 Install pnpm
+      run: npm install -g pnpm
+      
+    - name: 🔨 Build Frontend
+      working-directory: frontend
+      run: |
+        # 显示当前目录和文件
+        pwd
+        ls -la
+        
+        # 安装依赖
+        pnpm install
+        
+        # 创建生产环境配置
+        cat > .env.production << EOF
+        VITE_API_BASE_URL=http://${{ env.SERVER_IP }}:9001
+        VITE_APP_ENV=production
+        VITE_API_TIMEOUT=300000
+        VITE_DEBUG=false
+        EOF
+        
+        # 构建项目
+        pnpm build
+        
+    - name: 🗂️ Prepare Deployment Files
+      run: |
+        # 创建部署目录
+        mkdir -p deployment
+        
+        # 复制后端Python代码
+        cp -r backend/ deployment/
+        
+        # 复制根目录的Python分析脚本
+        cp data_formatter.py deployment/ 2>/dev/null || true
+        cp data_analysis.py deployment/ 2>/dev/null || true
+        
+        # 复制启动脚本
+        cp start.sh deployment/ 2>/dev/null || true
+        cp stop.sh deployment/ 2>/dev/null || true
+        
+        # 复制前端构建文件
+        mkdir -p deployment/frontend-dist
+        cp -r frontend/dist/* deployment/frontend-dist/ 2>/dev/null || true
+        
+        # 显示部署文件结构
+        echo "📁 部署文件结构："
+        ls -la deployment/
+        
+    - name: 📤 Deploy to Server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ env.SERVER_IP }}
+        username: ubuntu
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: 22
+        script: |
+          # 创建应用目录
+          sudo mkdir -p /var/www/app
+          sudo chown $USER:$USER /var/www/app
+          
+          # 清理旧文件
+          rm -rf ${{ env.APP_DIR }}
+          mkdir -p ${{ env.APP_DIR }}
+          
+    - name: 📁 Upload Files
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ env.SERVER_IP }}
+        username: ubuntu
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: 22
+        source: "deployment/*"
+        target: ${{ env.APP_DIR }}
+        strip_components: 1
+        
+    - name: 🚀 Execute Deployment
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ env.SERVER_IP }}
+        username: ubuntu
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: 22
+        script: |
+          cd ${{ env.APP_DIR }}
+          
+          echo "🐍 设置Python环境..."
+          python3 -m venv venv 2>/dev/null || echo 'venv已存在'
+          source venv/bin/activate
+          
+          echo "⬆️ 升级pip..."
+          pip install --upgrade pip
+          
+          echo "📦 安装Python依赖..."
+          # 使用backend目录下的requirements.txt
+          if [ -f backend/requirements.txt ]; then
+            pip install --no-cache-dir -r backend/requirements.txt
+          elif [ -f requirements.txt ]; then
+            pip install --no-cache-dir -r requirements.txt
+          else
+            echo "❌ 未找到requirements.txt文件"
+            exit 1
+          fi
+          
+          echo "🔄 重启后端服务..."
+          pm2 delete StockAnalysisLargeOrders 2>/dev/null || echo '服务不存在，新建中...'
+          
+          echo "🧹 清理端口占用..."
+          lsof -ti:9001 | xargs kill -9 2>/dev/null; echo "清理完成"
+          
+          echo "📍 确认Python解释器路径..."
+          PYTHON_PATH=$(pwd)/venv/bin/python
+          echo "Python path: $PYTHON_PATH"
+          $PYTHON_PATH --version
+          
+          echo "🚀 启动PM2服务..."
+          # 使用backend目录下的app.py启动
+          if [ -f backend/app.py ]; then
+            pm2 start backend/app.py --name StockAnalysisLargeOrders --interpreter $PYTHON_PATH
+          else
+            echo "❌ 未找到backend/app.py文件"
+            exit 1
+          fi
+          pm2 save
+          
+          echo "📊 检查PM2状态..."
+          pm2 status
+          
+          echo "✅ 部署完成！"
+          
+    - name: 🔍 Health Check
+      run: |
+        echo "⏳ 等待服务启动..."
+        sleep 30
+        
+        echo "🔍 检查服务健康状态..."
+        for i in {1..5}; do
+          if curl -f http://${{ env.SERVER_IP }}:9001/health 2>/dev/null; then
+            echo "✅ 服务运行正常！"
+            break
+          elif curl -f http://${{ env.SERVER_IP }}:9001/ 2>/dev/null; then
+            echo "✅ 服务运行正常！"
+            break
+          else
+            echo "⏳ 服务还未就绪，等待中... ($i/5)"
+            sleep 15
+          fi
+        done
+        
+    - name: 📊 Deployment Summary
+      run: |
+        echo "🎉 部署完成！"
+        echo ""
+        echo "🌐 访问地址："
+        echo "  - API服务: http://${{ env.SERVER_IP }}:9001/"
+        echo "  - 健康检查: http://${{ env.SERVER_IP }}:9001/health"
+        echo ""
+        echo "📊 服务架构："
+        echo "  - 后端: Flask应用 (端口9001)"
+        echo "  - 进程管理: PM2守护进程"
+        echo "  - 前端: 静态文件部署" 

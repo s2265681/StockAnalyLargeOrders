@@ -1,0 +1,9 @@
+Flask==2.3.3
+Flask-CORS==4.0.0
+efinance==0.5.3
+pandas>=2.2.0
+numpy>=1.24.0
+requests==2.31.0
+yfinance==0.2.18
+akshare==1.17.20
+beautifulsoup4==4.12.2 

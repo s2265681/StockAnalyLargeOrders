@@ -23,6 +23,11 @@ jobs:
       with:
         node-version: ${{ env.NODE_VERSION }}
         
+    - name: 🔑 Setup SSH Agent
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        
     - name: 🔨 Build Frontend
       working-directory: frontend
       run: |
@@ -69,40 +74,24 @@ jobs:
         ls -la deployment/
         
     - name: 📤 Deploy to Server
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ env.SERVER_IP }}
-        username: ubuntu
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: 22
-        script: |
-          # 创建应用目录
-          sudo mkdir -p /var/www/app
-          sudo chown $USER:$USER /var/www/app
-          
-          # 清理旧文件
-          rm -rf ${{ env.APP_DIR }}
-          mkdir -p ${{ env.APP_DIR }}
-          
+      run: |
+        # 添加服务器到known_hosts
+        ssh-keyscan -H ${{ env.SERVER_IP }} >> ~/.ssh/known_hosts
+        
+        # 创建应用目录
+        ssh ubuntu@${{ env.SERVER_IP }} "sudo mkdir -p /var/www/app && sudo chown \$USER:\$USER /var/www/app"
+        
+        # 清理旧文件
+        ssh ubuntu@${{ env.SERVER_IP }} "rm -rf ${{ env.APP_DIR }} && mkdir -p ${{ env.APP_DIR }}"
+        
     - name: 📁 Upload Files
-      uses: appleboy/scp-action@v0.1.7
-      with:
-        host: ${{ env.SERVER_IP }}
-        username: ubuntu
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: 22
-        source: "deployment/*"
-        target: ${{ env.APP_DIR }}
-        strip_components: 1
+      run: |
+        # 使用scp上传文件
+        scp -r deployment/* ubuntu@${{ env.SERVER_IP }}:${{ env.APP_DIR }}/
         
     - name: 🚀 Execute Deployment
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ env.SERVER_IP }}
-        username: ubuntu
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: 22
-        script: |
+      run: |
+        ssh ubuntu@${{ env.SERVER_IP }} << 'EOF'
           cd ${{ env.APP_DIR }}
           
           echo "🐍 设置Python环境..."
@@ -148,6 +137,7 @@ jobs:
           pm2 status
           
           echo "✅ 部署完成！"
+        EOF
           
     - name: 🔍 Health Check
       run: |

@@ -417,8 +417,6 @@ def generate_realistic_realtime_data(code):
     
     return realtime_data
 
-# 已移除generate_realistic_large_orders函数，改为使用基于真实分时数据的分析方法
-
 def classify_order_size(amount):
     """分类订单大小"""
     if amount >= 3000000:
@@ -1390,14 +1388,110 @@ def process_fast_large_orders_to_stats(large_orders_data):
 def process_real_dadan_statistics(code):
     """处理真实大单数据的统计分析 - 仅使用真实数据源"""
     try:
-        # 1. 尝试使用数据源管理器获取大单统计数据
-        stats = stock_data_manager.get_dadan_statistics(code)
+        # 1. 使用与大单数据接口相同的数据源
+        trades_data = get_trading_data(code)
         
-        if stats:
-            logger.info(f"使用数据源管理器获取{code}大单统计成功")
+        if trades_data:
+            # 初始化统计数据
+            stats = {
+                "buy_nums_300": 0,    # 超大单买入笔数(≥300万)
+                "buy_amount_300": 0.0,
+                "sell_nums_300": 0,
+                "sell_amount_300": 0.0,
+                
+                "buy_nums_100": 0,    # 大单买入笔数(≥100万)
+                "buy_amount_100": 0.0,
+                "sell_nums_100": 0,
+                "sell_amount_100": 0.0,
+                
+                "buy_nums_50": 0,     # 中单买入笔数(≥50万)
+                "buy_amount_50": 0.0,
+                "sell_nums_50": 0,
+                "sell_amount_50": 0.0,
+                
+                "buy_nums_30": 0,     # 小大单买入笔数(≥30万)
+                "buy_amount_30": 0.0,
+                "sell_nums_30": 0,
+                "sell_amount_30": 0.0,
+                
+                "buy_nums_below_50": 0,   # 散户买入笔数(<50万)
+                "buy_amount_below_50": 0.0,
+                "sell_nums_below_50": 0,
+                "sell_amount_below_50": 0.0,
+                
+                "buy_nums_below_30": 0,   # 小散户买入笔数(<30万)
+                "buy_amount_below_30": 0.0,
+                "sell_nums_below_30": 0,
+                "sell_amount_below_30": 0.0,
+                
+                "total_buy_amount": 0.0,
+                "total_sell_amount": 0.0
+            }
+            
+            # 统计处理
+            for order in trades_data:
+                amount = float(order['amount'])
+                is_buy = order['type'] in ['买入', 'buy']
+                amount_wan = amount / 10000  # 转为万元
+                
+                # 累计总计
+                if is_buy:
+                    stats["total_buy_amount"] += amount_wan
+                else:
+                    stats["total_sell_amount"] += amount_wan
+                
+                # 按金额分类统计
+                if amount >= 3000000:  # ≥300万
+                    if is_buy:
+                        stats["buy_nums_300"] += 1
+                        stats["buy_amount_300"] += amount_wan
+                    else:
+                        stats["sell_nums_300"] += 1
+                        stats["sell_amount_300"] += amount_wan
+                        
+                elif amount >= 1000000:  # ≥100万
+                    if is_buy:
+                        stats["buy_nums_100"] += 1
+                        stats["buy_amount_100"] += amount_wan
+                    else:
+                        stats["sell_nums_100"] += 1
+                        stats["sell_amount_100"] += amount_wan
+                        
+                elif amount >= 500000:  # ≥50万
+                    if is_buy:
+                        stats["buy_nums_50"] += 1
+                        stats["buy_amount_50"] += amount_wan
+                    else:
+                        stats["sell_nums_50"] += 1
+                        stats["sell_amount_50"] += amount_wan
+                        
+                elif amount >= 300000:  # ≥30万
+                    if is_buy:
+                        stats["buy_nums_30"] += 1
+                        stats["buy_amount_30"] += amount_wan
+                    else:
+                        stats["sell_nums_30"] += 1
+                        stats["sell_amount_30"] += amount_wan
+                        
+                else:  # <30万
+                    if is_buy:
+                        stats["buy_nums_below_30"] += 1
+                        stats["buy_amount_below_30"] += amount_wan
+                    else:
+                        stats["sell_nums_below_30"] += 1
+                        stats["sell_amount_below_30"] += amount_wan
+            
+            # 格式化为字符串（与接口期望格式一致）
+            for key in stats:
+                if 'amount' in key:
+                    stats[key] = f"{stats[key]:.2f}"
+                else:
+                    stats[key] = str(int(stats[key]))
+            
+            logger.info(f"使用真实大单数据计算{code}统计成功")
             return stats
-        
-        # 2. 尝试验证器作为备用数据源
+            
+        # 2. 备用：尝试验证器作为数据源
         large_orders_validation = validator.get_large_orders_validation(code)
         
         if large_orders_validation['status'] == 'success':
@@ -1543,8 +1637,6 @@ def get_dadan_statistics():
             "msg": f"获取大单统计数据失败: {str(e)}",
             "data": None
         }), 500
-
-# 旧的数据源函数已被 stock_data_manager 取代
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=9001) 

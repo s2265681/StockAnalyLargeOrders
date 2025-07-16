@@ -1,55 +1,19 @@
-import React, { useEffect } from 'react';
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { Layout, Alert } from 'antd';
 import { useAtom } from 'jotai';
-import { useSearchParams } from 'react-router-dom';
-import StockDashboard from './components/StockDashboard';
-import { 
-  stockCodeAtom, 
-  errorAtom
-} from './store/atoms';
+import Home from './pages/Home';
+import StockDashboard from './pages/StockDashboard';
+import { errorAtom } from './store/atoms';
 
 const { Content } = Layout;
 
 function App() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [stockCode, setStockCode] = useAtom(stockCodeAtom);
   const [error, setError] = useAtom(errorAtom);
-
-  // 从URL获取股票代码（只负责同步，不获取数据）
-  useEffect(() => {
-    const codeFromUrl = searchParams.get('code');
-    if (codeFromUrl && codeFromUrl !== stockCode) {
-      setStockCode(codeFromUrl);
-    } else if (!codeFromUrl) {
-      // 如果URL没有code参数，使用默认的000001
-      setSearchParams({ code: stockCode });
-    }
-  }, [searchParams, stockCode, setStockCode, setSearchParams]);
-
-  // 当股票代码改变时更新URL（数据获取由StockDashboard处理）
-  const handleStockCodeChange = (newCode) => {
-    setStockCode(newCode);
-    setSearchParams({ code: newCode });
-  };
 
   return (
     <Layout className="layout" style={{ minHeight: '100vh' }}>
-      {/* <Header style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        background: '#fff', 
-        borderBottom: '1px solid #f0f0f0'
-      }}>
-        <Title level={2} style={{ 
-          margin: 0, 
-          color: '#1890ff',
-          fontWeight: 'bold'
-        }}>
-          📈 股票大单数据分析
-        </Title>
-      </Header>
-       */}
-      <Content style={{ padding: '24px 50px' }}>
+      <Content>
         {error && (
           <Alert
             message="错误"
@@ -58,21 +22,31 @@ function App() {
             showIcon
             closable
             onClose={() => setError(null)}
-            style={{ marginBottom: 16 }}
+            style={{ 
+              position: 'fixed',
+              top: 20,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 9999,
+              maxWidth: '600px'
+            }}
           />
         )}
         
-        <StockDashboard onStockCodeChange={handleStockCodeChange} />
+        <Routes>
+          {/* 默认路由重定向到股票分析页面 */}
+          <Route path="/" element={<Navigate to="/stock-dashboard" replace />} />
+          
+          {/* 首页路由 */}
+          <Route path="/home" element={<Home />} />
+          
+          {/* 股票分析页面路由 */}
+          <Route path="/stock-dashboard" element={<StockDashboard />} />
+          
+          {/* 404页面 - 重定向到股票分析页面 */}
+          <Route path="*" element={<Navigate to="/stock-dashboard" replace />} />
+        </Routes>
       </Content>
-      
-      {/* <Footer style={{ textAlign: 'center', background: '#f0f2f5' }}>
-        <div style={{ color: '#666' }}>
-          股票大单数据分析 ©2024 Created by NiuNiuNiu
-        </div>
-        <div style={{ color: '#999', fontSize: '12px', marginTop: '4px' }}>
-          数据仅供参考，不构成投资建议
-        </div>
-      </Footer> */}
     </Layout>
   );
 }

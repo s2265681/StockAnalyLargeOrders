@@ -1097,6 +1097,162 @@ code {
   font-weight: 500;
 }
 
+/* 增强筛选控件样式 */
+.trade-filters-enhanced {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.filter-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filter-title > span:first-child {
+  font-size: 16px;
+  font-weight: 600;
+  color: #aaa;
+}
+
+.filter-count {
+  font-size: 12px;
+  color: #888;
+}
+
+.filter-actions .ant-btn {
+  padding: 4px 8px;
+  height: auto;
+  border: 1px solid rgba(24, 144, 255, 0.3);
+  background-color: rgba(24, 144, 255, 0.1);
+  border-radius: 4px;
+}
+
+.filter-actions .ant-btn:hover {
+  background-color: rgba(24, 144, 255, 0.2);
+  border-color: rgba(24, 144, 255, 0.5);
+}
+
+.filter-level-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.filter-level-item {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.filter-level-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.filter-level-item.active {
+  background: rgba(24, 144, 255, 0.1);
+  border-color: rgba(24, 144, 255, 0.3);
+  box-shadow: 0 0 8px rgba(24, 144, 255, 0.2);
+}
+
+.level-header {
+  margin-bottom: 8px;
+}
+
+.level-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.level-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.level-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.level-desc {
+  font-size: 11px;
+  color: #888;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1px 6px;
+  border-radius: 10px;
+  margin-left: 6px;
+}
+
+.level-stats {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.stat-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.stat-buy {
+  color: #ff4d4f;
+  font-weight: 500;
+}
+
+.stat-sell {
+  color: #52c41a;
+  font-weight: 500;
+}
+
+.stat-amount {
+  font-weight: 500;
+  color: #aaa;
+  font-family: 'Courier New', monospace;
+}
+
+/* 搜索栏样式 */
+.trade-search {
+  margin-bottom: 16px;
+}
+
+.trade-search .ant-input {
+  background-color: #2a2a2a !important;
+  border-color: #444 !important;
+  color: #fff !important;
+}
+
+.trade-search .ant-input::placeholder {
+  color: #888 !important;
+}
+
+.trade-search .ant-input:focus {
+  border-color: #1890ff !important;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2) !important;
+}
+
+.trade-search .anticon {
+  color: #888 !important;
+}
+
 .trade-header {
   display: grid;
   grid-template-columns: 100px 80px 80px 100px 120px;
@@ -1112,6 +1268,34 @@ code {
 
 .header-item {
   text-align: center;
+  position: relative;
+}
+
+/* 可排序表头样式 */
+.header-item.sortable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 4px;
+  border-radius: 4px;
+  user-select: none;
+}
+
+.header-item.sortable:hover {
+  background-color: rgba(24, 144, 255, 0.1);
+  color: #1890ff;
+  transform: translateY(-1px);
+}
+
+.header-item.sortable.active {
+  color: #1890ff;
+  background-color: rgba(24, 144, 255, 0.15);
+  font-weight: 700;
+}
+
+.sort-indicator {
+  font-size: 12px;
+  margin-left: 4px;
+  opacity: 0.8;
 }
 
 .trade-list {
@@ -1142,14 +1326,19 @@ code {
   font-family: 'Courier New', monospace;
 }
 
-/* 买入样式 - 红色系 */
+/* 增强的买卖类型和金额级别颜色区分 */
+
+/* 基础买入样式 - 红色系 */
 .trade-buy {
-  color: #ff4d4f;
+  border-left: 2px solid transparent;
 }
 
 .trade-buy .trade-status {
   color: #ff4d4f;
   font-weight: 600;
+  background: rgba(255, 77, 79, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
 }
 
 .trade-buy .trade-amount {
@@ -1157,14 +1346,21 @@ code {
   font-weight: 600;
 }
 
-/* 卖出样式 - 绿色系 */
+.trade-buy .trade-price {
+  color: #ff7875;
+}
+
+/* 基础卖出样式 - 绿色系 */
 .trade-sell {
-  color: #52c41a;
+  border-left: 2px solid transparent;
 }
 
 .trade-sell .trade-status {
   color: #52c41a;
   font-weight: 600;
+  background: rgba(82, 196, 26, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
 }
 
 .trade-sell .trade-amount {
@@ -1172,41 +1368,294 @@ code {
   font-weight: 600;
 }
 
-/* 不同金额级别的强度 */
-.level-300 {
-  opacity: 1;
-  font-weight: 600;
+.trade-sell .trade-price {
+  color: #73d13d;
 }
 
-.level-300 .trade-amount {
+/* 300万级别 - 最高优先级（深红/深绿） */
+.level-300 {
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.level-300.trade-buy {
+  background: linear-gradient(90deg, rgba(255, 23, 68, 0.15) 0%, rgba(255, 23, 68, 0.05) 100%);
+  border-left: 4px solid #ff1744;
+  box-shadow: 0 0 8px rgba(255, 23, 68, 0.3);
+}
+
+.level-300.trade-buy .trade-amount {
+  color: #ff1744;
   font-size: 14px;
   font-weight: 700;
+  text-shadow: 0 0 4px rgba(255, 23, 68, 0.3);
 }
 
-.level-100 {
-  opacity: 0.9;
-  font-weight: 500;
-}
-
-.level-50 {
-  opacity: 0.8;
-  font-weight: 400;
-}
-
-.level-30 {
-  opacity: 0.7;
-  font-weight: 400;
-}
-
-/* 特殊标记大额交易 */
-.level-300.trade-buy {
-  background-color: rgba(255, 77, 79, 0.08);
-  border-left: 3px solid #ff4d4f;
+.level-300.trade-buy .trade-status {
+  background: rgba(255, 23, 68, 0.2);
+  color: #ff1744;
 }
 
 .level-300.trade-sell {
-  background-color: rgba(82, 196, 26, 0.08);
+  background: linear-gradient(90deg, rgba(76, 175, 80, 0.15) 0%, rgba(76, 175, 80, 0.05) 100%);
+  border-left: 4px solid #4caf50;
+  box-shadow: 0 0 8px rgba(76, 175, 80, 0.3);
+}
+
+.level-300.trade-sell .trade-amount {
+  color: #4caf50;
+  font-size: 14px;
+  font-weight: 700;
+  text-shadow: 0 0 4px rgba(76, 175, 80, 0.3);
+}
+
+.level-300.trade-sell .trade-status {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4caf50;
+}
+
+/* 100万级别 - 高优先级（橙红/绿） */
+.level-100 {
+  font-weight: 600;
+}
+
+.level-100.trade-buy {
+  background: linear-gradient(90deg, rgba(255, 102, 0, 0.12) 0%, rgba(255, 102, 0, 0.04) 100%);
+  border-left: 3px solid #ff6600;
+}
+
+.level-100.trade-buy .trade-amount {
+  color: #ff6600;
+  font-weight: 700;
+}
+
+.level-100.trade-buy .trade-status {
+  background: rgba(255, 102, 0, 0.15);
+  color: #ff6600;
+}
+
+.level-100.trade-sell {
+  background: linear-gradient(90deg, rgba(82, 196, 26, 0.12) 0%, rgba(82, 196, 26, 0.04) 100%);
   border-left: 3px solid #52c41a;
+}
+
+.level-100.trade-sell .trade-amount {
+  color: #52c41a;
+  font-weight: 700;
+}
+
+.level-100.trade-sell .trade-status {
+  background: rgba(82, 196, 26, 0.15);
+  color: #52c41a;
+}
+
+/* 50万级别 - 中等优先级（黄橙/浅绿） */
+.level-50 {
+  font-weight: 500;
+}
+
+.level-50.trade-buy {
+  background: linear-gradient(90deg, rgba(255, 153, 0, 0.1) 0%, rgba(255, 153, 0, 0.03) 100%);
+  border-left: 2px solid #ff9900;
+}
+
+.level-50.trade-buy .trade-amount {
+  color: #ff9900;
+  font-weight: 600;
+}
+
+.level-50.trade-buy .trade-status {
+  background: rgba(255, 153, 0, 0.12);
+  color: #ff9900;
+}
+
+.level-50.trade-sell {
+  background: linear-gradient(90deg, rgba(139, 195, 74, 0.1) 0%, rgba(139, 195, 74, 0.03) 100%);
+  border-left: 2px solid #8bc34a;
+}
+
+.level-50.trade-sell .trade-amount {
+  color: #8bc34a;
+  font-weight: 600;
+}
+
+.level-50.trade-sell .trade-status {
+  background: rgba(139, 195, 74, 0.12);
+  color: #8bc34a;
+}
+
+/* 30万级别 - 基础级别（较淡颜色） */
+.level-30 {
+  font-weight: 400;
+  opacity: 0.9;
+}
+
+.level-30.trade-buy {
+  background: linear-gradient(90deg, rgba(255, 193, 7, 0.08) 0%, rgba(255, 193, 7, 0.02) 100%);
+  border-left: 2px solid #ffc107;
+}
+
+.level-30.trade-buy .trade-amount {
+  color: #ffc107;
+  font-weight: 500;
+}
+
+.level-30.trade-buy .trade-status {
+  background: rgba(255, 193, 7, 0.1);
+  color: #ffc107;
+}
+
+.level-30.trade-sell {
+  background: linear-gradient(90deg, rgba(205, 220, 57, 0.08) 0%, rgba(205, 220, 57, 0.02) 100%);
+  border-left: 2px solid #cddc39;
+}
+
+.level-30.trade-sell .trade-amount {
+  color: #cddc39;
+  font-weight: 500;
+}
+
+.level-30.trade-sell .trade-status {
+  background: rgba(205, 220, 57, 0.1);
+  color: #cddc39;
+}
+
+/* 所有级别的hover效果 */
+.trade-item:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  transform: translateX(2px);
+  transition: all 0.2s ease;
+}
+
+/* 时间和价格列保持中性色 */
+.trade-time,
+.trade-volume {
+  color: #aaa !important;
+  font-family: 'Courier New', monospace;
+}
+
+/* 实时统计面板样式 */
+.realtime-stats-panel {
+  background: linear-gradient(135deg, rgba(24, 144, 255, 0.05) 0%, rgba(24, 144, 255, 0.02) 100%);
+  border: 1px solid rgba(24, 144, 255, 0.2);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.stats-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.overview-item {
+  text-align: center;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.overview-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.overview-label {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.overview-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #aaa;
+  font-family: 'Courier New', monospace;
+}
+
+.overview-value.positive {
+  color: #52c41a;
+  text-shadow: 0 0 6px rgba(82, 196, 26, 0.3);
+}
+
+.overview-value.negative {
+  color: #ff4d4f;
+  text-shadow: 0 0 6px rgba(255, 77, 79, 0.3);
+}
+
+.level-distribution {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.distribution-item {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 12px;
+  transition: all 0.3s ease;
+}
+
+.distribution-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.distribution-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.distribution-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.distribution-total {
+  font-size: 12px;
+  color: #aaa;
+  font-family: 'Courier New', monospace;
+}
+
+.distribution-bar {
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+  display: flex;
+  background-color: rgba(255, 255, 255, 0.1);
+  margin-bottom: 8px;
+}
+
+.bar-buy,
+.bar-sell {
+  height: 100%;
+  transition: width 0.5s ease;
+}
+
+.distribution-details {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #888;
+}
+
+.detail-buy {
+  color: #ff4d4f;
+}
+
+.detail-sell {
+  color: #52c41a;
 }
 
 /* 响应式设计更新 */
@@ -1248,5 +1697,95 @@ code {
     gap: 8px;
     padding: 8px 12px;
     font-size: 12px;
+  }
+
+  /* 增强筛选控件响应式 */
+  .filter-level-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .filter-level-item {
+    padding: 8px;
+  }
+
+  .level-desc {
+    display: none; /* 移动端隐藏描述文字 */
+  }
+
+  /* 实时统计面板响应式 */
+  .stats-overview {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .level-distribution {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .distribution-details {
+    flex-direction: column;
+    gap: 4px;
+    font-size: 10px;
+  }
+
+  /* 大单数据表格响应式 */
+  .large-orders-table {
+    padding: 0 16px;
+  }
+
+  .order-row {
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 0;
+  }
+
+  .order-level {
+    flex: none;
+    font-size: 12px;
+  }
+
+  .order-counts,
+  .order-amounts {
+    flex: none;
+    font-size: 12px;
+  }
+
+  /* 搜索栏响应式 */
+  .trade-search .ant-input {
+    font-size: 14px;
+  }
+
+  /* 表格内容滚动优化 */
+  .trade-list {
+    max-height: 300px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 筛选控件头部响应式 */
+  .filter-header {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .filter-actions {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  /* 级别标签文字缩小 */
+  .level-label {
+    font-size: 12px;
+  }
+
+  .level-stats {
+    font-size: 10px;
+  }
+
+  .stat-amount {
+    font-size: 10px;
   }
 }

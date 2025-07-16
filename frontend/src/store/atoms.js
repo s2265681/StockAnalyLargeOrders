@@ -93,25 +93,38 @@ export const fetchLargeOrdersAtom = atom(
         apiRequest(`/api/v1/dadan?code=${code}&dt=${today}`, { timeout: 60000 }) // 60秒
       ]);
       
-      // 大单统计使用 code: 0 格式，大单明细使用 success: true 格式
-      if (statsData.code === 0 && dadanData.success === true) {
-        // 转换统计数据格式
-        const stats = statsData.data;
+      // 大单统计和大单明细都使用 success: true 格式
+      if (statsData.success === true && dadanData.success === true) {
+        // 转换统计数据格式 - 适配新的后端数据结构
+        const statsArray = statsData.statistics || [];
         const dadanResult = dadanData.data;
         const orders = dadanResult.dadan_list || [];
+        
+        // 将统计数组转换为映射对象，便于查找
+        const statsMap = {};
+        statsArray.forEach(stat => {
+          const level = stat.level;
+          statsMap[level] = {
+            buy_count: stat.buy_count || 0,
+            sell_count: stat.sell_count || 0,
+            net_count: stat.net_count || 0
+          };
+        });
         
         // 合并数据为前端期望的格式
         const combinedData = {
           summary: {
-            buyCount: parseInt(stats.buy_nums_300 || 0) + parseInt(stats.buy_nums_100 || 0) + parseInt(stats.buy_nums_50 || 0) + parseInt(stats.buy_nums_30 || 0),
-            sellCount: parseInt(stats.sell_nums_300 || 0) + parseInt(stats.sell_nums_100 || 0) + parseInt(stats.sell_nums_50 || 0) + parseInt(stats.sell_nums_30 || 0),
-            totalAmount: (parseFloat(stats.total_buy_amount || 0) + parseFloat(stats.total_sell_amount || 0)) * 10000,
-            netInflow: (parseFloat(stats.total_buy_amount || 0) - parseFloat(stats.total_sell_amount || 0)) * 10000,
+            buyCount: (statsMap['大于300万']?.buy_count || 0) + (statsMap['大于100万']?.buy_count || 0) + 
+                     (statsMap['大于50万']?.buy_count || 0) + (statsMap['大于30万']?.buy_count || 0),
+            sellCount: (statsMap['大于300万']?.sell_count || 0) + (statsMap['大于100万']?.sell_count || 0) + 
+                      (statsMap['大于50万']?.sell_count || 0) + (statsMap['大于30万']?.sell_count || 0),
+            totalAmount: 0, // 暂时设为0，因为后端没有返回金额汇总
+            netInflow: 0,   // 暂时设为0，因为后端没有返回净流入
             categoryStats: {
-              D300: parseInt(stats.buy_nums_300 || 0) + parseInt(stats.sell_nums_300 || 0),
-              D100: parseInt(stats.buy_nums_100 || 0) + parseInt(stats.sell_nums_100 || 0),
-              D50: parseInt(stats.buy_nums_50 || 0) + parseInt(stats.sell_nums_50 || 0),
-              D30: parseInt(stats.buy_nums_30 || 0) + parseInt(stats.sell_nums_30 || 0)
+              D300: (statsMap['大于300万']?.buy_count || 0) + (statsMap['大于300万']?.sell_count || 0),
+              D100: (statsMap['大于100万']?.buy_count || 0) + (statsMap['大于100万']?.sell_count || 0),
+              D50: (statsMap['大于50万']?.buy_count || 0) + (statsMap['大于50万']?.sell_count || 0),
+              D30: (statsMap['大于30万']?.buy_count || 0) + (statsMap['大于30万']?.sell_count || 0)
             }
           },
           largeOrders: Array.isArray(orders) ? orders.map(order => ({
@@ -124,34 +137,34 @@ export const fetchLargeOrdersAtom = atom(
           })) : [],
           levelStats: {
             D300: {
-              buy_count: parseInt(stats.buy_nums_300 || 0),
-              sell_count: parseInt(stats.sell_nums_300 || 0),
-              buy_amount: parseFloat(stats.buy_amount_300 || 0),
-              sell_amount: parseFloat(stats.sell_amount_300 || 0)
+              buy_count: statsMap['大于300万']?.buy_count || 0,
+              sell_count: statsMap['大于300万']?.sell_count || 0,
+              buy_amount: 0, // 后端暂未返回金额统计
+              sell_amount: 0
             },
             D100: {
-              buy_count: parseInt(stats.buy_nums_100 || 0),
-              sell_count: parseInt(stats.sell_nums_100 || 0),
-              buy_amount: parseFloat(stats.buy_amount_100 || 0),
-              sell_amount: parseFloat(stats.sell_amount_100 || 0)
+              buy_count: statsMap['大于100万']?.buy_count || 0,
+              sell_count: statsMap['大于100万']?.sell_count || 0,
+              buy_amount: 0, // 后端暂未返回金额统计
+              sell_amount: 0
             },
             D50: {
-              buy_count: parseInt(stats.buy_nums_50 || 0),
-              sell_count: parseInt(stats.sell_nums_50 || 0),
-              buy_amount: parseFloat(stats.buy_amount_50 || 0),
-              sell_amount: parseFloat(stats.sell_amount_50 || 0)
+              buy_count: statsMap['大于50万']?.buy_count || 0,
+              sell_count: statsMap['大于50万']?.sell_count || 0,
+              buy_amount: 0, // 后端暂未返回金额统计
+              sell_amount: 0
             },
             D30: {
-              buy_count: parseInt(stats.buy_nums_30 || 0),
-              sell_count: parseInt(stats.sell_nums_30 || 0),
-              buy_amount: parseFloat(stats.buy_amount_30 || 0),
-              sell_amount: parseFloat(stats.sell_amount_30 || 0)
+              buy_count: statsMap['大于30万']?.buy_count || 0,
+              sell_count: statsMap['大于30万']?.sell_count || 0,
+              buy_amount: 0, // 后端暂未返回金额统计
+              sell_amount: 0
             },
             under_D30: {
-              buy_count: parseInt(stats.buy_nums_below_30 || 0),
-              sell_count: parseInt(stats.sell_nums_below_30 || 0),
-              buy_amount: parseFloat(stats.buy_amount_below_30 || 0),
-              sell_amount: parseFloat(stats.sell_amount_below_30 || 0)
+              buy_count: statsMap['小于30万']?.buy_count || 0,
+              sell_count: statsMap['小于30万']?.sell_count || 0,
+              buy_amount: 0, // 后端暂未返回金额统计
+              sell_amount: 0
             }
           }
         };
@@ -159,7 +172,7 @@ export const fetchLargeOrdersAtom = atom(
         set(largeOrdersDataAtom, combinedData);
         // 移除设置filterAmountAtom，避免循环调用
       } else {
-        set(errorAtom, statsData.msg || dadanData.message || '获取大单数据失败');
+        set(errorAtom, statsData.message || dadanData.message || '获取大单数据失败');
       }
     } catch (error) {
       set(errorAtom, `获取大单数据失败: ${error.message}`);

@@ -245,15 +245,20 @@ class StockDataSourceManager:
                 logger.warning(f"无法获取{code}的基础股票数据")
                 return []
             
-            # 2. 获取分时数据进行大单分析
-            from app import get_eastmoney_timeshare_data, analyze_large_orders_from_timeshare_data
-            timeshare_data = get_eastmoney_timeshare_data(code)
+            # 2. 获取分时数据构造成交明细进行大单分析
+            from app import get_eastmoney_timeshare_data, get_tick_data_from_timeshare, analyze_large_orders_from_tick_data
+            timeshare_response = get_eastmoney_timeshare_data(code)
             
-            if timeshare_data:
-                large_orders = analyze_large_orders_from_timeshare_data(timeshare_data, code)
-                if large_orders:
-                    logger.info(f"基于分时数据分析{code}大单成功: {len(large_orders)}条")
-                    return large_orders
+            if timeshare_response and 'timeshare' in timeshare_response:
+                # 从分时数据构造成交明细
+                tick_data = get_tick_data_from_timeshare(timeshare_response['timeshare'])
+                if tick_data:
+                    # 基于成交明细进行专业大单分析
+                    analysis_result = analyze_large_orders_from_tick_data(tick_data, code)
+                    large_orders = analysis_result['large_orders']
+                    if large_orders:
+                        logger.info(f"基于成交明细分析{code}大单成功: {len(large_orders)}条")
+                        return large_orders
             
             # 3. 如果分时数据获取失败，返回空数组而不是模拟数据
             logger.error(f"无法获取{code}的真实分时数据进行大单分析")

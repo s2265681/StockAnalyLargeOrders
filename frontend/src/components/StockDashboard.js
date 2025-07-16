@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { 
   Card, 
   Row, 
@@ -6,7 +6,8 @@ import {
   Input, 
   Button, 
   Spin,
-  Alert
+  Alert,
+  AutoComplete
 } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
 import { useAtom } from 'jotai';
@@ -40,6 +41,7 @@ import {
   fetchRealtimeDataAtom,
   validateStockDataAtom
 } from '../store/atoms';
+import { apiRequest } from '../config/api';
 
 // 注册ECharts组件
 echarts.use([
@@ -75,6 +77,10 @@ const StockDashboard = ({ onStockCodeChange }) => {
   
   // 大单金额筛选状态
   const [amountFilters, setAmountFilters] = React.useState([300, 100, 30]);
+  
+  // 股票搜索相关状态
+  const [searchOptions, setSearchOptions] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   // 触发数据验证（暂时禁用）
   // const handleValidateData = () => {
@@ -99,11 +105,51 @@ const StockDashboard = ({ onStockCodeChange }) => {
     }
   };
 
-  // 股票代码搜索（只改变状态，让useEffect处理数据获取）
+  // 股票搜索功能
+  const handleStockSearch = async (value) => {
+    if (!value || value.length < 2) {
+      setSearchOptions([]);
+      return;
+    }
+    
+    try {
+      setSearchLoading(true);
+      const response = await apiRequest(`/api/stock/search?query=${encodeURIComponent(value)}`);
+      
+      if (response.code === 200 && response.data) {
+        const options = response.data.map(stock => ({
+          value: stock.code,
+          label: `${stock.code} ${stock.name}`,
+          stock: stock
+        }));
+        setSearchOptions(options);
+      }
+    } catch (error) {
+      console.error('搜索股票失败:', error);
+      setSearchOptions([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  // 股票代码搜索（修改条件检查）
   const handleSearch = (value) => {
-    if (value && value.length >= 6) {
+    // 放宽条件：只要有输入就可以搜索，支持4-6位股票代码
+    if (value && value.length >= 4) {
       onStockCodeChange(value);
     }
+  };
+
+  // 点击搜索图标触发搜索
+  const handleSearchIconClick = () => {
+    handleSearch(stockCode);
+  };
+
+  // 选择搜索建议时的处理
+  const handleSearchSelect = (value, option) => {
+    setStockCode(value);
+    handleSearch(value);
+    setSearchOptions([]); // 清空搜索建议
   };
 
   // 刷新数据（暂时禁用）
@@ -277,11 +323,37 @@ const StockDashboard = ({ onStockCodeChange }) => {
     const { timeshare, statistics } = timeshareData;
     const yesterdayClose = statistics ? statistics.yesterdayClose : (stockBasicData ? stockBasicData.yesterday_close : 0);
     
+    // 确保时间轴从9:30开始 - 如果数据中没有9:30，则补充一个
+    const ensureStartTime = (data) => {
+      if (!data || data.length === 0) return data;
+      
+      const firstTime = data[0][0];
+      let normalizedFirstTime = firstTime;
+      
+      // 标准化时间格式进行比较
+      if (firstTime && firstTime.includes(':')) {
+        const timeStr = firstTime.includes(' ') ? firstTime.split(' ')[1] : firstTime;
+        const [hour, minute] = timeStr.split(':');
+        normalizedFirstTime = `${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`;
+      }
+      
+      // 如果第一个时间点不是9:30，在开头插入9:30的数据点
+      if (normalizedFirstTime !== '09:30' && !normalizedFirstTime.startsWith('09:30')) {
+        const firstValue = data[0][1]; // 使用第一个数据点的值
+        return [['09:30', firstValue], ...data];
+      }
+      
+      return data;
+    };
+    
     // 价格和成交量数据（转换为百分比坐标）
-    const priceData = timeshare.map(item => {
+    let priceData = timeshare.map(item => {
       const percentChange = ((item.price - yesterdayClose) / yesterdayClose) * 100;
       return [item.time, percentChange];
     });
+    
+    // 确保价格数据从9:30开始
+    priceData = ensureStartTime(priceData);
     
     const volumeData = timeshare.map((item, index) => {
       const currentPrice = item.price;
@@ -304,10 +376,15 @@ const StockDashboard = ({ onStockCodeChange }) => {
     });
     
     // 计算均价线
-    const avgPriceData = calculateAvgPrice(timeshare, yesterdayClose);
+    let avgPriceData = calculateAvgPrice(timeshare, yesterdayClose);
+    // 确保均价数据也从9:30开始
+    avgPriceData = ensureStartTime(avgPriceData);
     
     // 生成主力线和散户线数据
-    const { institutionalData, retailData } = generateInstitutionalAndRetailData(timeshare, largeOrdersData?.largeOrders, yesterdayClose);
+    let { institutionalData, retailData } = generateInstitutionalAndRetailData(timeshare, largeOrdersData?.largeOrders, yesterdayClose);
+    // 确保主力线和散户线数据也从9:30开始
+    institutionalData = ensureStartTime(institutionalData);
+    retailData = ensureStartTime(retailData);
     
     // 生成筛选金额标注
     const { institutionalMarkers, retailMarkers } = generateFilteredAmountMarkers(
@@ -385,16 +462,21 @@ const StockDashboard = ({ onStockCodeChange }) => {
               const [hour, minute] = timeStr.split(':');
               const normalizedTime = `${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`;
               
-              // 目标时间节点
+              // 目标时间节点 - 确保包含9:30开盘时间
               const targetTimes = ['09:30', '10:30', '11:30', '14:00', '15:00'];
               
-              // 精确匹配
+              // 精确匹配标准化时间
               if (targetTimes.includes(normalizedTime)) {
                 return normalizedTime;
               }
               
-              // 检查是否为9:30格式
-              if (timeStr === '9:30') {
+              // 额外检查原始时间格式，确保9:30能被正确识别
+              if (timeStr === '9:30' || timeStr === '09:30') {
+                return '09:30';
+              }
+              
+              // 为了确保9:30显示，增加特殊处理
+              if (normalizedTime === '09:30' || timeStr.includes('9:30')) {
                 return '09:30';
               }
               
@@ -898,16 +980,34 @@ const StockDashboard = ({ onStockCodeChange }) => {
               <span className="stock-name">{stockBasicData.name}</span>
               <span className="stock-code">{stockBasicData.code}</span>
             </div>
-                         <div className="search-box">
-               <Input
-                 placeholder="奥康国际"
-                 value={stockCode}
-                 onChange={(e) => setStockCode(e.target.value)}
-                 onPressEnter={(e) => handleSearch(e.target.value)}
-                 style={{ width: 200, backgroundColor: '#2a2a2a', borderColor: '#444', color: '#fff' }}
-                 suffix={<SearchOutlined style={{ color: '#888' }} />}
-               />
-             </div>
+            <div className="search-box">
+              <AutoComplete
+                value={stockCode}
+                options={searchOptions}
+                onSearch={handleStockSearch}
+                onSelect={handleSearchSelect}
+                onChange={(value) => setStockCode(value)}
+                style={{ width: 200 }}
+                placeholder="输入股票代码或名称搜索"
+                allowClear
+              >
+                <Input
+                  onPressEnter={(e) => handleSearch(e.target.value)}
+                  style={{ 
+                    backgroundColor: '#2a2a2a', 
+                    borderColor: '#444', 
+                    color: '#fff' 
+                  }}
+                  suffix={
+                    <SearchOutlined 
+                      style={{ color: '#888', cursor: 'pointer' }} 
+                      onClick={handleSearchIconClick}
+                    />
+                  }
+                  loading={searchLoading}
+                />
+              </AutoComplete>
+            </div>
           </div>
 
           {/* 中部：当前价格和涨跌幅 */}

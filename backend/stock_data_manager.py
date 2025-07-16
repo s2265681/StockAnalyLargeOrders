@@ -237,21 +237,31 @@ class StockDataSourceManager:
         return None
     
     def get_large_orders_data(self, code: str) -> List[Dict]:
-        """获取大单数据 - 基于真实股票价格生成"""
+        """获取大单数据 - 基于真实分时数据分析"""
         try:
-            # 先获取真实股票数据，基于真实价格生成大单数据
+            # 1. 尝试获取真实股票数据
             stock_data = self.get_best_stock_data(code)
-            if stock_data:
-                return self._generate_realistic_large_orders(code, stock_data.current_price)
-            else:
-                # 备用价格
-                base_price = 8.48 if code == '603001' else 50.0
-                return self._generate_realistic_large_orders(code, base_price)
+            if not stock_data:
+                logger.warning(f"无法获取{code}的基础股票数据")
+                return []
+            
+            # 2. 获取分时数据进行大单分析
+            from app import get_eastmoney_timeshare_data, analyze_large_orders_from_timeshare_data
+            timeshare_data = get_eastmoney_timeshare_data(code)
+            
+            if timeshare_data:
+                large_orders = analyze_large_orders_from_timeshare_data(timeshare_data, code)
+                if large_orders:
+                    logger.info(f"基于分时数据分析{code}大单成功: {len(large_orders)}条")
+                    return large_orders
+            
+            # 3. 如果分时数据获取失败，返回空数组而不是模拟数据
+            logger.error(f"无法获取{code}的真实分时数据进行大单分析")
+            return []
                 
         except Exception as e:
             logger.warning(f"获取大单数据失败: {e}")
-            base_price = 8.48 if code == '603001' else 50.0
-            return self._generate_realistic_large_orders(code, base_price)
+            return []
     
     def _classify_order_size(self, amount: float) -> str:
         """分类订单大小"""
@@ -266,59 +276,7 @@ class StockDataSourceManager:
         else:
             return 'D10'   # 散户单 <30万
     
-    def _generate_realistic_large_orders(self, code: str, base_price: float) -> List[Dict]:
-        """基于真实价格生成模拟大单数据"""
-        import random
-        
-        orders = []
-        
-        # 根据股票特性调整参数
-        if code == '603001':  # 奥康国际
-            volume_multiplier = 1.0
-            order_counts = [3, 5, 8, 12, 15]  # 各级别订单数量
-        else:
-            volume_multiplier = 2.0
-            order_counts = [2, 4, 6, 10, 12]
-        
-        # 生成不同级别的大单
-        order_levels = [
-            (3000000, 8000000, order_counts[0]),  # 超大单
-            (1000000, 3000000, order_counts[1]),  # 大单  
-            (500000, 1000000, order_counts[2]),   # 中单
-            (300000, 500000, order_counts[3]),    # 小大单
-            (100000, 300000, order_counts[4]),    # 准大单
-        ]
-        
-        order_id = 0
-        for min_amount, max_amount, count in order_levels:
-            for _ in range(count):
-                time_offset = timedelta(minutes=order_id*3 + random.randint(0, 10))
-                trade_time = (datetime.now() - time_offset).strftime('%H:%M:%S')
-                
-                is_buy = random.choice([True, False])
-                amount = random.uniform(min_amount, max_amount) * volume_multiplier
-                
-                # 价格波动范围
-                price_variation = base_price * 0.02  # 2%的价格波动
-                price = base_price + random.uniform(-price_variation, price_variation)
-                volume = int(amount / price)
-                
-                orders.append({
-                    'time': trade_time,
-                    'type': 'buy' if is_buy else 'sell',
-                    'price': round(price, 2),
-                    'volume': volume,
-                    'amount': amount,
-                    'net_inflow': amount if is_buy else -amount,
-                    'category': self._classify_order_size(amount)
-                })
-                
-                order_id += 1
-        
-        # 按时间排序
-        orders.sort(key=lambda x: x['time'], reverse=True)
-        
-        return orders[:30]  # 返回最新30条
+    # 已移除_generate_realistic_large_orders函数，改为使用基于真实分时数据的分析方法
     
     def get_dadan_statistics(self, code: str) -> Dict:
         """获取大单统计数据"""

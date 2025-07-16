@@ -87,10 +87,10 @@ export const fetchLargeOrdersAtom = atom(
     
     try {
       const today = new Date().toISOString().split('T')[0];
-      // 获取大单统计数据和大单明细
+      // 获取大单统计数据和大单明细（设置更长的超时时间，因为需要分析大量成交明细）
       const [statsData, dadanData] = await Promise.all([
-        apiRequest(`/api/v1/dadantongji?code=${code}&dt=${today}`),
-        apiRequest(`/api/v1/dadan?code=${code}&dt=${today}`)
+        apiRequest(`/api/v1/dadantongji?code=${code}&dt=${today}`, { timeout: 60000 }), // 60秒
+        apiRequest(`/api/v1/dadan?code=${code}&dt=${today}`, { timeout: 60000 }) // 60秒
       ]);
       
       // 大单统计使用 code: 0 格式，大单明细使用 success: true 格式
@@ -235,7 +235,7 @@ export const fetchRealtimeDataAtom = atom(
     
     try {
       const today = new Date().toISOString().split('T')[0];
-      const data = await apiRequest(`/api/v1/dadan?code=${code}&dt=${today}`);
+      const data = await apiRequest(`/api/v1/dadan?code=${code}&dt=${today}`, { timeout: 60000 }); // 60秒
       
       if (data.success === true && data.data) {
         // 转换为前端期望的实时交易格式

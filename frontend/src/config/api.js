@@ -10,11 +10,11 @@ const getApiConfig = () => {
   const defaultConfig = {
     development: {
       baseURL: 'http://localhost:9001',
-      timeout: 10000,
+      timeout: 30000, // 增加到30秒，适应成交明细数据获取
     },
     production: {
       baseURL: 'http://18.141.179.222:9001', 
-      timeout: 15000,
+      timeout: 45000, // 增加到45秒，生产环境网络可能较慢
     }
   };
 

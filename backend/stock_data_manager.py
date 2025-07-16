@@ -246,8 +246,11 @@ class StockDataSourceManager:
                 return []
             
             # 2. 获取分时数据构造成交明细进行大单分析
-            from app import get_eastmoney_timeshare_data, get_tick_data_from_timeshare, analyze_large_orders_from_tick_data
-            timeshare_response = get_eastmoney_timeshare_data(code)
+            from app import get_akshare_timeshare_data, get_eastmoney_timeshare_data, get_tick_data_from_timeshare, analyze_large_orders_from_tick_data
+            timeshare_response = get_akshare_timeshare_data(code)  # 使用当天数据
+            if not timeshare_response:
+                # 备用：使用东方财富分时数据
+                timeshare_response = get_eastmoney_timeshare_data(code)
             
             if timeshare_response and 'timeshare' in timeshare_response:
                 # 从分时数据构造成交明细

@@ -104,9 +104,9 @@ jobs:
           echo "📦 安装Python依赖..."
           # 使用backend目录下的requirements.txt
           if [ -f backend/requirements.txt ]; then
-            pip install --no-cache-dir -r backend/requirements.txt
+            pip install --no-cache-dir -r backend/requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple/
           elif [ -f requirements.txt ]; then
-            pip install --no-cache-dir -r requirements.txt
+            pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple/
           else
             echo "❌ 未找到requirements.txt文件"
             exit 1

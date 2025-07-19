@@ -99,18 +99,21 @@ jobs:
           source venv/bin/activate
           
           echo "⬆️ 升级pip..."
-          pip install --upgrade pip
+          # pip install --upgrade pip
           
           echo "📦 安装Python依赖..."
           # 使用backend目录下的requirements.txt
-          if [ -f backend/requirements.txt ]; then
-            pip install --no-cache-dir -r backend/requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple/
-          elif [ -f requirements.txt ]; then
-            pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple/
-          else
-            echo "❌ 未找到requirements.txt文件"
-            exit 1
-          fi
+          pip install --no-cache-dir -r backend/requirements.txt
+          # 验证依赖安装情况
+          pip list  
+          python -c "import pandas; print(pandas.__version__)"
+          python -c "import numpy; print(numpy.__version__)"
+          python -c "import scipy; print(scipy.__version__)"
+          python -c "import matplotlib; print(matplotlib.__version__)"
+          python -c "import seaborn; print(seaborn.__version__)"
+          python -c "import sklearn; print(sklearn.__version__)"
+          python -c "import xgboost; print(xgboost.__version__)"
+          python -c "import lightgbm; print(lightgbm.__version__)"
           
           echo "🔄 重启后端服务..."
           pm2 delete StockAnalysisLargeOrders 2>/dev/null || echo '服务不存在，新建中...'

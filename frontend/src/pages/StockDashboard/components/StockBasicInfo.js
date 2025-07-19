@@ -1,18 +1,20 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AutoComplete, Input } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
 import { useAtom } from 'jotai';
 import {
   stockCodeAtom,
   stockBasicDataAtom,
-  errorAtom
+  errorAtom,
+  fetchStockBasicAtom
 } from '../../../store/atoms';
 import { apiRequest } from '../../../config/api';
 
 const StockBasicInfo = ({ onStockCodeChange }) => {
   const [stockCode, setStockCode] = useAtom(stockCodeAtom);
   const [stockBasicData] = useAtom(stockBasicDataAtom);
-  const [, setError] = useAtom(errorAtom);
+  const [, fetchStockBasic] = useAtom(fetchStockBasicAtom);
+  const [_innerCode, setInnerCode] = useState(stockCode);
   
   // 股票搜索相关状态
   const [searchOptions, setSearchOptions] = useState([]);
@@ -20,41 +22,18 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
 
   // 股票搜索功能
   const handleStockSearch = async (value) => {
-    if (!value || value.length < 2) {
-      setSearchOptions([]);
-      return;
-    }
     
-    try {
-      setSearchLoading(true);
-      const response = await apiRequest(`/api/stock/search?query=${encodeURIComponent(value)}`);
-      
-      if (response.code === 200 && response.data) {
-        const options = response.data.map(stock => ({
-          value: stock.code,
-          label: `${stock.code} ${stock.name}`,
-          stock: stock
-        }));
-        setSearchOptions(options);
-      }
-    } catch (error) {
-      console.error('搜索股票失败:', error);
-      setSearchOptions([]);
-    } finally {
-      setSearchLoading(false);
-    }
   };
 
   // 股票代码搜索
   const handleSearch = (value) => {
-    if (value && value.length >= 4) {
-      onStockCodeChange(value);
-    }
+      setInnerCode(value)
   };
 
   // 点击搜索图标触发搜索
   const handleSearchIconClick = () => {
-    handleSearch(stockCode);
+    onStockCodeChange(_innerCode);
+
   };
 
   // 选择搜索建议时的处理
@@ -64,8 +43,15 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
     setSearchOptions([]);
   };
 
+  //调用basic 接口数据
+  useEffect(()=>{
+    fetchStockBasic(stockCode)
+  },[stockCode])
+
+  console.log(stockCode,'stockCode;;;;')
+
   return (
-    <div>
+    <div className=''>
       {/* 股票基础信息 - 新样式 */}
       {stockBasicData && (
         <div className="stock-header-new">
@@ -77,17 +63,21 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
             </div>
             <div className="search-box">
               <AutoComplete
-                value={stockCode}
+                value={_innerCode}
                 options={searchOptions}
-                onSearch={handleStockSearch}
-                onSelect={handleSearchSelect}
-                onChange={(value) => setStockCode(value)}
+                // onSearch={handleStockSearch}
+                // onSelect={handleSearchSelect}
+                onChange={(value) => {
+                  setInnerCode(value)
+                }}
                 style={{ width: 200 }}
                 placeholder="输入股票代码或名称搜索"
-                allowClear
+                // allowClear
               >
                 <Input
-                  onPressEnter={(e) => handleSearch(e.target.value)}
+                  onPressEnter={(e) => {
+                    setInnerCode(e.target.value)
+                  }}
                   style={{ 
                     backgroundColor: '#2a2a2a', 
                     borderColor: '#444', 
@@ -95,8 +85,10 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
                   }}
                   suffix={
                     <SearchOutlined 
-                      style={{ color: '#888', cursor: 'pointer' }} 
-                      onClick={handleSearchIconClick}
+                      style={{ color: '#fff', cursor: 'pointer' }} 
+                      onClick={()=>{
+                        onStockCodeChange(_innerCode)
+                      }}
                     />
                   }
                   loading={searchLoading}

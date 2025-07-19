@@ -6,7 +6,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #141213;
-  color: #aaa;
+  color: #fff;
 }
 
 code {
@@ -27,23 +27,23 @@ code {
 /* 卡片样式 */
 .stock-card {
   margin-bottom: 16px;
-  background-color: #1a1a1a;
+  /* background-color: #1a1a1a; */
   border: 1px solid #333;
   border-radius: 8px;
 }
 
 .stock-card .ant-card-body {
   padding: 16px;
-  background-color: #1a1a1a;
+  /* background-color: #1a1a1a; */
 }
 
 .stock-card .ant-card-head {
-  background-color: #1a1a1a;
+  /* background-color: #1a1a1a; */
   border-bottom: 1px solid #333;
 }
 
 .stock-card .ant-card-head-title {
-  color: #aaa;
+  color: #fff;
   font-weight: 600;
 }
 
@@ -72,13 +72,13 @@ code {
 .stock-name {
   font-size: 24px;
   font-weight: bold;
-  color: #aaa;
+  color: #fff;
   margin-bottom: 4px;
 }
 
 .stock-code {
   font-size: 14px;
-  color: #888;
+  color: #fff;
   background-color: #333;
   padding: 2px 8px;
   border-radius: 4px;
@@ -127,7 +127,7 @@ code {
 
 .stock-industry {
   font-size: 12px;
-  color: #888;
+  color: #fff;
   background-color: rgba(255, 255, 255, 0.1);
   padding: 2px 6px;
   border-radius: 3px;
@@ -148,7 +148,7 @@ code {
 }
 
 .market-status.closed {
-  color: #888;
+  color: #fff;
   background-color: rgba(136, 136, 136, 0.1);
   border: 1px solid rgba(136, 136, 136, 0.3);
 }
@@ -195,7 +195,7 @@ code {
   transition: all 0.3s ease;
   display: flex;
   flex-direction: row;
-  color: #aaa;
+  color: #fff;
   /* font-size: 15px; */
 }
 
@@ -207,7 +207,7 @@ code {
 
 .stat-label {
   /* font-size: 11px; */
-  color: #888;
+  color: #fff;
   margin-bottom: 4px;
   font-weight: 500;
 }
@@ -215,7 +215,7 @@ code {
 .stat-value {
   /* font-size: 14px; */
   font-weight: 600;
-  color: #aaa;
+  color: #fff;
   font-family: 'Courier New', monospace;
 }
 
@@ -237,14 +237,14 @@ code {
 
 .summary-label {
   /* font-size: 14px; */
-  color: #888;
+  color: #fff;
   margin-bottom: 8px;
 }
 
 .summary-value {
   font-size: 20px;
   font-weight: bold;
-  color: #aaa;
+  color: #fff;
   font-family: 'Courier New', monospace;
 }
 
@@ -258,10 +258,10 @@ code {
 
 /* 搜索控制面板 */
 .search-panel {
-  background-color: #1a1a1a;
+  /* background-color: #1a1a1a; */
   padding: 16px;
   border-radius: 8px;
-  border: 1px solid #333;
+  /* border: 1px solid #333; */
   margin-bottom: 16px;
 }
 
@@ -320,7 +320,7 @@ code {
 }
 
 .ant-table-tbody > tr > td {
-  background-color: #1a1a1a;
+  /* background-color: #1a1a1a; */
   border-bottom: 1px solid #333;
   color: #ffffff !important;
 }
@@ -351,20 +351,20 @@ code {
 .stock-card .ant-table td,
 .stock-card .ant-table th,
 .stock-card .ant-table .ant-typography {
-  color: #aaa !important;
+  color: #fff !important;
 }
 
 /* 标签颜色保持原有的红绿区分，但文字为指定颜色 */
 .ant-table .ant-tag-red {
   background-color: rgba(255, 77, 79, 0.2);
   border-color: #ff4d4f;
-  color: #aaa !important;
+  color: #fff !important;
 }
 
 .ant-table .ant-tag-green {
   background-color: rgba(82, 196, 26, 0.2);
   border-color: #52c41a;
-  color: #aaa !important;
+  color: #fff !important;
 }
 
 /* 分页组件文字颜色 */
@@ -379,12 +379,12 @@ code {
 .ant-pagination .ant-pagination-jump-next,
 .ant-pagination .ant-pagination-prev,
 .ant-pagination .ant-pagination-next {
-  color: #aaa !important;
+  color: #fff !important;
 }
 
 /* 表格内选择器下拉选项 */
 .ant-select-dropdown .ant-select-item {
-  color: #aaa !important;
+  color: #fff !important;
   background-color: #2a2a2a !important;
 }
 
@@ -394,14 +394,14 @@ code {
 
 /* 表格空状态文字 */
 .ant-table-tbody .ant-empty-description {
-  color: #aaa !important;
+  color: #fff !important;
 }
 
 /* 分页输入框样式 */
 .ant-pagination .ant-pagination-options-quick-jumper input {
   background-color: #2a2a2a !important;
   border-color: #444 !important;
-  color: #aaa !important;
+  color: #fff !important;
 }
 
 .ant-pagination .ant-pagination-options-quick-jumper input:focus {
@@ -426,16 +426,16 @@ code {
 
 /* 统计数字样式 */
 .ant-statistic {
-  color: #aaa;
+  color: #fff;
 }
 
 .ant-statistic-title {
-  color: #888;
+  color: #fff;
   font-size: 12px;
 }
 
 .ant-statistic-content {
-  color: #aaa;
+  color: #fff;
   font-family: 'Courier New', monospace;
 }
 
@@ -482,7 +482,7 @@ code {
 .analysis-title {
   font-size: 16px;
   font-weight: 600;
-  color: #aaa;
+  color: #fff;
   margin-bottom: 16px;
   padding-bottom: 8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -513,7 +513,7 @@ code {
 
 .category-desc {
   font-size: 12px;
-  color: #888;
+  color: #fff;
 }
 
 .category-count {
@@ -555,14 +555,14 @@ code {
 
 .indicator-label {
   font-size: 12px;
-  color: #888;
+  color: #fff;
   margin-bottom: 8px;
 }
 
 .indicator-value {
   font-size: 18px;
   font-weight: bold;
-  color: #aaa;
+  color: #fff;
   font-family: 'Courier New', monospace;
 }
 
@@ -596,7 +596,7 @@ code {
 }
 
 ::-webkit-scrollbar-track {
-  background: #1a1a1a;
+  /* background: #1a1a1a; */
 }
 
 ::-webkit-scrollbar-thumb {
@@ -628,12 +628,12 @@ code {
 .validation-title {
   font-size: 16px;
   font-weight: 600;
-  color: #aaa;
+  color: #fff;
 }
 
 .validation-time {
   font-size: 12px;
-  color: #888;
+  color: #fff;
 }
 
 .quality-indicators {
@@ -651,7 +651,7 @@ code {
 
 .score-label {
   font-size: 12px;
-  color: #888;
+  color: #fff;
   margin-bottom: 8px;
 }
 
@@ -685,13 +685,13 @@ code {
 
 .analysis-label {
   font-size: 11px;
-  color: #888;
+  color: #fff;
 }
 
 .analysis-value {
   font-size: 14px;
   font-weight: 600;
-  color: #aaa;
+  color: #fff;
   font-family: 'Courier New', monospace;
 }
 
@@ -721,7 +721,7 @@ code {
 
 .source-name {
   font-size: 13px;
-  color: #aaa;
+  color: #fff;
   font-weight: 500;
 }
 
@@ -762,7 +762,7 @@ code {
 .source-price {
   font-size: 13px;
   font-weight: 600;
-  color: #aaa;
+  color: #fff;
   font-family: 'Courier New', monospace;
 }
 
@@ -778,7 +778,7 @@ code {
 .recommendations-title {
   font-size: 14px;
   font-weight: 600;
-  color: #aaa;
+  color: #fff;
   margin-bottom: 12px;
 }
 
@@ -790,7 +790,7 @@ code {
 
 .recommendation-item {
   font-size: 12px;
-  color: #aaa;
+  color: #fff;
   padding: 8px 12px;
   background: rgba(24, 144, 255, 0.1);
   border-radius: 4px;
@@ -815,13 +815,18 @@ code {
 
 .status-details {
   font-size: 12px;
-  color: #aaa;
+  color: #fff;
   opacity: 0.8;
 }
 
 /* 大单数据表格样式 */
 .large-orders-table {
   padding: 0 160px;
+  display: flex
+;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
 .order-row {
@@ -830,6 +835,8 @@ code {
   padding: 12px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   font-size: 14px;
+  width: 100%;
+  justify-content: space-around;
 }
 
 .order-row:last-child {
@@ -838,7 +845,7 @@ code {
 
 .order-level {
   flex: 0 0 120px;
-  color: #aaa;
+  color: #fff;
   font-weight: 500;
 }
 
@@ -850,7 +857,7 @@ code {
 }
 
 .order-amounts {
-  flex: 1;
+  /* flex: 1; */
   display: flex;
   align-items: center;
   font-weight: 600;
@@ -878,9 +885,14 @@ code {
   padding-top: 16px;
 }
 
+.stock-dashboard-container{
+  max-width: 980px;
+  margin: 0 auto;
+}
+
 /* 新股票信息样式 */
 .stock-header-new {
-  background-color: #1a1a1a;
+  /* background-color: #1a1a1a; */
   padding: 16px;
   border-radius: 8px;
   border: 1px solid #333;
@@ -903,12 +915,12 @@ code {
 .stock-name-code .stock-name {
   font-size: 20px;
   font-weight: bold;
-  color: #aaa;
+  color: #fff;
 }
 
 .stock-name-code .stock-code {
   font-size: 14px;
-  color: #888;
+  color: #fff;
   background-color: transparent;
   padding: 0;
   border-radius: 0;
@@ -921,7 +933,7 @@ code {
 
 .search-box input {
   background-color: transparent;
-  color: #aaa;
+  color: #fff;
   border: 1px solid #333;
   border-radius: 4px;
 }
@@ -940,7 +952,7 @@ code {
 
 .main-price .label {
   font-size: 14px;
-  color: #888;
+  color: #fff;
 }
 
 .main-price .price {
@@ -958,7 +970,7 @@ code {
 .basic-stats {
   border-top: 1px solid #333;
   padding-top: 16px;
-  font-size: 19px;
+  font-size: 15px;
 }
 
 .stats-row {
@@ -983,11 +995,11 @@ code {
 }
 
 .stats-row .stat-item .label {
-  color: #888;
+  color: #fff;
 }
 
 .stats-row .stat-item .value {
-  color: #aaa;
+  color: #fff;
   font-weight: 500;
   font-family: 'Courier New', monospace;
 }
@@ -998,7 +1010,7 @@ code {
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  background-color: #1a1a1a;
+  /* background-color: #1a1a1a; */
   border-top: 1px solid #333;
   margin-top: 0;
 }
@@ -1056,7 +1068,7 @@ code {
 
 .legend-text {
   font-size: 12px;
-  color: #888;
+  color: #fff;
 }
 
 .cost-indicator {
@@ -1083,7 +1095,7 @@ code {
   gap: 8px;
   cursor: pointer;
   font-size: 14px;
-  color: #aaa;
+  color: #fff;
 }
 
 .filter-checkbox input[type="checkbox"] {
@@ -1124,12 +1136,12 @@ code {
 .filter-title > span:first-child {
   font-size: 16px;
   font-weight: 600;
-  color: #aaa;
+  color: #fff;
 }
 
 .filter-count {
   font-size: 12px;
-  color: #888;
+  color: #fff;
 }
 
 .filter-actions .ant-btn {
@@ -1195,7 +1207,7 @@ code {
 
 .level-desc {
   font-size: 11px;
-  color: #888;
+  color: #fff;
   background: rgba(255, 255, 255, 0.1);
   padding: 1px 6px;
   border-radius: 10px;
@@ -1204,7 +1216,7 @@ code {
 
 .level-stats {
   font-size: 12px;
-  color: #aaa;
+  color: #fff;
 }
 
 .stat-row {
@@ -1225,7 +1237,7 @@ code {
 
 .stat-amount {
   font-weight: 500;
-  color: #aaa;
+  color: #fff;
   font-family: 'Courier New', monospace;
 }
 
@@ -1241,7 +1253,7 @@ code {
 }
 
 .trade-search .ant-input::placeholder {
-  color: #888 !important;
+  color: #fff !important;
 }
 
 .trade-search .ant-input:focus {
@@ -1250,7 +1262,7 @@ code {
 }
 
 .trade-search .anticon {
-  color: #888 !important;
+  color: #fff !important;
 }
 
 .trade-header {
@@ -1263,7 +1275,7 @@ code {
   margin-bottom: 8px;
   font-weight: 600;
   font-size: 14px;
-  color: #888;
+  color: #fff;
 }
 
 .header-item {
@@ -1530,7 +1542,7 @@ code {
 /* 时间和价格列保持中性色 */
 .trade-time,
 .trade-volume {
-  color: #aaa !important;
+  color: #fff !important;
   font-family: 'Courier New', monospace;
 }
 
@@ -1569,7 +1581,7 @@ code {
 
 .overview-label {
   font-size: 12px;
-  color: #888;
+  color: #fff;
   margin-bottom: 6px;
   font-weight: 500;
 }
@@ -1577,7 +1589,7 @@ code {
 .overview-value {
   font-size: 16px;
   font-weight: 700;
-  color: #aaa;
+  color: #fff;
   font-family: 'Courier New', monospace;
 }
 
@@ -1624,7 +1636,7 @@ code {
 
 .distribution-total {
   font-size: 12px;
-  color: #aaa;
+  color: #fff;
   font-family: 'Courier New', monospace;
 }
 
@@ -1647,7 +1659,7 @@ code {
   display: flex;
   justify-content: space-between;
   font-size: 11px;
-  color: #888;
+  color: #fff;
 }
 
 .detail-buy {
@@ -1733,12 +1745,19 @@ code {
   /* 大单数据表格响应式 */
   .large-orders-table {
     padding: 0 16px;
+    display: flex
+;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
   }
 
   .order-row {
     flex-direction: column;
     gap: 8px;
     padding: 8px 0;
+    width: 100%;   
+    justify-content: space-around;
   }
 
   .order-level {

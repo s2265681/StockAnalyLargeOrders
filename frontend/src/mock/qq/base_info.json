@@ -1,0 +1,29 @@
+{
+    "data": {
+      "amplitude": 11.7,
+      "change_amount": 0.11,
+      "change_percent": 0.87,
+      "circulation_market_cap": 98.6,
+      "code": "0000001",
+      "current_price": 12.7,
+      "date": "2025-07-19",
+      "high": 12.75,
+      "limit_down": 11.33,
+      "limit_up": 13.85,
+      "low": 12.6,
+      "market_cap": 157633175970.0,
+      "market_status": "trading",
+      "name": "\u5e73\u5b89\u94f6\u884c",
+      "open": 12.62,
+      "pb_ratio": 1.2,
+      "pe_ratio": 19.91,
+      "turnover": 15.74,
+      "turnover_rate": 1.37,
+      "update_time": "2025-07-19 10:16:49",
+      "volume": 12412.06,
+      "yesterday_close": 12.59
+    },
+    "message": "success",
+    "success": true
+  }
+  

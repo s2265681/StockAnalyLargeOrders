@@ -1,0 +1,7111 @@
+{
+    "code": 0,
+    "msg": "操作成功",
+    "data": [
+        {
+            "created_at": "15:00:00",
+            "state": "主买",
+            "price": "12.70",
+            "volume": 930,
+            "amount": "118.21"
+        },
+        {
+            "created_at": "15:00:00",
+            "state": "主卖",
+            "price": "12.70",
+            "volume": 958,
+            "amount": "121.77"
+        },
+        {
+            "created_at": "15:00:00",
+            "state": "主卖",
+            "price": "12.70",
+            "volume": 921,
+            "amount": "117.07"
+        },
+        {
+            "created_at": "15:00:00",
+            "state": "被卖",
+            "price": "12.70",
+            "volume": 658,
+            "amount": "83.67"
+        },
+        {
+            "created_at": "15:00:00",
+            "state": "被买",
+            "price": "12.70",
+            "volume": 1757,
+            "amount": "223.14"
+        },
+        {
+            "created_at": "15:00:00",
+            "state": "主买",
+            "price": "12.70",
+            "volume": 276,
+            "amount": "35.05"
+        },
+        {
+            "created_at": "15:00:00",
+            "state": "被买",
+            "price": "12.70",
+            "volume": 974,
+            "amount": "123.78"
+        },
+        {
+            "created_at": "15:00:00",
+            "state": "主卖",
+            "price": "12.70",
+            "volume": 2389,
+            "amount": "303.45"
+        },
+        {
+            "created_at": "15:00:00",
+            "state": "被买",
+            "price": "12.70",
+            "volume": 2567,
+            "amount": "326.03"
+        },
+        {
+            "created_at": "15:00:00",
+            "state": "被卖",
+            "price": "12.70",
+            "volume": 1241,
+            "amount": "157.61"
+        },
+        {
+            "created_at": "15:00:00",
+            "state": "主买",
+            "price": "12.70",
+            "volume": 1591,
+            "amount": "202.08"
+        },
+        {
+            "created_at": "15:00:00",
+            "state": "被卖",
+            "price": "12.70",
+            "volume": 2104,
+            "amount": "267.31"
+        },
+        {
+            "created_at": "15:00:00",
+            "state": "被买",
+            "price": "12.70",
+            "volume": 930,
+            "amount": "118.11"
+        },
+        {
+            "created_at": "14:56:49",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 432,
+            "amount": "54.83"
+        },
+        {
+            "created_at": "14:56:46",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 791,
+            "amount": "100.38"
+        },
+        {
+            "created_at": "14:56:03",
+            "state": "被卖",
+            "price": "12.69",
+            "volume": 369,
+            "amount": "46.83"
+        },
+        {
+            "created_at": "14:55:47",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 261,
+            "amount": "33.09"
+        },
+        {
+            "created_at": "14:55:46",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 1757,
+            "amount": "222.79"
+        },
+        {
+            "created_at": "14:55:36",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 802,
+            "amount": "101.77"
+        },
+        {
+            "created_at": "14:55:05",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 746,
+            "amount": "94.67"
+        },
+        {
+            "created_at": "14:54:38",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 299,
+            "amount": "37.94"
+        },
+        {
+            "created_at": "14:54:33",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 300,
+            "amount": "38.04"
+        },
+        {
+            "created_at": "14:54:15",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 940,
+            "amount": "119.34"
+        },
+        {
+            "created_at": "14:54:11",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 382,
+            "amount": "48.53"
+        },
+        {
+            "created_at": "14:53:59",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 248,
+            "amount": "31.52"
+        },
+        {
+            "created_at": "14:53:52",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 452,
+            "amount": "57.41"
+        },
+        {
+            "created_at": "14:53:51",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 300,
+            "amount": "38.04"
+        },
+        {
+            "created_at": "14:53:47",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 529,
+            "amount": "67.18"
+        },
+        {
+            "created_at": "14:53:30",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 737,
+            "amount": "93.45"
+        },
+        {
+            "created_at": "14:53:30",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 557,
+            "amount": "70.63"
+        },
+        {
+            "created_at": "14:52:52",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 280,
+            "amount": "35.53"
+        },
+        {
+            "created_at": "14:52:36",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 432,
+            "amount": "54.78"
+        },
+        {
+            "created_at": "14:52:22",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 860,
+            "amount": "109.13"
+        },
+        {
+            "created_at": "14:51:28",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 853,
+            "amount": "108.30"
+        },
+        {
+            "created_at": "14:51:07",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 519,
+            "amount": "65.86"
+        },
+        {
+            "created_at": "14:51:02",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 392,
+            "amount": "49.71"
+        },
+        {
+            "created_at": "14:50:42",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 274,
+            "amount": "34.74"
+        },
+        {
+            "created_at": "14:50:25",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 1991,
+            "amount": "252.66"
+        },
+        {
+            "created_at": "14:50:15",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 352,
+            "amount": "44.63"
+        },
+        {
+            "created_at": "14:50:14",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 276,
+            "amount": "35.00"
+        },
+        {
+            "created_at": "14:50:10",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 571,
+            "amount": "72.40"
+        },
+        {
+            "created_at": "14:50:05",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 288,
+            "amount": "36.52"
+        },
+        {
+            "created_at": "14:49:45",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 1075,
+            "amount": "136.31"
+        },
+        {
+            "created_at": "14:49:44",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 1292,
+            "amount": "163.95"
+        },
+        {
+            "created_at": "14:49:09",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 272,
+            "amount": "34.49"
+        },
+        {
+            "created_at": "14:48:37",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 1218,
+            "amount": "154.56"
+        },
+        {
+            "created_at": "14:48:36",
+            "state": "被卖",
+            "price": "12.69",
+            "volume": 290,
+            "amount": "36.80"
+        },
+        {
+            "created_at": "14:48:33",
+            "state": "被卖",
+            "price": "12.69",
+            "volume": 311,
+            "amount": "39.47"
+        },
+        {
+            "created_at": "14:48:20",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 963,
+            "amount": "122.20"
+        },
+        {
+            "created_at": "14:48:13",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 2025,
+            "amount": "256.97"
+        },
+        {
+            "created_at": "14:46:51",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 250,
+            "amount": "31.70"
+        },
+        {
+            "created_at": "14:46:03",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 391,
+            "amount": "49.62"
+        },
+        {
+            "created_at": "14:46:03",
+            "state": "被卖",
+            "price": "12.69",
+            "volume": 626,
+            "amount": "79.44"
+        },
+        {
+            "created_at": "14:45:59",
+            "state": "被卖",
+            "price": "12.69",
+            "volume": 2275,
+            "amount": "288.70"
+        },
+        {
+            "created_at": "14:45:37",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 414,
+            "amount": "52.50"
+        },
+        {
+            "created_at": "14:45:37",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 405,
+            "amount": "51.35"
+        },
+        {
+            "created_at": "14:45:36",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 289,
+            "amount": "36.65"
+        },
+        {
+            "created_at": "14:45:34",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 1500,
+            "amount": "190.35"
+        },
+        {
+            "created_at": "14:45:33",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 260,
+            "amount": "32.97"
+        },
+        {
+            "created_at": "14:45:19",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 239,
+            "amount": "30.31"
+        },
+        {
+            "created_at": "14:45:05",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 1000,
+            "amount": "126.90"
+        },
+        {
+            "created_at": "14:44:35",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 297,
+            "amount": "37.66"
+        },
+        {
+            "created_at": "14:44:23",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 436,
+            "amount": "55.28"
+        },
+        {
+            "created_at": "14:44:23",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 415,
+            "amount": "52.62"
+        },
+        {
+            "created_at": "14:44:20",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 1585,
+            "amount": "200.98"
+        },
+        {
+            "created_at": "14:44:12",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 730,
+            "amount": "92.56"
+        },
+        {
+            "created_at": "14:44:09",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 337,
+            "amount": "42.73"
+        },
+        {
+            "created_at": "14:44:09",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 946,
+            "amount": "119.95"
+        },
+        {
+            "created_at": "14:44:09",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 409,
+            "amount": "51.86"
+        },
+        {
+            "created_at": "14:44:09",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 485,
+            "amount": "61.50"
+        },
+        {
+            "created_at": "14:43:15",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 270,
+            "amount": "34.24"
+        },
+        {
+            "created_at": "14:43:01",
+            "state": "被卖",
+            "price": "12.69",
+            "volume": 489,
+            "amount": "62.05"
+        },
+        {
+            "created_at": "14:42:48",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 278,
+            "amount": "35.28"
+        },
+        {
+            "created_at": "14:42:48",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 1632,
+            "amount": "207.10"
+        },
+        {
+            "created_at": "14:42:46",
+            "state": "被卖",
+            "price": "12.69",
+            "volume": 554,
+            "amount": "70.30"
+        },
+        {
+            "created_at": "14:42:42",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 1880,
+            "amount": "238.57"
+        },
+        {
+            "created_at": "14:42:36",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 497,
+            "amount": "63.07"
+        },
+        {
+            "created_at": "14:42:36",
+            "state": "被卖",
+            "price": "12.69",
+            "volume": 304,
+            "amount": "38.58"
+        },
+        {
+            "created_at": "14:41:59",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 1000,
+            "amount": "126.90"
+        },
+        {
+            "created_at": "14:41:45",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 797,
+            "amount": "101.14"
+        },
+        {
+            "created_at": "14:41:16",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 300,
+            "amount": "38.04"
+        },
+        {
+            "created_at": "14:41:13",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 300,
+            "amount": "38.04"
+        },
+        {
+            "created_at": "14:40:28",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 481,
+            "amount": "61.02"
+        },
+        {
+            "created_at": "14:40:28",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 360,
+            "amount": "45.74"
+        },
+        {
+            "created_at": "14:40:28",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 641,
+            "amount": "81.34"
+        },
+        {
+            "created_at": "14:40:27",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 246,
+            "amount": "31.19"
+        },
+        {
+            "created_at": "14:40:27",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 1904,
+            "amount": "241.52"
+        },
+        {
+            "created_at": "14:40:26",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 388,
+            "amount": "49.20"
+        },
+        {
+            "created_at": "14:40:25",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 482,
+            "amount": "61.12"
+        },
+        {
+            "created_at": "14:39:53",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 248,
+            "amount": "31.47"
+        },
+        {
+            "created_at": "14:39:42",
+            "state": "被卖",
+            "price": "12.69",
+            "volume": 337,
+            "amount": "42.77"
+        },
+        {
+            "created_at": "14:39:37",
+            "state": "被卖",
+            "price": "12.69",
+            "volume": 492,
+            "amount": "62.43"
+        },
+        {
+            "created_at": "14:39:27",
+            "state": "被卖",
+            "price": "12.69",
+            "volume": 241,
+            "amount": "30.58"
+        },
+        {
+            "created_at": "14:39:14",
+            "state": "被卖",
+            "price": "12.69",
+            "volume": 563,
+            "amount": "71.44"
+        },
+        {
+            "created_at": "14:38:54",
+            "state": "被卖",
+            "price": "12.69",
+            "volume": 430,
+            "amount": "54.57"
+        },
+        {
+            "created_at": "14:38:33",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 3564,
+            "amount": "452.27"
+        },
+        {
+            "created_at": "14:38:06",
+            "state": "被卖",
+            "price": "12.69",
+            "volume": 1031,
+            "amount": "130.83"
+        },
+        {
+            "created_at": "14:37:04",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 3062,
+            "amount": "388.29"
+        },
+        {
+            "created_at": "14:36:45",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 894,
+            "amount": "113.36"
+        },
+        {
+            "created_at": "14:36:17",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 257,
+            "amount": "32.56"
+        },
+        {
+            "created_at": "14:36:08",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 393,
+            "amount": "49.79"
+        },
+        {
+            "created_at": "14:34:51",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 261,
+            "amount": "33.07"
+        },
+        {
+            "created_at": "14:34:33",
+            "state": "被卖",
+            "price": "12.67",
+            "volume": 280,
+            "amount": "35.48"
+        },
+        {
+            "created_at": "14:34:33",
+            "state": "被卖",
+            "price": "12.67",
+            "volume": 246,
+            "amount": "31.17"
+        },
+        {
+            "created_at": "14:34:00",
+            "state": "主卖",
+            "price": "12.66",
+            "volume": 383,
+            "amount": "48.50"
+        },
+        {
+            "created_at": "14:33:50",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 259,
+            "amount": "32.82"
+        },
+        {
+            "created_at": "14:33:24",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 416,
+            "amount": "52.71"
+        },
+        {
+            "created_at": "14:33:22",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 1000,
+            "amount": "126.80"
+        },
+        {
+            "created_at": "14:33:22",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 2174,
+            "amount": "275.45"
+        },
+        {
+            "created_at": "14:33:11",
+            "state": "被卖",
+            "price": "12.68",
+            "volume": 251,
+            "amount": "31.83"
+        },
+        {
+            "created_at": "14:33:10",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 270,
+            "amount": "34.21"
+        },
+        {
+            "created_at": "14:32:59",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 239,
+            "amount": "30.31"
+        },
+        {
+            "created_at": "14:32:26",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 1017,
+            "amount": "128.85"
+        },
+        {
+            "created_at": "14:32:13",
+            "state": "主买",
+            "price": "12.67",
+            "volume": 1800,
+            "amount": "228.06"
+        },
+        {
+            "created_at": "14:32:09",
+            "state": "主买",
+            "price": "12.67",
+            "volume": 2237,
+            "amount": "283.43"
+        },
+        {
+            "created_at": "14:32:03",
+            "state": "主买",
+            "price": "12.67",
+            "volume": 7000,
+            "amount": "886.90"
+        },
+        {
+            "created_at": "14:31:54",
+            "state": "主卖",
+            "price": "12.66",
+            "volume": 344,
+            "amount": "43.61"
+        },
+        {
+            "created_at": "14:30:49",
+            "state": "主买",
+            "price": "12.67",
+            "volume": 276,
+            "amount": "34.96"
+        },
+        {
+            "created_at": "14:30:40",
+            "state": "主买",
+            "price": "12.66",
+            "volume": 259,
+            "amount": "32.79"
+        },
+        {
+            "created_at": "14:30:40",
+            "state": "主买",
+            "price": "12.66",
+            "volume": 341,
+            "amount": "43.17"
+        },
+        {
+            "created_at": "14:30:38",
+            "state": "主买",
+            "price": "12.66",
+            "volume": 771,
+            "amount": "97.61"
+        },
+        {
+            "created_at": "14:30:09",
+            "state": "被买",
+            "price": "12.65",
+            "volume": 268,
+            "amount": "33.90"
+        },
+        {
+            "created_at": "14:29:36",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 261,
+            "amount": "33.02"
+        },
+        {
+            "created_at": "14:29:26",
+            "state": "主买",
+            "price": "12.66",
+            "volume": 300,
+            "amount": "37.98"
+        },
+        {
+            "created_at": "14:28:37",
+            "state": "主买",
+            "price": "12.66",
+            "volume": 300,
+            "amount": "37.98"
+        },
+        {
+            "created_at": "14:28:36",
+            "state": "主买",
+            "price": "12.66",
+            "volume": 300,
+            "amount": "37.98"
+        },
+        {
+            "created_at": "14:27:58",
+            "state": "主买",
+            "price": "12.66",
+            "volume": 476,
+            "amount": "60.26"
+        },
+        {
+            "created_at": "14:26:48",
+            "state": "主买",
+            "price": "12.66",
+            "volume": 500,
+            "amount": "63.30"
+        },
+        {
+            "created_at": "14:26:34",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 300,
+            "amount": "37.95"
+        },
+        {
+            "created_at": "14:25:43",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 322,
+            "amount": "40.73"
+        },
+        {
+            "created_at": "14:24:12",
+            "state": "被买",
+            "price": "12.66",
+            "volume": 271,
+            "amount": "34.31"
+        },
+        {
+            "created_at": "14:24:12",
+            "state": "主卖",
+            "price": "12.66",
+            "volume": 359,
+            "amount": "45.45"
+        },
+        {
+            "created_at": "14:24:12",
+            "state": "主卖",
+            "price": "12.66",
+            "volume": 378,
+            "amount": "47.85"
+        },
+        {
+            "created_at": "14:24:02",
+            "state": "被买",
+            "price": "12.66",
+            "volume": 370,
+            "amount": "46.84"
+        },
+        {
+            "created_at": "14:23:33",
+            "state": "主卖",
+            "price": "12.66",
+            "volume": 900,
+            "amount": "113.94"
+        },
+        {
+            "created_at": "14:22:30",
+            "state": "被买",
+            "price": "12.66",
+            "volume": 479,
+            "amount": "60.64"
+        },
+        {
+            "created_at": "14:22:21",
+            "state": "主买",
+            "price": "12.67",
+            "volume": 319,
+            "amount": "40.42"
+        },
+        {
+            "created_at": "14:22:13",
+            "state": "主买",
+            "price": "12.66",
+            "volume": 1117,
+            "amount": "141.41"
+        },
+        {
+            "created_at": "14:22:04",
+            "state": "主买",
+            "price": "12.66",
+            "volume": 300,
+            "amount": "37.98"
+        },
+        {
+            "created_at": "14:21:25",
+            "state": "主买",
+            "price": "12.66",
+            "volume": 418,
+            "amount": "52.92"
+        },
+        {
+            "created_at": "14:19:45",
+            "state": "主买",
+            "price": "12.66",
+            "volume": 310,
+            "amount": "39.25"
+        },
+        {
+            "created_at": "14:19:28",
+            "state": "被卖",
+            "price": "12.66",
+            "volume": 328,
+            "amount": "41.52"
+        },
+        {
+            "created_at": "14:19:08",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 493,
+            "amount": "62.39"
+        },
+        {
+            "created_at": "14:18:38",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 629,
+            "amount": "79.59"
+        },
+        {
+            "created_at": "14:18:38",
+            "state": "被买",
+            "price": "12.65",
+            "volume": 927,
+            "amount": "117.37"
+        },
+        {
+            "created_at": "14:18:31",
+            "state": "被买",
+            "price": "12.65",
+            "volume": 455,
+            "amount": "57.56"
+        },
+        {
+            "created_at": "14:18:30",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 588,
+            "amount": "74.41"
+        },
+        {
+            "created_at": "14:18:30",
+            "state": "被买",
+            "price": "12.65",
+            "volume": 971,
+            "amount": "122.93"
+        },
+        {
+            "created_at": "14:18:29",
+            "state": "被买",
+            "price": "12.65",
+            "volume": 467,
+            "amount": "59.18"
+        },
+        {
+            "created_at": "14:18:29",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 250,
+            "amount": "31.65"
+        },
+        {
+            "created_at": "14:18:27",
+            "state": "被买",
+            "price": "12.65",
+            "volume": 245,
+            "amount": "31.09"
+        },
+        {
+            "created_at": "14:18:17",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 1000,
+            "amount": "126.50"
+        },
+        {
+            "created_at": "14:17:26",
+            "state": "主买",
+            "price": "12.66",
+            "volume": 500,
+            "amount": "63.30"
+        },
+        {
+            "created_at": "14:16:31",
+            "state": "主买",
+            "price": "12.66",
+            "volume": 548,
+            "amount": "69.38"
+        },
+        {
+            "created_at": "14:16:04",
+            "state": "主买",
+            "price": "12.66",
+            "volume": 258,
+            "amount": "32.66"
+        },
+        {
+            "created_at": "14:15:27",
+            "state": "被卖",
+            "price": "12.66",
+            "volume": 302,
+            "amount": "38.23"
+        },
+        {
+            "created_at": "14:15:13",
+            "state": "主买",
+            "price": "12.66",
+            "volume": 342,
+            "amount": "43.30"
+        },
+        {
+            "created_at": "14:09:51",
+            "state": "主卖",
+            "price": "12.66",
+            "volume": 293,
+            "amount": "37.09"
+        },
+        {
+            "created_at": "14:09:51",
+            "state": "被买",
+            "price": "12.66",
+            "volume": 763,
+            "amount": "96.60"
+        },
+        {
+            "created_at": "14:07:23",
+            "state": "被卖",
+            "price": "12.66",
+            "volume": 242,
+            "amount": "30.64"
+        },
+        {
+            "created_at": "14:06:04",
+            "state": "主卖",
+            "price": "12.66",
+            "volume": 344,
+            "amount": "43.55"
+        },
+        {
+            "created_at": "14:05:57",
+            "state": "主卖",
+            "price": "12.66",
+            "volume": 554,
+            "amount": "70.14"
+        },
+        {
+            "created_at": "14:05:57",
+            "state": "主卖",
+            "price": "12.66",
+            "volume": 540,
+            "amount": "68.36"
+        },
+        {
+            "created_at": "14:05:21",
+            "state": "主买",
+            "price": "12.67",
+            "volume": 1811,
+            "amount": "229.45"
+        },
+        {
+            "created_at": "14:02:22",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 615,
+            "amount": "77.92"
+        },
+        {
+            "created_at": "14:02:22",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 243,
+            "amount": "30.79"
+        },
+        {
+            "created_at": "14:02:22",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 2012,
+            "amount": "254.92"
+        },
+        {
+            "created_at": "14:02:12",
+            "state": "主买",
+            "price": "12.67",
+            "volume": 1080,
+            "amount": "136.84"
+        },
+        {
+            "created_at": "14:02:09",
+            "state": "主买",
+            "price": "12.67",
+            "volume": 304,
+            "amount": "38.52"
+        },
+        {
+            "created_at": "14:02:09",
+            "state": "被卖",
+            "price": "12.67",
+            "volume": 789,
+            "amount": "99.97"
+        },
+        {
+            "created_at": "14:02:08",
+            "state": "主买",
+            "price": "12.67",
+            "volume": 309,
+            "amount": "39.15"
+        },
+        {
+            "created_at": "14:02:08",
+            "state": "主买",
+            "price": "12.67",
+            "volume": 384,
+            "amount": "48.65"
+        },
+        {
+            "created_at": "14:02:06",
+            "state": "主买",
+            "price": "12.67",
+            "volume": 243,
+            "amount": "30.79"
+        },
+        {
+            "created_at": "14:02:06",
+            "state": "被卖",
+            "price": "12.67",
+            "volume": 325,
+            "amount": "41.18"
+        },
+        {
+            "created_at": "13:58:37",
+            "state": "主卖",
+            "price": "12.66",
+            "volume": 406,
+            "amount": "51.40"
+        },
+        {
+            "created_at": "13:58:16",
+            "state": "主买",
+            "price": "12.66",
+            "volume": 252,
+            "amount": "31.90"
+        },
+        {
+            "created_at": "13:58:15",
+            "state": "被卖",
+            "price": "12.66",
+            "volume": 1387,
+            "amount": "175.59"
+        },
+        {
+            "created_at": "13:58:13",
+            "state": "被卖",
+            "price": "12.66",
+            "volume": 688,
+            "amount": "87.10"
+        },
+        {
+            "created_at": "13:58:11",
+            "state": "被卖",
+            "price": "12.66",
+            "volume": 257,
+            "amount": "32.54"
+        },
+        {
+            "created_at": "13:58:10",
+            "state": "主买",
+            "price": "12.66",
+            "volume": 306,
+            "amount": "38.74"
+        },
+        {
+            "created_at": "13:58:10",
+            "state": "主买",
+            "price": "12.66",
+            "volume": 314,
+            "amount": "39.75"
+        },
+        {
+            "created_at": "13:58:10",
+            "state": "被卖",
+            "price": "12.66",
+            "volume": 310,
+            "amount": "39.25"
+        },
+        {
+            "created_at": "13:56:57",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 691,
+            "amount": "87.41"
+        },
+        {
+            "created_at": "13:56:50",
+            "state": "被买",
+            "price": "12.65",
+            "volume": 278,
+            "amount": "35.17"
+        },
+        {
+            "created_at": "13:55:31",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 367,
+            "amount": "46.43"
+        },
+        {
+            "created_at": "13:54:39",
+            "state": "主买",
+            "price": "12.65",
+            "volume": 249,
+            "amount": "31.50"
+        },
+        {
+            "created_at": "13:54:37",
+            "state": "被卖",
+            "price": "12.65",
+            "volume": 242,
+            "amount": "30.61"
+        },
+        {
+            "created_at": "13:52:48",
+            "state": "被买",
+            "price": "12.64",
+            "volume": 1052,
+            "amount": "132.97"
+        },
+        {
+            "created_at": "13:52:48",
+            "state": "被买",
+            "price": "12.64",
+            "volume": 429,
+            "amount": "54.23"
+        },
+        {
+            "created_at": "13:52:47",
+            "state": "主买",
+            "price": "12.65",
+            "volume": 293,
+            "amount": "37.06"
+        },
+        {
+            "created_at": "13:52:45",
+            "state": "被买",
+            "price": "12.65",
+            "volume": 311,
+            "amount": "39.34"
+        },
+        {
+            "created_at": "13:52:45",
+            "state": "被买",
+            "price": "12.65",
+            "volume": 247,
+            "amount": "31.25"
+        },
+        {
+            "created_at": "13:52:45",
+            "state": "被买",
+            "price": "12.65",
+            "volume": 242,
+            "amount": "30.61"
+        },
+        {
+            "created_at": "13:52:45",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 387,
+            "amount": "48.96"
+        },
+        {
+            "created_at": "13:52:45",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 387,
+            "amount": "48.96"
+        },
+        {
+            "created_at": "13:52:31",
+            "state": "被买",
+            "price": "12.65",
+            "volume": 261,
+            "amount": "33.02"
+        },
+        {
+            "created_at": "13:52:15",
+            "state": "被买",
+            "price": "12.65",
+            "volume": 284,
+            "amount": "35.93"
+        },
+        {
+            "created_at": "13:49:40",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 342,
+            "amount": "43.26"
+        },
+        {
+            "created_at": "13:49:33",
+            "state": "被买",
+            "price": "12.65",
+            "volume": 386,
+            "amount": "48.83"
+        },
+        {
+            "created_at": "13:49:29",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 408,
+            "amount": "51.61"
+        },
+        {
+            "created_at": "13:49:05",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 500,
+            "amount": "63.25"
+        },
+        {
+            "created_at": "13:48:55",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 332,
+            "amount": "42.00"
+        },
+        {
+            "created_at": "13:47:15",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 477,
+            "amount": "60.34"
+        },
+        {
+            "created_at": "13:46:48",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 676,
+            "amount": "85.51"
+        },
+        {
+            "created_at": "13:44:19",
+            "state": "被买",
+            "price": "12.65",
+            "volume": 911,
+            "amount": "115.24"
+        },
+        {
+            "created_at": "13:44:19",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 261,
+            "amount": "33.02"
+        },
+        {
+            "created_at": "13:44:19",
+            "state": "被买",
+            "price": "12.65",
+            "volume": 711,
+            "amount": "89.94"
+        },
+        {
+            "created_at": "13:44:19",
+            "state": "被买",
+            "price": "12.65",
+            "volume": 647,
+            "amount": "81.85"
+        },
+        {
+            "created_at": "13:44:19",
+            "state": "主卖",
+            "price": "12.66",
+            "volume": 271,
+            "amount": "34.31"
+        },
+        {
+            "created_at": "13:44:19",
+            "state": "被买",
+            "price": "12.66",
+            "volume": 1836,
+            "amount": "232.44"
+        },
+        {
+            "created_at": "13:44:19",
+            "state": "主卖",
+            "price": "12.66",
+            "volume": 1569,
+            "amount": "198.64"
+        },
+        {
+            "created_at": "13:44:03",
+            "state": "被买",
+            "price": "12.66",
+            "volume": 446,
+            "amount": "56.46"
+        },
+        {
+            "created_at": "13:42:57",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 386,
+            "amount": "48.91"
+        },
+        {
+            "created_at": "13:42:57",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 254,
+            "amount": "32.18"
+        },
+        {
+            "created_at": "13:42:57",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 240,
+            "amount": "30.41"
+        },
+        {
+            "created_at": "13:42:45",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 851,
+            "amount": "107.91"
+        },
+        {
+            "created_at": "13:42:39",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 290,
+            "amount": "36.74"
+        },
+        {
+            "created_at": "13:42:12",
+            "state": "主买",
+            "price": "12.67",
+            "volume": 1972,
+            "amount": "249.85"
+        },
+        {
+            "created_at": "13:40:31",
+            "state": "被卖",
+            "price": "12.67",
+            "volume": 359,
+            "amount": "45.49"
+        },
+        {
+            "created_at": "13:39:37",
+            "state": "主买",
+            "price": "12.66",
+            "volume": 790,
+            "amount": "100.13"
+        },
+        {
+            "created_at": "13:39:37",
+            "state": "被卖",
+            "price": "12.66",
+            "volume": 531,
+            "amount": "67.24"
+        },
+        {
+            "created_at": "13:39:21",
+            "state": "被卖",
+            "price": "12.66",
+            "volume": 242,
+            "amount": "30.64"
+        },
+        {
+            "created_at": "13:39:07",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 349,
+            "amount": "44.15"
+        },
+        {
+            "created_at": "13:38:45",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 317,
+            "amount": "40.10"
+        },
+        {
+            "created_at": "13:38:45",
+            "state": "被买",
+            "price": "12.65",
+            "volume": 388,
+            "amount": "49.08"
+        },
+        {
+            "created_at": "13:38:15",
+            "state": "被买",
+            "price": "12.65",
+            "volume": 250,
+            "amount": "31.66"
+        },
+        {
+            "created_at": "13:38:09",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 704,
+            "amount": "89.15"
+        },
+        {
+            "created_at": "13:38:04",
+            "state": "被买",
+            "price": "12.65",
+            "volume": 686,
+            "amount": "86.81"
+        },
+        {
+            "created_at": "13:37:57",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 266,
+            "amount": "33.74"
+        },
+        {
+            "created_at": "13:35:46",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 315,
+            "amount": "39.94"
+        },
+        {
+            "created_at": "13:35:41",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 286,
+            "amount": "36.27"
+        },
+        {
+            "created_at": "13:35:21",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 588,
+            "amount": "74.47"
+        },
+        {
+            "created_at": "13:35:19",
+            "state": "被买",
+            "price": "12.65",
+            "volume": 439,
+            "amount": "55.53"
+        },
+        {
+            "created_at": "13:34:15",
+            "state": "主买",
+            "price": "12.66",
+            "volume": 642,
+            "amount": "81.28"
+        },
+        {
+            "created_at": "13:34:15",
+            "state": "被卖",
+            "price": "12.66",
+            "volume": 306,
+            "amount": "38.74"
+        },
+        {
+            "created_at": "13:34:01",
+            "state": "被卖",
+            "price": "12.66",
+            "volume": 249,
+            "amount": "31.52"
+        },
+        {
+            "created_at": "13:33:40",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 1000,
+            "amount": "126.50"
+        },
+        {
+            "created_at": "13:33:01",
+            "state": "被卖",
+            "price": "12.66",
+            "volume": 298,
+            "amount": "37.73"
+        },
+        {
+            "created_at": "13:32:35",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 988,
+            "amount": "125.02"
+        },
+        {
+            "created_at": "13:31:37",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 545,
+            "amount": "68.94"
+        },
+        {
+            "created_at": "13:31:05",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 500,
+            "amount": "63.25"
+        },
+        {
+            "created_at": "13:28:06",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 281,
+            "amount": "35.55"
+        },
+        {
+            "created_at": "13:28:06",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 257,
+            "amount": "32.51"
+        },
+        {
+            "created_at": "13:28:06",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 330,
+            "amount": "41.74"
+        },
+        {
+            "created_at": "13:28:06",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 424,
+            "amount": "53.64"
+        },
+        {
+            "created_at": "13:27:06",
+            "state": "被买",
+            "price": "12.66",
+            "volume": 300,
+            "amount": "37.98"
+        },
+        {
+            "created_at": "13:27:01",
+            "state": "主卖",
+            "price": "12.66",
+            "volume": 531,
+            "amount": "67.22"
+        },
+        {
+            "created_at": "13:25:15",
+            "state": "被买",
+            "price": "12.66",
+            "volume": 647,
+            "amount": "81.91"
+        },
+        {
+            "created_at": "13:25:05",
+            "state": "主买",
+            "price": "12.66",
+            "volume": 5297,
+            "amount": "670.60"
+        },
+        {
+            "created_at": "13:25:01",
+            "state": "主买",
+            "price": "12.65",
+            "volume": 489,
+            "amount": "61.86"
+        },
+        {
+            "created_at": "13:25:01",
+            "state": "主买",
+            "price": "12.65",
+            "volume": 270,
+            "amount": "34.16"
+        },
+        {
+            "created_at": "13:25:01",
+            "state": "主买",
+            "price": "12.65",
+            "volume": 357,
+            "amount": "45.16"
+        },
+        {
+            "created_at": "13:25:01",
+            "state": "被卖",
+            "price": "12.65",
+            "volume": 332,
+            "amount": "42.00"
+        },
+        {
+            "created_at": "13:24:59",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 337,
+            "amount": "42.63"
+        },
+        {
+            "created_at": "13:24:59",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 306,
+            "amount": "38.71"
+        },
+        {
+            "created_at": "13:24:58",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 267,
+            "amount": "33.78"
+        },
+        {
+            "created_at": "13:24:58",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 373,
+            "amount": "47.18"
+        },
+        {
+            "created_at": "13:24:58",
+            "state": "被买",
+            "price": "12.65",
+            "volume": 382,
+            "amount": "48.32"
+        },
+        {
+            "created_at": "13:24:56",
+            "state": "主买",
+            "price": "12.65",
+            "volume": 460,
+            "amount": "58.19"
+        },
+        {
+            "created_at": "13:24:56",
+            "state": "被卖",
+            "price": "12.65",
+            "volume": 304,
+            "amount": "38.46"
+        },
+        {
+            "created_at": "13:24:56",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 302,
+            "amount": "38.20"
+        },
+        {
+            "created_at": "13:24:55",
+            "state": "被买",
+            "price": "12.65",
+            "volume": 284,
+            "amount": "35.93"
+        },
+        {
+            "created_at": "13:24:51",
+            "state": "主买",
+            "price": "12.65",
+            "volume": 1924,
+            "amount": "243.39"
+        },
+        {
+            "created_at": "13:24:45",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 270,
+            "amount": "34.16"
+        },
+        {
+            "created_at": "13:24:43",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 281,
+            "amount": "35.55"
+        },
+        {
+            "created_at": "13:24:43",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 300,
+            "amount": "37.95"
+        },
+        {
+            "created_at": "13:24:43",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 284,
+            "amount": "35.93"
+        },
+        {
+            "created_at": "13:24:42",
+            "state": "被买",
+            "price": "12.65",
+            "volume": 580,
+            "amount": "73.37"
+        },
+        {
+            "created_at": "13:24:42",
+            "state": "被买",
+            "price": "12.65",
+            "volume": 792,
+            "amount": "100.19"
+        },
+        {
+            "created_at": "13:24:42",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 243,
+            "amount": "30.74"
+        },
+        {
+            "created_at": "13:24:42",
+            "state": "被买",
+            "price": "12.65",
+            "volume": 716,
+            "amount": "90.57"
+        },
+        {
+            "created_at": "13:24:40",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 268,
+            "amount": "33.90"
+        },
+        {
+            "created_at": "13:24:40",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 392,
+            "amount": "49.59"
+        },
+        {
+            "created_at": "13:24:39",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 298,
+            "amount": "37.70"
+        },
+        {
+            "created_at": "13:24:39",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 453,
+            "amount": "57.30"
+        },
+        {
+            "created_at": "13:24:39",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 480,
+            "amount": "60.72"
+        },
+        {
+            "created_at": "13:24:39",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 308,
+            "amount": "38.96"
+        },
+        {
+            "created_at": "13:24:39",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 454,
+            "amount": "57.43"
+        },
+        {
+            "created_at": "13:24:38",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 422,
+            "amount": "53.38"
+        },
+        {
+            "created_at": "13:24:37",
+            "state": "被买",
+            "price": "12.65",
+            "volume": 246,
+            "amount": "31.12"
+        },
+        {
+            "created_at": "13:24:37",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 411,
+            "amount": "51.99"
+        },
+        {
+            "created_at": "13:24:37",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 391,
+            "amount": "49.46"
+        },
+        {
+            "created_at": "13:24:37",
+            "state": "主买",
+            "price": "12.66",
+            "volume": 343,
+            "amount": "43.42"
+        },
+        {
+            "created_at": "13:24:36",
+            "state": "被买",
+            "price": "12.65",
+            "volume": 3921,
+            "amount": "496.01"
+        },
+        {
+            "created_at": "13:24:33",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 272,
+            "amount": "34.41"
+        },
+        {
+            "created_at": "13:24:33",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 342,
+            "amount": "43.26"
+        },
+        {
+            "created_at": "13:24:33",
+            "state": "被买",
+            "price": "12.65",
+            "volume": 258,
+            "amount": "32.64"
+        },
+        {
+            "created_at": "13:24:06",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 400,
+            "amount": "50.60"
+        },
+        {
+            "created_at": "13:24:00",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 455,
+            "amount": "57.56"
+        },
+        {
+            "created_at": "13:23:35",
+            "state": "主买",
+            "price": "12.66",
+            "volume": 314,
+            "amount": "39.75"
+        },
+        {
+            "created_at": "13:23:35",
+            "state": "被卖",
+            "price": "12.66",
+            "volume": 335,
+            "amount": "42.41"
+        },
+        {
+            "created_at": "13:23:31",
+            "state": "被卖",
+            "price": "12.66",
+            "volume": 329,
+            "amount": "41.65"
+        },
+        {
+            "created_at": "13:23:29",
+            "state": "被卖",
+            "price": "12.66",
+            "volume": 278,
+            "amount": "35.19"
+        },
+        {
+            "created_at": "13:23:26",
+            "state": "被卖",
+            "price": "12.66",
+            "volume": 328,
+            "amount": "41.52"
+        },
+        {
+            "created_at": "13:23:23",
+            "state": "主卖",
+            "price": "12.66",
+            "volume": 251,
+            "amount": "31.78"
+        },
+        {
+            "created_at": "13:23:22",
+            "state": "主卖",
+            "price": "12.66",
+            "volume": 337,
+            "amount": "42.66"
+        },
+        {
+            "created_at": "13:23:21",
+            "state": "主卖",
+            "price": "12.66",
+            "volume": 4610,
+            "amount": "583.63"
+        },
+        {
+            "created_at": "13:23:20",
+            "state": "主卖",
+            "price": "12.66",
+            "volume": 421,
+            "amount": "53.30"
+        },
+        {
+            "created_at": "13:23:15",
+            "state": "主卖",
+            "price": "12.66",
+            "volume": 3194,
+            "amount": "404.36"
+        },
+        {
+            "created_at": "13:23:11",
+            "state": "主买",
+            "price": "12.67",
+            "volume": 591,
+            "amount": "74.88"
+        },
+        {
+            "created_at": "13:23:09",
+            "state": "主卖",
+            "price": "12.66",
+            "volume": 5640,
+            "amount": "714.02"
+        },
+        {
+            "created_at": "13:23:00",
+            "state": "被卖",
+            "price": "12.67",
+            "volume": 278,
+            "amount": "35.22"
+        },
+        {
+            "created_at": "13:22:59",
+            "state": "被卖",
+            "price": "12.67",
+            "volume": 272,
+            "amount": "34.46"
+        },
+        {
+            "created_at": "13:22:59",
+            "state": "主买",
+            "price": "12.67",
+            "volume": 510,
+            "amount": "64.62"
+        },
+        {
+            "created_at": "13:22:59",
+            "state": "主卖",
+            "price": "12.66",
+            "volume": 491,
+            "amount": "62.16"
+        },
+        {
+            "created_at": "13:22:57",
+            "state": "主卖",
+            "price": "12.66",
+            "volume": 256,
+            "amount": "32.41"
+        },
+        {
+            "created_at": "13:22:57",
+            "state": "被买",
+            "price": "12.66",
+            "volume": 275,
+            "amount": "34.81"
+        },
+        {
+            "created_at": "13:22:54",
+            "state": "主卖",
+            "price": "12.66",
+            "volume": 6534,
+            "amount": "827.20"
+        },
+        {
+            "created_at": "13:21:45",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 271,
+            "amount": "34.34"
+        },
+        {
+            "created_at": "13:21:45",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 366,
+            "amount": "46.37"
+        },
+        {
+            "created_at": "13:21:45",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 532,
+            "amount": "67.40"
+        },
+        {
+            "created_at": "13:21:45",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 1143,
+            "amount": "144.82"
+        },
+        {
+            "created_at": "13:21:45",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 350,
+            "amount": "44.34"
+        },
+        {
+            "created_at": "13:21:01",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 300,
+            "amount": "38.04"
+        },
+        {
+            "created_at": "13:20:45",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 438,
+            "amount": "55.49"
+        },
+        {
+            "created_at": "13:20:45",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 1422,
+            "amount": "180.17"
+        },
+        {
+            "created_at": "13:19:42",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 358,
+            "amount": "45.36"
+        },
+        {
+            "created_at": "13:19:00",
+            "state": "被卖",
+            "price": "12.68",
+            "volume": 252,
+            "amount": "31.95"
+        },
+        {
+            "created_at": "13:18:06",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 496,
+            "amount": "62.84"
+        },
+        {
+            "created_at": "13:18:00",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 290,
+            "amount": "36.74"
+        },
+        {
+            "created_at": "13:17:58",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 472,
+            "amount": "59.80"
+        },
+        {
+            "created_at": "13:17:57",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 606,
+            "amount": "76.78"
+        },
+        {
+            "created_at": "13:17:57",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 399,
+            "amount": "50.55"
+        },
+        {
+            "created_at": "13:17:54",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 1051,
+            "amount": "133.16"
+        },
+        {
+            "created_at": "13:17:47",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 398,
+            "amount": "50.43"
+        },
+        {
+            "created_at": "13:17:39",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 398,
+            "amount": "50.43"
+        },
+        {
+            "created_at": "13:17:29",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 398,
+            "amount": "50.43"
+        },
+        {
+            "created_at": "13:17:23",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 262,
+            "amount": "33.20"
+        },
+        {
+            "created_at": "13:16:07",
+            "state": "被卖",
+            "price": "12.68",
+            "volume": 459,
+            "amount": "58.20"
+        },
+        {
+            "created_at": "13:16:05",
+            "state": "被卖",
+            "price": "12.68",
+            "volume": 308,
+            "amount": "39.05"
+        },
+        {
+            "created_at": "13:16:05",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 337,
+            "amount": "42.73"
+        },
+        {
+            "created_at": "13:16:05",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 305,
+            "amount": "38.67"
+        },
+        {
+            "created_at": "13:16:04",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 250,
+            "amount": "31.70"
+        },
+        {
+            "created_at": "13:16:04",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 249,
+            "amount": "31.57"
+        },
+        {
+            "created_at": "13:16:04",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 327,
+            "amount": "41.46"
+        },
+        {
+            "created_at": "13:15:59",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 386,
+            "amount": "48.98"
+        },
+        {
+            "created_at": "13:15:55",
+            "state": "被卖",
+            "price": "12.68",
+            "volume": 399,
+            "amount": "50.59"
+        },
+        {
+            "created_at": "13:15:55",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 289,
+            "amount": "36.65"
+        },
+        {
+            "created_at": "13:15:55",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 356,
+            "amount": "45.14"
+        },
+        {
+            "created_at": "13:15:55",
+            "state": "被卖",
+            "price": "12.68",
+            "volume": 373,
+            "amount": "47.30"
+        },
+        {
+            "created_at": "13:15:55",
+            "state": "被卖",
+            "price": "12.68",
+            "volume": 430,
+            "amount": "54.52"
+        },
+        {
+            "created_at": "13:15:55",
+            "state": "被卖",
+            "price": "12.68",
+            "volume": 459,
+            "amount": "58.20"
+        },
+        {
+            "created_at": "13:15:55",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 566,
+            "amount": "71.71"
+        },
+        {
+            "created_at": "13:15:55",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 532,
+            "amount": "67.46"
+        },
+        {
+            "created_at": "13:15:41",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 1184,
+            "amount": "150.01"
+        },
+        {
+            "created_at": "13:15:31",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 581,
+            "amount": "73.61"
+        },
+        {
+            "created_at": "13:15:20",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 586,
+            "amount": "74.25"
+        },
+        {
+            "created_at": "13:13:10",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 549,
+            "amount": "69.61"
+        },
+        {
+            "created_at": "13:12:37",
+            "state": "被卖",
+            "price": "12.68",
+            "volume": 300,
+            "amount": "38.04"
+        },
+        {
+            "created_at": "13:12:35",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 800,
+            "amount": "101.44"
+        },
+        {
+            "created_at": "13:11:56",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 331,
+            "amount": "41.97"
+        },
+        {
+            "created_at": "13:11:31",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 247,
+            "amount": "31.32"
+        },
+        {
+            "created_at": "13:10:17",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 1000,
+            "amount": "126.80"
+        },
+        {
+            "created_at": "13:09:53",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 2000,
+            "amount": "253.55"
+        },
+        {
+            "created_at": "13:09:27",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 245,
+            "amount": "31.07"
+        },
+        {
+            "created_at": "13:09:24",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 920,
+            "amount": "116.66"
+        },
+        {
+            "created_at": "13:09:01",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 280,
+            "amount": "35.48"
+        },
+        {
+            "created_at": "13:09:01",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 319,
+            "amount": "40.42"
+        },
+        {
+            "created_at": "13:08:58",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 500,
+            "amount": "63.35"
+        },
+        {
+            "created_at": "13:07:51",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 1080,
+            "amount": "136.84"
+        },
+        {
+            "created_at": "13:07:13",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 399,
+            "amount": "50.59"
+        },
+        {
+            "created_at": "13:06:07",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 600,
+            "amount": "76.08"
+        },
+        {
+            "created_at": "13:05:52",
+            "state": "主卖",
+            "price": "12.66",
+            "volume": 760,
+            "amount": "96.22"
+        },
+        {
+            "created_at": "13:05:38",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 282,
+            "amount": "35.73"
+        },
+        {
+            "created_at": "13:05:38",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 421,
+            "amount": "53.34"
+        },
+        {
+            "created_at": "13:05:33",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 409,
+            "amount": "51.82"
+        },
+        {
+            "created_at": "13:05:30",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 1391,
+            "amount": "176.38"
+        },
+        {
+            "created_at": "13:05:18",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 289,
+            "amount": "36.62"
+        },
+        {
+            "created_at": "13:03:53",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 519,
+            "amount": "65.76"
+        },
+        {
+            "created_at": "13:02:41",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 796,
+            "amount": "100.85"
+        },
+        {
+            "created_at": "13:02:36",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 387,
+            "amount": "49.07"
+        },
+        {
+            "created_at": "13:02:36",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 488,
+            "amount": "61.83"
+        },
+        {
+            "created_at": "13:02:33",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 681,
+            "amount": "86.28"
+        },
+        {
+            "created_at": "13:02:33",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 638,
+            "amount": "80.83"
+        },
+        {
+            "created_at": "13:02:33",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 269,
+            "amount": "34.08"
+        },
+        {
+            "created_at": "13:02:33",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 951,
+            "amount": "120.49"
+        },
+        {
+            "created_at": "13:02:33",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 345,
+            "amount": "43.71"
+        },
+        {
+            "created_at": "13:02:33",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 308,
+            "amount": "39.02"
+        },
+        {
+            "created_at": "13:02:33",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 285,
+            "amount": "36.11"
+        },
+        {
+            "created_at": "13:02:33",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 486,
+            "amount": "61.62"
+        },
+        {
+            "created_at": "13:02:33",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 356,
+            "amount": "45.14"
+        },
+        {
+            "created_at": "13:02:33",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 300,
+            "amount": "38.04"
+        },
+        {
+            "created_at": "13:02:33",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 3765,
+            "amount": "477.40"
+        },
+        {
+            "created_at": "13:02:33",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 1748,
+            "amount": "221.65"
+        },
+        {
+            "created_at": "13:02:33",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 1613,
+            "amount": "204.53"
+        },
+        {
+            "created_at": "13:02:33",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 731,
+            "amount": "92.69"
+        },
+        {
+            "created_at": "13:02:33",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 1818,
+            "amount": "230.52"
+        },
+        {
+            "created_at": "13:02:33",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 1329,
+            "amount": "168.52"
+        },
+        {
+            "created_at": "13:02:33",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 931,
+            "amount": "118.05"
+        },
+        {
+            "created_at": "13:02:30",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 422,
+            "amount": "53.51"
+        },
+        {
+            "created_at": "13:02:24",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 248,
+            "amount": "31.45"
+        },
+        {
+            "created_at": "13:01:33",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 465,
+            "amount": "58.96"
+        },
+        {
+            "created_at": "13:01:33",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 3200,
+            "amount": "405.76"
+        },
+        {
+            "created_at": "13:01:33",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 979,
+            "amount": "124.14"
+        },
+        {
+            "created_at": "13:01:33",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 378,
+            "amount": "47.93"
+        },
+        {
+            "created_at": "13:01:10",
+            "state": "被买",
+            "price": "12.69",
+            "volume": 814,
+            "amount": "103.30"
+        },
+        {
+            "created_at": "13:01:09",
+            "state": "主卖",
+            "price": "12.69",
+            "volume": 894,
+            "amount": "113.45"
+        },
+        {
+            "created_at": "13:00:42",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 440,
+            "amount": "55.84"
+        },
+        {
+            "created_at": "13:00:06",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 532,
+            "amount": "67.46"
+        },
+        {
+            "created_at": "13:00:05",
+            "state": "被卖",
+            "price": "12.69",
+            "volume": 307,
+            "amount": "38.96"
+        },
+        {
+            "created_at": "13:00:01",
+            "state": "主卖",
+            "price": "12.69",
+            "volume": 814,
+            "amount": "103.30"
+        },
+        {
+            "created_at": "13:00:01",
+            "state": "被卖",
+            "price": "12.70",
+            "volume": 251,
+            "amount": "31.88"
+        },
+        {
+            "created_at": "13:00:01",
+            "state": "被买",
+            "price": "12.69",
+            "volume": 372,
+            "amount": "47.21"
+        },
+        {
+            "created_at": "13:00:00",
+            "state": "主卖",
+            "price": "12.69",
+            "volume": 2000,
+            "amount": "253.80"
+        },
+        {
+            "created_at": "11:29:36",
+            "state": "主卖",
+            "price": "12.69",
+            "volume": 500,
+            "amount": "63.45"
+        },
+        {
+            "created_at": "11:29:01",
+            "state": "主卖",
+            "price": "12.69",
+            "volume": 1580,
+            "amount": "200.50"
+        },
+        {
+            "created_at": "11:28:29",
+            "state": "主卖",
+            "price": "12.69",
+            "volume": 257,
+            "amount": "32.61"
+        },
+        {
+            "created_at": "11:28:03",
+            "state": "主卖",
+            "price": "12.70",
+            "volume": 525,
+            "amount": "66.67"
+        },
+        {
+            "created_at": "11:28:03",
+            "state": "被买",
+            "price": "12.70",
+            "volume": 301,
+            "amount": "38.23"
+        },
+        {
+            "created_at": "11:28:03",
+            "state": "主卖",
+            "price": "12.70",
+            "volume": 1485,
+            "amount": "188.59"
+        },
+        {
+            "created_at": "11:28:03",
+            "state": "被买",
+            "price": "12.70",
+            "volume": 481,
+            "amount": "61.09"
+        },
+        {
+            "created_at": "11:28:03",
+            "state": "被买",
+            "price": "12.70",
+            "volume": 245,
+            "amount": "31.11"
+        },
+        {
+            "created_at": "11:28:03",
+            "state": "主卖",
+            "price": "12.70",
+            "volume": 383,
+            "amount": "48.64"
+        },
+        {
+            "created_at": "11:27:27",
+            "state": "主买",
+            "price": "12.71",
+            "volume": 1455,
+            "amount": "184.93"
+        },
+        {
+            "created_at": "11:27:20",
+            "state": "主卖",
+            "price": "12.71",
+            "volume": 2415,
+            "amount": "306.95"
+        },
+        {
+            "created_at": "11:27:09",
+            "state": "主卖",
+            "price": "12.71",
+            "volume": 944,
+            "amount": "119.98"
+        },
+        {
+            "created_at": "11:26:41",
+            "state": "主卖",
+            "price": "12.71",
+            "volume": 1273,
+            "amount": "161.89"
+        },
+        {
+            "created_at": "11:26:41",
+            "state": "被买",
+            "price": "12.71",
+            "volume": 265,
+            "amount": "33.72"
+        },
+        {
+            "created_at": "11:25:15",
+            "state": "主卖",
+            "price": "12.71",
+            "volume": 797,
+            "amount": "101.30"
+        },
+        {
+            "created_at": "11:24:48",
+            "state": "被卖",
+            "price": "12.72",
+            "volume": 253,
+            "amount": "32.18"
+        },
+        {
+            "created_at": "11:24:43",
+            "state": "主买",
+            "price": "12.72",
+            "volume": 615,
+            "amount": "78.23"
+        },
+        {
+            "created_at": "11:22:26",
+            "state": "主买",
+            "price": "12.72",
+            "volume": 273,
+            "amount": "34.73"
+        },
+        {
+            "created_at": "11:20:45",
+            "state": "主卖",
+            "price": "12.71",
+            "volume": 440,
+            "amount": "55.92"
+        },
+        {
+            "created_at": "11:19:41",
+            "state": "主卖",
+            "price": "12.71",
+            "volume": 1464,
+            "amount": "186.16"
+        },
+        {
+            "created_at": "11:19:40",
+            "state": "被买",
+            "price": "12.71",
+            "volume": 775,
+            "amount": "98.54"
+        },
+        {
+            "created_at": "11:17:57",
+            "state": "被买",
+            "price": "12.71",
+            "volume": 628,
+            "amount": "79.82"
+        },
+        {
+            "created_at": "11:16:44",
+            "state": "主买",
+            "price": "12.72",
+            "volume": 253,
+            "amount": "32.18"
+        },
+        {
+            "created_at": "11:16:06",
+            "state": "主卖",
+            "price": "12.71",
+            "volume": 301,
+            "amount": "38.34"
+        },
+        {
+            "created_at": "11:16:03",
+            "state": "主卖",
+            "price": "12.71",
+            "volume": 262,
+            "amount": "33.39"
+        },
+        {
+            "created_at": "11:14:37",
+            "state": "主卖",
+            "price": "12.73",
+            "volume": 432,
+            "amount": "54.99"
+        },
+        {
+            "created_at": "11:14:37",
+            "state": "被买",
+            "price": "12.73",
+            "volume": 970,
+            "amount": "123.48"
+        },
+        {
+            "created_at": "11:14:30",
+            "state": "被买",
+            "price": "12.73",
+            "volume": 618,
+            "amount": "78.67"
+        },
+        {
+            "created_at": "11:14:11",
+            "state": "主买",
+            "price": "12.73",
+            "volume": 505,
+            "amount": "64.29"
+        },
+        {
+            "created_at": "11:14:03",
+            "state": "被买",
+            "price": "12.73",
+            "volume": 388,
+            "amount": "49.39"
+        },
+        {
+            "created_at": "11:14:03",
+            "state": "主卖",
+            "price": "12.73",
+            "volume": 286,
+            "amount": "36.41"
+        },
+        {
+            "created_at": "11:14:03",
+            "state": "主卖",
+            "price": "12.73",
+            "volume": 818,
+            "amount": "104.13"
+        },
+        {
+            "created_at": "11:14:03",
+            "state": "主卖",
+            "price": "12.73",
+            "volume": 548,
+            "amount": "69.76"
+        },
+        {
+            "created_at": "11:14:03",
+            "state": "主卖",
+            "price": "12.74",
+            "volume": 2047,
+            "amount": "260.79"
+        },
+        {
+            "created_at": "11:14:03",
+            "state": "主卖",
+            "price": "12.74",
+            "volume": 1044,
+            "amount": "133.01"
+        },
+        {
+            "created_at": "11:14:03",
+            "state": "被买",
+            "price": "12.74",
+            "volume": 773,
+            "amount": "98.48"
+        },
+        {
+            "created_at": "11:14:02",
+            "state": "主卖",
+            "price": "12.74",
+            "volume": 248,
+            "amount": "31.60"
+        },
+        {
+            "created_at": "11:13:05",
+            "state": "被买",
+            "price": "12.74",
+            "volume": 315,
+            "amount": "40.13"
+        },
+        {
+            "created_at": "11:12:18",
+            "state": "被卖",
+            "price": "12.75",
+            "volume": 250,
+            "amount": "31.88"
+        },
+        {
+            "created_at": "11:11:54",
+            "state": "主卖",
+            "price": "12.73",
+            "volume": 400,
+            "amount": "50.92"
+        },
+        {
+            "created_at": "11:11:53",
+            "state": "主买",
+            "price": "12.73",
+            "volume": 1559,
+            "amount": "198.46"
+        },
+        {
+            "created_at": "11:11:52",
+            "state": "主买",
+            "price": "12.73",
+            "volume": 1668,
+            "amount": "212.34"
+        },
+        {
+            "created_at": "11:11:52",
+            "state": "被卖",
+            "price": "12.73",
+            "volume": 572,
+            "amount": "72.82"
+        },
+        {
+            "created_at": "11:11:29",
+            "state": "主卖",
+            "price": "12.72",
+            "volume": 1000,
+            "amount": "127.20"
+        },
+        {
+            "created_at": "11:10:12",
+            "state": "主买",
+            "price": "12.74",
+            "volume": 310,
+            "amount": "39.49"
+        },
+        {
+            "created_at": "11:10:12",
+            "state": "主卖",
+            "price": "12.74",
+            "volume": 1411,
+            "amount": "179.76"
+        },
+        {
+            "created_at": "11:10:12",
+            "state": "被买",
+            "price": "12.74",
+            "volume": 860,
+            "amount": "109.63"
+        },
+        {
+            "created_at": "11:10:12",
+            "state": "主卖",
+            "price": "12.74",
+            "volume": 2051,
+            "amount": "261.30"
+        },
+        {
+            "created_at": "11:10:12",
+            "state": "主卖",
+            "price": "12.74",
+            "volume": 792,
+            "amount": "100.90"
+        },
+        {
+            "created_at": "11:10:12",
+            "state": "主卖",
+            "price": "12.74",
+            "volume": 445,
+            "amount": "56.69"
+        },
+        {
+            "created_at": "11:10:12",
+            "state": "主卖",
+            "price": "12.74",
+            "volume": 1321,
+            "amount": "168.35"
+        },
+        {
+            "created_at": "11:10:12",
+            "state": "主卖",
+            "price": "12.74",
+            "volume": 2288,
+            "amount": "291.55"
+        },
+        {
+            "created_at": "11:10:12",
+            "state": "被买",
+            "price": "12.74",
+            "volume": 441,
+            "amount": "56.25"
+        },
+        {
+            "created_at": "11:09:58",
+            "state": "主买",
+            "price": "12.75",
+            "volume": 392,
+            "amount": "49.98"
+        },
+        {
+            "created_at": "11:09:55",
+            "state": "被买",
+            "price": "12.74",
+            "volume": 394,
+            "amount": "50.20"
+        },
+        {
+            "created_at": "11:09:00",
+            "state": "主买",
+            "price": "12.75",
+            "volume": 241,
+            "amount": "30.73"
+        },
+        {
+            "created_at": "11:08:59",
+            "state": "主买",
+            "price": "12.75",
+            "volume": 2403,
+            "amount": "306.38"
+        },
+        {
+            "created_at": "11:08:22",
+            "state": "被买",
+            "price": "12.74",
+            "volume": 235,
+            "amount": "30.01"
+        },
+        {
+            "created_at": "11:08:21",
+            "state": "主买",
+            "price": "12.75",
+            "volume": 811,
+            "amount": "103.40"
+        },
+        {
+            "created_at": "11:08:21",
+            "state": "主买",
+            "price": "12.74",
+            "volume": 752,
+            "amount": "95.80"
+        },
+        {
+            "created_at": "11:08:19",
+            "state": "被卖",
+            "price": "12.74",
+            "volume": 322,
+            "amount": "41.08"
+        },
+        {
+            "created_at": "11:08:18",
+            "state": "主买",
+            "price": "12.74",
+            "volume": 1028,
+            "amount": "131.04"
+        },
+        {
+            "created_at": "11:08:18",
+            "state": "被卖",
+            "price": "12.74",
+            "volume": 1000,
+            "amount": "127.40"
+        },
+        {
+            "created_at": "11:08:18",
+            "state": "被卖",
+            "price": "12.74",
+            "volume": 399,
+            "amount": "50.89"
+        },
+        {
+            "created_at": "11:08:18",
+            "state": "主买",
+            "price": "12.74",
+            "volume": 1108,
+            "amount": "141.16"
+        },
+        {
+            "created_at": "11:08:18",
+            "state": "主买",
+            "price": "12.74",
+            "volume": 270,
+            "amount": "34.40"
+        },
+        {
+            "created_at": "11:08:18",
+            "state": "主买",
+            "price": "12.74",
+            "volume": 277,
+            "amount": "35.29"
+        },
+        {
+            "created_at": "11:08:18",
+            "state": "主买",
+            "price": "12.74",
+            "volume": 659,
+            "amount": "83.96"
+        },
+        {
+            "created_at": "11:08:18",
+            "state": "主买",
+            "price": "12.73",
+            "volume": 451,
+            "amount": "57.49"
+        },
+        {
+            "created_at": "11:08:18",
+            "state": "被卖",
+            "price": "12.73",
+            "volume": 569,
+            "amount": "72.49"
+        },
+        {
+            "created_at": "11:08:18",
+            "state": "主买",
+            "price": "12.73",
+            "volume": 238,
+            "amount": "30.30"
+        },
+        {
+            "created_at": "11:08:18",
+            "state": "主买",
+            "price": "12.73",
+            "volume": 826,
+            "amount": "105.15"
+        },
+        {
+            "created_at": "11:08:18",
+            "state": "主买",
+            "price": "12.73",
+            "volume": 752,
+            "amount": "95.80"
+        },
+        {
+            "created_at": "11:08:18",
+            "state": "被卖",
+            "price": "12.73",
+            "volume": 1942,
+            "amount": "247.27"
+        },
+        {
+            "created_at": "11:08:18",
+            "state": "主买",
+            "price": "12.73",
+            "volume": 719,
+            "amount": "91.53"
+        },
+        {
+            "created_at": "11:08:18",
+            "state": "主买",
+            "price": "12.72",
+            "volume": 689,
+            "amount": "87.73"
+        },
+        {
+            "created_at": "11:08:18",
+            "state": "被卖",
+            "price": "12.72",
+            "volume": 445,
+            "amount": "56.60"
+        },
+        {
+            "created_at": "11:08:18",
+            "state": "被卖",
+            "price": "12.72",
+            "volume": 807,
+            "amount": "102.70"
+        },
+        {
+            "created_at": "11:08:18",
+            "state": "主买",
+            "price": "12.72",
+            "volume": 798,
+            "amount": "101.58"
+        },
+        {
+            "created_at": "11:08:18",
+            "state": "被卖",
+            "price": "12.72",
+            "volume": 318,
+            "amount": "40.50"
+        },
+        {
+            "created_at": "11:08:18",
+            "state": "主买",
+            "price": "12.72",
+            "volume": 560,
+            "amount": "71.23"
+        },
+        {
+            "created_at": "11:08:18",
+            "state": "主买",
+            "price": "12.72",
+            "volume": 1108,
+            "amount": "140.94"
+        },
+        {
+            "created_at": "11:08:03",
+            "state": "主买",
+            "price": "12.72",
+            "volume": 426,
+            "amount": "54.19"
+        },
+        {
+            "created_at": "11:08:03",
+            "state": "主买",
+            "price": "12.72",
+            "volume": 351,
+            "amount": "44.65"
+        },
+        {
+            "created_at": "11:07:34",
+            "state": "主卖",
+            "price": "12.71",
+            "volume": 328,
+            "amount": "41.69"
+        },
+        {
+            "created_at": "11:06:57",
+            "state": "被买",
+            "price": "12.71",
+            "volume": 1132,
+            "amount": "143.96"
+        },
+        {
+            "created_at": "11:06:56",
+            "state": "被买",
+            "price": "12.71",
+            "volume": 248,
+            "amount": "31.52"
+        },
+        {
+            "created_at": "11:06:56",
+            "state": "主卖",
+            "price": "12.71",
+            "volume": 1515,
+            "amount": "192.64"
+        },
+        {
+            "created_at": "11:06:56",
+            "state": "被买",
+            "price": "12.71",
+            "volume": 278,
+            "amount": "35.33"
+        },
+        {
+            "created_at": "11:06:56",
+            "state": "主卖",
+            "price": "12.71",
+            "volume": 2037,
+            "amount": "258.99"
+        },
+        {
+            "created_at": "11:06:56",
+            "state": "被买",
+            "price": "12.71",
+            "volume": 278,
+            "amount": "35.33"
+        },
+        {
+            "created_at": "11:06:56",
+            "state": "被买",
+            "price": "12.71",
+            "volume": 278,
+            "amount": "35.33"
+        },
+        {
+            "created_at": "11:06:56",
+            "state": "被买",
+            "price": "12.71",
+            "volume": 278,
+            "amount": "35.33"
+        },
+        {
+            "created_at": "11:06:17",
+            "state": "主买",
+            "price": "12.72",
+            "volume": 323,
+            "amount": "41.09"
+        },
+        {
+            "created_at": "11:03:59",
+            "state": "主买",
+            "price": "12.72",
+            "volume": 334,
+            "amount": "42.48"
+        },
+        {
+            "created_at": "11:03:57",
+            "state": "主买",
+            "price": "12.72",
+            "volume": 638,
+            "amount": "81.15"
+        },
+        {
+            "created_at": "11:03:55",
+            "state": "主卖",
+            "price": "12.71",
+            "volume": 380,
+            "amount": "48.30"
+        },
+        {
+            "created_at": "11:03:18",
+            "state": "被买",
+            "price": "12.71",
+            "volume": 278,
+            "amount": "35.33"
+        },
+        {
+            "created_at": "11:02:53",
+            "state": "主卖",
+            "price": "12.72",
+            "volume": 898,
+            "amount": "114.23"
+        },
+        {
+            "created_at": "11:02:08",
+            "state": "主买",
+            "price": "12.73",
+            "volume": 500,
+            "amount": "63.65"
+        },
+        {
+            "created_at": "11:01:51",
+            "state": "被买",
+            "price": "12.72",
+            "volume": 244,
+            "amount": "31.04"
+        },
+        {
+            "created_at": "11:01:03",
+            "state": "主买",
+            "price": "12.73",
+            "volume": 452,
+            "amount": "57.54"
+        },
+        {
+            "created_at": "11:00:56",
+            "state": "主卖",
+            "price": "12.72",
+            "volume": 300,
+            "amount": "38.16"
+        },
+        {
+            "created_at": "11:00:16",
+            "state": "主卖",
+            "price": "12.72",
+            "volume": 2000,
+            "amount": "254.40"
+        },
+        {
+            "created_at": "11:00:08",
+            "state": "主买",
+            "price": "12.72",
+            "volume": 388,
+            "amount": "49.35"
+        },
+        {
+            "created_at": "11:00:07",
+            "state": "被卖",
+            "price": "12.72",
+            "volume": 287,
+            "amount": "36.51"
+        },
+        {
+            "created_at": "11:00:00",
+            "state": "主买",
+            "price": "12.72",
+            "volume": 300,
+            "amount": "38.16"
+        },
+        {
+            "created_at": "10:59:51",
+            "state": "被卖",
+            "price": "12.72",
+            "volume": 313,
+            "amount": "39.81"
+        },
+        {
+            "created_at": "10:57:37",
+            "state": "主买",
+            "price": "12.71",
+            "volume": 391,
+            "amount": "49.70"
+        },
+        {
+            "created_at": "10:57:27",
+            "state": "主买",
+            "price": "12.71",
+            "volume": 332,
+            "amount": "42.20"
+        },
+        {
+            "created_at": "10:55:54",
+            "state": "被卖",
+            "price": "12.71",
+            "volume": 292,
+            "amount": "37.11"
+        },
+        {
+            "created_at": "10:54:21",
+            "state": "主买",
+            "price": "12.70",
+            "volume": 267,
+            "amount": "33.91"
+        },
+        {
+            "created_at": "10:53:35",
+            "state": "主买",
+            "price": "12.70",
+            "volume": 432,
+            "amount": "54.86"
+        },
+        {
+            "created_at": "10:53:28",
+            "state": "被买",
+            "price": "12.69",
+            "volume": 261,
+            "amount": "33.12"
+        },
+        {
+            "created_at": "10:52:58",
+            "state": "被卖",
+            "price": "12.70",
+            "volume": 736,
+            "amount": "93.47"
+        },
+        {
+            "created_at": "10:51:40",
+            "state": "主卖",
+            "price": "12.69",
+            "volume": 3000,
+            "amount": "380.70"
+        },
+        {
+            "created_at": "10:50:02",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 320,
+            "amount": "40.61"
+        },
+        {
+            "created_at": "10:50:01",
+            "state": "被卖",
+            "price": "12.69",
+            "volume": 439,
+            "amount": "55.71"
+        },
+        {
+            "created_at": "10:48:39",
+            "state": "被卖",
+            "price": "12.68",
+            "volume": 2632,
+            "amount": "333.74"
+        },
+        {
+            "created_at": "10:48:37",
+            "state": "被卖",
+            "price": "12.68",
+            "volume": 528,
+            "amount": "66.95"
+        },
+        {
+            "created_at": "10:48:30",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 1579,
+            "amount": "200.22"
+        },
+        {
+            "created_at": "10:48:24",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 615,
+            "amount": "77.98"
+        },
+        {
+            "created_at": "10:48:23",
+            "state": "被卖",
+            "price": "12.68",
+            "volume": 4775,
+            "amount": "605.47"
+        },
+        {
+            "created_at": "10:47:57",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 3768,
+            "amount": "477.78"
+        },
+        {
+            "created_at": "10:47:57",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 1243,
+            "amount": "157.61"
+        },
+        {
+            "created_at": "10:47:55",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 4989,
+            "amount": "632.61"
+        },
+        {
+            "created_at": "10:46:49",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 802,
+            "amount": "101.69"
+        },
+        {
+            "created_at": "10:46:23",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 369,
+            "amount": "46.79"
+        },
+        {
+            "created_at": "10:46:14",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 2016,
+            "amount": "255.63"
+        },
+        {
+            "created_at": "10:44:41",
+            "state": "主买",
+            "price": "12.67",
+            "volume": 360,
+            "amount": "45.61"
+        },
+        {
+            "created_at": "10:44:25",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 263,
+            "amount": "33.32"
+        },
+        {
+            "created_at": "10:44:24",
+            "state": "被卖",
+            "price": "12.67",
+            "volume": 277,
+            "amount": "35.10"
+        },
+        {
+            "created_at": "10:44:24",
+            "state": "被卖",
+            "price": "12.67",
+            "volume": 287,
+            "amount": "36.36"
+        },
+        {
+            "created_at": "10:44:21",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 1585,
+            "amount": "200.82"
+        },
+        {
+            "created_at": "10:44:21",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 241,
+            "amount": "30.53"
+        },
+        {
+            "created_at": "10:44:21",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 456,
+            "amount": "57.78"
+        },
+        {
+            "created_at": "10:44:21",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 257,
+            "amount": "32.56"
+        },
+        {
+            "created_at": "10:44:21",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 515,
+            "amount": "65.25"
+        },
+        {
+            "created_at": "10:43:42",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 324,
+            "amount": "41.05"
+        },
+        {
+            "created_at": "10:43:09",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 3000,
+            "amount": "380.15"
+        },
+        {
+            "created_at": "10:43:01",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 587,
+            "amount": "74.43"
+        },
+        {
+            "created_at": "10:42:18",
+            "state": "被卖",
+            "price": "12.68",
+            "volume": 619,
+            "amount": "78.49"
+        },
+        {
+            "created_at": "10:42:12",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 300,
+            "amount": "38.01"
+        },
+        {
+            "created_at": "10:41:13",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 1216,
+            "amount": "154.19"
+        },
+        {
+            "created_at": "10:40:12",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 374,
+            "amount": "47.42"
+        },
+        {
+            "created_at": "10:40:02",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 292,
+            "amount": "37.03"
+        },
+        {
+            "created_at": "10:40:02",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 246,
+            "amount": "31.19"
+        },
+        {
+            "created_at": "10:40:01",
+            "state": "被买",
+            "price": "12.69",
+            "volume": 294,
+            "amount": "37.31"
+        },
+        {
+            "created_at": "10:40:01",
+            "state": "主卖",
+            "price": "12.69",
+            "volume": 475,
+            "amount": "60.28"
+        },
+        {
+            "created_at": "10:40:00",
+            "state": "主卖",
+            "price": "12.69",
+            "volume": 246,
+            "amount": "31.22"
+        },
+        {
+            "created_at": "10:37:16",
+            "state": "主卖",
+            "price": "12.70",
+            "volume": 810,
+            "amount": "102.87"
+        },
+        {
+            "created_at": "10:37:09",
+            "state": "主卖",
+            "price": "12.70",
+            "volume": 889,
+            "amount": "112.90"
+        },
+        {
+            "created_at": "10:37:08",
+            "state": "主卖",
+            "price": "12.70",
+            "volume": 1041,
+            "amount": "132.21"
+        },
+        {
+            "created_at": "10:36:50",
+            "state": "主买",
+            "price": "12.70",
+            "volume": 1738,
+            "amount": "220.73"
+        },
+        {
+            "created_at": "10:36:29",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 1752,
+            "amount": "222.16"
+        },
+        {
+            "created_at": "10:36:28",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 307,
+            "amount": "38.96"
+        },
+        {
+            "created_at": "10:36:03",
+            "state": "被卖",
+            "price": "12.69",
+            "volume": 1488,
+            "amount": "188.83"
+        },
+        {
+            "created_at": "10:36:01",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 783,
+            "amount": "99.36"
+        },
+        {
+            "created_at": "10:34:57",
+            "state": "被卖",
+            "price": "12.69",
+            "volume": 442,
+            "amount": "56.09"
+        },
+        {
+            "created_at": "10:34:13",
+            "state": "被卖",
+            "price": "12.69",
+            "volume": 269,
+            "amount": "34.14"
+        },
+        {
+            "created_at": "10:34:13",
+            "state": "被卖",
+            "price": "12.69",
+            "volume": 342,
+            "amount": "43.40"
+        },
+        {
+            "created_at": "10:34:13",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 1771,
+            "amount": "224.56"
+        },
+        {
+            "created_at": "10:33:26",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 280,
+            "amount": "35.48"
+        },
+        {
+            "created_at": "10:33:12",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 240,
+            "amount": "30.41"
+        },
+        {
+            "created_at": "10:33:12",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 894,
+            "amount": "113.27"
+        },
+        {
+            "created_at": "10:32:53",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 280,
+            "amount": "35.48"
+        },
+        {
+            "created_at": "10:32:16",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 500,
+            "amount": "63.35"
+        },
+        {
+            "created_at": "10:32:07",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 753,
+            "amount": "95.48"
+        },
+        {
+            "created_at": "10:32:03",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 556,
+            "amount": "70.50"
+        },
+        {
+            "created_at": "10:32:03",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 686,
+            "amount": "86.98"
+        },
+        {
+            "created_at": "10:32:03",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 385,
+            "amount": "48.82"
+        },
+        {
+            "created_at": "10:31:22",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 406,
+            "amount": "51.48"
+        },
+        {
+            "created_at": "10:30:25",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 3360,
+            "amount": "426.05"
+        },
+        {
+            "created_at": "10:30:23",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 889,
+            "amount": "112.64"
+        },
+        {
+            "created_at": "10:30:15",
+            "state": "被买",
+            "price": "12.67",
+            "volume": 321,
+            "amount": "40.67"
+        },
+        {
+            "created_at": "10:30:12",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 391,
+            "amount": "49.58"
+        },
+        {
+            "created_at": "10:30:12",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 1871,
+            "amount": "237.24"
+        },
+        {
+            "created_at": "10:30:12",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 477,
+            "amount": "60.48"
+        },
+        {
+            "created_at": "10:30:12",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 280,
+            "amount": "35.50"
+        },
+        {
+            "created_at": "10:30:12",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 307,
+            "amount": "38.93"
+        },
+        {
+            "created_at": "10:30:12",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 383,
+            "amount": "48.56"
+        },
+        {
+            "created_at": "10:30:12",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 528,
+            "amount": "66.95"
+        },
+        {
+            "created_at": "10:30:09",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 256,
+            "amount": "32.46"
+        },
+        {
+            "created_at": "10:30:08",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 343,
+            "amount": "43.53"
+        },
+        {
+            "created_at": "10:30:08",
+            "state": "主卖",
+            "price": "12.69",
+            "volume": 238,
+            "amount": "30.20"
+        },
+        {
+            "created_at": "10:30:08",
+            "state": "被买",
+            "price": "12.69",
+            "volume": 1695,
+            "amount": "215.10"
+        },
+        {
+            "created_at": "10:30:08",
+            "state": "主卖",
+            "price": "12.69",
+            "volume": 607,
+            "amount": "77.03"
+        },
+        {
+            "created_at": "10:30:08",
+            "state": "主卖",
+            "price": "12.69",
+            "volume": 1963,
+            "amount": "249.10"
+        },
+        {
+            "created_at": "10:29:57",
+            "state": "主卖",
+            "price": "12.69",
+            "volume": 306,
+            "amount": "38.83"
+        },
+        {
+            "created_at": "10:29:43",
+            "state": "主买",
+            "price": "12.70",
+            "volume": 534,
+            "amount": "67.82"
+        },
+        {
+            "created_at": "10:29:26",
+            "state": "被买",
+            "price": "12.70",
+            "volume": 600,
+            "amount": "76.20"
+        },
+        {
+            "created_at": "10:29:26",
+            "state": "被买",
+            "price": "12.70",
+            "volume": 304,
+            "amount": "38.61"
+        },
+        {
+            "created_at": "10:29:12",
+            "state": "被买",
+            "price": "12.70",
+            "volume": 258,
+            "amount": "32.77"
+        },
+        {
+            "created_at": "10:28:50",
+            "state": "主卖",
+            "price": "12.70",
+            "volume": 1334,
+            "amount": "169.42"
+        },
+        {
+            "created_at": "10:28:47",
+            "state": "主买",
+            "price": "12.71",
+            "volume": 1176,
+            "amount": "149.47"
+        },
+        {
+            "created_at": "10:28:33",
+            "state": "主卖",
+            "price": "12.70",
+            "volume": 353,
+            "amount": "44.83"
+        },
+        {
+            "created_at": "10:28:21",
+            "state": "主买",
+            "price": "12.70",
+            "volume": 1587,
+            "amount": "201.55"
+        },
+        {
+            "created_at": "10:28:20",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 302,
+            "amount": "38.32"
+        },
+        {
+            "created_at": "10:28:20",
+            "state": "被卖",
+            "price": "12.69",
+            "volume": 251,
+            "amount": "31.85"
+        },
+        {
+            "created_at": "10:28:20",
+            "state": "被卖",
+            "price": "12.69",
+            "volume": 397,
+            "amount": "50.38"
+        },
+        {
+            "created_at": "10:28:08",
+            "state": "被卖",
+            "price": "12.69",
+            "volume": 420,
+            "amount": "53.30"
+        },
+        {
+            "created_at": "10:28:00",
+            "state": "被卖",
+            "price": "12.69",
+            "volume": 423,
+            "amount": "53.68"
+        },
+        {
+            "created_at": "10:27:55",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 279,
+            "amount": "35.38"
+        },
+        {
+            "created_at": "10:27:55",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 873,
+            "amount": "110.70"
+        },
+        {
+            "created_at": "10:27:52",
+            "state": "被卖",
+            "price": "12.69",
+            "volume": 337,
+            "amount": "42.77"
+        },
+        {
+            "created_at": "10:27:50",
+            "state": "被卖",
+            "price": "12.69",
+            "volume": 300,
+            "amount": "38.07"
+        },
+        {
+            "created_at": "10:27:32",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 257,
+            "amount": "32.59"
+        },
+        {
+            "created_at": "10:26:35",
+            "state": "主买",
+            "price": "12.70",
+            "volume": 490,
+            "amount": "62.22"
+        },
+        {
+            "created_at": "10:26:32",
+            "state": "主卖",
+            "price": "12.69",
+            "volume": 299,
+            "amount": "37.94"
+        },
+        {
+            "created_at": "10:26:30",
+            "state": "主卖",
+            "price": "12.69",
+            "volume": 4441,
+            "amount": "563.56"
+        },
+        {
+            "created_at": "10:26:30",
+            "state": "被买",
+            "price": "12.69",
+            "volume": 561,
+            "amount": "71.19"
+        },
+        {
+            "created_at": "10:26:16",
+            "state": "主卖",
+            "price": "12.69",
+            "volume": 309,
+            "amount": "39.21"
+        },
+        {
+            "created_at": "10:25:20",
+            "state": "主卖",
+            "price": "12.70",
+            "volume": 1945,
+            "amount": "247.01"
+        },
+        {
+            "created_at": "10:25:05",
+            "state": "主卖",
+            "price": "12.70",
+            "volume": 1563,
+            "amount": "198.50"
+        },
+        {
+            "created_at": "10:25:04",
+            "state": "被买",
+            "price": "12.70",
+            "volume": 386,
+            "amount": "49.02"
+        },
+        {
+            "created_at": "10:25:02",
+            "state": "主买",
+            "price": "12.71",
+            "volume": 393,
+            "amount": "49.95"
+        },
+        {
+            "created_at": "10:24:35",
+            "state": "主卖",
+            "price": "12.70",
+            "volume": 780,
+            "amount": "99.06"
+        },
+        {
+            "created_at": "10:24:35",
+            "state": "被买",
+            "price": "12.70",
+            "volume": 239,
+            "amount": "30.35"
+        },
+        {
+            "created_at": "10:24:33",
+            "state": "主买",
+            "price": "12.71",
+            "volume": 420,
+            "amount": "53.38"
+        },
+        {
+            "created_at": "10:24:24",
+            "state": "主买",
+            "price": "12.71",
+            "volume": 306,
+            "amount": "38.89"
+        },
+        {
+            "created_at": "10:24:18",
+            "state": "主买",
+            "price": "12.71",
+            "volume": 396,
+            "amount": "50.33"
+        },
+        {
+            "created_at": "10:24:12",
+            "state": "被买",
+            "price": "12.71",
+            "volume": 291,
+            "amount": "36.99"
+        },
+        {
+            "created_at": "10:24:12",
+            "state": "主卖",
+            "price": "12.71",
+            "volume": 297,
+            "amount": "37.75"
+        },
+        {
+            "created_at": "10:23:52",
+            "state": "主卖",
+            "price": "12.71",
+            "volume": 300,
+            "amount": "38.13"
+        },
+        {
+            "created_at": "10:22:22",
+            "state": "主卖",
+            "price": "12.70",
+            "volume": 431,
+            "amount": "54.75"
+        },
+        {
+            "created_at": "10:22:19",
+            "state": "主买",
+            "price": "12.71",
+            "volume": 1084,
+            "amount": "137.78"
+        },
+        {
+            "created_at": "10:22:00",
+            "state": "主买",
+            "price": "12.71",
+            "volume": 483,
+            "amount": "61.39"
+        },
+        {
+            "created_at": "10:20:51",
+            "state": "被买",
+            "price": "12.71",
+            "volume": 308,
+            "amount": "39.15"
+        },
+        {
+            "created_at": "10:20:30",
+            "state": "主卖",
+            "price": "12.70",
+            "volume": 2000,
+            "amount": "254.01"
+        },
+        {
+            "created_at": "10:20:25",
+            "state": "主买",
+            "price": "12.71",
+            "volume": 310,
+            "amount": "39.40"
+        },
+        {
+            "created_at": "10:20:12",
+            "state": "被买",
+            "price": "12.71",
+            "volume": 300,
+            "amount": "38.13"
+        },
+        {
+            "created_at": "10:20:11",
+            "state": "主卖",
+            "price": "12.71",
+            "volume": 383,
+            "amount": "48.68"
+        },
+        {
+            "created_at": "10:20:11",
+            "state": "主卖",
+            "price": "12.71",
+            "volume": 1818,
+            "amount": "231.07"
+        },
+        {
+            "created_at": "10:20:11",
+            "state": "被买",
+            "price": "12.71",
+            "volume": 251,
+            "amount": "31.90"
+        },
+        {
+            "created_at": "10:19:44",
+            "state": "主买",
+            "price": "12.72",
+            "volume": 249,
+            "amount": "31.67"
+        },
+        {
+            "created_at": "10:19:44",
+            "state": "主卖",
+            "price": "12.72",
+            "volume": 461,
+            "amount": "58.64"
+        },
+        {
+            "created_at": "10:19:44",
+            "state": "主卖",
+            "price": "12.72",
+            "volume": 1346,
+            "amount": "171.21"
+        },
+        {
+            "created_at": "10:19:03",
+            "state": "主买",
+            "price": "12.73",
+            "volume": 1552,
+            "amount": "197.57"
+        },
+        {
+            "created_at": "10:19:02",
+            "state": "被卖",
+            "price": "12.73",
+            "volume": 408,
+            "amount": "51.94"
+        },
+        {
+            "created_at": "10:18:47",
+            "state": "被卖",
+            "price": "12.73",
+            "volume": 385,
+            "amount": "49.01"
+        },
+        {
+            "created_at": "10:18:01",
+            "state": "主买",
+            "price": "12.72",
+            "volume": 1129,
+            "amount": "143.61"
+        },
+        {
+            "created_at": "10:18:01",
+            "state": "被卖",
+            "price": "12.72",
+            "volume": 393,
+            "amount": "49.99"
+        },
+        {
+            "created_at": "10:17:57",
+            "state": "被卖",
+            "price": "12.72",
+            "volume": 250,
+            "amount": "31.80"
+        },
+        {
+            "created_at": "10:16:29",
+            "state": "主卖",
+            "price": "12.71",
+            "volume": 1066,
+            "amount": "135.49"
+        },
+        {
+            "created_at": "10:15:25",
+            "state": "主卖",
+            "price": "12.71",
+            "volume": 545,
+            "amount": "69.27"
+        },
+        {
+            "created_at": "10:15:24",
+            "state": "被买",
+            "price": "12.71",
+            "volume": 301,
+            "amount": "38.26"
+        },
+        {
+            "created_at": "10:15:20",
+            "state": "被买",
+            "price": "12.72",
+            "volume": 416,
+            "amount": "52.92"
+        },
+        {
+            "created_at": "10:15:15",
+            "state": "主卖",
+            "price": "12.73",
+            "volume": 671,
+            "amount": "85.42"
+        },
+        {
+            "created_at": "10:15:15",
+            "state": "主卖",
+            "price": "12.73",
+            "volume": 584,
+            "amount": "74.34"
+        },
+        {
+            "created_at": "10:15:15",
+            "state": "主卖",
+            "price": "12.73",
+            "volume": 1906,
+            "amount": "242.63"
+        },
+        {
+            "created_at": "10:15:14",
+            "state": "主卖",
+            "price": "12.74",
+            "volume": 2063,
+            "amount": "262.83"
+        },
+        {
+            "created_at": "10:15:04",
+            "state": "主买",
+            "price": "12.75",
+            "volume": 486,
+            "amount": "61.97"
+        },
+        {
+            "created_at": "10:14:56",
+            "state": "主买",
+            "price": "12.75",
+            "volume": 335,
+            "amount": "42.71"
+        },
+        {
+            "created_at": "10:14:56",
+            "state": "主买",
+            "price": "12.75",
+            "volume": 259,
+            "amount": "33.02"
+        },
+        {
+            "created_at": "10:14:35",
+            "state": "主买",
+            "price": "12.75",
+            "volume": 1993,
+            "amount": "254.11"
+        },
+        {
+            "created_at": "10:14:23",
+            "state": "被买",
+            "price": "12.74",
+            "volume": 351,
+            "amount": "44.72"
+        },
+        {
+            "created_at": "10:14:15",
+            "state": "主买",
+            "price": "12.75",
+            "volume": 500,
+            "amount": "63.75"
+        },
+        {
+            "created_at": "10:13:53",
+            "state": "主买",
+            "price": "12.75",
+            "volume": 306,
+            "amount": "39.02"
+        },
+        {
+            "created_at": "10:13:35",
+            "state": "被卖",
+            "price": "12.74",
+            "volume": 341,
+            "amount": "43.44"
+        },
+        {
+            "created_at": "10:13:33",
+            "state": "主买",
+            "price": "12.74",
+            "volume": 1000,
+            "amount": "127.40"
+        },
+        {
+            "created_at": "10:13:30",
+            "state": "被卖",
+            "price": "12.74",
+            "volume": 620,
+            "amount": "78.99"
+        },
+        {
+            "created_at": "10:13:19",
+            "state": "主买",
+            "price": "12.74",
+            "volume": 267,
+            "amount": "34.02"
+        },
+        {
+            "created_at": "10:13:19",
+            "state": "被卖",
+            "price": "12.74",
+            "volume": 1787,
+            "amount": "227.66"
+        },
+        {
+            "created_at": "10:13:16",
+            "state": "被卖",
+            "price": "12.74",
+            "volume": 362,
+            "amount": "46.12"
+        },
+        {
+            "created_at": "10:13:06",
+            "state": "主买",
+            "price": "12.74",
+            "volume": 738,
+            "amount": "94.02"
+        },
+        {
+            "created_at": "10:13:06",
+            "state": "被卖",
+            "price": "12.74",
+            "volume": 270,
+            "amount": "34.40"
+        },
+        {
+            "created_at": "10:12:19",
+            "state": "主买",
+            "price": "12.74",
+            "volume": 333,
+            "amount": "42.42"
+        },
+        {
+            "created_at": "10:12:19",
+            "state": "主买",
+            "price": "12.74",
+            "volume": 360,
+            "amount": "45.86"
+        },
+        {
+            "created_at": "10:11:57",
+            "state": "主卖",
+            "price": "12.73",
+            "volume": 373,
+            "amount": "47.48"
+        },
+        {
+            "created_at": "10:11:48",
+            "state": "主买",
+            "price": "12.74",
+            "volume": 284,
+            "amount": "36.18"
+        },
+        {
+            "created_at": "10:11:24",
+            "state": "主卖",
+            "price": "12.73",
+            "volume": 300,
+            "amount": "38.19"
+        },
+        {
+            "created_at": "10:11:12",
+            "state": "主买",
+            "price": "12.73",
+            "volume": 514,
+            "amount": "65.43"
+        },
+        {
+            "created_at": "10:11:12",
+            "state": "被卖",
+            "price": "12.73",
+            "volume": 248,
+            "amount": "31.57"
+        },
+        {
+            "created_at": "10:10:54",
+            "state": "被买",
+            "price": "12.73",
+            "volume": 303,
+            "amount": "38.57"
+        },
+        {
+            "created_at": "10:10:42",
+            "state": "主卖",
+            "price": "12.73",
+            "volume": 975,
+            "amount": "124.12"
+        },
+        {
+            "created_at": "10:10:34",
+            "state": "主买",
+            "price": "12.73",
+            "volume": 371,
+            "amount": "47.23"
+        },
+        {
+            "created_at": "10:10:34",
+            "state": "被卖",
+            "price": "12.73",
+            "volume": 307,
+            "amount": "39.08"
+        },
+        {
+            "created_at": "10:10:31",
+            "state": "主买",
+            "price": "12.73",
+            "volume": 477,
+            "amount": "60.72"
+        },
+        {
+            "created_at": "10:10:06",
+            "state": "主卖",
+            "price": "12.73",
+            "volume": 468,
+            "amount": "59.58"
+        },
+        {
+            "created_at": "10:09:14",
+            "state": "主卖",
+            "price": "12.73",
+            "volume": 453,
+            "amount": "57.67"
+        },
+        {
+            "created_at": "10:09:13",
+            "state": "主卖",
+            "price": "12.73",
+            "volume": 380,
+            "amount": "48.37"
+        },
+        {
+            "created_at": "10:09:07",
+            "state": "主买",
+            "price": "12.74",
+            "volume": 372,
+            "amount": "47.39"
+        },
+        {
+            "created_at": "10:08:50",
+            "state": "主卖",
+            "price": "12.73",
+            "volume": 237,
+            "amount": "30.17"
+        },
+        {
+            "created_at": "10:08:38",
+            "state": "主卖",
+            "price": "12.73",
+            "volume": 500,
+            "amount": "63.65"
+        },
+        {
+            "created_at": "10:08:27",
+            "state": "主买",
+            "price": "12.74",
+            "volume": 921,
+            "amount": "117.34"
+        },
+        {
+            "created_at": "10:07:45",
+            "state": "主买",
+            "price": "12.73",
+            "volume": 2278,
+            "amount": "289.99"
+        },
+        {
+            "created_at": "10:07:44",
+            "state": "主买",
+            "price": "12.73",
+            "volume": 483,
+            "amount": "61.49"
+        },
+        {
+            "created_at": "10:07:44",
+            "state": "主买",
+            "price": "12.73",
+            "volume": 2567,
+            "amount": "326.78"
+        },
+        {
+            "created_at": "10:07:22",
+            "state": "主买",
+            "price": "12.72",
+            "volume": 1514,
+            "amount": "192.58"
+        },
+        {
+            "created_at": "10:07:22",
+            "state": "被卖",
+            "price": "12.72",
+            "volume": 451,
+            "amount": "57.37"
+        },
+        {
+            "created_at": "10:07:06",
+            "state": "主买",
+            "price": "12.71",
+            "volume": 508,
+            "amount": "64.57"
+        },
+        {
+            "created_at": "10:06:55",
+            "state": "主买",
+            "price": "12.70",
+            "volume": 568,
+            "amount": "72.14"
+        },
+        {
+            "created_at": "10:06:27",
+            "state": "主买",
+            "price": "12.70",
+            "volume": 244,
+            "amount": "30.99"
+        },
+        {
+            "created_at": "10:06:19",
+            "state": "主卖",
+            "price": "12.70",
+            "volume": 1516,
+            "amount": "192.60"
+        },
+        {
+            "created_at": "10:06:19",
+            "state": "被买",
+            "price": "12.70",
+            "volume": 1753,
+            "amount": "222.69"
+        },
+        {
+            "created_at": "10:06:16",
+            "state": "被买",
+            "price": "12.70",
+            "volume": 252,
+            "amount": "32.00"
+        },
+        {
+            "created_at": "10:05:58",
+            "state": "主卖",
+            "price": "12.70",
+            "volume": 2000,
+            "amount": "254.00"
+        },
+        {
+            "created_at": "10:05:33",
+            "state": "被买",
+            "price": "12.71",
+            "volume": 295,
+            "amount": "37.55"
+        },
+        {
+            "created_at": "10:05:28",
+            "state": "主卖",
+            "price": "12.71",
+            "volume": 284,
+            "amount": "36.10"
+        },
+        {
+            "created_at": "10:05:28",
+            "state": "主卖",
+            "price": "12.71",
+            "volume": 2633,
+            "amount": "334.73"
+        },
+        {
+            "created_at": "10:05:25",
+            "state": "被买",
+            "price": "12.71",
+            "volume": 238,
+            "amount": "30.25"
+        },
+        {
+            "created_at": "10:04:48",
+            "state": "主买",
+            "price": "12.72",
+            "volume": 500,
+            "amount": "63.60"
+        },
+        {
+            "created_at": "10:04:44",
+            "state": "被买",
+            "price": "12.71",
+            "volume": 314,
+            "amount": "39.91"
+        },
+        {
+            "created_at": "10:04:23",
+            "state": "被买",
+            "price": "12.71",
+            "volume": 301,
+            "amount": "38.26"
+        },
+        {
+            "created_at": "10:04:13",
+            "state": "主卖",
+            "price": "12.72",
+            "volume": 2042,
+            "amount": "259.74"
+        },
+        {
+            "created_at": "10:04:09",
+            "state": "被买",
+            "price": "12.72",
+            "volume": 312,
+            "amount": "39.69"
+        },
+        {
+            "created_at": "10:04:08",
+            "state": "被买",
+            "price": "12.72",
+            "volume": 325,
+            "amount": "41.34"
+        },
+        {
+            "created_at": "10:03:48",
+            "state": "被卖",
+            "price": "12.73",
+            "volume": 259,
+            "amount": "32.97"
+        },
+        {
+            "created_at": "10:03:43",
+            "state": "被卖",
+            "price": "12.73",
+            "volume": 905,
+            "amount": "115.21"
+        },
+        {
+            "created_at": "10:03:41",
+            "state": "主买",
+            "price": "12.73",
+            "volume": 660,
+            "amount": "84.02"
+        },
+        {
+            "created_at": "10:02:49",
+            "state": "被买",
+            "price": "12.73",
+            "volume": 261,
+            "amount": "33.23"
+        },
+        {
+            "created_at": "10:02:42",
+            "state": "主买",
+            "price": "12.74",
+            "volume": 297,
+            "amount": "37.84"
+        },
+        {
+            "created_at": "10:02:40",
+            "state": "主买",
+            "price": "12.73",
+            "volume": 1972,
+            "amount": "251.04"
+        },
+        {
+            "created_at": "10:02:27",
+            "state": "被卖",
+            "price": "12.73",
+            "volume": 889,
+            "amount": "113.17"
+        },
+        {
+            "created_at": "10:01:34",
+            "state": "主买",
+            "price": "12.73",
+            "volume": 498,
+            "amount": "63.40"
+        },
+        {
+            "created_at": "10:01:33",
+            "state": "主买",
+            "price": "12.73",
+            "volume": 299,
+            "amount": "38.06"
+        },
+        {
+            "created_at": "10:01:24",
+            "state": "主卖",
+            "price": "12.72",
+            "volume": 245,
+            "amount": "31.16"
+        },
+        {
+            "created_at": "10:00:57",
+            "state": "主买",
+            "price": "12.73",
+            "volume": 523,
+            "amount": "66.58"
+        },
+        {
+            "created_at": "10:00:57",
+            "state": "被卖",
+            "price": "12.73",
+            "volume": 831,
+            "amount": "105.79"
+        },
+        {
+            "created_at": "10:00:35",
+            "state": "被买",
+            "price": "12.72",
+            "volume": 282,
+            "amount": "35.87"
+        },
+        {
+            "created_at": "10:00:26",
+            "state": "被卖",
+            "price": "12.73",
+            "volume": 246,
+            "amount": "31.32"
+        },
+        {
+            "created_at": "09:59:38",
+            "state": "主卖",
+            "price": "12.72",
+            "volume": 500,
+            "amount": "63.60"
+        },
+        {
+            "created_at": "09:59:36",
+            "state": "被买",
+            "price": "12.72",
+            "volume": 385,
+            "amount": "48.97"
+        },
+        {
+            "created_at": "09:59:34",
+            "state": "主卖",
+            "price": "12.72",
+            "volume": 500,
+            "amount": "63.60"
+        },
+        {
+            "created_at": "09:59:23",
+            "state": "主买",
+            "price": "12.73",
+            "volume": 958,
+            "amount": "121.95"
+        },
+        {
+            "created_at": "09:59:15",
+            "state": "主买",
+            "price": "12.73",
+            "volume": 419,
+            "amount": "53.34"
+        },
+        {
+            "created_at": "09:59:00",
+            "state": "主买",
+            "price": "12.73",
+            "volume": 386,
+            "amount": "49.14"
+        },
+        {
+            "created_at": "09:58:58",
+            "state": "主卖",
+            "price": "12.72",
+            "volume": 250,
+            "amount": "31.80"
+        },
+        {
+            "created_at": "09:58:48",
+            "state": "主买",
+            "price": "12.73",
+            "volume": 472,
+            "amount": "60.09"
+        },
+        {
+            "created_at": "09:58:32",
+            "state": "主卖",
+            "price": "12.73",
+            "volume": 500,
+            "amount": "63.65"
+        },
+        {
+            "created_at": "09:58:23",
+            "state": "主卖",
+            "price": "12.73",
+            "volume": 253,
+            "amount": "32.21"
+        },
+        {
+            "created_at": "09:58:23",
+            "state": "主卖",
+            "price": "12.73",
+            "volume": 1026,
+            "amount": "130.61"
+        },
+        {
+            "created_at": "09:58:03",
+            "state": "主买",
+            "price": "12.73",
+            "volume": 706,
+            "amount": "89.87"
+        },
+        {
+            "created_at": "09:57:56",
+            "state": "主买",
+            "price": "12.73",
+            "volume": 337,
+            "amount": "42.90"
+        },
+        {
+            "created_at": "09:57:49",
+            "state": "被卖",
+            "price": "12.73",
+            "volume": 321,
+            "amount": "40.86"
+        },
+        {
+            "created_at": "09:57:44",
+            "state": "被买",
+            "price": "12.72",
+            "volume": 582,
+            "amount": "74.06"
+        },
+        {
+            "created_at": "09:57:18",
+            "state": "主买",
+            "price": "12.72",
+            "volume": 342,
+            "amount": "43.50"
+        },
+        {
+            "created_at": "09:57:18",
+            "state": "主买",
+            "price": "12.72",
+            "volume": 303,
+            "amount": "38.54"
+        },
+        {
+            "created_at": "09:57:17",
+            "state": "主买",
+            "price": "12.72",
+            "volume": 2567,
+            "amount": "326.52"
+        },
+        {
+            "created_at": "09:57:15",
+            "state": "被卖",
+            "price": "12.72",
+            "volume": 468,
+            "amount": "59.53"
+        },
+        {
+            "created_at": "09:57:12",
+            "state": "被卖",
+            "price": "12.72",
+            "volume": 371,
+            "amount": "47.19"
+        },
+        {
+            "created_at": "09:57:12",
+            "state": "被卖",
+            "price": "12.72",
+            "volume": 378,
+            "amount": "48.08"
+        },
+        {
+            "created_at": "09:56:55",
+            "state": "主买",
+            "price": "12.72",
+            "volume": 1000,
+            "amount": "127.20"
+        },
+        {
+            "created_at": "09:56:52",
+            "state": "主买",
+            "price": "12.72",
+            "volume": 1000,
+            "amount": "127.20"
+        },
+        {
+            "created_at": "09:56:46",
+            "state": "被买",
+            "price": "12.71",
+            "volume": 562,
+            "amount": "71.43"
+        },
+        {
+            "created_at": "09:56:42",
+            "state": "被卖",
+            "price": "12.72",
+            "volume": 286,
+            "amount": "36.38"
+        },
+        {
+            "created_at": "09:56:36",
+            "state": "被卖",
+            "price": "12.72",
+            "volume": 260,
+            "amount": "33.07"
+        },
+        {
+            "created_at": "09:56:32",
+            "state": "被买",
+            "price": "12.71",
+            "volume": 263,
+            "amount": "33.43"
+        },
+        {
+            "created_at": "09:56:30",
+            "state": "被卖",
+            "price": "12.72",
+            "volume": 743,
+            "amount": "94.51"
+        },
+        {
+            "created_at": "09:56:27",
+            "state": "被卖",
+            "price": "12.72",
+            "volume": 601,
+            "amount": "76.45"
+        },
+        {
+            "created_at": "09:56:24",
+            "state": "被买",
+            "price": "12.71",
+            "volume": 277,
+            "amount": "35.21"
+        },
+        {
+            "created_at": "09:56:22",
+            "state": "被买",
+            "price": "12.71",
+            "volume": 468,
+            "amount": "59.48"
+        },
+        {
+            "created_at": "09:56:22",
+            "state": "被买",
+            "price": "12.71",
+            "volume": 627,
+            "amount": "79.69"
+        },
+        {
+            "created_at": "09:56:21",
+            "state": "被买",
+            "price": "12.71",
+            "volume": 3433,
+            "amount": "436.33"
+        },
+        {
+            "created_at": "09:56:21",
+            "state": "被买",
+            "price": "12.71",
+            "volume": 373,
+            "amount": "47.41"
+        },
+        {
+            "created_at": "09:56:18",
+            "state": "主买",
+            "price": "12.72",
+            "volume": 800,
+            "amount": "101.76"
+        },
+        {
+            "created_at": "09:56:17",
+            "state": "被买",
+            "price": "12.71",
+            "volume": 997,
+            "amount": "126.72"
+        },
+        {
+            "created_at": "09:56:15",
+            "state": "主买",
+            "price": "12.71",
+            "volume": 2111,
+            "amount": "268.31"
+        },
+        {
+            "created_at": "09:56:07",
+            "state": "主买",
+            "price": "12.71",
+            "volume": 246,
+            "amount": "31.27"
+        },
+        {
+            "created_at": "09:56:07",
+            "state": "主买",
+            "price": "12.71",
+            "volume": 1000,
+            "amount": "127.10"
+        },
+        {
+            "created_at": "09:55:16",
+            "state": "主买",
+            "price": "12.71",
+            "volume": 325,
+            "amount": "41.31"
+        },
+        {
+            "created_at": "09:55:07",
+            "state": "被卖",
+            "price": "12.70",
+            "volume": 247,
+            "amount": "31.37"
+        },
+        {
+            "created_at": "09:55:03",
+            "state": "主卖",
+            "price": "12.70",
+            "volume": 1415,
+            "amount": "179.78"
+        },
+        {
+            "created_at": "09:55:03",
+            "state": "主卖",
+            "price": "12.70",
+            "volume": 2009,
+            "amount": "255.14"
+        },
+        {
+            "created_at": "09:55:03",
+            "state": "主卖",
+            "price": "12.70",
+            "volume": 350,
+            "amount": "44.45"
+        },
+        {
+            "created_at": "09:54:44",
+            "state": "主买",
+            "price": "12.71",
+            "volume": 586,
+            "amount": "74.48"
+        },
+        {
+            "created_at": "09:54:20",
+            "state": "被买",
+            "price": "12.70",
+            "volume": 245,
+            "amount": "31.17"
+        },
+        {
+            "created_at": "09:54:13",
+            "state": "主买",
+            "price": "12.70",
+            "volume": 1234,
+            "amount": "156.72"
+        },
+        {
+            "created_at": "09:54:13",
+            "state": "主买",
+            "price": "12.70",
+            "volume": 297,
+            "amount": "37.72"
+        },
+        {
+            "created_at": "09:54:12",
+            "state": "主买",
+            "price": "12.70",
+            "volume": 392,
+            "amount": "49.83"
+        },
+        {
+            "created_at": "09:53:47",
+            "state": "主买",
+            "price": "12.70",
+            "volume": 550,
+            "amount": "69.85"
+        },
+        {
+            "created_at": "09:53:46",
+            "state": "主卖",
+            "price": "12.69",
+            "volume": 476,
+            "amount": "60.40"
+        },
+        {
+            "created_at": "09:53:34",
+            "state": "主买",
+            "price": "12.70",
+            "volume": 902,
+            "amount": "114.55"
+        },
+        {
+            "created_at": "09:53:18",
+            "state": "主卖",
+            "price": "12.70",
+            "volume": 261,
+            "amount": "33.15"
+        },
+        {
+            "created_at": "09:53:12",
+            "state": "主买",
+            "price": "12.71",
+            "volume": 300,
+            "amount": "38.13"
+        },
+        {
+            "created_at": "09:52:50",
+            "state": "主买",
+            "price": "12.71",
+            "volume": 697,
+            "amount": "88.59"
+        },
+        {
+            "created_at": "09:52:49",
+            "state": "主卖",
+            "price": "12.70",
+            "volume": 400,
+            "amount": "50.80"
+        },
+        {
+            "created_at": "09:52:48",
+            "state": "主卖",
+            "price": "12.70",
+            "volume": 250,
+            "amount": "31.75"
+        },
+        {
+            "created_at": "09:52:39",
+            "state": "主买",
+            "price": "12.71",
+            "volume": 807,
+            "amount": "102.57"
+        },
+        {
+            "created_at": "09:52:38",
+            "state": "主卖",
+            "price": "12.70",
+            "volume": 534,
+            "amount": "67.89"
+        },
+        {
+            "created_at": "09:52:34",
+            "state": "主卖",
+            "price": "12.70",
+            "volume": 336,
+            "amount": "42.67"
+        },
+        {
+            "created_at": "09:52:31",
+            "state": "主买",
+            "price": "12.70",
+            "volume": 1079,
+            "amount": "137.03"
+        },
+        {
+            "created_at": "09:52:23",
+            "state": "主买",
+            "price": "12.70",
+            "volume": 813,
+            "amount": "103.25"
+        },
+        {
+            "created_at": "09:52:23",
+            "state": "主买",
+            "price": "12.70",
+            "volume": 515,
+            "amount": "65.41"
+        },
+        {
+            "created_at": "09:52:16",
+            "state": "被卖",
+            "price": "12.70",
+            "volume": 300,
+            "amount": "38.10"
+        },
+        {
+            "created_at": "09:52:07",
+            "state": "主卖",
+            "price": "12.69",
+            "volume": 390,
+            "amount": "49.49"
+        },
+        {
+            "created_at": "09:52:04",
+            "state": "被卖",
+            "price": "12.70",
+            "volume": 827,
+            "amount": "105.03"
+        },
+        {
+            "created_at": "09:52:03",
+            "state": "被卖",
+            "price": "12.70",
+            "volume": 246,
+            "amount": "31.24"
+        },
+        {
+            "created_at": "09:52:01",
+            "state": "被卖",
+            "price": "12.70",
+            "volume": 440,
+            "amount": "55.88"
+        },
+        {
+            "created_at": "09:52:00",
+            "state": "被卖",
+            "price": "12.70",
+            "volume": 371,
+            "amount": "47.12"
+        },
+        {
+            "created_at": "09:51:58",
+            "state": "主买",
+            "price": "12.70",
+            "volume": 3079,
+            "amount": "391.03"
+        },
+        {
+            "created_at": "09:51:41",
+            "state": "主买",
+            "price": "12.70",
+            "volume": 337,
+            "amount": "42.80"
+        },
+        {
+            "created_at": "09:51:39",
+            "state": "被买",
+            "price": "12.69",
+            "volume": 395,
+            "amount": "50.13"
+        },
+        {
+            "created_at": "09:51:38",
+            "state": "被卖",
+            "price": "12.70",
+            "volume": 245,
+            "amount": "31.11"
+        },
+        {
+            "created_at": "09:51:36",
+            "state": "主买",
+            "price": "12.70",
+            "volume": 288,
+            "amount": "36.58"
+        },
+        {
+            "created_at": "09:51:36",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 820,
+            "amount": "104.06"
+        },
+        {
+            "created_at": "09:51:35",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 1996,
+            "amount": "253.29"
+        },
+        {
+            "created_at": "09:51:28",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 395,
+            "amount": "50.13"
+        },
+        {
+            "created_at": "09:51:21",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 972,
+            "amount": "123.25"
+        },
+        {
+            "created_at": "09:51:18",
+            "state": "被买",
+            "price": "12.68",
+            "volume": 269,
+            "amount": "34.11"
+        },
+        {
+            "created_at": "09:51:14",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 269,
+            "amount": "34.11"
+        },
+        {
+            "created_at": "09:50:38",
+            "state": "主买",
+            "price": "12.67",
+            "volume": 282,
+            "amount": "35.73"
+        },
+        {
+            "created_at": "09:50:24",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 4032,
+            "amount": "511.35"
+        },
+        {
+            "created_at": "09:50:24",
+            "state": "主买",
+            "price": "12.67",
+            "volume": 379,
+            "amount": "48.02"
+        },
+        {
+            "created_at": "09:50:23",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 2087,
+            "amount": "264.42"
+        },
+        {
+            "created_at": "09:50:22",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 2183,
+            "amount": "276.80"
+        },
+        {
+            "created_at": "09:49:58",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 1000,
+            "amount": "126.90"
+        },
+        {
+            "created_at": "09:49:57",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 275,
+            "amount": "34.87"
+        },
+        {
+            "created_at": "09:49:46",
+            "state": "被卖",
+            "price": "12.68",
+            "volume": 750,
+            "amount": "95.10"
+        },
+        {
+            "created_at": "09:49:44",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 264,
+            "amount": "33.48"
+        },
+        {
+            "created_at": "09:49:41",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 500,
+            "amount": "63.40"
+        },
+        {
+            "created_at": "09:49:38",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 257,
+            "amount": "32.59"
+        },
+        {
+            "created_at": "09:49:29",
+            "state": "被卖",
+            "price": "12.68",
+            "volume": 315,
+            "amount": "39.94"
+        },
+        {
+            "created_at": "09:49:22",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 1992,
+            "amount": "252.59"
+        },
+        {
+            "created_at": "09:49:16",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 360,
+            "amount": "45.65"
+        },
+        {
+            "created_at": "09:49:07",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 497,
+            "amount": "63.07"
+        },
+        {
+            "created_at": "09:49:02",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 470,
+            "amount": "59.64"
+        },
+        {
+            "created_at": "09:48:49",
+            "state": "被卖",
+            "price": "12.68",
+            "volume": 1360,
+            "amount": "172.45"
+        },
+        {
+            "created_at": "09:48:49",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 719,
+            "amount": "91.17"
+        },
+        {
+            "created_at": "09:48:48",
+            "state": "被卖",
+            "price": "12.68",
+            "volume": 293,
+            "amount": "37.15"
+        },
+        {
+            "created_at": "09:48:48",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 1228,
+            "amount": "155.71"
+        },
+        {
+            "created_at": "09:48:42",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 896,
+            "amount": "113.52"
+        },
+        {
+            "created_at": "09:48:41",
+            "state": "主买",
+            "price": "12.67",
+            "volume": 403,
+            "amount": "51.06"
+        },
+        {
+            "created_at": "09:48:41",
+            "state": "被卖",
+            "price": "12.67",
+            "volume": 1016,
+            "amount": "128.73"
+        },
+        {
+            "created_at": "09:48:34",
+            "state": "主买",
+            "price": "12.67",
+            "volume": 256,
+            "amount": "32.44"
+        },
+        {
+            "created_at": "09:48:09",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 960,
+            "amount": "121.63"
+        },
+        {
+            "created_at": "09:48:08",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 2000,
+            "amount": "253.60"
+        },
+        {
+            "created_at": "09:48:04",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 2645,
+            "amount": "335.12"
+        },
+        {
+            "created_at": "09:48:04",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 780,
+            "amount": "98.83"
+        },
+        {
+            "created_at": "09:47:45",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 300,
+            "amount": "38.04"
+        },
+        {
+            "created_at": "09:47:24",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 300,
+            "amount": "38.01"
+        },
+        {
+            "created_at": "09:47:07",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 1446,
+            "amount": "183.21"
+        },
+        {
+            "created_at": "09:47:03",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 294,
+            "amount": "37.28"
+        },
+        {
+            "created_at": "09:46:57",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 981,
+            "amount": "124.49"
+        },
+        {
+            "created_at": "09:46:56",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 400,
+            "amount": "50.76"
+        },
+        {
+            "created_at": "09:46:56",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 282,
+            "amount": "35.78"
+        },
+        {
+            "created_at": "09:46:56",
+            "state": "主卖",
+            "price": "12.67",
+            "volume": 1446,
+            "amount": "183.22"
+        },
+        {
+            "created_at": "09:46:52",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 1000,
+            "amount": "126.80"
+        },
+        {
+            "created_at": "09:46:50",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 399,
+            "amount": "50.63"
+        },
+        {
+            "created_at": "09:46:41",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 500,
+            "amount": "63.45"
+        },
+        {
+            "created_at": "09:46:41",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 276,
+            "amount": "35.00"
+        },
+        {
+            "created_at": "09:46:34",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 1834,
+            "amount": "232.73"
+        },
+        {
+            "created_at": "09:46:34",
+            "state": "被卖",
+            "price": "12.68",
+            "volume": 264,
+            "amount": "33.48"
+        },
+        {
+            "created_at": "09:46:32",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 551,
+            "amount": "69.87"
+        },
+        {
+            "created_at": "09:46:30",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 487,
+            "amount": "61.80"
+        },
+        {
+            "created_at": "09:46:27",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 1024,
+            "amount": "129.84"
+        },
+        {
+            "created_at": "09:46:21",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 500,
+            "amount": "63.40"
+        },
+        {
+            "created_at": "09:46:16",
+            "state": "主卖",
+            "price": "12.68",
+            "volume": 420,
+            "amount": "53.26"
+        },
+        {
+            "created_at": "09:46:06",
+            "state": "主买",
+            "price": "12.69",
+            "volume": 735,
+            "amount": "93.27"
+        },
+        {
+            "created_at": "09:46:00",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 1783,
+            "amount": "226.08"
+        },
+        {
+            "created_at": "09:46:00",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 244,
+            "amount": "30.94"
+        },
+        {
+            "created_at": "09:46:00",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 1629,
+            "amount": "206.56"
+        },
+        {
+            "created_at": "09:46:00",
+            "state": "被卖",
+            "price": "12.68",
+            "volume": 617,
+            "amount": "78.24"
+        },
+        {
+            "created_at": "09:46:00",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 2287,
+            "amount": "289.99"
+        },
+        {
+            "created_at": "09:45:57",
+            "state": "主买",
+            "price": "12.68",
+            "volume": 255,
+            "amount": "32.33"
+        },
+        {
+            "created_at": "09:45:54",
+            "state": "主买",
+            "price": "12.67",
+            "volume": 1990,
+            "amount": "252.13"
+        },
+        {
+            "created_at": "09:45:54",
+            "state": "被卖",
+            "price": "12.67",
+            "volume": 447,
+            "amount": "56.63"
+        },
+        {
+            "created_at": "09:45:52",
+            "state": "主买",
+            "price": "12.67",
+            "volume": 291,
+            "amount": "36.87"
+        },
+        {
+            "created_at": "09:45:46",
+            "state": "主买",
+            "price": "12.67",
+            "volume": 325,
+            "amount": "41.18"
+        },
+        {
+            "created_at": "09:45:27",
+            "state": "主买",
+            "price": "12.67",
+            "volume": 273,
+            "amount": "34.59"
+        },
+        {
+            "created_at": "09:45:26",
+            "state": "主买",
+            "price": "12.66",
+            "volume": 1007,
+            "amount": "127.49"
+        },
+        {
+            "created_at": "09:45:26",
+            "state": "主买",
+            "price": "12.66",
+            "volume": 2212,
+            "amount": "280.05"
+        },
+        {
+            "created_at": "09:45:26",
+            "state": "主买",
+            "price": "12.66",
+            "volume": 401,
+            "amount": "50.77"
+        },
+        {
+            "created_at": "09:45:23",
+            "state": "主买",
+            "price": "12.66",
+            "volume": 382,
+            "amount": "48.36"
+        },
+        {
+            "created_at": "09:45:21",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 1000,
+            "amount": "126.50"
+        },
+        {
+            "created_at": "09:45:00",
+            "state": "主买",
+            "price": "12.65",
+            "volume": 2084,
+            "amount": "263.63"
+        },
+        {
+            "created_at": "09:45:00",
+            "state": "主买",
+            "price": "12.65",
+            "volume": 2274,
+            "amount": "287.66"
+        },
+        {
+            "created_at": "09:45:00",
+            "state": "被卖",
+            "price": "12.65",
+            "volume": 366,
+            "amount": "46.30"
+        },
+        {
+            "created_at": "09:44:57",
+            "state": "被卖",
+            "price": "12.65",
+            "volume": 295,
+            "amount": "37.32"
+        },
+        {
+            "created_at": "09:44:21",
+            "state": "被买",
+            "price": "12.64",
+            "volume": 393,
+            "amount": "49.68"
+        },
+        {
+            "created_at": "09:44:08",
+            "state": "主卖",
+            "price": "12.64",
+            "volume": 1806,
+            "amount": "228.28"
+        },
+        {
+            "created_at": "09:43:40",
+            "state": "主买",
+            "price": "12.65",
+            "volume": 289,
+            "amount": "36.56"
+        },
+        {
+            "created_at": "09:43:32",
+            "state": "主卖",
+            "price": "12.64",
+            "volume": 239,
+            "amount": "30.21"
+        },
+        {
+            "created_at": "09:43:25",
+            "state": "被卖",
+            "price": "12.64",
+            "volume": 337,
+            "amount": "42.60"
+        },
+        {
+            "created_at": "09:43:24",
+            "state": "主买",
+            "price": "12.64",
+            "volume": 267,
+            "amount": "33.75"
+        },
+        {
+            "created_at": "09:43:24",
+            "state": "主买",
+            "price": "12.64",
+            "volume": 250,
+            "amount": "31.60"
+        },
+        {
+            "created_at": "09:43:24",
+            "state": "被卖",
+            "price": "12.64",
+            "volume": 598,
+            "amount": "75.59"
+        },
+        {
+            "created_at": "09:43:08",
+            "state": "主买",
+            "price": "12.63",
+            "volume": 853,
+            "amount": "107.73"
+        },
+        {
+            "created_at": "09:43:08",
+            "state": "主买",
+            "price": "12.63",
+            "volume": 609,
+            "amount": "76.92"
+        },
+        {
+            "created_at": "09:42:21",
+            "state": "被卖",
+            "price": "12.62",
+            "volume": 289,
+            "amount": "36.47"
+        },
+        {
+            "created_at": "09:42:12",
+            "state": "主买",
+            "price": "12.62",
+            "volume": 340,
+            "amount": "42.91"
+        },
+        {
+            "created_at": "09:42:12",
+            "state": "被卖",
+            "price": "12.62",
+            "volume": 332,
+            "amount": "41.90"
+        },
+        {
+            "created_at": "09:41:48",
+            "state": "主卖",
+            "price": "12.62",
+            "volume": 691,
+            "amount": "87.20"
+        },
+        {
+            "created_at": "09:41:27",
+            "state": "主买",
+            "price": "12.63",
+            "volume": 250,
+            "amount": "31.57"
+        },
+        {
+            "created_at": "09:40:50",
+            "state": "被卖",
+            "price": "12.61",
+            "volume": 243,
+            "amount": "30.64"
+        },
+        {
+            "created_at": "09:40:50",
+            "state": "主买",
+            "price": "12.61",
+            "volume": 948,
+            "amount": "119.54"
+        },
+        {
+            "created_at": "09:40:50",
+            "state": "被卖",
+            "price": "12.61",
+            "volume": 670,
+            "amount": "84.49"
+        },
+        {
+            "created_at": "09:40:50",
+            "state": "主买",
+            "price": "12.61",
+            "volume": 261,
+            "amount": "32.91"
+        },
+        {
+            "created_at": "09:40:03",
+            "state": "主卖",
+            "price": "12.60",
+            "volume": 500,
+            "amount": "63.02"
+        },
+        {
+            "created_at": "09:40:01",
+            "state": "主买",
+            "price": "12.61",
+            "volume": 1645,
+            "amount": "207.43"
+        },
+        {
+            "created_at": "09:39:16",
+            "state": "主买",
+            "price": "12.62",
+            "volume": 280,
+            "amount": "35.34"
+        },
+        {
+            "created_at": "09:38:58",
+            "state": "主卖",
+            "price": "12.61",
+            "volume": 450,
+            "amount": "56.74"
+        },
+        {
+            "created_at": "09:38:58",
+            "state": "主卖",
+            "price": "12.61",
+            "volume": 1237,
+            "amount": "155.99"
+        },
+        {
+            "created_at": "09:38:55",
+            "state": "被买",
+            "price": "12.61",
+            "volume": 309,
+            "amount": "38.96"
+        },
+        {
+            "created_at": "09:38:53",
+            "state": "主卖",
+            "price": "12.61",
+            "volume": 298,
+            "amount": "37.58"
+        },
+        {
+            "created_at": "09:38:39",
+            "state": "主买",
+            "price": "12.62",
+            "volume": 310,
+            "amount": "39.12"
+        },
+        {
+            "created_at": "09:38:14",
+            "state": "主买",
+            "price": "12.63",
+            "volume": 976,
+            "amount": "123.27"
+        },
+        {
+            "created_at": "09:38:09",
+            "state": "主卖",
+            "price": "12.63",
+            "volume": 289,
+            "amount": "36.50"
+        },
+        {
+            "created_at": "09:37:48",
+            "state": "主卖",
+            "price": "12.62",
+            "volume": 671,
+            "amount": "84.68"
+        },
+        {
+            "created_at": "09:37:42",
+            "state": "被卖",
+            "price": "12.62",
+            "volume": 293,
+            "amount": "36.98"
+        },
+        {
+            "created_at": "09:37:38",
+            "state": "主卖",
+            "price": "12.61",
+            "volume": 666,
+            "amount": "83.98"
+        },
+        {
+            "created_at": "09:37:35",
+            "state": "主卖",
+            "price": "12.61",
+            "volume": 299,
+            "amount": "37.70"
+        },
+        {
+            "created_at": "09:37:18",
+            "state": "主卖",
+            "price": "12.61",
+            "volume": 363,
+            "amount": "45.77"
+        },
+        {
+            "created_at": "09:37:18",
+            "state": "被买",
+            "price": "12.61",
+            "volume": 246,
+            "amount": "31.02"
+        },
+        {
+            "created_at": "09:36:38",
+            "state": "主卖",
+            "price": "12.61",
+            "volume": 500,
+            "amount": "63.05"
+        },
+        {
+            "created_at": "09:36:06",
+            "state": "主卖",
+            "price": "12.61",
+            "volume": 846,
+            "amount": "106.68"
+        },
+        {
+            "created_at": "09:36:06",
+            "state": "主卖",
+            "price": "12.61",
+            "volume": 248,
+            "amount": "31.27"
+        },
+        {
+            "created_at": "09:35:59",
+            "state": "主卖",
+            "price": "12.62",
+            "volume": 1712,
+            "amount": "216.05"
+        },
+        {
+            "created_at": "09:35:56",
+            "state": "主卖",
+            "price": "12.62",
+            "volume": 300,
+            "amount": "37.86"
+        },
+        {
+            "created_at": "09:35:33",
+            "state": "主买",
+            "price": "12.63",
+            "volume": 400,
+            "amount": "50.52"
+        },
+        {
+            "created_at": "09:35:26",
+            "state": "被买",
+            "price": "12.63",
+            "volume": 1026,
+            "amount": "129.58"
+        },
+        {
+            "created_at": "09:35:26",
+            "state": "被买",
+            "price": "12.63",
+            "volume": 372,
+            "amount": "46.98"
+        },
+        {
+            "created_at": "09:35:26",
+            "state": "主卖",
+            "price": "12.63",
+            "volume": 256,
+            "amount": "32.33"
+        },
+        {
+            "created_at": "09:35:23",
+            "state": "主卖",
+            "price": "12.64",
+            "volume": 372,
+            "amount": "47.02"
+        },
+        {
+            "created_at": "09:35:21",
+            "state": "被买",
+            "price": "12.64",
+            "volume": 287,
+            "amount": "36.28"
+        },
+        {
+            "created_at": "09:35:21",
+            "state": "主卖",
+            "price": "12.64",
+            "volume": 532,
+            "amount": "67.24"
+        },
+        {
+            "created_at": "09:34:55",
+            "state": "被卖",
+            "price": "12.65",
+            "volume": 274,
+            "amount": "34.66"
+        },
+        {
+            "created_at": "09:34:54",
+            "state": "被卖",
+            "price": "12.65",
+            "volume": 296,
+            "amount": "37.44"
+        },
+        {
+            "created_at": "09:34:31",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 987,
+            "amount": "124.86"
+        },
+        {
+            "created_at": "09:34:31",
+            "state": "被卖",
+            "price": "12.66",
+            "volume": 484,
+            "amount": "61.27"
+        },
+        {
+            "created_at": "09:34:29",
+            "state": "被卖",
+            "price": "12.66",
+            "volume": 257,
+            "amount": "32.54"
+        },
+        {
+            "created_at": "09:34:24",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 953,
+            "amount": "120.55"
+        },
+        {
+            "created_at": "09:33:57",
+            "state": "主买",
+            "price": "12.66",
+            "volume": 477,
+            "amount": "60.39"
+        },
+        {
+            "created_at": "09:33:55",
+            "state": "被卖",
+            "price": "12.65",
+            "volume": 288,
+            "amount": "36.43"
+        },
+        {
+            "created_at": "09:33:55",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 1508,
+            "amount": "190.76"
+        },
+        {
+            "created_at": "09:33:45",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 341,
+            "amount": "43.14"
+        },
+        {
+            "created_at": "09:33:09",
+            "state": "被卖",
+            "price": "12.66",
+            "volume": 641,
+            "amount": "81.15"
+        },
+        {
+            "created_at": "09:33:08",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 774,
+            "amount": "97.91"
+        },
+        {
+            "created_at": "09:33:08",
+            "state": "主卖",
+            "price": "12.65",
+            "volume": 943,
+            "amount": "119.29"
+        },
+        {
+            "created_at": "09:33:08",
+            "state": "被买",
+            "price": "12.65",
+            "volume": 266,
+            "amount": "33.65"
+        },
+        {
+            "created_at": "09:33:06",
+            "state": "主买",
+            "price": "12.65",
+            "volume": 1280,
+            "amount": "161.92"
+        },
+        {
+            "created_at": "09:33:06",
+            "state": "主买",
+            "price": "12.65",
+            "volume": 862,
+            "amount": "109.05"
+        },
+        {
+            "created_at": "09:33:06",
+            "state": "被卖",
+            "price": "12.65",
+            "volume": 3470,
+            "amount": "439.08"
+        },
+        {
+            "created_at": "09:33:06",
+            "state": "主买",
+            "price": "12.65",
+            "volume": 2292,
+            "amount": "289.94"
+        },
+        {
+            "created_at": "09:33:06",
+            "state": "主买",
+            "price": "12.64",
+            "volume": 1524,
+            "amount": "192.63"
+        },
+        {
+            "created_at": "09:33:02",
+            "state": "主买",
+            "price": "12.64",
+            "volume": 290,
+            "amount": "36.66"
+        },
+        {
+            "created_at": "09:32:57",
+            "state": "主买",
+            "price": "12.64",
+            "volume": 1000,
+            "amount": "126.40"
+        },
+        {
+            "created_at": "09:32:56",
+            "state": "主卖",
+            "price": "12.63",
+            "volume": 300,
+            "amount": "37.89"
+        },
+        {
+            "created_at": "09:32:51",
+            "state": "主买",
+            "price": "12.64",
+            "volume": 1631,
+            "amount": "206.11"
+        },
+        {
+            "created_at": "09:32:50",
+            "state": "被卖",
+            "price": "12.63",
+            "volume": 373,
+            "amount": "47.23"
+        },
+        {
+            "created_at": "09:32:42",
+            "state": "主卖",
+            "price": "12.63",
+            "volume": 383,
+            "amount": "48.37"
+        },
+        {
+            "created_at": "09:32:42",
+            "state": "被买",
+            "price": "12.63",
+            "volume": 601,
+            "amount": "75.91"
+        },
+        {
+            "created_at": "09:32:29",
+            "state": "主卖",
+            "price": "12.64",
+            "volume": 600,
+            "amount": "75.84"
+        },
+        {
+            "created_at": "09:32:13",
+            "state": "主买",
+            "price": "12.65",
+            "volume": 304,
+            "amount": "38.46"
+        },
+        {
+            "created_at": "09:31:51",
+            "state": "主买",
+            "price": "12.65",
+            "volume": 1629,
+            "amount": "206.07"
+        },
+        {
+            "created_at": "09:31:41",
+            "state": "主卖",
+            "price": "12.64",
+            "volume": 1058,
+            "amount": "133.85"
+        },
+        {
+            "created_at": "09:31:41",
+            "state": "主买",
+            "price": "12.64",
+            "volume": 445,
+            "amount": "56.25"
+        },
+        {
+            "created_at": "09:31:39",
+            "state": "被卖",
+            "price": "12.64",
+            "volume": 300,
+            "amount": "37.92"
+        },
+        {
+            "created_at": "09:31:39",
+            "state": "主买",
+            "price": "12.64",
+            "volume": 1283,
+            "amount": "162.18"
+        },
+        {
+            "created_at": "09:31:39",
+            "state": "被卖",
+            "price": "12.64",
+            "volume": 715,
+            "amount": "90.50"
+        },
+        {
+            "created_at": "09:31:27",
+            "state": "被买",
+            "price": "12.63",
+            "volume": 385,
+            "amount": "48.63"
+        },
+        {
+            "created_at": "09:31:19",
+            "state": "被卖",
+            "price": "12.63",
+            "volume": 288,
+            "amount": "36.37"
+        },
+        {
+            "created_at": "09:31:12",
+            "state": "主买",
+            "price": "12.64",
+            "volume": 267,
+            "amount": "33.75"
+        },
+        {
+            "created_at": "09:31:04",
+            "state": "主卖",
+            "price": "12.63",
+            "volume": 343,
+            "amount": "43.32"
+        },
+        {
+            "created_at": "09:31:00",
+            "state": "主卖",
+            "price": "12.62",
+            "volume": 374,
+            "amount": "47.20"
+        },
+        {
+            "created_at": "09:30:54",
+            "state": "主买",
+            "price": "12.63",
+            "volume": 454,
+            "amount": "57.36"
+        },
+        {
+            "created_at": "09:30:54",
+            "state": "被卖",
+            "price": "12.63",
+            "volume": 300,
+            "amount": "37.89"
+        },
+        {
+            "created_at": "09:30:49",
+            "state": "被买",
+            "price": "12.62",
+            "volume": 315,
+            "amount": "39.75"
+        },
+        {
+            "created_at": "09:30:36",
+            "state": "主买",
+            "price": "12.61",
+            "volume": 465,
+            "amount": "58.64"
+        },
+        {
+            "created_at": "09:30:34",
+            "state": "主买",
+            "price": "12.61",
+            "volume": 400,
+            "amount": "50.44"
+        },
+        {
+            "created_at": "09:30:33",
+            "state": "被卖",
+            "price": "12.61",
+            "volume": 380,
+            "amount": "47.92"
+        },
+        {
+            "created_at": "09:30:30",
+            "state": "主买",
+            "price": "12.63",
+            "volume": 858,
+            "amount": "108.40"
+        },
+        {
+            "created_at": "09:30:30",
+            "state": "主卖",
+            "price": "12.61",
+            "volume": 627,
+            "amount": "79.06"
+        },
+        {
+            "created_at": "09:30:30",
+            "state": "主卖",
+            "price": "12.61",
+            "volume": 669,
+            "amount": "84.38"
+        },
+        {
+            "created_at": "09:30:30",
+            "state": "主卖",
+            "price": "12.62",
+            "volume": 446,
+            "amount": "56.29"
+        },
+        {
+            "created_at": "09:30:15",
+            "state": "被卖",
+            "price": "12.65",
+            "volume": 247,
+            "amount": "31.25"
+        },
+        {
+            "created_at": "09:30:15",
+            "state": "主买",
+            "price": "12.63",
+            "volume": 366,
+            "amount": "46.23"
+        },
+        {
+            "created_at": "09:30:13",
+            "state": "被卖",
+            "price": "12.62",
+            "volume": 743,
+            "amount": "93.89"
+        },
+        {
+            "created_at": "09:30:12",
+            "state": "主买",
+            "price": "12.62",
+            "volume": 632,
+            "amount": "79.76"
+        },
+        {
+            "created_at": "09:30:12",
+            "state": "被卖",
+            "price": "12.62",
+            "volume": 245,
+            "amount": "30.92"
+        },
+        {
+            "created_at": "09:30:12",
+            "state": "被卖",
+            "price": "12.62",
+            "volume": 278,
+            "amount": "35.08"
+        },
+        {
+            "created_at": "09:30:12",
+            "state": "被卖",
+            "price": "12.62",
+            "volume": 327,
+            "amount": "41.27"
+        },
+        {
+            "created_at": "09:30:11",
+            "state": "主卖",
+            "price": "12.62",
+            "volume": 529,
+            "amount": "66.76"
+        },
+        {
+            "created_at": "09:30:10",
+            "state": "主卖",
+            "price": "12.63",
+            "volume": 337,
+            "amount": "42.57"
+        },
+        {
+            "created_at": "09:30:10",
+            "state": "主卖",
+            "price": "12.64",
+            "volume": 563,
+            "amount": "71.16"
+        },
+        {
+            "created_at": "09:30:10",
+            "state": "主卖",
+            "price": "12.64",
+            "volume": 662,
+            "amount": "83.68"
+        },
+        {
+            "created_at": "09:30:09",
+            "state": "主买",
+            "price": "12.64",
+            "volume": 425,
+            "amount": "53.72"
+        },
+        {
+            "created_at": "09:30:09",
+            "state": "主买",
+            "price": "12.64",
+            "volume": 290,
+            "amount": "36.66"
+        },
+        {
+            "created_at": "09:30:09",
+            "state": "被卖",
+            "price": "12.64",
+            "volume": 275,
+            "amount": "34.88"
+        },
+        {
+            "created_at": "09:30:09",
+            "state": "主买",
+            "price": "12.64",
+            "volume": 326,
+            "amount": "41.21"
+        },
+        {
+            "created_at": "09:30:09",
+            "state": "被卖",
+            "price": "12.64",
+            "volume": 399,
+            "amount": "50.55"
+        },
+        {
+            "created_at": "09:30:04",
+            "state": "主卖",
+            "price": "12.61",
+            "volume": 388,
+            "amount": "48.93"
+        },
+        {
+            "created_at": "09:30:03",
+            "state": "主买",
+            "price": "12.64",
+            "volume": 273,
+            "amount": "34.51"
+        },
+        {
+            "created_at": "09:30:03",
+            "state": "被卖",
+            "price": "12.63",
+            "volume": 977,
+            "amount": "123.52"
+        },
+        {
+            "created_at": "09:30:02",
+            "state": "主卖",
+            "price": "12.62",
+            "volume": 977,
+            "amount": "123.44"
+        },
+        {
+            "created_at": "09:30:01",
+            "state": "被买",
+            "price": "12.63",
+            "volume": 272,
+            "amount": "34.36"
+        },
+        {
+            "created_at": "09:30:00",
+            "state": "主卖",
+            "price": "12.63",
+            "volume": 729,
+            "amount": "92.19"
+        },
+        {
+            "created_at": "09:30:00",
+            "state": "被买",
+            "price": "12.63",
+            "volume": 577,
+            "amount": "72.88"
+        },
+        {
+            "created_at": "09:30:00",
+            "state": "主买",
+            "price": "12.64",
+            "volume": 630,
+            "amount": "79.63"
+        },
+        {
+            "created_at": "09:30:00",
+            "state": "主买",
+            "price": "12.63",
+            "volume": 626,
+            "amount": "79.06"
+        },
+        {
+            "created_at": "09:30:00",
+            "state": "主买",
+            "price": "12.63",
+            "volume": 501,
+            "amount": "63.28"
+        },
+        {
+            "created_at": "09:30:00",
+            "state": "主买",
+            "price": "12.63",
+            "volume": 626,
+            "amount": "79.06"
+        },
+        {
+            "created_at": "09:30:00",
+            "state": "主卖",
+            "price": "12.62",
+            "volume": 651,
+            "amount": "82.16"
+        },
+        {
+            "created_at": "09:30:00",
+            "state": "被买",
+            "price": "12.62",
+            "volume": 402,
+            "amount": "50.73"
+        },
+        {
+            "created_at": "09:30:00",
+            "state": "主买",
+            "price": "12.63",
+            "volume": 286,
+            "amount": "36.12"
+        },
+        {
+            "created_at": "09:30:00",
+            "state": "主卖",
+            "price": "12.62",
+            "volume": 702,
+            "amount": "88.59"
+        },
+        {
+            "created_at": "09:30:00",
+            "state": "主卖",
+            "price": "12.62",
+            "volume": 361,
+            "amount": "45.56"
+        },
+        {
+            "created_at": "09:30:00",
+            "state": "主卖",
+            "price": "12.62",
+            "volume": 510,
+            "amount": "64.36"
+        },
+        {
+            "created_at": "09:30:00",
+            "state": "被卖",
+            "price": "12.61",
+            "volume": 710,
+            "amount": "89.53"
+        },
+        {
+            "created_at": "09:30:00",
+            "state": "被卖",
+            "price": "12.61",
+            "volume": 387,
+            "amount": "48.80"
+        },
+        {
+            "created_at": "09:30:00",
+            "state": "被卖",
+            "price": "12.62",
+            "volume": 1073,
+            "amount": "135.41"
+        },
+        {
+            "created_at": "09:30:00",
+            "state": "被卖",
+            "price": "12.62",
+            "volume": 405,
+            "amount": "51.11"
+        },
+        {
+            "created_at": "09:30:00",
+            "state": "主卖",
+            "price": "12.61",
+            "volume": 500,
+            "amount": "63.05"
+        },
+        {
+            "created_at": "09:30:00",
+            "state": "主卖",
+            "price": "12.62",
+            "volume": 5549,
+            "amount": "700.28"
+        },
+        {
+            "created_at": "09:25:00",
+            "state": "被买",
+            "price": "12.62",
+            "volume": 1219,
+            "amount": "153.84"
+        },
+        {
+            "created_at": "09:25:00",
+            "state": "被卖",
+            "price": "12.62",
+            "volume": 291,
+            "amount": "36.72"
+        },
+        {
+            "created_at": "09:25:00",
+            "state": "被卖",
+            "price": "12.62",
+            "volume": 258,
+            "amount": "32.56"
+        },
+        {
+            "created_at": "09:25:00",
+            "state": "被买",
+            "price": "12.62",
+            "volume": 308,
+            "amount": "38.87"
+        },
+        {
+            "created_at": "09:25:00",
+            "state": "主买",
+            "price": "12.62",
+            "volume": 2139,
+            "amount": "269.94"
+        },
+        {
+            "created_at": "09:25:00",
+            "state": "主卖",
+            "price": "12.62",
+            "volume": 394,
+            "amount": "49.72"
+        },
+        {
+            "created_at": "09:25:00",
+            "state": "主买",
+            "price": "12.62",
+            "volume": 320,
+            "amount": "40.38"
+        }
+    ]
+}

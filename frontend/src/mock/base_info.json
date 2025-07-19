@@ -1,0 +1,17 @@
+{
+    "code": 0,
+    "msg": "操作成功",
+    "data": {
+        "code": "000001",
+        "currentAmount": "15.74",
+        "currentVolume": "124.12",
+        "highPrice": "12.75",
+        "latestPrice": "12.70",
+        "lowPrice": "12.60",
+        "name": "平安银行",
+        "openPrice": "12.62",
+        "prevClosePrice": "12.59",
+        "priceStat": "-",
+        "zhangFu": "0.87"
+    }
+}

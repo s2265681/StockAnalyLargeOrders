@@ -21,7 +21,7 @@ const Home = () => {
           <Title level={1} style={{ color: '#ffffff', marginBottom: '16px' }}>
             📈 股票大单数据分析平台
           </Title>
-          <Paragraph style={{ fontSize: '18px', color: '#888', maxWidth: '600px', margin: '0 auto' }}>
+          <Paragraph style={{ fontSize: '18px', color: '#fff', maxWidth: '600px', margin: '0 auto' }}>
             专业的股票大单数据实时分析工具，帮您精准把握市场资金流向，捕捉主力动向
           </Paragraph>
         </div>
@@ -40,7 +40,7 @@ const Home = () => {
             >
               <LineChartOutlined style={{ fontSize: '48px', color: '#1890ff', marginBottom: '16px' }} />
               <Title level={4} style={{ color: '#ffffff', marginBottom: '8px' }}>实时分时图</Title>
-              <Paragraph style={{ color: '#888' }}>
+              <Paragraph style={{ color: '#fff' }}>
                 实时展示股票价格走势、成交量变化，支持主力线和散户线分析
               </Paragraph>
             </Card>
@@ -57,7 +57,7 @@ const Home = () => {
             >
               <DollarOutlined style={{ fontSize: '48px', color: '#52c41a', marginBottom: '16px' }} />
               <Title level={4} style={{ color: '#ffffff', marginBottom: '8px' }}>大单监控</Title>
-              <Paragraph style={{ color: '#888' }}>
+              <Paragraph style={{ color: '#fff' }}>
                 监控30万以上大单交易，自动分级统计，掌握主力资金动向
               </Paragraph>
             </Card>
@@ -74,7 +74,7 @@ const Home = () => {
             >
               <BarChartOutlined style={{ fontSize: '48px', color: '#faad14', marginBottom: '16px' }} />
               <Title level={4} style={{ color: '#ffffff', marginBottom: '8px' }}>资金流向</Title>
-              <Paragraph style={{ color: '#888' }}>
+              <Paragraph style={{ color: '#fff' }}>
                 实时计算买卖资金流向，净流入统计，买卖力量对比分析
               </Paragraph>
             </Card>
@@ -91,7 +91,7 @@ const Home = () => {
             >
               <SearchOutlined style={{ fontSize: '48px', color: '#ff4d4f', marginBottom: '16px' }} />
               <Title level={4} style={{ color: '#ffffff', marginBottom: '8px' }}>智能搜索</Title>
-              <Paragraph style={{ color: '#888' }}>
+              <Paragraph style={{ color: '#fff' }}>
                 支持股票代码、名称快速搜索，智能提示，一键跳转分析
               </Paragraph>
             </Card>
@@ -111,7 +111,7 @@ const Home = () => {
             <Title level={3} style={{ color: '#ffffff', marginBottom: '20px' }}>
               立即开始股票分析
             </Title>
-            <Paragraph style={{ color: '#888', marginBottom: '30px' }}>
+            <Paragraph style={{ color: '#fff', marginBottom: '30px' }}>
               输入股票代码或名称，开始您的专业级股票大单分析之旅
             </Paragraph>
             <Button 
@@ -159,7 +159,7 @@ const Home = () => {
               }}
               headStyle={{ color: '#ffffff', borderBottomColor: '#333' }}
             >
-              <Space direction="vertical" style={{ width: '100%', color: '#888' }}>
+              <Space direction="vertical" style={{ width: '100%', color: '#fff' }}>
                 <div>分时数据：每分钟更新</div>
                 <div>大单数据：实时推送</div>
                 <div>基础信息：每30秒刷新</div>
@@ -176,7 +176,7 @@ const Home = () => {
               }}
               headStyle={{ color: '#ffffff', borderBottomColor: '#333' }}
             >
-              <Space direction="vertical" style={{ width: '100%', color: '#888' }}>
+              <Space direction="vertical" style={{ width: '100%', color: '#fff' }}>
                 <div>支持A股全市场股票</div>
                 <div>多维度数据筛选</div>
                 <div>可视化图表分析</div>

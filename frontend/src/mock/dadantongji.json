@@ -1,0 +1,28 @@
+{
+    "code": 0,
+    "msg": "操作成功",
+    "data": {
+        "buy_nums_300": "14",
+        "buy_amount_300": "6421.96",
+        "sell_nums_300": "18",
+        "sell_amount_300": "8728.58",
+        "buy_nums_100": "130",
+        "buy_amount_100": "21490.85",
+        "sell_nums_100": "104",
+        "sell_amount_100": "18075.28",
+        "buy_nums_50": "144",
+        "buy_amount_50": "9851.79",
+        "sell_nums_50": "144",
+        "sell_amount_50": "9744.87",
+        "buy_nums_below_50": "6946",
+        "buy_amount_below_50": "33786.10",
+        "sell_nums_below_50": "6867",
+        "sell_amount_below_50": "31624.75",
+        "total_buy_amount": "78121.82",
+        "total_sell_amount": "79295.87",
+        "buy_nums_30": "225",
+        "buy_amount_30": "8570.45",
+        "sell_nums_30": "236",
+        "sell_amount_30": "9104.05"
+    }
+}

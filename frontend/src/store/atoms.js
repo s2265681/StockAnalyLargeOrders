@@ -1,5 +1,6 @@
 import { atom } from 'jotai';
 import { apiRequest, getEnvironmentInfo } from '../config/api.js';
+import quote from '../mock/quote.json'
 
 // 股票代码原子
 export const stockCodeAtom = atom('603001');
@@ -38,7 +39,6 @@ export const fetchStockBasicAtom = atom(
     try {
       const today = new Date().toISOString().split('T')[0];
       const data = await apiRequest(`/api/v1/base_info?code=${code}&dt=${today}`);
-      
       if (data.success === true && data.data) {
         // 转换竞品接口格式为前端期望格式
         const baseInfo = data.data;
@@ -65,7 +65,6 @@ export const fetchStockBasicAtom = atom(
           market_status: baseInfo.market_status,
           data_source: 'competitor_api'
         };
-        
         set(stockBasicDataAtom, convertedData);
       } else {
         set(errorAtom, data.message || '获取基础数据失败');
@@ -195,46 +194,65 @@ const determineCategory = (amount) => {
 export const fetchTimeshareDataAtom = atom(
   null,
   async (get, set, code) => {
+    console.log('🔄 fetchTimeshareDataAtom 被调用，股票代码:', code);
     set(loadingAtom, true);
     set(errorAtom, null);
     
     try {
       const today = new Date().toISOString().split('T')[0];
-      const data = await apiRequest(`/api/v1/quote?code=${code}&dt=${today}`);
+      console.log('📅 请求日期:', today);
       
-      if (data.success === true && data.data) {
-        // 转换为前端期望的格式
-        const quoteData = data.data;
+      // 注释掉实际的 API 调用，直接使用 mock 数据
+      // const data = await apiRequest(`/api/v1/quote?code=${code}&dt=${today}`);
+      
+      console.log('📊 使用 mock 数据');
+      console.log('📊 Mock 数据结构:', Object.keys(quote.data || {}));
+      console.log('📊 Mock 数据样本:', {
+        fenshi: quote.data?.fenshi?.slice(0, 3),
+        zhuli: quote.data?.zhuli?.slice(0, 3),
+        sanhu: quote.data?.sanhu?.slice(0, 3),
+        volume: quote.data?.volume?.slice(0, 3)
+      });
+      
+      // 通过mock 数据展示 
+      set(timeshareDataAtom, quote.data);
+      console.log('✅ Mock 数据已设置到 timeshareDataAtom');
+      
+      // if (data.success === true && data.data) {
+      //   // 转换为前端期望的格式
+      //   const quoteData = data.data;
         
-        // 处理分时数据
-        const timeshareArray = Array.isArray(quoteData.timeshare) ? quoteData.timeshare : [];
+      //   // 处理分时数据
+      //   const timeshareArray = Array.isArray(quoteData.timeshare) ? quoteData.timeshare : [];
         
-        const timeshareData = {
-          timeshare: timeshareArray.map(item => ({
-            time: item.time,
-            price: parseFloat(item.price),
-            volume: parseInt(item.volume || 0)
-          })),
-          statistics: {
-            current_price: parseFloat(quoteData.current_price || 0),
-            yesterdayClose: parseFloat(quoteData.yesterday_close || 0),
-            change_percent: parseFloat(quoteData.change_percent || 0),
-            change_amount: parseFloat(quoteData.change_amount || 0),
-            high: parseFloat(quoteData.high || 0),
-            low: parseFloat(quoteData.low || 0),
-            volume: parseInt(quoteData.volume || 0),
-            turnover: parseFloat(quoteData.turnover || 0)
-          }
-        };
+      //   const timeshareData = {
+      //     timeshare: timeshareArray.map(item => ({
+      //       time: item.time,
+      //       price: parseFloat(item.price),
+      //       volume: parseInt(item.volume || 0)
+      //     })),
+      //     statistics: {
+      //       current_price: parseFloat(quoteData.current_price || 0),
+      //       yesterdayClose: parseFloat(quoteData.yesterday_close || 0),
+      //       change_percent: parseFloat(quoteData.change_percent || 0),
+      //       change_amount: parseFloat(quoteData.change_amount || 0),
+      //       high: parseFloat(quoteData.high || 0),
+      //       low: parseFloat(quoteData.low || 0),
+      //       volume: parseInt(quoteData.volume || 0),
+      //       turnover: parseFloat(quoteData.turnover || 0)
+      //     }
+      //   };
         
-        set(timeshareDataAtom, timeshareData);
-      } else {
-        set(errorAtom, data.message || '获取分时数据失败');
-      }
+      //   set(timeshareDataAtom, timeshareData);
+      // } else {
+      //   set(errorAtom, data.message || '获取分时数据失败');
+      // }
     } catch (error) {
+      console.error('❌ fetchTimeshareDataAtom 错误:', error);
       set(errorAtom, `获取分时图数据失败: ${error.message}`);
     } finally {
       set(loadingAtom, false);
+      console.log('🏁 fetchTimeshareDataAtom 执行完成');
     }
   }
 );
@@ -284,29 +302,6 @@ const determineOrderSize = (amount) => {
   if (amount >= 1000000) return 'medium';
   return 'small';
 };
-
-// 验证股票数据的异步原子
-export const validateStockDataAtom = atom(
-  null,
-  async (get, set, code) => {
-    set(loadingAtom, true);
-    set(errorAtom, null);
-    
-    try {
-      const data = await apiRequest(`/api/stock/validate?code=${code}`);
-      
-      if (data.code === 200) {
-        set(dataValidationAtom, data.data);
-      } else {
-        set(errorAtom, data.message || '数据验证失败');
-      }
-    } catch (error) {
-      set(errorAtom, `数据验证失败: ${error.message}`);
-    } finally {
-      set(loadingAtom, false);
-    }
-  }
-);
 
 // 环境信息原子 (用于调试)
 export const environmentInfoAtom = atom(getEnvironmentInfo()); 

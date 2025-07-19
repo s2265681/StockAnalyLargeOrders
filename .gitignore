@@ -21,6 +21,7 @@ wheels/
 *.egg
 MANIFEST
 
+
 # Python虚拟环境
 venv/
 env/
@@ -51,6 +52,7 @@ pids
 # 构建产物
 build/
 dist/
+report/
 
 # 日志文件
 logs
@@ -105,3 +107,4 @@ htmlcov/
 *.tar.gz
 *.zip
 *.rar 
+

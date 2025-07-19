@@ -6,9 +6,6 @@ import StockChart from './components/StockChart';
 import StockOrderDetails from './components/StockOrderDetails';
 import { 
   stockCodeAtom, 
-  filterAmountAtom,
-  fetchStockBasicAtom,
-  fetchLargeOrdersAtom,
   fetchTimeshareDataAtom,
   fetchRealtimeDataAtom
 } from '../../store/atoms';
@@ -16,28 +13,25 @@ import {
 const StockDashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [stockCode, setStockCode] = useAtom(stockCodeAtom);
-  const [filterAmount] = useAtom(filterAmountAtom);
-  const [, fetchLargeOrders] = useAtom(fetchLargeOrdersAtom);
   const [, fetchTimeshareData] = useAtom(fetchTimeshareDataAtom);
   const [, fetchRealtimeData] = useAtom(fetchRealtimeDataAtom);
 
-  // 组件初始化时从URL获取股票代码（只执行一次）
-  useEffect(() => {
-    const codeFromUrl = searchParams.get('code');
-    if (codeFromUrl && codeFromUrl !== stockCode) {
-      // 如果URL中有不同的股票代码，使用URL中的代码
-      setStockCode(codeFromUrl);
-    } else if (!codeFromUrl) {
-      // 如果URL中没有代码，将当前代码设置到URL中
-      setSearchParams({ code: stockCode }, { replace: true });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // 只在组件初始化时执行一次
+  // // 组件初始化时从URL获取股票代码（只执行一次）
+  // useEffect(() => {
+  //   const codeFromUrl = searchParams.get('code');
+  //   if (codeFromUrl && codeFromUrl !== stockCode) {
+  //     // 如果URL中有不同的股票代码，使用URL中的代码
+  //     setStockCode(codeFromUrl);
+  //   } else if (!codeFromUrl) {
+  //     // 如果URL中没有代码，将当前代码设置到URL中
+  //     // setSearchParams({ code: stockCode }, { replace: true });
+  //   }
+  // }, []); // 只在组件初始化时执行一次
 
   // 当股票代码改变时更新URL
   const handleStockCodeChange = (newCode) => {
     setStockCode(newCode);
-    setSearchParams({ code: newCode });
+    // setSearchParams({ code: newCode });
   };
 
   // 组件加载时获取数据（不包括大单数据，大单数据由filterAmount变化触发）
@@ -46,7 +40,7 @@ const StockDashboard = () => {
       // 调用分时接口数据
       fetchTimeshareData(stockCode);
     } 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stockCode]); // 只依赖stockCode，避免fetch函数引起的重复调用
 
   // 获取大单数据（处理filterAmount和stockCode变化）
@@ -88,7 +82,7 @@ const StockDashboard = () => {
   // }, [stockCode]); // 只依赖stockCode，避免fetch函数引起的重复调用
 
   return (
-    <div className='stock-dashboard-container' style={{ padding: '24px', backgroundColor: '#141213', minHeight: '100vh' }}>
+    <div className='stock-dashboard-container' style={{ backgroundColor: '#141213', minHeight: '100vh' }}>
       {/* 股票基本信息 */}
       <StockBasicInfo onStockCodeChange={handleStockCodeChange} />
       

@@ -20,7 +20,7 @@ code {
 }
 
 .ant-layout-content {
-  padding: 16px;
+  /* padding: 16px; */
   background-color: #141213;
 }
 
@@ -28,8 +28,9 @@ code {
 .stock-card {
   margin-bottom: 16px;
   /* background-color: #1a1a1a; */
-  border: 1px solid #333;
+  /* border: 1px solid #333; */
   border-radius: 8px;
+  padding: 0px !important;
 }
 
 .stock-card .ant-card-body {
@@ -74,10 +75,11 @@ code {
   font-weight: bold;
   color: #fff;
   margin-bottom: 4px;
+  white-space: nowrap;
 }
 
 .stock-code {
-  font-size: 14px;
+  font-size: 12px;
   color: #fff;
   background-color: #333;
   padding: 2px 8px;
@@ -92,13 +94,13 @@ code {
 }
 
 .current-price {
-  font-size: 32px;
+  font-size: 24px;
   font-weight: bold;
   font-family: 'Courier New', monospace;
 }
 
 .price-change {
-  font-size: 16px;
+  font-size: 14px;
   padding: 4px 8px;
   border-radius: 4px;
   font-weight: 600;
@@ -295,15 +297,13 @@ code {
 
 /* 图表容器 */
 .chart-container {
-  background-color: #1a1a1a;
   border-radius: 8px;
-  border: 1px solid #333;
   overflow: hidden;
 }
 
 .chart-title {
   color: #ffffff;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   padding: 16px 16px 0;
 }
@@ -507,7 +507,7 @@ code {
 }
 
 .category-name {
-  font-size: 14px;
+  font-size: 12px;  
   font-weight: 600;
 }
 
@@ -517,7 +517,7 @@ code {
 }
 
 .category-count {
-  font-size: 16px;
+  font-size: 12px;
   font-weight: bold;
   font-family: 'Courier New', monospace;
 }
@@ -560,7 +560,7 @@ code {
 }
 
 .indicator-value {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: bold;
   color: #fff;
   font-family: 'Courier New', monospace;
@@ -626,7 +626,7 @@ code {
 }
 
 .validation-title {
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 600;
   color: #fff;
 }
@@ -663,7 +663,7 @@ code {
 }
 
 .score-status {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -807,7 +807,7 @@ code {
 }
 
 .status-message {
-  font-size: 14px;
+  font-size: 12px;
   color: #52c41a;
   font-weight: 600;
   margin-bottom: 8px;
@@ -821,9 +821,7 @@ code {
 
 /* 大单数据表格样式 */
 .large-orders-table {
-  padding: 0 160px;
-  display: flex
-;
+  display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
@@ -832,9 +830,9 @@ code {
 .order-row {
   display: flex;
   align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  font-size: 14px;
+  padding: 6px 0;
+  /* border-bottom: 1px solid rgba(255, 255, 255, 0.05); */
+  font-size: 11px;
   width: 100%;
   justify-content: space-around;
 }
@@ -893,10 +891,12 @@ code {
 /* 新股票信息样式 */
 .stock-header-new {
   /* background-color: #1a1a1a; */
-  padding: 16px;
+  /* padding: 16px; */
   border-radius: 8px;
-  border: 1px solid #333;
+  border-bottom: 1px solid #333;
   margin-bottom: 16px;
+  margin-top: 16px;
+
 }
 
 .stock-title-bar {
@@ -904,6 +904,7 @@ code {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+  gap: 8px;
 }
 
 .stock-name-code {
@@ -919,7 +920,7 @@ code {
 }
 
 .stock-name-code .stock-code {
-  font-size: 14px;
+  font-size: 12px;
   color: #fff;
   background-color: transparent;
   padding: 0;
@@ -948,21 +949,23 @@ code {
   justify-content: center;
   align-items: center;
   gap: 16px;
+  flex-direction: row;
 }
 
 .main-price .label {
-  font-size: 14px;
+  font-size: 12px;
   color: #fff;
+  white-space: nowrap;
 }
 
 .main-price .price {
-  font-size: 28px;
+  font-size: 16px;
   font-weight: bold;
   font-family: 'Courier New', monospace;
 }
 
 .main-price .change {
-  font-size: 18px;
+  font-size: 12px;
   font-weight: bold;
   font-family: 'Courier New', monospace;
 }
@@ -970,7 +973,8 @@ code {
 .basic-stats {
   border-top: 1px solid #333;
   padding-top: 16px;
-  font-size: 15px;
+  font-size: 12px;
+  padding-bottom: 16px;
 }
 
 .stats-row {
@@ -1009,9 +1013,9 @@ code {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
+  /* padding: 12px 16px; */
   /* background-color: #1a1a1a; */
-  border-top: 1px solid #333;
+  /* border-top: 1px solid #333; */
   margin-top: 0;
 }
 
@@ -1398,7 +1402,7 @@ code {
 
 .level-300.trade-buy .trade-amount {
   color: #ff1744;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
   text-shadow: 0 0 4px rgba(255, 23, 68, 0.3);
 }
@@ -1416,7 +1420,7 @@ code {
 
 .level-300.trade-sell .trade-amount {
   color: #4caf50;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
   text-shadow: 0 0 4px rgba(76, 175, 80, 0.3);
 }
@@ -1587,7 +1591,7 @@ code {
 }
 
 .overview-value {
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 700;
   color: #fff;
   font-family: 'Courier New', monospace;
@@ -1630,7 +1634,7 @@ code {
 }
 
 .distribution-label {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -1668,143 +1672,4 @@ code {
 
 .detail-sell {
   color: #52c41a;
-}
-
-/* 响应式设计更新 */
-@media (max-width: 768px) {
-  .stock-title-bar {
-    flex-direction: column;
-    gap: 12px;
-    align-items: flex-start;
-  }
-  
-  .search-box {
-    width: 100%;
-  }
-  
-  .main-price {
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .chart-legend-nav {
-    flex-direction: column;
-    gap: 12px;
-    align-items: flex-start;
-  }
-  
-  .chart-legend {
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-
-  .filter-checkboxes {
-    flex-wrap: wrap;
-    gap: 16px;
-  }
-
-  .trade-header,
-  .trade-item {
-    grid-template-columns: 80px 60px 70px 80px 100px;
-    gap: 8px;
-    padding: 8px 12px;
-    font-size: 12px;
-  }
-
-  /* 增强筛选控件响应式 */
-  .filter-level-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-  }
-
-  .filter-level-item {
-    padding: 8px;
-  }
-
-  .level-desc {
-    display: none; /* 移动端隐藏描述文字 */
-  }
-
-  /* 实时统计面板响应式 */
-  .stats-overview {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-  }
-
-  .level-distribution {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-
-  .distribution-details {
-    flex-direction: column;
-    gap: 4px;
-    font-size: 10px;
-  }
-
-  /* 大单数据表格响应式 */
-  .large-orders-table {
-    padding: 0 16px;
-    display: flex
-;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .order-row {
-    flex-direction: column;
-    gap: 8px;
-    padding: 8px 0;
-    width: 100%;   
-    justify-content: space-around;
-  }
-
-  .order-level {
-    flex: none;
-    font-size: 12px;
-  }
-
-  .order-counts,
-  .order-amounts {
-    flex: none;
-    font-size: 12px;
-  }
-
-  /* 搜索栏响应式 */
-  .trade-search .ant-input {
-    font-size: 14px;
-  }
-
-  /* 表格内容滚动优化 */
-  .trade-list {
-    max-height: 300px;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* 筛选控件头部响应式 */
-  .filter-header {
-    flex-direction: column;
-    gap: 8px;
-    align-items: flex-start;
-  }
-
-  .filter-actions {
-    width: 100%;
-    display: flex;
-    justify-content: flex-end;
-  }
-
-  /* 级别标签文字缩小 */
-  .level-label {
-    font-size: 12px;
-  }
-
-  .level-stats {
-    font-size: 10px;
-  }
-
-  .stat-amount {
-    font-size: 10px;
-  }
 }

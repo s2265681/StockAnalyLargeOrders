@@ -2,13 +2,15 @@ import { atom } from 'jotai';
 import { apiRequest, getEnvironmentInfo } from '../config/api.js';
 import quote from '../mock/quote.json'
 
+
 // 股票代码原子
-export const stockCodeAtom = atom('603001');
+const initCode =  new URLSearchParams(window.location.search).get('code') || '000001';
+export const stockCodeAtom = atom(initCode);
 
 // 股票基础数据原子
 export const stockBasicDataAtom = atom(null);
 
-// 大单数据原子
+// 大单数据原子`
 export const largeOrdersDataAtom = atom(null);
 
 // 分时图数据原子

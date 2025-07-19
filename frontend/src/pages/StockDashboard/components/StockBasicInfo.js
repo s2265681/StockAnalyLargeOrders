@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState } from 'react';
 import { AutoComplete, Input } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
@@ -5,10 +6,8 @@ import { useAtom } from 'jotai';
 import {
   stockCodeAtom,
   stockBasicDataAtom,
-  errorAtom,
   fetchStockBasicAtom
 } from '../../../store/atoms';
-import { apiRequest } from '../../../config/api';
 
 const StockBasicInfo = ({ onStockCodeChange }) => {
   const [stockCode, setStockCode] = useAtom(stockCodeAtom);
@@ -20,11 +19,6 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
   const [searchOptions, setSearchOptions] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
 
-  // 股票搜索功能
-  const handleStockSearch = async (value) => {
-    
-  };
-
   // 股票代码搜索
   const handleSearch = (value) => {
       setInnerCode(value)
@@ -33,21 +27,15 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
   // 点击搜索图标触发搜索
   const handleSearchIconClick = () => {
     onStockCodeChange(_innerCode);
-
-  };
-
-  // 选择搜索建议时的处理
-  const handleSearchSelect = (value, option) => {
-    setStockCode(value);
-    handleSearch(value);
-    setSearchOptions([]);
   };
 
   //调用basic 接口数据
   useEffect(()=>{
     fetchStockBasic(stockCode)
-  },[fetchStockBasic, stockCode])
+  },[stockCode])
 
+
+  console.log(_innerCode,'_innerCode...')
   return (
     <div className=''>
       {/* 股票基础信息 - 新样式 */}
@@ -57,7 +45,22 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
           <div className="stock-title-bar">
             <div className="stock-name-code">
               <span className="stock-name">{stockBasicData.name}</span>
-              <span className="stock-code">{stockBasicData.code}</span>
+                  {/* 中部：当前价格和涨跌幅 */}
+            <div className="main-price">
+              <span className="label">当前价格</span>
+              <span 
+                className={`price ${stockBasicData.change_percent >= 0 ? 'price-up' : 'price-down'}`}
+              >
+                {stockBasicData.current_price}
+              </span>
+              <span 
+                className={`change ${stockBasicData.change_percent >= 0 ? 'price-up' : 'price-down'}`}
+              >
+                {stockBasicData.change_percent >= 0 ? '+' : ''}{stockBasicData.change_percent}%
+              </span>
+          </div>
+
+              {/* <span className="stock-code">{stockBasicData.code}</span> */}
             </div>
             <div className="search-box">
               <AutoComplete
@@ -95,23 +98,7 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
             </div>
           </div>
 
-          {/* 中部：当前价格和涨跌幅 */}
-          <div className="price-section">
-            <div className="main-price">
-              <span className="label">当前价格</span>
-              <span 
-                className={`price ${stockBasicData.change_percent >= 0 ? 'price-up' : 'price-down'}`}
-              >
-                {stockBasicData.current_price}
-              </span>
-              <span 
-                className={`change ${stockBasicData.change_percent >= 0 ? 'price-up' : 'price-down'}`}
-              >
-                {stockBasicData.change_percent >= 0 ? '+' : ''}{stockBasicData.change_percent}%
-              </span>
-            </div>
-          </div>
-
+      
           {/* 底部：基本数据 */}
           <div className="basic-stats">
             <div className="stats-row">

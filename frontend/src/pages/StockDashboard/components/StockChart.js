@@ -321,7 +321,7 @@ const StockChart = () => {
                   show: true,
                   position: position,
                   color: color,
-                  fontSize: 14, // 加大字体
+                  fontSize: 9, // 加大字体
                   fontWeight: 'bold',
                   backgroundColor: 'transparent', // 透明背景
                   padding: [2, 4],
@@ -381,7 +381,7 @@ const StockChart = () => {
                       show: true,
                       position: position,
                       color: color,
-                      fontSize: 14,
+                      fontSize: 9,
                       fontWeight: 'bold',
                       backgroundColor: 'transparent',
                       padding: [2, 4],
@@ -981,7 +981,7 @@ const StockChart = () => {
       </div>
        */}
       {/* 分时图 */}
-      <Card className="stock-card chart-container">
+      <div className="stock-card chart-container">
         {/* 图例和导航区域 */}
         <div className="chart-legend-nav">
           {/* 时间导航 */}
@@ -1056,7 +1056,7 @@ const StockChart = () => {
         </div>
         
         <Spin spinning={loading}>
-          {error && (
+          {/* {error && (
             <Alert
               message="错误"
               description={error}
@@ -1064,7 +1064,7 @@ const StockChart = () => {
               showIcon
               style={{ marginBottom: 16 }}
             />
-          )}
+          )} */}
           {/* <div style={{ border: '1px solid #333', padding: '10px', marginBottom: '10px' }}>
             <div style={{ color: '#fff', fontSize: '12px', marginBottom: '5px' }}>
               图表渲染状态: {timeshareData ? '数据已加载' : '数据未加载'}
@@ -1076,7 +1076,7 @@ const StockChart = () => {
           <ReactEChartsCore
             echarts={echarts}
             option={getTimeshareChartOption()}
-            style={{ height: '500px', border: '1px solid #666' }}
+            style={{  }}
             opts={{ 
               renderer: 'canvas',
               devicePixelRatio: window.devicePixelRatio || 1
@@ -1093,7 +1093,7 @@ const StockChart = () => {
             }}
           />
         </Spin>
-      </Card>
+      </div>
 
       {/* 大单数据分析 */}
       {timeshareData?.big_map && (

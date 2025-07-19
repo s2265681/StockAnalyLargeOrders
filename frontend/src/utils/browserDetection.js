@@ -56,7 +56,7 @@ export const checkCompatibility = () => {
   }
   
   if (info.isTdx) {
-    console.log('检测到通达信内嵌浏览器');
+    // console.log('检测到通达信内嵌浏览器');
   }
   
   if (info.chromeVersion && info.chromeVersion < 81) {
@@ -100,18 +100,18 @@ export const setupErrorHandling = () => {
       setTimeout(() => {
         const perfData = performance.getEntriesByType('navigation')[0];
         if (perfData) {
-          console.log('页面加载性能:', {
-            loadTime: perfData.loadEventEnd - perfData.loadEventStart,
-            domContentLoaded: perfData.domContentLoadedEventEnd - perfData.domContentLoadedEventStart,
-            browser: getBrowserInfo()
-          });
+          // console.log('页面加载性能:', {
+          //   loadTime: perfData.loadEventEnd - perfData.loadEventStart,
+          //   domContentLoaded: perfData.domContentLoadedEventEnd - perfData.domContentLoadedEventStart,
+          //   browser: getBrowserInfo()
+          // });
         }
       }, 0);
     });
   }
 };
 
-export default {
+const browserDetection = {
   isIE,
   isTdxBrowser,
   getChromeVersion,
@@ -119,4 +119,6 @@ export default {
   getBrowserInfo,
   checkCompatibility,
   setupErrorHandling
-}; 
+};
+
+export default browserDetection; 

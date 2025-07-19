@@ -48,8 +48,6 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
     fetchStockBasic(stockCode)
   },[fetchStockBasic, stockCode])
 
-  console.log(stockCode,'stockCode;;;;')
-
   return (
     <div className=''>
       {/* 股票基础信息 - 新样式 */}

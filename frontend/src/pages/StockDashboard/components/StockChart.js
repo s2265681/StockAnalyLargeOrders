@@ -161,7 +161,7 @@ const StockChart = () => {
     }
     
     const { base_info, fenshi, sanhu, volume, zhuli } = timeshareData;
-    const yesterdayClose = parseFloat(base_info?.prevClosePrice || 12.59);
+    const prevClosePrice = parseFloat(base_info?.prevClosePrice || 12.59);
     
     // 根据数据长度生成时间轴
     const dataLength = Math.max(
@@ -332,12 +332,12 @@ const StockChart = () => {
               institutionalMarkers.push(markerData);
             } else {
               // 如果主力线数据为空，尝试使用价格数据
-              if (timeStr === '15:00') {
-                // console.log('❌ 15:00 yValue为null，尝试使用价格数据');
-                const priceIndex = fullTimeAxis.indexOf(timeStr);
-                if (priceIndex !== -1 && fenshi[priceIndex]) {
-                  const price = parseFloat(fenshi[priceIndex]);
-                  const percentChange = ((price - yesterdayClose) / yesterdayClose) * 100;
+                              if (timeStr === '15:00') {
+                  // console.log('❌ 15:00 yValue为null，尝试使用价格数据');
+                  const priceIndex = fullTimeAxis.indexOf(timeStr);
+                  if (priceIndex !== -1 && fenshi[priceIndex]) {
+                    const price = parseFloat(fenshi[priceIndex]);
+                    const percentChange = ((price - prevClosePrice) / prevClosePrice) * 100;
                   
                   // 智能分配位置
                   const usedPos = usedPositions.get(timeStr) || [];
@@ -412,7 +412,7 @@ const StockChart = () => {
     const priceData = fenshi.map((price, index) => {
       const timePoint = fullTimeAxis[index];
       if (timePoint && price) {
-        const percentChange = ((parseFloat(price) - yesterdayClose) / yesterdayClose) * 100;
+        const percentChange = ((parseFloat(price) - prevClosePrice) / prevClosePrice) * 100;
         return [timePoint, percentChange];
       }
       return [fullTimeAxis[index], null];
@@ -429,7 +429,7 @@ const StockChart = () => {
           color = currentPrice >= previousPrice ? '#ff4d4f' : '#52c41a';
         } else if (fenshi[index]) {
           const currentPrice = parseFloat(fenshi[index]);
-          color = currentPrice >= yesterdayClose ? '#ff4d4f' : '#52c41a';
+          color = currentPrice >= prevClosePrice ? '#ff4d4f' : '#52c41a';
         }
         
         return {
@@ -455,23 +455,26 @@ const StockChart = () => {
         const currentVolume = volume[index];
         totalAmount += currentPrice * currentVolume;
         totalVolume += currentVolume;
-        const avgPrice = totalVolume > 0 ? totalAmount / totalVolume : yesterdayClose;
-        const percentChange = ((avgPrice - yesterdayClose) / yesterdayClose) * 100;
+        const avgPrice = totalVolume > 0 ? totalAmount / totalVolume : prevClosePrice;
+        const percentChange = ((avgPrice - prevClosePrice) / prevClosePrice) * 100;
         avgPriceData.push([timePoint, percentChange]);
       } else {
         avgPriceData.push([timePoint, null]);
       }
     });
     
-    // 主力线数据（红色）- 使用独立的Y轴
+    // 主力线数据（红色）- 净流入流出趋势线
     const institutionalData = zhuli.map((value, index) => {
       const timePoint = fullTimeAxis[index];
       if (timePoint && value) {
-        // 将主力资金数据转换为百分比变化，与价格数据使用相同的Y轴
         const rawValue = parseFloat(value);
-        // 根据数据的实际范围调整缩放比例，主力线数据范围约-5000到+2000
-        const scaledValue = (rawValue / 5000) * 5; // 调整缩放比例，使其在-5%到+2%范围内
-        return [timePoint, scaledValue];
+        // 将主力资金数据转换为净流入流出趋势线
+        // 从0轴开始，净流入为正（向上），净流出为负（向下）
+        // 数据范围约-5000到+2000，转换为百分比变化
+        const netFlowPercent = (rawValue / 10000) * 2; // 每1万资金对应2%的变化
+        
+        // 限制在合理范围内
+        return [timePoint, Math.max(-10, Math.min(10, netFlowPercent))];
       }
       return [timePoint, null];
     });
@@ -489,38 +492,47 @@ const StockChart = () => {
       // });
     }
     
-    // 散户线数据（绿色）- 使用独立的Y轴
+    // 散户线数据（绿色）- 净流入流出趋势线
     const retailData = sanhu.map((value, index) => {
       const timePoint = fullTimeAxis[index];
       if (timePoint && value) {
-        // 将散户资金数据转换为百分比变化，与价格数据使用相同的Y轴
         const rawValue = parseFloat(value);
-        // 根据数据的实际范围调整缩放比例，散户线数据范围约-600到+2500
-        const scaledValue = (rawValue / 2500) * 3; // 调整缩放比例，使其在-0.7%到+3%范围内
-        return [timePoint, scaledValue];
+        // 将散户资金数据转换为净流入流出趋势线
+        // 从0轴开始，净流入为正（向上），净流出为负（向下）
+        // 数据范围约-600到+2500，转换为百分比变化
+        const netFlowPercent = (rawValue / 10000) * 3; // 每1万资金对应3%的变化
+        
+        // 限制在合理范围内
+        return [timePoint, Math.max(-10, Math.min(10, netFlowPercent))];
       }
       return [timePoint, null];
     });
     
-    // 计算Y轴范围，使其对称于0轴
-    const allPriceData = [
-      ...priceData.map(item => item[1]).filter(val => val !== null),
-      ...avgPriceData.map(item => item[1]).filter(val => val !== null),
-      ...institutionalData.map(item => item[1]).filter(val => val !== null),
-      ...retailData.map(item => item[1]).filter(val => val !== null)
-    ];
+    // 根据base_info动态计算Y轴范围
+    const highPrice = parseFloat(base_info?.highPrice || 6.08);
+    const lowPrice = parseFloat(base_info?.lowPrice || 5.53);
     
-    const maxAbsValue = Math.max(...allPriceData.map(Math.abs));
-    const yAxisRange = Math.ceil(maxAbsValue * 1.2); // 增加20%的边距
-    const yAxisMin = -yAxisRange;
-    const yAxisMax = yAxisRange;
+    // 计算涨停价和跌停价（A股涨跌停幅度为10%）
+    const upperLimitPrice = prevClosePrice * 1.1; // 涨停价
+    const lowerLimitPrice = prevClosePrice * 0.9; // 跌停价
+    
+    // 计算最高价与涨停价的比值，最低价与跌停价的比值
+    const highToUpperRatio = ((highPrice - prevClosePrice) / (upperLimitPrice - prevClosePrice)) * 10; // 转换为百分比
+    const lowToLowerRatio = ((lowPrice - prevClosePrice) / (lowerLimitPrice - prevClosePrice)) * 10; // 转换为百分比
+    
+    // 设置Y轴范围，取较大的绝对值作为范围，确保上下对称
+    const maxRange = Math.max(Math.abs(highToUpperRatio), Math.abs(lowToLowerRatio));
+    // 确保最小范围为±1%，最大范围为±10%
+    const adjustedRange = Math.max(1, Math.min(10, maxRange));
+    const yAxisMax = adjustedRange; // 例如5%
+    const yAxisMin = -adjustedRange; // 例如-5%
     
     // 生成筛选金额标注
     const { institutionalMarkers, retailMarkers } = generateFilteredAmountMarkers(
       fenshi, 
       largeOrdersData?.largeOrders, 
       filterAmount,
-      yesterdayClose
+      prevClosePrice
     );
     
     // 生成big_map数据标注
@@ -637,7 +649,7 @@ const StockChart = () => {
           scale: false,
           min: yAxisMin,
           max: yAxisMax,
-          interval: Math.ceil(yAxisRange / 5), // 动态计算间隔，大约5个刻度
+          interval: Math.ceil((yAxisMax - yAxisMin) / 6), // 确保上下各3个刻度，总共7个刻度（包括0轴）
           position: 'right',
           splitArea: { 
             show: false
@@ -654,12 +666,14 @@ const StockChart = () => {
           axisLabel: {
             color: '#fff',
             formatter: function(value) {
-              if (value === 0) {
+              // 取整到小数点后2位
+              const roundedValue = Math.round(value * 100) / 100;
+              if (roundedValue === 0) {
                 return '0%';
-              } else if (value > 0) {
-                return `+${value}%`;
+              } else if (roundedValue > 0) {
+                return `+${roundedValue}%`;
               } else {
-                return `${value}%`;
+                return `${roundedValue}%`;
               }
             },
             show: true,
@@ -715,6 +729,28 @@ const StockChart = () => {
             color: '#ff4d4f'
           },
           symbol: 'none',
+          markLine: {
+            silent: true,
+            symbol: 'none',
+            data: [
+              {
+                yAxis: 0,
+                symbol: 'none',
+                lineStyle: {
+                  color: '#666',
+                  width: 1,
+                  type: 'dashed'
+                },
+                label: {
+                  show: true,
+                  position: 'end',
+                  color: '#666',
+                  fontSize: 10,
+                  formatter: '0%'
+                }
+              }
+            ]
+          },
           markPoint: {
             symbol: 'circle',
             symbolSize: 4,
@@ -791,18 +827,24 @@ const StockChart = () => {
           markLine: {
             silent: true,
             symbol: 'none',
-            data: [{
-              yAxis: 0,
-              symbol: 'none',
-              lineStyle: {
-                color: '#fff',
-                width: 1,
-                type: 'solid'
-              },
-              label: {
-                show: false
+            data: [
+              {
+                yAxis: 0,
+                symbol: 'none',
+                lineStyle: {
+                  color: '#666',
+                  width: 1,
+                  type: 'dashed'
+                },
+                label: {
+                  show: true,
+                  position: 'end',
+                  color: '#666',
+                  fontSize: 10,
+                  formatter: '0%'
+                }
               }
-            }]
+            ]
           },
           silent: true
         },
@@ -1043,12 +1085,16 @@ const StockChart = () => {
           <div className="chart-legend">
             <div className="legend-item">
               <span className="legend-line main-line"></span>
-              <span className="legend-text">主力线 ——</span>
+              <span className="legend-text">主力净流入</span>
             </div>
             <div className="legend-item">
               <span className="legend-line retail-line"></span>
-              <span className="legend-text">散户线 ——</span>
+              <span className="legend-text">散户净流入</span>
             </div>
+            {/* <div className="legend-item">
+              <span className="legend-line avg-line"></span>
+              <span className="legend-text">价格均线 ——</span>
+            </div> */}
             <div className="cost-indicator">
               <span style={{ color: '#ffa940' }}>D300成本: {getD300Cost()}</span>
             </div>

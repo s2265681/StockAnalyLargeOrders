@@ -46,7 +46,7 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
   //调用basic 接口数据
   useEffect(()=>{
     fetchStockBasic(stockCode)
-  },[stockCode])
+  },[fetchStockBasic, stockCode])
 
   console.log(stockCode,'stockCode;;;;')
 

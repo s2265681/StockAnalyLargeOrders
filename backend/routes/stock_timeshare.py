@@ -237,7 +237,22 @@ def get_eastmoney_timeshare_data(code):
             'Referer': 'https://quote.eastmoney.com'
         }
         
-        response = requests.get(url, params=params, headers=headers, timeout=8)
+        # 增加超时时间并添加重试机制
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                response = requests.get(url, params=params, headers=headers, timeout=15)
+                break
+            except requests.exceptions.Timeout:
+                if attempt < max_retries - 1:
+                    logger.warning(f"东方财富API请求超时，第{attempt + 1}次重试...")
+                    continue
+                else:
+                    logger.error("东方财富API请求多次超时，放弃重试")
+                    raise
+            except Exception as e:
+                logger.error(f"东方财富API请求异常: {e}")
+                raise
         
         logger.info(f"东方财富API请求: {url}?{requests.compat.urlencode(params)}")
         logger.info(f"东方财富API响应状态: {response.status_code}")
@@ -246,6 +261,18 @@ def get_eastmoney_timeshare_data(code):
             try:
                 data = json.loads(response.text)
                 logger.info(f"东方财富API响应数据结构: {list(data.keys()) if data else 'None'}")
+                
+                # 添加更详细的调试信息
+                if data and 'data' in data:
+                    logger.info(f"data字段存在: {data['data'] is not None}")
+                    if data['data']:
+                        logger.info(f"data字段内容: {list(data['data'].keys()) if isinstance(data['data'], dict) else type(data['data'])}")
+                        if isinstance(data['data'], dict) and 'trends' in data['data']:
+                            logger.info(f"trends字段存在: {data['data']['trends'] is not None}")
+                            if data['data']['trends']:
+                                logger.info(f"trends数据类型: {type(data['data']['trends'])}")
+                                if isinstance(data['data']['trends'], list):
+                                    logger.info(f"trends数据长度: {len(data['data']['trends'])}")
                 
                 if data and 'data' in data and data['data'] and 'trends' in data['data']:
                     trends = data['data']['trends']
@@ -256,6 +283,8 @@ def get_eastmoney_timeshare_data(code):
                         for i, trend in enumerate(trends):
                             # 东方财富分时数据格式: "日期时间,开盘,最高,最低,收盘,成交量,成交额,均价"
                             parts = trend.split(',')
+                            logger.debug(f"处理第{i}个数据点: {trend}, 字段数: {len(parts)}")
+                            
                             if len(parts) >= 8:
                                 try:
                                     # 时间格式处理：2025-07-15 09:30 -> 09:30
@@ -264,6 +293,13 @@ def get_eastmoney_timeshare_data(code):
                                         time_str = datetime_str.split(' ')[1]  # 取时间部分 HH:MM
                                     else:
                                         time_str = datetime_str
+                                    
+                                    # 过滤掉9:15-9:30的集合竞价数据
+                                    if len(time_str) >= 5:
+                                        hour_minute = time_str[:5]
+                                        if hour_minute >= "09:15" and hour_minute <= "09:30":
+                                            logger.debug(f"跳过集合竞价时间段数据: {time_str}")
+                                            continue
                                     
                                     # 获取价格数据 (使用收盘价作为当前价格)
                                     open_price = float(parts[1])
@@ -287,6 +323,8 @@ def get_eastmoney_timeshare_data(code):
                                 except (ValueError, IndexError) as e:
                                     logger.debug(f"跳过无效数据行 {i}: {trend}, 错误: {e}")
                                     continue
+                            else:
+                                logger.debug(f"数据字段不足，跳过第{i}个数据点: {trend}")
                         
                         if timeshare_data:
                             # 获取股票基础信息
@@ -395,6 +433,103 @@ def get_sina_timeshare_data(code):
         logger.warning(f"新浪财经分时数据获取失败: {e}")
         return None
 
+def get_eastmoney_l2_tick_data(code):
+    """从东方财富获取L2大单逐笔成交数据"""
+    try:
+        # 东方财富L2逐笔成交数据接口
+        market_code = f"1.{code}" if code.startswith('6') else f"0.{code}"
+        url = "http://push2.eastmoney.com/api/qt/stock/details/get"
+        
+        params = {
+            'secid': market_code,
+            'fields1': 'f1,f2,f3,f4',
+            'fields2': 'f51,f52,f53,f54,f55',
+            'pos': '-100000'  # 获取更多历史数据
+        }
+        
+        headers = {
+            'Referer': 'http://quote.eastmoney.com',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        
+        logger.info(f"东方财富L2 API请求: {url}?{requests.compat.urlencode(params)}")
+        response = requests.get(url, params=params, headers=headers, timeout=15)
+        logger.info(f"东方财富L2 API响应状态: {response.status_code}")
+        
+        if response.status_code == 200:
+            try:
+                data = json.loads(response.text)
+                logger.info(f"东方财富L2 API响应数据结构: {list(data.keys()) if data else 'None'}")
+                
+                if data and 'data' in data and data['data'] and 'details' in data['data']:
+                    details = data['data']['details']
+                    logger.info(f"东方财富L2逐笔数据点数量: {len(details) if details else 0}")
+                    
+                    if details and len(details) > 10:  # 确保有足够的逐笔数据
+                        tick_data = []
+                        for i, detail in enumerate(details):
+                            # 东方财富逐笔数据格式: "时间,价格,成交量(手),成交金额,买卖方向"
+                            if isinstance(detail, str):
+                                parts = detail.split(',')
+                                if len(parts) >= 5:
+                                    try:
+                                        time_str = parts[0]  # 时间 HH:MM:SS
+                                        price = float(parts[1])  # 成交价
+                                        volume = int(parts[2])  # 成交量(手)
+                                        amount_field = int(parts[3]) if parts[3].isdigit() else 0  # 成交金额字段
+                                        direction = int(parts[4])  # 买卖方向
+                                        
+                                        # 计算成交金额 - 假设volume是手数，需要×100转为股数，再×价格
+                                        amount_yuan = price * volume * 100  # 总金额（元）
+                                        
+                                        # 判断交易类型（根据东方财富API实际定义）
+                                        if direction == 1:
+                                            trade_type = 1  # 买入
+                                        elif direction == 2:
+                                            trade_type = 3  # 卖出
+                                        elif direction == 4:
+                                            trade_type = 4  # 集合竞价
+                                        else:
+                                            trade_type = 3  # 中性
+                                        
+                                        # 只保留大单数据（成交额>=20万）
+                                        if amount_yuan >= 200000:
+                                            tick_data.append({
+                                                'time': time_str,
+                                                'price': price,
+                                                'volume': volume * 100,  # 转换为股数
+                                                'amount': amount_yuan,
+                                                'trade_type': trade_type,
+                                                'nature': f"方向{direction}"
+                                            })
+                                            
+                                    except (ValueError, IndexError) as e:
+                                        logger.debug(f"跳过无效逐笔数据 {i}: {detail}, 错误: {e}")
+                                        continue
+                        
+                        if tick_data:
+                            logger.info(f"✅ 东方财富L2逐笔数据获取成功: {len(tick_data)}个大单数据点")
+                            return tick_data
+                        else:
+                            logger.warning("东方财富L2逐笔数据解析失败：无大单数据")
+                    else:
+                        logger.warning(f"东方财富L2逐笔数据不足: {len(details) if details else 0}个数据点")
+                else:
+                    logger.warning("东方财富L2逐笔数据响应格式错误")
+                    
+            except json.JSONDecodeError:
+                logger.warning("东方财富L2逐笔数据JSON解析失败")
+            except Exception as parse_error:
+                logger.warning(f"东方财富L2逐笔数据解析异常: {parse_error}")
+        else:
+            logger.warning(f"东方财富L2逐笔数据API响应错误: {response.status_code}")
+        
+        return None
+        
+    except Exception as e:
+        logger.warning(f"东方财富L2逐笔数据获取失败: {e}")
+        return None
+
 def get_tencent_timeshare_data(code):
     """从腾讯股票获取真实分时数据"""
     try:
@@ -465,108 +600,150 @@ def get_tencent_timeshare_data(code):
         logger.warning(f"腾讯股票分时数据获取失败: {e}")
         return None
 
+def get_eastmoney_money_flow_data(code):
+    """从东方财富获取主力、散户净流入流出数据"""
+    try:
+        # 东方财富资金流向接口
+        market_code = f"1.{code}" if code.startswith('6') else f"0.{code}"
+        url = "https://push2.eastmoney.com/api/qt/stock/fflow/kline/get"
+        
+        params = {
+            'fields1': 'f1,f2,f3,f7',
+            'fields2': 'f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61,f62,f63,f64,f65',
+            'klt': '1',  # 1分钟
+            'fqt': '1',  # 前复权
+            'secid': market_code,
+            'beg': '0',  # 开始位置
+            'end': '20500101',  # 结束日期
+            'lmt': '256'  # 限制数量
+        }
+        
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Referer': 'https://quote.eastmoney.com'
+        }
+        
+        # 增加超时时间并添加重试机制
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                response = requests.get(url, params=params, headers=headers, timeout=15)
+                break
+            except requests.exceptions.Timeout:
+                if attempt < max_retries - 1:
+                    logger.warning(f"东方财富资金流向API请求超时，第{attempt + 1}次重试...")
+                    continue
+                else:
+                    logger.error("东方财富资金流向API请求多次超时，放弃重试")
+                    raise
+            except Exception as e:
+                logger.error(f"东方财富资金流向API请求异常: {e}")
+                raise
+        
+        logger.info(f"东方财富资金流向API请求: {url}?{requests.compat.urlencode(params)}")
+        logger.info(f"东方财富资金流向API响应状态: {response.status_code}")
+        
+        if response.status_code == 200:
+            try:
+                data = json.loads(response.text)
+                logger.info(f"东方财富资金流向API响应数据结构: {list(data.keys()) if data else 'None'}")
+                
+                if data and 'data' in data and data['data'] and 'klines' in data['data']:
+                    klines = data['data']['klines']
+                    logger.info(f"东方财富资金流向数据点数量: {len(klines) if klines else 0}")
+                    
+                    if klines and len(klines) > 0:
+                        zhuli_data = []  # 主力净流入
+                        sanhu_data = []  # 散户净流入
+                        
+                        for kline in klines:
+                            # 东方财富资金流向数据格式: "时间,主力净流入,超大单净流入,大单净流入,中单净流入,小单净流入"
+                            parts = kline.split(',')
+                            
+                            if len(parts) >= 6:
+                                try:
+                                    # 主力净流入 = 超大单净流入 + 大单净流入
+                                    super_large_net_inflow = float(parts[2]) if parts[2] and parts[2] != '0' else 0
+                                    large_net_inflow = float(parts[3]) if parts[3] and parts[3] != '0' else 0
+                                    zhuli_net_inflow = super_large_net_inflow + large_net_inflow
+                                    
+                                    # 散户净流入 = 小单净流入
+                                    sanhu_net_inflow = float(parts[5]) if parts[5] and parts[5] != '0' else 0
+                                    
+                                    # 转换为万元单位，保留3位小数
+                                    # 注意：正值表示净流入，负值表示净流出
+                                    # 根据业务需求，可能需要反转符号
+                                    zhuli_data.append(f"{zhuli_net_inflow/10000:.3f}")
+                                    sanhu_data.append(f"{sanhu_net_inflow/10000:.3f}")
+                                    
+                                except (ValueError, IndexError) as e:
+                                    logger.debug(f"跳过无效资金流向数据: {kline}, 错误: {e}")
+                                    # 添加默认值
+                                    zhuli_data.append("0.000")
+                                    sanhu_data.append("0.000")
+                                    continue
+                            else:
+                                logger.debug(f"资金流向数据字段不足: {kline}")
+                                # 添加默认值
+                                zhuli_data.append("0.000")
+                                sanhu_data.append("0.000")
+                        
+                        if zhuli_data and sanhu_data:
+                            logger.info(f"✅ 东方财富资金流向数据获取成功: {len(zhuli_data)}个数据点")
+                            
+                            return {
+                                'zhuli': zhuli_data,
+                                'sanhu': sanhu_data
+                            }
+                        else:
+                            logger.warning("东方财富资金流向数据解析失败：无有效数据")
+                    else:
+                        logger.warning(f"东方财富资金流向数据不足: {len(klines) if klines else 0}个数据点")
+                else:
+                    logger.warning("东方财富资金流向数据响应格式错误")
+                    
+            except json.JSONDecodeError:
+                logger.warning("东方财富资金流向数据JSON解析失败")
+            except Exception as parse_error:
+                logger.warning(f"东方财富资金流向数据解析异常: {parse_error}")
+        else:
+            logger.warning(f"东方财富资金流向数据API响应错误: {response.status_code}")
+        
+        return None
+        
+    except Exception as e:
+        logger.warning(f"东方财富资金流向数据获取失败: {e}")
+        return None
+
 @stock_timeshare_bp.route('/api/stock/timeshare', methods=['GET'])
 def get_timeshare_data():
-    """获取分时数据 - 优先使用AKShare，失败时使用其他数据源"""
+    """获取分时数据 - 仅使用东方财富数据源"""
     code = request.args.get('code', '000001')
     date_param = request.args.get('date', request.args.get('dt'))
     
     try:
+        # 标准化股票代码格式
+        if len(code) > 6:
+            code = code[-6:]  # 取后6位
+            logger.info(f"股票代码标准化: {code}")
+        
         # 获取有效的交易日期
         trading_date = validate_and_get_trading_date(date_param)
-        logger.info(f"开始获取{code}在{trading_date}的真实分时数据...")
+        logger.info(f"开始获取{code}在{trading_date}的东方财富分时数据...")
         
-        # 1. 优先尝试AKShare分时数据API（最高优先级）
-        akshare_timeshare = get_akshare_timeshare_data(code, trading_date)
-        if akshare_timeshare:
-            # 添加日期信息到返回数据
-            akshare_timeshare['trading_date'] = trading_date
-            logger.info(f"✅ 使用AKShare获取{code}在{trading_date}分时数据成功")
-            return success_response(
-                data=akshare_timeshare,
-                message=f'success - AKShare分时数据 ({trading_date})'
-            )
-        
-        # 2. 备用：尝试东方财富分时数据API
+        # 仅使用东方财富分时数据API
         eastmoney_timeshare = get_eastmoney_timeshare_data(code)
         if eastmoney_timeshare:
-            logger.info(f"✅ 使用东方财富获取{code}分时数据成功")
+            # 添加日期信息到返回数据
+            eastmoney_timeshare['trading_date'] = trading_date
+            logger.info(f"✅ 使用东方财富获取{code}在{trading_date}分时数据成功")
             return success_response(
                 data=eastmoney_timeshare,
-                message='success - 东方财富分时数据'
+                message=f'success - 东方财富分时数据 ({trading_date})'
             )
         
-        # 3. 备用：尝试新浪财经分时数据API
-        sina_timeshare = get_sina_timeshare_data(code)
-        if sina_timeshare:
-            logger.info(f"✅ 使用新浪财经获取{code}分时数据成功")
-            return success_response(
-                data=sina_timeshare,
-                message='success - 新浪财经分时数据'
-            )
-        
-        # 4. 备用：尝试腾讯分时数据API 
-        tencent_timeshare = get_tencent_timeshare_data(code)
-        if tencent_timeshare:
-            logger.info(f"✅ 使用腾讯股票获取{code}分时数据成功")
-            return success_response(
-                data=tencent_timeshare,
-                message='success - 腾讯股票分时数据'
-            )
-        
-        # 5. 备用：尝试efinance分时数据
-        try:
-            import efinance as ef
-            ef_data = ef.stock.get_quote_history(code, klt=1)
-            
-            if ef_data is not None and not ef_data.empty:
-                # 转换数据格式 - 获取今日的分时数据
-                data = []
-                today = datetime.now().strftime('%Y-%m-%d')
-                
-                for _, row in ef_data.iterrows():
-                    row_date = str(row['日期'])
-                    if today in row_date:  # 只取今日数据
-                        time_part = row_date.split(' ')[-1] if ' ' in row_date else row_date[-5:]
-                        data.append({
-                            'time': time_part,
-                            'price': float(row['收盘']),
-                            'volume': int(row['成交量'])
-                        })
-                
-                if data and len(data) >= 100:  # 确保有足够的分时数据
-                    # 获取基础股票信息
-                    stock_basic = get_stock_basic_data(code)
-                    
-                    # 计算统计信息
-                    prices = [d['price'] for d in data]
-                    volumes = [d['volume'] for d in data]
-                    
-                    logger.info(f"✅ 使用efinance获取{code}分时数据成功，共{len(data)}个数据点")
-                    return success_response(
-                        data={
-                            'timeshare': data,
-                            'statistics': {
-                                'current_price': stock_basic['current_price'],
-                                'yesterdayClose': stock_basic['yesterday_close'],
-                                'change_percent': stock_basic['change_percent'],
-                                'change_amount': stock_basic['change_amount'],
-                                'high': max(prices) if prices else stock_basic['high'],
-                                'low': min(prices) if prices else stock_basic['low'],
-                                'volume': sum(volumes) if volumes else stock_basic['volume'],
-                                'turnover': stock_basic['turnover']
-                            }
-                        },
-                        message=f'success - efinance分时数据，共{len(data)}个数据点'
-                    )
-                else:
-                    logger.warning(f"efinance返回的分时数据不足: {len(data) if data else 0}个数据点")
-                    
-        except Exception as ef_error:
-            logger.warning(f"efinance获取分时数据失败: {ef_error}")
-        
-        # 所有真实数据源都失败，返回错误
-        error_msg = f"无法获取股票{code}的真实分时数据：所有数据源都失败"
+        # 东方财富数据获取失败，返回错误
+        error_msg = f"无法获取股票{code}的东方财富分时数据"
         logger.error(error_msg)
         return error_response(message=error_msg)
         
@@ -578,61 +755,166 @@ def get_timeshare_data():
 @stock_timeshare_bp.route('/api/v1/quote', methods=['GET'])
 def get_quote():
     """竞品格式 - 数据源/行情接口"""
-    code = request.args.get('code', '603001')
+    code = request.args.get('code', '000001')
     dt = request.args.get('dt', datetime.now().strftime('%Y-%m-%d'))
     
     try:
-        # 获取分时数据
-        timeshare_response = get_timeshare_data()
-        timeshare_data = timeshare_response.get_json()
+        # 标准化股票代码格式
+        if len(code) > 6:
+            code = code[-6:]  # 取后6位
+            logger.info(f"股票代码标准化: {code}")
         
-        if timeshare_data['code'] == 200:
-            ts_data = timeshare_data['data']['timeshare']
-            stats = timeshare_data['data']['statistics']
+        # 直接获取东方财富分时数据，避免重复调用API
+        eastmoney_timeshare = get_eastmoney_timeshare_data(code)
+        if not eastmoney_timeshare:
+            error_msg = f"无法获取股票{code}的东方财富分时数据"
+            logger.error(error_msg)
+            return v1_error_response(message=error_msg)
+        
+        ts_data = eastmoney_timeshare['timeshare']
+        stats = eastmoney_timeshare['statistics']
+        
+                # 提取分时价格数据为fenshi数组
+        fenshi = []
+        volume = []
+        
+        # 获取主力、散户净流入流出数据
+        money_flow_data = get_eastmoney_money_flow_data(code)
+        if money_flow_data:
+            zhuli_raw = money_flow_data['zhuli']
+            sanhu_raw = money_flow_data['sanhu']
+            logger.info(f"✅ 获取到主力数据: {len(zhuli_raw)}个点, 散户数据: {len(sanhu_raw)}个点")
             
-            # 转换为竞品格式的分时数据
-            quote_data = []
-            for item in ts_data:
-                quote_data.append({
-                    'time': item['time'].split(' ')[1] if ' ' in item['time'] else item['time'][-5:],  # 只保留时间部分
-                    'price': item['price'],
-                    'volume': item['volume'],
-                    'amount': round(item['price'] * item['volume'], 2),
-                    'avg_price': item['price'],  # 简化处理，实际应计算累计均价
-                    'change_percent': round((item['price'] - stats['yesterdayClose']) / stats['yesterdayClose'] * 100, 2)
-                })
-            
-            # 计算均价线
-            total_amount = 0
-            total_volume = 0
-            avg_prices = []
-            
-            for item in quote_data:
-                total_amount += item['amount']
-                total_volume += item['volume']
-                avg_price = total_amount / total_volume if total_volume > 0 else item['price']
-                avg_prices.append(avg_price)
-                item['avg_price'] = round(avg_price, 2)
-            
-            result = {
-                'code': code,
-                'date': dt,
-                'timeshare': quote_data[-240:],  # 最近240个数据点
-                'yesterday_close': stats['yesterdayClose'],
-                'current_price': stats['current_price'],
-                'high': stats['high'],
-                'low': stats['low'],
-                'volume': stats['volume'],
-                'turnover': stats['turnover'],
-                'change_percent': stats['change_percent'],
-                'change_amount': stats['change_amount'],
-                'update_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            }
-            
-            return v1_success_response(data=result)
+            # 过滤掉9:15-9:30的数据，确保与分时数据同步
+            zhuli = []
+            sanhu = []
+            for i, item in enumerate(ts_data):
+                time_str = item['time']
+                if len(time_str) >= 5:
+                    hour_minute = time_str[:5]
+                    # 跳过9:15到9:30之间的数据
+                    if hour_minute >= "09:15" and hour_minute <= "09:30":
+                        continue
+                
+                # 添加对应的主力、散户数据
+                if i < len(zhuli_raw):
+                    zhuli.append(zhuli_raw[i])
+                else:
+                    zhuli.append("0.000")
+                    
+                if i < len(sanhu_raw):
+                    sanhu.append(sanhu_raw[i])
+                else:
+                    sanhu.append("0.000")
         else:
-            raise Exception("获取分时数据失败")
+            # 如果获取失败，生成默认数据
+            zhuli = []
+            sanhu = []
+            for item in ts_data:
+                time_str = item['time']
+                if len(time_str) >= 5:
+                    hour_minute = time_str[:5]
+                    # 跳过9:15到9:30之间的数据
+                    if hour_minute >= "09:15" and hour_minute <= "09:30":
+                        continue
+                
+                zhuli.append("0.000")
+                sanhu.append("0.000")
+            logger.warning("资金流向数据获取失败，使用默认值")
+        
+        for item in ts_data:
+            # 过滤掉9:15-9:30的集合竞价数据
+            time_str = item['time']
+            if len(time_str) >= 5:  # 确保时间格式正确
+                hour_minute = time_str[:5]  # 取HH:MM部分
+                # 跳过9:15到9:30之间的数据
+                if hour_minute >= "09:15" and hour_minute <= "09:30":
+                    continue
             
+            # 价格数据
+            fenshi.append(str(item['price']))
+            # 成交量数据，乘以100
+            volume.append(item['volume'] * 100)
+        
+        # 获取L2大单逐笔成交数据
+        l2_tick_data = get_eastmoney_l2_tick_data(code)
+        
+        # 构建big_map数据
+        big_map = {}
+        if l2_tick_data:
+            logger.info(f"开始处理{len(l2_tick_data)}条L2数据，组装big_map...")
+            
+            # 按时间分组L2数据
+            time_groups = {}
+            for tick in l2_tick_data:
+                time_key = tick['time'][:5]  # 取HH:MM部分作为key
+                # 过滤掉9:15-9:30的集合竞价时间
+                if time_key >= "09:15" and time_key <= "09:30":
+                    continue
+                if time_key not in time_groups:
+                    time_groups[time_key] = []
+                time_groups[time_key].append(tick)
+            
+            logger.info(f"L2数据按时间分组完成，共{len(time_groups)}个时间点")
+            
+            # 为每个时间点生成big_map数据
+            for time_key, ticks in time_groups.items():
+                big_map[time_key] = []
+                for tick in ticks:
+                    # 添加大单数据，格式：{"t": 交易类型, "v": "成交金额"}
+                    # 将成交金额除以10000并取整
+                    amount_in_wan = int(tick['amount'] / 10000)
+                    big_map[time_key].append({
+                        't': tick['trade_type'],  # 交易类型：1=买入，2=卖出，3=中性，4=其他
+                        'v': str(amount_in_wan)  # 成交金额（万元），取整
+                    })
+            
+            logger.info(f"✅ big_map组装完成，共{len(big_map)}个时间点，包含大单数据")
+        else:
+            logger.warning("未获取到L2大单数据，生成空的big_map结构")
+            # 从分时数据中提取时间点，确保覆盖到15:00
+            time_points = set()
+            for item in ts_data:
+                time_key = item['time'][:5]  # 取HH:MM部分
+                # 过滤掉9:15-9:30的集合竞价时间
+                if time_key >= "09:15" and time_key <= "09:30":
+                    continue
+                time_points.add(time_key)
+            
+            # 确保包含关键时间点（排除9:15-9:30）
+            key_times = ['09:30', '10:00', '11:00', '13:00', '14:00', '15:00']
+            for key_time in key_times:
+                time_points.add(key_time)
+            
+            # 按时间排序
+            sorted_times = sorted(list(time_points))
+            
+            # 生成空的big_map结构
+            for time_point in sorted_times:
+                big_map[time_point] = []
+        
+        # 构建符合quote.json格式的返回数据
+        result = {
+            'code': 0,
+            'msg': '操作成功',
+            'data': {
+                'base_info': {
+                    'd300ave_percent': f"{stats['change_percent']:.2f}%",
+                    'highPrice': str(stats['high']),
+                    'lowPrice': str(stats['low']),
+                    'prevClosePrice': str(stats['yesterdayClose']),
+                    'yi_dong': ""
+                },
+                'big_map': big_map,
+                'fenshi': fenshi,
+                'volume': volume,
+                'sanhu': sanhu,
+                'zhuli': zhuli
+            }
+        }
+        
+        logger.info(f"✅ 成功生成竞品格式数据: {len(fenshi)}个价格点, {len(volume)}个成交量点, {len(big_map)}个时间点的大单数据")
+        return v1_success_response(data=result['data'])
     except Exception as e:
         logger.error(f"获取行情数据失败: {e}")
         return v1_error_response(message=f'获取行情数据失败: {str(e)}') 

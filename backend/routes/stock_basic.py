@@ -176,11 +176,6 @@ def get_base_info():
         logger.error(f"获取基本信息失败: {e}")
         return v1_error_response(message=f'获取基本信息失败: {str(e)}')
 
-@stock_basic_bp.route('/api/stock/search', methods=['GET'])
-def search_stock():
-    """搜索股票接口"""
-    query = request.args.get('query', '')
-    
     try:
         # 使用efinance搜索股票
         import efinance as ef

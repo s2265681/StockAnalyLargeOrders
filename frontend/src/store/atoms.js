@@ -1,6 +1,6 @@
 import { atom } from 'jotai';
 import { apiRequest, getEnvironmentInfo } from '../config/api.js';
-import quote from '../mock/quote.json'
+// import quote from '../mock/quote.json'
 
 
 // 股票代码原子
@@ -205,9 +205,9 @@ export const fetchTimeshareDataAtom = atom(
       console.log('📅 请求日期:', today);
       
       // 注释掉实际的 API 调用，直接使用 mock 数据
-      // const data = await apiRequest(`/api/v1/quote?code=${code}&dt=${today}`);
+     const quote = await apiRequest(`/api/v1/quote?code=${code}&dt=${today}`)
+     console.log(quote,'quote;;;;;')
       
-      console.log('📊 使用 mock 数据');
       console.log('📊 Mock 数据结构:', Object.keys(quote.data || {}));
       console.log('📊 Mock 数据样本:', {
         fenshi: quote.data?.fenshi?.slice(0, 3),

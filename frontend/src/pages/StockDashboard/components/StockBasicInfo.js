@@ -34,29 +34,26 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
     fetchStockBasic(stockCode)
   },[stockCode])
 
-
-  console.log(_innerCode,'_innerCode...')
   return (
     <div className=''>
       {/* 股票基础信息 - 新样式 */}
-      {stockBasicData && (
         <div className="stock-header-new">
           {/* 顶部：股票名称和代码 */}
           <div className="stock-title-bar">
             <div className="stock-name-code">
-              <span className="stock-name">{stockBasicData.name}</span>
+              <span className="stock-name">{stockBasicData?.name}</span>
                   {/* 中部：当前价格和涨跌幅 */}
             <div className="main-price">
               <span className="label">当前价格</span>
               <span 
-                className={`price ${stockBasicData.change_percent >= 0 ? 'price-up' : 'price-down'}`}
+                className={`price ${stockBasicData?.change_percent >= 0 ? 'price-up' : 'price-down'}`}
               >
-                {stockBasicData.current_price}
+                {stockBasicData?.current_price}
               </span>
               <span 
-                className={`change ${stockBasicData.change_percent >= 0 ? 'price-up' : 'price-down'}`}
+                className={`change ${stockBasicData?.change_percent >= 0 ? 'price-up' : 'price-down'}`}
               >
-                {stockBasicData.change_percent >= 0 ? '+' : ''}{stockBasicData.change_percent}%
+                {stockBasicData?.change_percent >= 0 ? '+' : ''}{stockBasicData?.change_percent}%
               </span>
           </div>
 
@@ -104,34 +101,33 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
             <div className="stats-row">
               <div className="stat-item">
                 <span className="label">开</span>
-                <span className="value">{stockBasicData.open}</span>
+                <span className="value">{stockBasicData?.open}</span>
               </div>
               <div className="stat-item">
                 <span className="label">高</span>
-                <span className="value">{stockBasicData.high}</span>
+                <span className="value">{stockBasicData?.high}</span>
               </div>
               <div className="stat-item">
                 <span className="label">量</span>
-                <span className="value">{(stockBasicData.volume / 10000).toFixed(2)}</span>
+                <span className="value">{(stockBasicData?.volume / 10000).toFixed(2)}</span>
               </div>
             </div>
             <div className="stats-row">
               <div className="stat-item">
                 <span className="label">昨</span>
-                <span className="value">{stockBasicData.yesterday_close}</span>
+                <span className="value">{stockBasicData?.yesterday_close}</span>
               </div>
               <div className="stat-item">
                 <span className="label">低</span>
-                <span className="value">{stockBasicData.low}</span>
+                <span className="value">{stockBasicData?.low}</span>
               </div>
               <div className="stat-item">
                 <span className="label">额</span>
-                <span className="value">{(stockBasicData.turnover / 100000000).toFixed(2)}</span>
+                <span className="value">{(stockBasicData?.turnover / 100000000).toFixed(2)}</span>
               </div>
             </div>
           </div>
         </div>
-      )}
     </div>
   );
 };

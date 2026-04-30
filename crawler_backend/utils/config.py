@@ -24,9 +24,9 @@ class Config:
         self.AJAX_URL = f"{self.TARGET_SITE}/wp-admin/admin-ajax.php"
         
         # 请求配置
-        self.REQUEST_TIMEOUT = 30
-        self.MAX_RETRIES = 3
-        self.RETRY_DELAY = 2
+        self.REQUEST_TIMEOUT = 60  # 增加超时时间到60秒
+        self.MAX_RETRIES = 5       # 增加重试次数
+        self.RETRY_DELAY = 3       # 增加重试延迟
         
         # 频率限制
         self.REQUEST_INTERVAL = (2, 8)  # 随机间隔范围(秒)
@@ -79,8 +79,29 @@ class Config:
         self.CAPTCHA_SOLVERS = {
             'ddddocr': True,
             'tesseract': True,
-            'manual': False
+            'manual': False,
+            'chaojiying': True  # 启用超级鹰
         }
+        
+        # 超级鹰配置
+        self.CHAOJIYING_USERNAME = os.getenv('CHAOJIYING_USERNAME', '')
+        self.CHAOJIYING_PASSWORD = os.getenv('CHAOJIYING_PASSWORD', '')
+        self.CHAOJIYING_SOFT_ID = os.getenv('CHAOJIYING_SOFT_ID', '')
+        
+        # 短信服务配置
+        self.SMS_SERVICE = os.getenv('SMS_SERVICE', 'mock')  # jiema, ema, mock
+        self.YUNPIAN_API_KEY = os.getenv('YUNPIAN_API_KEY', '')
+        self.YUNPIAN_SECRET = os.getenv('YUNPIAN_SECRET', '')
+        self.ALIYUN_ACCESS_KEY = os.getenv('ALIYUN_ACCESS_KEY', '')
+        self.ALIYUN_SECRET_KEY = os.getenv('ALIYUN_SECRET_KEY', '')
+        self.TENCENT_SECRET_ID = os.getenv('TENCENT_SECRET_ID', '')
+        self.TENCENT_SECRET_KEY = os.getenv('TENCENT_SECRET_KEY', '')
+        
+        # e码平台配置
+        self.EMA_USERNAME = os.getenv('EMA_USERNAME', '')
+        self.EMA_PASSWORD = os.getenv('EMA_PASSWORD', '')
+        
+
         
         # 异常处理配置
         self.MAX_FAILURES = 5

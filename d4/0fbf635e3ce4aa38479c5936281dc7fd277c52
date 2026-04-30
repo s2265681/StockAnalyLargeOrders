@@ -1,0 +1,25 @@
+backend/services/data_source_adapter.py
+  5bbaa47c2de3dd27 1-164
+backend/services/eastmoney_l2.py
+  5bbaa47c2de3dd27 1-27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "d40fbf635e3ce4aa38479c5936281dc7fd277c52",
+  "prompts": {
+    "5bbaa47c2de3dd27": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0d261668-29a7-4cd5-a2c2-bcf104645127",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "佳伟",
+      "messages": [],
+      "total_additions": 191,
+      "total_deletions": 0,
+      "accepted_lines": 191,
+      "overriden_lines": 0
+    }
+  }
+}

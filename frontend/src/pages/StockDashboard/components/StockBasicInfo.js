@@ -8,6 +8,7 @@ import {
   stockBasicDataAtom,
   fetchStockBasicAtom
 } from '../../../store/atoms';
+import LimitUpMonitorPanel from './LimitUpMonitorPanel';
 
 const StockBasicInfo = ({ onStockCodeChange }) => {
   const [stockCode, setStockCode] = useAtom(stockCodeAtom);
@@ -127,6 +128,7 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
               </div>
             </div>
           </div>
+          <LimitUpMonitorPanel />
         </div>
     </div>
   );

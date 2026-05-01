@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useRef, useCallback, useMemo, useState } from 'react';
 import { Radio, Switch, Tag } from 'antd';
 import { useAtom } from 'jotai';

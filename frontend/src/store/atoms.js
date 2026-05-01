@@ -445,7 +445,7 @@ export const fetchL2DashboardAtom = atom(
         query.set('simulate', '1');
         query.set('simulate_time', simulateTime);
       }
-      const data = await apiRequest(`/api/v1/l2_dashboard?${query.toString()}`, { timeout: 15000 });
+      const data = await apiRequest(`/api/v1/l2_dashboard?${query.toString()}`, { timeout: 45000 });
 
       if (!applyL2DashboardData(set, data)) {
         set(errorAtom, data.message || '获取L2看板数据失败');

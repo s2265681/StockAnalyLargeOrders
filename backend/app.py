@@ -2,6 +2,9 @@
 重构后的Flask应用主文件
 整合所有拆分的模块
 """
+import eventlet
+eventlet.monkey_patch()
+
 import logging
 from flask import Flask
 from flask_cors import CORS

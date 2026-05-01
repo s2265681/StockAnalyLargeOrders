@@ -9,6 +9,19 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
+
+def _safe_request(func, timeout_seconds=8):
+    """在 eventlet 环境下为网络请求添加可靠的超时保护"""
+    try:
+        import eventlet
+        with eventlet.Timeout(timeout_seconds):
+            return func()
+    except ImportError:
+        return func()
+    except Exception:
+        return None
+
+
 class EastMoneyFreeSource:
     """东方财富免费数据源"""
 
@@ -74,10 +87,16 @@ class EastMoneyFreeSource:
             'fltt': 2
         }
 
-        try:
-            resp = self.session.get(url, params=params, timeout=10)
+        def _do_request():
+            resp = self.session.get(url, params=params, timeout=8)
             resp.raise_for_status()
-            data = resp.json()
+            return resp.json()
+
+        try:
+            data = _safe_request(_do_request, timeout_seconds=10)
+            if data is None:
+                logger.warning("东方财富行情接口超时或不可达")
+                return None
 
             if data.get('rc') != 0 or not data.get('data'):
                 logger.warning(f"东方财富行情接口返回异常: {data}")
@@ -107,7 +126,11 @@ class EastMoneyFreeSource:
         try:
             import akshare as ak
 
-            df = ak.stock_bid_ask_em(symbol=code)
+            def _fetch():
+                return ak.stock_bid_ask_em(symbol=code)
+            df = _safe_request(_fetch, timeout_seconds=8)
+            if df is None:
+                return self._empty_order_book()
             if df is None or df.empty:
                 return self._empty_order_book()
 
@@ -198,14 +221,20 @@ class EastMoneyFreeSource:
             'fltt': 2
         }
 
-        try:
-            resp = self.session.get(url, params=params, timeout=10)
+        def _do_request():
+            resp = self.session.get(url, params=params, timeout=8)
             resp.raise_for_status()
-            data = resp.json()
+            return resp.json()
+
+        try:
+            data = _safe_request(_do_request, timeout_seconds=10)
+            if data is None:
+                logger.warning("东方财富成交明细接口超时或不可达")
+                return self._get_intraday_details_sina(code, dt)
 
             if data.get('rc') != 0 or not data.get('data'):
                 logger.warning(f"东方财富成交明细接口返回异常: {data}")
-                return self._get_intraday_details_akshare(code, dt)
+                return self._get_intraday_details_sina(code, dt)
 
             details_raw = data['data'].get('details', [])
             new_pos = data['data'].get('pos', pos)
@@ -232,7 +261,7 @@ class EastMoneyFreeSource:
             return {'details': details, 'pos': new_pos}
         except Exception as e:
             logger.error(f"获取成交明细失败: {e}")
-            return self._get_intraday_details_akshare(code, dt)
+            return self._get_intraday_details_sina(code, dt)
 
     def get_timeshare(self, code, dt=None):
         """获取分时走势数据
@@ -259,10 +288,16 @@ class EastMoneyFreeSource:
             'ut': 'fa5fd1943c7b386f172d6893dbfba10b'
         }
 
-        try:
-            resp = self.session.get(url, params=params, timeout=10)
+        def _do_request():
+            resp = self.session.get(url, params=params, timeout=8)
             resp.raise_for_status()
-            data = resp.json()
+            return resp.json()
+
+        try:
+            data = _safe_request(_do_request, timeout_seconds=10)
+            if data is None:
+                logger.warning("东方财富分时接口超时或不可达")
+                return self._get_minute_timeshare_akshare(code, dt)
 
             if data.get('rc') != 0 or not data.get('data'):
                 logger.warning(f"东方财富分时接口返回异常: {data}")
@@ -304,10 +339,16 @@ class EastMoneyFreeSource:
             'ut': 'fa5fd1943c7b386f172d6893dbfba10b',
         }
 
-        try:
-            resp = self.session.get(url, params=params, timeout=10)
+        def _do_request():
+            resp = self.session.get(url, params=params, timeout=8)
             resp.raise_for_status()
-            data = resp.json()
+            return resp.json()
+
+        try:
+            data = _safe_request(_do_request, timeout_seconds=10)
+            if data is None:
+                logger.warning("东方财富历史分钟K线接口超时或不可达")
+                return self._get_minute_timeshare_akshare(code, dt)
 
             if data.get('rc') != 0 or not data.get('data'):
                 logger.warning(f"东方财富历史分钟K线接口返回异常: {data}")
@@ -323,12 +364,11 @@ class EastMoneyFreeSource:
                 if len(parts) < 7:
                     continue
 
-                # 1分钟K线格式: 时间,开,收,高,低,成交量(手),成交额,振幅,涨跌幅,涨跌额,换手率
-                time_full = parts[0]  # "2026-04-27 09:31"
+                time_full = parts[0]
                 time_str = time_full.split(' ')[1] if ' ' in time_full else time_full
-                close_price = float(parts[2])  # 收盘价（该分钟最后成交价）
-                volume = int(float(parts[5]))  # 成交量（手）
-                turnover = float(parts[6])     # 成交额
+                close_price = float(parts[2])
+                volume = int(float(parts[5]))
+                turnover = float(parts[6])
 
                 cumulative_turnover += turnover
                 cumulative_volume += volume
@@ -356,7 +396,10 @@ class EastMoneyFreeSource:
             import akshare as ak
 
             symbol = self._get_akshare_symbol(code)
-            df = ak.stock_zh_a_minute(symbol=symbol, period='1', adjust='')
+
+            def _fetch():
+                return ak.stock_zh_a_minute(symbol=symbol, period='1', adjust='')
+            df = _safe_request(_fetch, timeout_seconds=15)
             if df is None or df.empty or 'day' not in df.columns:
                 return []
 
@@ -415,10 +458,16 @@ class EastMoneyFreeSource:
             'ut': 'fa5fd1943c7b386f172d6893dbfba10b',
         }
 
-        try:
-            resp = self.session.get(url, params=params, timeout=10)
+        def _do_request():
+            resp = self.session.get(url, params=params, timeout=8)
             resp.raise_for_status()
-            data = resp.json()
+            return resp.json()
+
+        try:
+            data = _safe_request(_do_request, timeout_seconds=10)
+            if data is None:
+                logger.warning("东方财富日K线接口超时或不可达")
+                return None
 
             if data.get('rc') != 0 or not data.get('data'):
                 return None
@@ -434,7 +483,6 @@ class EastMoneyFreeSource:
 
             close = float(parts[2])
             change_percent = float(parts[8])
-            # 从涨跌幅反推昨收: preclose = close / (1 + change_percent/100)
             preclose = round(close / (1 + change_percent / 100), 2) if change_percent != 0 else close
 
             return {
@@ -474,14 +522,20 @@ class EastMoneyFreeSource:
             'dates': dt.replace('-', ''),  # 格式: 20250716
         }
 
-        try:
-            resp = self.session.get(url, params=params, timeout=15)
+        def _do_request():
+            resp = self.session.get(url, params=params, timeout=8)
             resp.raise_for_status()
-            data = resp.json()
+            return resp.json()
+
+        try:
+            data = _safe_request(_do_request, timeout_seconds=10)
+            if data is None:
+                logger.warning("东方财富历史成交明细接口超时或不可达")
+                return self._get_intraday_details_sina(code, dt)
 
             if data.get('rc') != 0 or not data.get('data'):
                 logger.warning(f"东方财富历史成交明细接口返回异常: {data}")
-                return self._get_intraday_details_akshare(code, dt)
+                return self._get_intraday_details_sina(code, dt)
 
             details_raw = data['data'].get('details', [])
             details = []
@@ -507,14 +561,18 @@ class EastMoneyFreeSource:
             return {'details': details, 'pos': 0}
         except Exception as e:
             logger.error(f"获取历史成交明细失败({dt}): {e}")
-            return self._get_intraday_details_akshare(code, dt)
+            return self._get_intraday_details_sina(code, dt)
 
     def _get_intraday_details_akshare(self, code, dt=None):
         """使用 akshare 当日分笔成交兜底，尽量恢复大单明细"""
         try:
             import akshare as ak
 
-            df = ak.stock_intraday_em(symbol=code)
+            def _fetch():
+                return ak.stock_intraday_em(symbol=code)
+            df = _safe_request(_fetch, timeout_seconds=8)
+            if df is None:
+                return self._get_intraday_details_sina(code, dt)
             if df is None or df.empty:
                 return {'details': [], 'pos': 0}
 
@@ -550,10 +608,14 @@ class EastMoneyFreeSource:
         try:
             import akshare as ak
 
-            df = ak.stock_intraday_sina(
-                symbol=self._get_akshare_symbol(code),
-                date=dt.replace('-', ''),
-            )
+            def _fetch():
+                return ak.stock_intraday_sina(
+                    symbol=self._get_akshare_symbol(code),
+                    date=dt.replace('-', ''),
+                )
+            df = _safe_request(_fetch, timeout_seconds=15)
+            if df is None:
+                return {'details': [], 'pos': 0}
             if df is None or df.empty:
                 return {'details': [], 'pos': 0}
 

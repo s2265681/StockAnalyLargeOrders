@@ -8,6 +8,7 @@ from datetime import datetime
 
 from .eastmoney_free import EastMoneyFreeSource
 from .eastmoney_l2 import EastMoneyL2Source
+from .limit_up_monitor import LimitUpMonitor
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,7 @@ LEVEL_THRESHOLDS = {
 
 # 简单内存缓存
 _cache = {}
-CACHE_TTL = 5  # 秒
+CACHE_TTL = 2  # 秒
 
 
 class DataSourceAdapter:
@@ -34,6 +35,7 @@ class DataSourceAdapter:
         else:
             self.source = EastMoneyFreeSource()
             self.source_name = 'eastmoney_free'
+        self.limit_up_monitor = LimitUpMonitor()
 
     def get_l2_dashboard(self, code, dt=None, simulate_time=None):
         """获取L2大单看板全量数据，结果缓存5秒"""
@@ -152,6 +154,9 @@ class DataSourceAdapter:
                     'change_percent': round((last_price - open_price) / open_price * 100, 2) if open_price else 0,
                 }
 
+        # 6. 封单监控
+        limit_up_data = self.limit_up_monitor.analyze(code, quote, order_book)
+
         return {
             'success': True,
             'data': {
@@ -162,6 +167,7 @@ class DataSourceAdapter:
                 'orders': large_orders,
                 'big_map': big_map,
                 'order_book': order_book,
+                'limit_up_monitor': limit_up_data,
                 'simulation': {
                     'enabled': bool(simulate_time),
                     'simulate_time': simulate_time,

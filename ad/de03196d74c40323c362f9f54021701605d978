@@ -1,0 +1,23 @@
+frontend/src/pages/StockDashboard/index.js
+  63e1161c005eec49 2,9-10,14-19,61-66,179-271,291-295
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "adde03196d74c40323c362f9f54021701605d978",
+  "prompts": {
+    "63e1161c005eec49": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e3d6f0f9-9ced-4c81-a19d-410443c7c887",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "佳伟",
+      "messages": [],
+      "total_additions": 113,
+      "total_deletions": 3,
+      "accepted_lines": 114,
+      "overriden_lines": 0
+    }
+  }
+}

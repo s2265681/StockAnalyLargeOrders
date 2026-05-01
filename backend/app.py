@@ -5,6 +5,7 @@
 import logging
 from flask import Flask
 from flask_cors import CORS
+from flask_socketio import SocketIO
 
 # 导入所有路由蓝图
 from routes import (
@@ -20,6 +21,7 @@ from routes import (
 # 创建Flask应用
 app = Flask(__name__)
 CORS(app)
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 # 设置日志
 logging.basicConfig(level=logging.INFO)
@@ -38,6 +40,11 @@ def register_blueprints(app):
 
 # 注册蓝图
 register_blueprints(app)
+
+# 注册 WebSocket 事件
+from websocket_manager import register_websocket_events, start_push_loop
+register_websocket_events(socketio)
+start_push_loop(socketio)
 
 # 健康检查端点
 @app.route('/health')
@@ -141,4 +148,4 @@ if __name__ == '__main__':
     logger.info("  - stock_realtime: 股票实时数据")
     logger.info("  - stock_other: 其他功能")
     
-    app.run(debug=True, host='0.0.0.0', port=9001) 
+    socketio.run(app, debug=True, host='0.0.0.0', port=9001) 

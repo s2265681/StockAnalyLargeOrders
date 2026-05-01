@@ -102,6 +102,71 @@ class EastMoneyFreeSource:
             logger.error(f"获取实时行情失败: {e}")
             return None
 
+    def get_order_book(self, code):
+        """获取五档盘口，金额单位为元，volume 保持接口返回股数"""
+        try:
+            import akshare as ak
+
+            df = ak.stock_bid_ask_em(symbol=code)
+            if df is None or df.empty:
+                return self._empty_order_book()
+
+            values = dict(zip(df['item'], df['value']))
+            bids = []
+            asks = []
+            for level in range(1, 6):
+                bid_price = self._safe_float(values.get(f'buy_{level}'))
+                bid_volume = self._safe_float(values.get(f'buy_{level}_vol'))
+                ask_price = self._safe_float(values.get(f'sell_{level}'))
+                ask_volume = self._safe_float(values.get(f'sell_{level}_vol'))
+
+                if bid_price and bid_volume:
+                    bids.append({
+                        'level': level,
+                        'price': bid_price,
+                        'volume': bid_volume,
+                        'amount': round(bid_price * bid_volume, 2),
+                    })
+                if ask_price and ask_volume:
+                    asks.append({
+                        'level': level,
+                        'price': ask_price,
+                        'volume': ask_volume,
+                        'amount': round(ask_price * ask_volume, 2),
+                    })
+
+            bid_amount = round(sum(item['amount'] for item in bids), 2)
+            ask_amount = round(sum(item['amount'] for item in asks), 2)
+            spread = round(asks[0]['price'] - bids[0]['price'], 3) if bids and asks else 0
+            return {
+                'bids': bids,
+                'asks': asks,
+                'spread': spread,
+                'bid_amount': bid_amount,
+                'ask_amount': ask_amount,
+                'source': 'akshare.stock_bid_ask_em',
+            }
+        except Exception as e:
+            logger.error(f"获取五档盘口失败: {e}")
+            return self._empty_order_book()
+
+    @staticmethod
+    def _safe_float(value):
+        try:
+            return float(value or 0)
+        except (TypeError, ValueError):
+            return 0.0
+
+    def _empty_order_book(self):
+        return {
+            'bids': [],
+            'asks': [],
+            'spread': 0,
+            'bid_amount': 0,
+            'ask_amount': 0,
+            'source': 'empty',
+        }
+
     def get_tick_details(self, code, pos=-100000, dt=None):
         """获取逐笔成交明细
         Args:

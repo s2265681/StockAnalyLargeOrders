@@ -35,14 +35,14 @@ class DataSourceAdapter:
             self.source = EastMoneyFreeSource()
             self.source_name = 'eastmoney_free'
 
-    def get_l2_dashboard(self, code, dt=None):
+    def get_l2_dashboard(self, code, dt=None, simulate_time=None):
         """获取L2大单看板全量数据，结果缓存5秒"""
         today = datetime.now().strftime('%Y-%m-%d')
         if dt is None:
             dt = today
         is_today = (dt == today)
 
-        cache_key = f'l2_dashboard_{code}_{dt}'
+        cache_key = f'l2_dashboard_{code}_{dt}_{simulate_time or "live"}'
         now = time.time()
 
         if cache_key in _cache:
@@ -52,11 +52,11 @@ class DataSourceAdapter:
             if now - cached_time < ttl:
                 return cached_data
 
-        result = self._build_dashboard(code, dt=dt)
+        result = self._build_dashboard(code, dt=dt, simulate_time=simulate_time)
         _cache[cache_key] = (now, result)
         return result
 
-    def _build_dashboard(self, code, dt=None):
+    def _build_dashboard(self, code, dt=None, simulate_time=None):
         """构建完整的看板数据"""
         today = datetime.now().strftime('%Y-%m-%d')
         if dt is None:
@@ -74,11 +74,15 @@ class DataSourceAdapter:
         timeshare = self.source.get_timeshare(code, dt=dt)
         if not quote:
             quote = self._build_fallback_quote(code, dt, timeshare)
+        order_book = self.source.get_order_book(code) if hasattr(self.source, 'get_order_book') else self._empty_order_book()
 
         # 4. 标注买卖方向。免费源的中性盘按相邻价格变化归因，便于统一红/绿展示。
         self._annotate_directions(all_details)
         if not all_details:
             all_details = self._build_minute_amount_details(timeshare)
+
+        if simulate_time:
+            timeshare, all_details = self._slice_intraday_data(timeshare, all_details, simulate_time)
 
         # 5. 识别大单并分级
         large_orders = self._identify_large_orders(all_details)
@@ -157,10 +161,32 @@ class DataSourceAdapter:
                 'large_orders': large_orders,
                 'orders': large_orders,
                 'big_map': big_map,
+                'order_book': order_book,
+                'simulation': {
+                    'enabled': bool(simulate_time),
+                    'simulate_time': simulate_time,
+                },
                 'data_source': self.source_name,
                 'update_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             }
         }
+
+    def _slice_intraday_data(self, timeshare, details, simulate_time):
+        """按模拟时间裁剪分时和逐笔数据"""
+        cutoff = simulate_time[:5]
+
+        def minute_of(value):
+            return str(value or '')[:5]
+
+        sliced_timeshare = [
+            point for point in timeshare
+            if minute_of(point.get('time')) <= cutoff
+        ]
+        sliced_details = [
+            detail for detail in details
+            if minute_of(detail.get('time')) <= cutoff
+        ]
+        return sliced_timeshare, sliced_details
 
     def _build_fallback_quote(self, code, dt, timeshare):
         """实时行情接口不可用时，用日K/分时/基础信息兜底，避免整页失败"""
@@ -231,6 +257,15 @@ class DataSourceAdapter:
             'volume': 0,
             'turnover': 0,
             'change_percent': 0,
+        }
+
+    def _empty_order_book(self):
+        return {
+            'bids': [],
+            'asks': [],
+            'spread': 0,
+            'bid_amount': 0,
+            'ask_amount': 0,
         }
 
     def _get_fallback_stock_name(self, code):

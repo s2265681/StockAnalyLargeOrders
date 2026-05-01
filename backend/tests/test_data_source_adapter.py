@@ -53,6 +53,21 @@ class FakeSource:
             'change_percent': 4.08,
         }
 
+    def get_order_book(self, code):
+        return {
+            'bids': [
+                {'level': 1, 'price': 10.19, 'volume': 1200, 'amount': 1222800.0},
+                {'level': 2, 'price': 10.18, 'volume': 800, 'amount': 814400.0},
+            ],
+            'asks': [
+                {'level': 1, 'price': 10.21, 'volume': 600, 'amount': 612600.0},
+                {'level': 2, 'price': 10.22, 'volume': 500, 'amount': 511000.0},
+            ],
+            'spread': 0.02,
+            'bid_amount': 2037200.0,
+            'ask_amount': 1123600.0,
+        }
+
     def infer_direction(self, buy_sell_type):
         return {1: '被买', 2: '被卖', 4: '中性'}.get(buy_sell_type, '中性')
 
@@ -96,6 +111,17 @@ class DataSourceAdapterAnalysisTest(unittest.TestCase):
         self.assertEqual(big_map['10:15'][0]['amount'], 336.0)
         self.assertEqual(big_map['10:15'][0]['price'], 10.5)
         self.assertEqual(big_map['10:15'][0]['type'], '被买')
+        self.assertEqual(result['data']['order_book']['bids'][0]['price'], 10.19)
+        self.assertGreater(result['data']['order_book']['bid_amount'], result['data']['order_book']['ask_amount'])
+
+    def test_simulated_dashboard_only_returns_data_up_to_simulate_time(self):
+        result = self.adapter._build_dashboard('000001', dt='2026-05-01', simulate_time='09:31')
+
+        self.assertEqual([p['time'] for p in result['data']['timeshare']], ['09:30', '09:31'])
+        self.assertEqual([o['time'] for o in result['data']['large_orders']], ['09:31:02'])
+        self.assertEqual(set(result['data']['big_map'].keys()), {'09:31'})
+        self.assertTrue(result['data']['simulation']['enabled'])
+        self.assertEqual(result['data']['simulation']['simulate_time'], '09:31')
 
     def test_dashboard_uses_fallback_quote_when_realtime_quote_fails(self):
         self.adapter.source = QuoteFailureSource()

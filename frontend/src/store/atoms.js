@@ -359,11 +359,18 @@ export const fetchL2DashboardAtom = atom(
   async (get, set, params) => {
     const code = typeof params === 'string' ? params : params.code;
     const dt = typeof params === 'string' ? get(selectedDateAtom) : (params.dt || get(selectedDateAtom));
+    const simulate = typeof params === 'object' && params.simulate;
+    const simulateTime = typeof params === 'object' ? params.simulateTime : null;
     set(loadingAtom, true);
     set(errorAtom, null);
 
     try {
-      const data = await apiRequest(`/api/v1/l2_dashboard?code=${code}&dt=${dt}`, { timeout: 15000 });
+      const query = new URLSearchParams({ code, dt });
+      if (simulate && simulateTime) {
+        query.set('simulate', '1');
+        query.set('simulate_time', simulateTime);
+      }
+      const data = await apiRequest(`/api/v1/l2_dashboard?${query.toString()}`, { timeout: 15000 });
 
       if (data.success === true && data.data) {
         const d = data.data;
@@ -380,8 +387,10 @@ export const fetchL2DashboardAtom = atom(
           zhuli: [],
           sanhu: [],
           big_map: d.big_map || {},
+          order_book: d.order_book || null,
           base_info: {
             prevClosePrice: d.stock_info.yesterday_close,
+            openPrice: d.stock_info.open,
             highPrice: d.stock_info.high,
             lowPrice: d.stock_info.low,
           },

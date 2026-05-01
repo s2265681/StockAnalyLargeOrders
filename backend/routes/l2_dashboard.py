@@ -29,13 +29,15 @@ def l2_dashboard():
     """
     code = request.args.get('code', '000001')
     dt = request.args.get('dt', datetime.now().strftime('%Y-%m-%d'))
+    simulate = request.args.get('simulate') in ('1', 'true', 'True')
+    simulate_time = request.args.get('simulate_time') if simulate else None
 
     # 基本校验
     if not code.isdigit() or len(code) != 6:
         return jsonify({'success': False, 'message': f'无效的股票代码: {code}'}), 400
 
     try:
-        result = adapter.get_l2_dashboard(code, dt=dt)
+        result = adapter.get_l2_dashboard(code, dt=dt, simulate_time=simulate_time)
         return jsonify(result)
     except Exception as e:
         logger.error(f"L2看板接口异常: {e}", exc_info=True)

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Card, Spin, Alert, Button } from 'antd';
+import { Button } from 'antd';
 import { useAtom } from 'jotai';
 import ReactEChartsCore from 'echarts-for-react/lib/core';
 import * as echarts from 'echarts/core';
@@ -20,7 +20,6 @@ import {
   largeOrdersDataAtom,
   timeshareDataAtom,
   filterAmountAtom,
-  loadingAtom,
   errorAtom,
   fetchTimeshareDataAtom
 } from '../../../store/atoms';
@@ -46,7 +45,6 @@ const StockChart = () => {
   const [largeOrdersData] = useAtom(largeOrdersDataAtom);
   const [timeshareData] = useAtom(timeshareDataAtom);
   const [filterAmount] = useAtom(filterAmountAtom);
-  const [loading] = useAtom(loadingAtom);
   const [error] = useAtom(errorAtom);
   const [, fetchTimeshareData] = useAtom(fetchTimeshareDataAtom);
 
@@ -1074,8 +1072,7 @@ const StockChart = () => {
           </div>
         </div>
         
-        <Spin spinning={loading}>
-          {/* {error && (
+        {/* {error && (
             <Alert
               message="错误"
               description={error}
@@ -1092,26 +1089,25 @@ const StockChart = () => {
               图表配置: {Object.keys(getTimeshareChartOption()).length > 0 ? '已生成' : '未生成'}
             </div>
           </div> */}
-          <ReactEChartsCore
-            echarts={echarts}
-            option={getTimeshareChartOption()}
-            style={{  }}
-            opts={{ 
-              renderer: 'canvas',
-              devicePixelRatio: window.devicePixelRatio || 1
-            }}
-            notMerge={true}
-            lazyUpdate={false}
-            onChartReady={(chart) => {
-              // console.log('✅ ECharts 图表已准备就绪:', chart);
-            }}
-            onEvents={{
-              click: (params) => {
-                // console.log('图表点击事件:', params);
-              }
-            }}
-          />
-        </Spin>
+        <ReactEChartsCore
+          echarts={echarts}
+          option={getTimeshareChartOption()}
+          style={{  }}
+          opts={{ 
+            renderer: 'canvas',
+            devicePixelRatio: window.devicePixelRatio || 1
+          }}
+          notMerge={true}
+          lazyUpdate={false}
+          onChartReady={(chart) => {
+            // console.log('✅ ECharts 图表已准备就绪:', chart);
+          }}
+          onEvents={{
+            click: (params) => {
+              // console.log('图表点击事件:', params);
+            }
+          }}
+        />
       </div>
 
       {/* 大单数据分析 */}

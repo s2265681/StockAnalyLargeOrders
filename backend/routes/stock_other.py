@@ -82,6 +82,26 @@ def build_limit_up_theme_summary(limit_up_rows, code):
             current_stock = {**item, 'theme': theme}
 
     themes = sorted(theme_map.values(), key=lambda x: x['count'], reverse=True)
+
+    # 联动分析
+    for theme_item in themes:
+        stock_count = len(theme_item['stocks'])
+        if stock_count >= 4:
+            theme_item['linkage_score'] = round(min(stock_count / 5, 1.0), 2)
+            theme_item['linkage_label'] = '强联动'
+        elif stock_count >= 2:
+            theme_item['linkage_score'] = round(stock_count / 5, 2)
+            theme_item['linkage_label'] = '中等联动'
+        else:
+            theme_item['linkage_score'] = 0.1
+            theme_item['linkage_label'] = '弱联动'
+
+    # 独狼股识别
+    lone_wolf_stocks = []
+    for theme_item in themes:
+        if theme_item['count'] == 1:
+            lone_wolf_stocks.extend([s['code'] for s in theme_item['stocks']])
+
     current_theme = current_stock.get('theme') if current_stock else ''
     current_theme_count = theme_map.get(current_theme, {}).get('count', 0) if current_theme else 0
 
@@ -95,6 +115,7 @@ def build_limit_up_theme_summary(limit_up_rows, code):
         'current_theme': current_theme,
         'current_theme_count': current_theme_count,
         'themes': themes,
+        'lone_wolf_stocks': lone_wolf_stocks,
     }
 
 
@@ -132,6 +153,33 @@ def get_limit_up_themes():
         df = ak.stock_zt_pool_em(date=trade_date)
         rows = df.to_dict('records') if df is not None else []
         data = build_limit_up_theme_summary(rows, code)
+
+        # 获取跌停数据
+        limit_down_count = 0
+        try:
+            dt_df = ak.stock_zt_pool_dtgc_em(date=trade_date)
+            limit_down_count = len(dt_df) if dt_df is not None else 0
+        except Exception:
+            pass
+
+        # 情绪标签
+        limit_up_count = sum(t['count'] for t in data.get('themes', []))
+        if limit_up_count > limit_down_count * 5:
+            sentiment_label = '强势'
+        elif limit_up_count > limit_down_count * 2:
+            sentiment_label = '偏强'
+        elif limit_up_count > limit_down_count:
+            sentiment_label = '中性'
+        else:
+            sentiment_label = '偏弱'
+
+        data['market_sentiment'] = {
+            'limit_up_count': limit_up_count,
+            'limit_down_count': limit_down_count,
+            'sentiment_label': sentiment_label,
+            'lone_wolf_stocks': data.get('lone_wolf_stocks', []),
+        }
+
         data = _enrich_current_stock_info(data, code, ak)
         data['trade_date'] = dt
         data['data_source'] = 'akshare.stock_zt_pool_em'

@@ -13,7 +13,8 @@ from routes import (
     stock_tick_bp,
     stock_realtime_bp,
     stock_other_bp,
-    l2_data_bp
+    l2_data_bp,
+    l2_dashboard_bp
 )
 
 # 创建Flask应用
@@ -33,6 +34,7 @@ def register_blueprints(app):
     app.register_blueprint(stock_realtime_bp)   # 股票实时数据接口
     app.register_blueprint(stock_other_bp)      # 其他功能接口
     app.register_blueprint(l2_data_bp)          # L2大单逐笔成交数据接口
+    app.register_blueprint(l2_dashboard_bp)     # L2大单看板统一接口
 
 # 注册蓝图
 register_blueprints(app)

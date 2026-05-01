@@ -1,0 +1,66 @@
+frontend/src/pages/StockDashboard/components/StockChart.js
+  7b44e00ac94075b4 163,210,213,219-282,287-290,292-295,297-299,407-409,440-442,444-465,475,491,499-500,505,771-804,822-842,860-862,865-867,869,888,891-893,914,916,1061,1065
+  8af448382a3c5438 52
+backend/routes/l2_dashboard.py
+  8af448382a3c5438 6,25,31,38
+backend/services/data_source_adapter.py
+  7b44e00ac94075b4 75-76,78-81,88-120,131-154,158,165-281
+frontend/src/pages/StockDashboard/utils/l2Analysis.js
+  7b44e00ac94075b4 1-77
+backend/routes/stock_other.py
+  7b44e00ac94075b4 41-143
+frontend/src/pages/StockDashboard/components/StockOrderDetails.js
+  7b44e00ac94075b4 54,56-57
+frontend/src/pages/StockDashboard/index.js
+  7b44e00ac94075b4 6,10-11,37,48,50,72,75
+backend/tests/test_data_source_adapter.py
+  7b44e00ac94075b4 5-207
+backend/services/eastmoney_l2.py
+  8af448382a3c5438 23-26
+  7b44e00ac94075b4 20
+backend/tests/__init__.py
+  7b44e00ac94075b4 1
+frontend/src/store/atoms.js
+  7b44e00ac94075b4 11-44,54-56,356,359-361,366,372-375,377-379,391,394-395,401,433-450
+frontend/src/pages/StockDashboard/components/ThemeLimitUpPanel.js
+  7b44e00ac94075b4 1-79
+frontend/src/pages/StockDashboard/utils/l2Analysis.test.js
+  7b44e00ac94075b4 1-39
+backend/services/eastmoney_free.py
+  7b44e00ac94075b4 36-59,105,109-110,117-119,121-125,143,170,172-173,176,180-185,204,210-256,261-262,264-270,274-323,328,331-516
+frontend/src/index.css
+  7b44e00ac94075b4 30-31,37-41,44-45,49-50,191-289,998-1012,1142-1143,1663-1701,1764-1765,1769-1770,1839-1965
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "e1b6b89639362f72a8c266d3f411388993fa3361",
+  "prompts": {
+    "7b44e00ac94075b4": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "57c0d03b-375a-464e-8b49-5abd14e4f080",
+        "model": "gpt-5.5"
+      },
+      "human_author": "佳伟",
+      "messages": [],
+      "total_additions": 1321,
+      "total_deletions": 554,
+      "accepted_lines": 1173,
+      "overriden_lines": 0
+    },
+    "8af448382a3c5438": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a3e76399-67b2-46c0-bfbd-f4bc3443d5ff",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "佳伟",
+      "messages": [],
+      "total_additions": 2926,
+      "total_deletions": 8,
+      "accepted_lines": 977,
+      "overriden_lines": 38
+    }
+  }
+}

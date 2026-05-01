@@ -1,11 +1,46 @@
 import { atom } from 'jotai';
 import { apiRequest, getEnvironmentInfo } from '../config/api.js';
+import { alignTimeshareToTradingAxis } from '../pages/StockDashboard/utils/l2Analysis.js';
 // import quote from '../mock/quote.json'
 
 
 // 股票代码原子
 const initCode =  new URLSearchParams(window.location.search).get('code') || '000001';
 export const stockCodeAtom = atom(initCode);
+
+const MARKET_HOLIDAYS = new Set([
+  '2026-05-01',
+]);
+
+const formatLocalDate = (date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
+const isTradingDay = (date) => {
+  const day = date.getDay();
+  return day !== 0 && day !== 6 && !MARKET_HOLIDAYS.has(formatLocalDate(date));
+};
+
+// 当前看板只展示最新有效交易日
+const getLastTradingDay = () => {
+  const d = new Date();
+  const now = new Date();
+
+  if (now.getHours() < 9 || (now.getHours() === 9 && now.getMinutes() < 30)) {
+    d.setDate(d.getDate() - 1);
+  }
+
+  while (!isTradingDay(d)) {
+    d.setDate(d.getDate() - 1);
+  }
+
+  return formatLocalDate(d);
+};
+
+export const selectedDateAtom = atom(getLastTradingDay());
 
 // 股票基础数据原子
 export const stockBasicDataAtom = atom(null);
@@ -15,6 +50,9 @@ export const largeOrdersDataAtom = atom(null);
 
 // 分时图数据原子
 export const timeshareDataAtom = atom(null);
+
+// 题材与涨停池归纳
+export const limitUpThemesAtom = atom(null);
 
 // 实时交易数据原子
 export const realtimeDataAtom = atom(null);
@@ -315,22 +353,30 @@ const determineCategoryFromWan = (amountWan) => {
 };
 
 // 获取L2看板统一数据的异步原子
+// 参数可以是 code 字符串，或 { code, dt } 对象
 export const fetchL2DashboardAtom = atom(
   null,
-  async (get, set, code) => {
+  async (get, set, params) => {
+    const code = typeof params === 'string' ? params : params.code;
+    const dt = typeof params === 'string' ? get(selectedDateAtom) : (params.dt || get(selectedDateAtom));
     set(loadingAtom, true);
     set(errorAtom, null);
 
     try {
-      const data = await apiRequest(`/api/v1/l2_dashboard?code=${code}`, { timeout: 15000 });
+      const data = await apiRequest(`/api/v1/l2_dashboard?code=${code}&dt=${dt}`, { timeout: 15000 });
 
       if (data.success === true && data.data) {
         const d = data.data;
 
         // 1. 设置分时图数据（兼容 StockChart.js 格式）
+        const timeshare = d.timeshare || [];
+
+        const alignedTimeshare = alignTimeshareToTradingAxis(timeshare);
+
         set(timeshareDataAtom, {
-          fenshi: d.timeshare.map(t => t.price),
-          volume: d.timeshare.map(t => t.volume),
+          timeAxis: alignedTimeshare.axis,
+          fenshi: alignedTimeshare.fenshi,
+          volume: alignedTimeshare.volume,
           zhuli: [],
           sanhu: [],
           big_map: d.big_map || {},
@@ -342,16 +388,17 @@ export const fetchL2DashboardAtom = atom(
         });
 
         // 2. 设置大单数据
-        const orders = d.orders || [];
+        const orders = d.large_orders || d.orders || [];
         const stats = d.statistics || {};
         const buyCount = orders.filter(o => o.direction === '被买' || o.direction === '主买').length;
-        const sellCount = orders.length - buyCount;
+        const sellCount = orders.filter(o => o.direction === '被卖' || o.direction === '主卖').length;
+        const neutralCount = orders.length - buyCount - sellCount;
         const totalAmount = orders.reduce((sum, o) => sum + (o.amount || 0), 0);
         const buyAmount = orders.filter(o => o.direction === '被买' || o.direction === '主买').reduce((sum, o) => sum + (o.amount || 0), 0);
         const netInflow = buyAmount - (totalAmount - buyAmount);
 
         set(largeOrdersDataAtom, {
-          summary: { buyCount, sellCount, totalAmount, netInflow },
+          summary: { buyCount, sellCount, neutralCount, totalAmount, netInflow },
           largeOrders: orders.map(order => ({
             time: order.time,
             type: (order.direction === '被买' || order.direction === '主买') ? 'buy' : 'sell',
@@ -379,6 +426,28 @@ export const fetchL2DashboardAtom = atom(
       set(errorAtom, `获取L2看板数据失败: ${error.message}`);
     } finally {
       set(loadingAtom, false);
+    }
+  }
+);
+
+// 获取当前股票题材与当天涨停池归纳
+export const fetchLimitUpThemesAtom = atom(
+  null,
+  async (get, set, code) => {
+    const dt = get(selectedDateAtom);
+
+    try {
+      const data = await apiRequest(`/api/v1/limit_up_themes?code=${code}&dt=${dt}`, { timeout: 30000 });
+      if (data.code === 200 && data.data) {
+        set(limitUpThemesAtom, data.data);
+      } else {
+        set(limitUpThemesAtom, null);
+      }
+    } catch (error) {
+      set(limitUpThemesAtom, {
+        error: error.message,
+        themes: [],
+      });
     }
   }
 );

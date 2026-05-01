@@ -51,10 +51,10 @@ const StockOrderDetails = () => {
         const s = ls[key] || {};
         return {
           buy: s.buy_count || 0,
-          sell: s.sell_count || 0,
+          sell: (s.sell_count || 0) + (s.neutral_count || 0),
           buyAmount: s.buy_amount || 0,
-          sellAmount: s.sell_amount || 0,
-          totalAmount: (s.buy_amount || 0) + (s.sell_amount || 0),
+          sellAmount: (s.sell_amount || 0) + (s.neutral_amount || 0),
+          totalAmount: (s.buy_amount || 0) + (s.sell_amount || 0) + (s.neutral_amount || 0),
         };
       };
       return {

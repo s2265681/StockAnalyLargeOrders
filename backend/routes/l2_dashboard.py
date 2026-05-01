@@ -3,6 +3,7 @@ L2大单看板统一API路由
 提供一站式的L2大单数据接口
 """
 import logging
+from datetime import datetime
 from flask import Blueprint, request, jsonify
 
 from services.data_source_adapter import DataSourceAdapter
@@ -21,18 +22,20 @@ def l2_dashboard():
 
     Query Params:
         code: 股票代码，默认 '000001'
+        dt: 日期，格式 YYYY-MM-DD，默认当天
 
     Returns:
         JSON: 统一格式的L2看板数据
     """
     code = request.args.get('code', '000001')
+    dt = request.args.get('dt', datetime.now().strftime('%Y-%m-%d'))
 
     # 基本校验
     if not code.isdigit() or len(code) != 6:
         return jsonify({'success': False, 'message': f'无效的股票代码: {code}'}), 400
 
     try:
-        result = adapter.get_l2_dashboard(code)
+        result = adapter.get_l2_dashboard(code, dt=dt)
         return jsonify(result)
     except Exception as e:
         logger.error(f"L2看板接口异常: {e}", exc_info=True)

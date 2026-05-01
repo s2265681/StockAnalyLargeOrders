@@ -38,6 +38,109 @@ logger = logging.getLogger(__name__)
 # 创建蓝图
 stock_other_bp = Blueprint('stock_other', __name__)
 
+
+def _normalize_stock_code(code):
+    return str(code).zfill(6)
+
+
+def _json_value(value, default=0):
+    if value is None:
+        return default
+    if hasattr(value, 'item'):
+        return value.item()
+    return value
+
+
+def build_limit_up_theme_summary(limit_up_rows, code):
+    """按题材/行业归纳涨停池，并标出当前股票所属题材"""
+    normalized_code = _normalize_stock_code(code)
+    theme_map = {}
+    current_stock = None
+
+    for row in limit_up_rows:
+        stock_code = _normalize_stock_code(row.get('代码', ''))
+        theme = row.get('所属行业') or '未分类'
+        item = {
+            'code': stock_code,
+            'name': row.get('名称', ''),
+            'price': _json_value(row.get('最新价'), 0),
+            'limit_up_stat': row.get('涨停统计', ''),
+            'consecutive_boards': int(_json_value(row.get('连板数'), 0) or 0),
+            'seal_amount': _json_value(row.get('封板资金'), 0),
+            'reason': f'{theme}题材涨停',
+        }
+
+        theme_map.setdefault(theme, {
+            'theme': theme,
+            'count': 0,
+            'stocks': [],
+        })
+        theme_map[theme]['count'] += 1
+        theme_map[theme]['stocks'].append(item)
+
+        if stock_code == normalized_code:
+            current_stock = {**item, 'theme': theme}
+
+    themes = sorted(theme_map.values(), key=lambda x: x['count'], reverse=True)
+    current_theme = current_stock.get('theme') if current_stock else ''
+    current_theme_count = theme_map.get(current_theme, {}).get('count', 0) if current_theme else 0
+
+    return {
+        'current_stock': current_stock or {
+            'code': normalized_code,
+            'name': '',
+            'theme': '',
+            'reason': '当前股票未在当日涨停池中，暂无涨停原因',
+        },
+        'current_theme': current_theme,
+        'current_theme_count': current_theme_count,
+        'themes': themes,
+    }
+
+
+def _enrich_current_stock_info(data, code, ak):
+    if data.get('current_theme'):
+        return data
+
+    try:
+        info_df = ak.stock_individual_info_em(symbol=_normalize_stock_code(code))
+        info = dict(zip(info_df['item'], info_df['value']))
+        theme = info.get('行业') or info.get('所属行业') or ''
+        name = info.get('股票简称') or info.get('简称') or data['current_stock'].get('name', '')
+        data['current_stock'] = {
+            **data['current_stock'],
+            'name': name,
+            'theme': theme,
+            'reason': f'当前股票属于{theme}行业，但未在当日涨停池中' if theme else data['current_stock']['reason'],
+        }
+        data['current_theme'] = theme
+    except Exception as e:
+        logger.warning(f"补充当前股票题材失败: {e}")
+
+    return data
+
+
+@stock_other_bp.route('/api/v1/limit_up_themes', methods=['GET'])
+def get_limit_up_themes():
+    """获取当前股票题材和当天涨停池按题材归纳"""
+    code = request.args.get('code', '000001')
+    dt = request.args.get('dt', datetime.now().strftime('%Y-%m-%d'))
+    trade_date = dt.replace('-', '')
+
+    try:
+        import akshare as ak
+        df = ak.stock_zt_pool_em(date=trade_date)
+        rows = df.to_dict('records') if df is not None else []
+        data = build_limit_up_theme_summary(rows, code)
+        data = _enrich_current_stock_info(data, code, ak)
+        data['trade_date'] = dt
+        data['data_source'] = 'akshare.stock_zt_pool_em'
+        data['note'] = '题材按涨停池所属行业归纳；接口未提供逐股官方涨停原因时，原因展示为题材归纳。'
+        return success_response(data=data)
+    except Exception as e:
+        logger.error(f"获取涨停题材归纳失败: {e}", exc_info=True)
+        return error_response(message=f'获取涨停题材归纳失败: {str(e)}')
+
 @stock_other_bp.route('/api/stock/validate', methods=['GET'])
 def validate_stock_data():
     """验证股票数据"""

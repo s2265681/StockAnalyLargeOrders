@@ -49,7 +49,7 @@ const StockChart = () => {
   const [loading] = useAtom(loadingAtom);
   const [error] = useAtom(errorAtom);
   const [, fetchTimeshareData] = useAtom(fetchTimeshareDataAtom);
-  
+
   // 添加筛选阈值状态，默认300
   const [filterThreshold, setFilterThreshold] = React.useState(300);
 
@@ -160,7 +160,7 @@ const StockChart = () => {
       return {};
     }
     
-    const { base_info, fenshi, sanhu, volume, zhuli } = timeshareData;
+    const { base_info, fenshi, sanhu, volume, zhuli, timeAxis } = timeshareData;
     const prevClosePrice = parseFloat(base_info?.prevClosePrice || 12.59);
     
     // 根据数据长度生成时间轴
@@ -207,201 +207,96 @@ const StockChart = () => {
       return timePoints;
     };
     
-    const fullTimeAxis = generateTimeAxisByLength(dataLength);
+    const fullTimeAxis = timeAxis?.length ? timeAxis : generateTimeAxisByLength(dataLength);
     
     // 生成big_map数据标注点
-    const generateBigMapMarkers = (bigMapData, institutionalData, retailData, fullTimeAxis, filterThreshold = 300) => {
+    const generateBigMapMarkers = (bigMapData, institutionalData, retailData, fullTimeAxis, filterThreshold = 300, yAxisMin = -10, yAxisMax = 10) => {
       if (!bigMapData) {
         return { institutionalMarkers: [], retailMarkers: [] };
       }
 
       const institutionalMarkers = [];
-      const usedPositions = new Map(); // 记录每个时间点已使用的位置
-      
-      // 遍历big_map中的每个时间点
+      const isBuyOrder = (item) => {
+        const rawType = item.type ?? item.t;
+        const type = Number.isNaN(parseInt(rawType, 10)) ? rawType : parseInt(rawType, 10);
+        return type === 1 || type === 2 || type === '主买' || type === '被买';
+      };
+      const isSellOrder = (item) => {
+        const rawType = item.type ?? item.t;
+        const type = Number.isNaN(parseInt(rawType, 10)) ? rawType : parseInt(rawType, 10);
+        return type === 3 || type === 4 || type === '主卖' || type === '被卖';
+      };
+      const buildMarker = (timeStr, item, stackIndex, side) => {
+        const value = parseFloat(item.amount ?? item.v);
+        const isBuy = side === 'buy';
+        const color = isBuy ? '#ff4d4f' : '#52c41a';
+        const timeIndex = fullTimeAxis.indexOf(timeStr);
+        if (timeIndex === -1) return null;
+
+        const basePrice = item.price || fenshi[timeIndex];
+        if (!basePrice || !prevClosePrice) return null;
+
+        const baseY = ((parseFloat(basePrice) - prevClosePrice) / prevClosePrice) * 100;
+        const stackStep = Math.max((yAxisMax - yAxisMin) * 0.045, 0.28);
+        const maxRowsPerColumn = 6;
+        const rowIndex = stackIndex % maxRowsPerColumn;
+        const columnIndex = Math.floor(stackIndex / maxRowsPerColumn);
+        const horizontalOffset = (isBuy ? -12 : 12) + (isBuy ? -1 : 1) * columnIndex * 18;
+        const neededSpace = (rowIndex + 1) * stackStep + 0.3;
+        const spaceAbove = yAxisMax - baseY;
+        const spaceBelow = baseY - yAxisMin;
+        const direction = isBuy
+          ? (spaceAbove >= neededSpace ? 1 : -1)
+          : (spaceBelow >= neededSpace ? -1 : 1);
+        const stackedY = Math.max(
+          yAxisMin + 0.15,
+          Math.min(yAxisMax - 0.15, baseY + direction * (rowIndex + 1) * stackStep)
+        );
+
+        return {
+          name: Math.round(value).toString(),
+          coord: [timeStr, stackedY],
+          symbol: 'circle',
+          symbolSize: 1,
+          symbolOffset: [horizontalOffset, 0],
+          itemStyle: {
+            color: 'transparent',
+            borderColor: 'transparent',
+            borderWidth: 0
+          },
+          label: {
+            show: true,
+            position: 'inside',
+            offset: [horizontalOffset, 0],
+            color,
+            fontSize: 9,
+            fontWeight: 'bold',
+            lineHeight: 10,
+            backgroundColor: 'transparent',
+            padding: 0,
+            borderRadius: 2
+          }
+        };
+      };
+
+      // 遍历big_map中的每个时间点。同一分钟按买/卖拆成两列，分别上下堆叠。
       Object.keys(bigMapData).forEach(timeStr => {
         const timeData = bigMapData[timeStr];
         if (!Array.isArray(timeData)) return;
         
-        // 过滤出大于阈值的数据
-        const filteredData = timeData.filter(item => parseFloat(item.v) > filterThreshold);
-        
-        filteredData.forEach(item => {
-          const value = parseFloat(item.v);
-          const type = parseInt(item.t);
-          
-          // 找到对应时间点的索引
-          const timeIndex = fullTimeAxis.indexOf(timeStr);
-          if (timeIndex === -1) return;
-          
-          // 只处理主力线数据（t=1、t=2、t=3、t=4）
-          if (type === 1 || type === 2 || type === 3 || type === 4) {
-            // 根据t值确定颜色和Y坐标
-            let color, yValue;
-            
-            if (type === 1) {
-              // 主买 - 深红色
-              color = '#f00';
-              yValue = institutionalData[timeIndex] ? institutionalData[timeIndex][1] : null;
-            } else if (type === 2) {
-              // 被买 - 红色
-              color = '#f48cae';
-              yValue = institutionalData[timeIndex] ? institutionalData[timeIndex][1] : null;
-            } else if (type === 3) {
-              // 主卖 - 深绿色
-              color = '#0f0';
-              yValue = institutionalData[timeIndex] ? institutionalData[timeIndex][1] : null;
-            } else if (type === 4) {
-              // 被卖 - 浅绿色
-              color = '#7cf7cc';
-              yValue = institutionalData[timeIndex] ? institutionalData[timeIndex][1] : null;
-            }
-            
-            if (yValue !== null) {
-              // 智能分配位置，避免重合
-              const positions = ['top', 'bottom', 'left', 'right'];
-              let position = 'top'; // 默认位置
-              
-              // 检查该时间点已使用的位置
-              const usedPos = usedPositions.get(timeStr) || [];
-              
-              // 根据类型选择合适的位置
-              if (type === 1 || type === 2) {
-                // 买入类型优先选择上方位置
-                if (!usedPos.includes('top')) {
-                  position = 'top';
-                } else if (!usedPos.includes('right')) {
-                  position = 'right';
-                } else if (!usedPos.includes('bottom')) {
-                  position = 'bottom';
-                } else {
-                  position = 'left';
-                }
-              } else {
-                // 卖出类型优先选择下方位置
-                if (!usedPos.includes('bottom')) {
-                  position = 'bottom';
-                } else if (!usedPos.includes('left')) {
-                  position = 'left';
-                } else if (!usedPos.includes('top')) {
-                  position = 'top';
-                } else {
-                  position = 'right';
-                }
-              }
-              
-              // 记录已使用的位置
-              usedPositions.set(timeStr, [...usedPos, position]);
-              
-              // 特别调试15:00的数据
-              // if (timeStr === '15:00') {
-              //   console.log('🔍 15:00标注生成:', {
-              //     timeStr,
-              //     value,
-              //     type,
-              //     color,
-              //     position,
-              //     yValue,
-              //     timeIndex,
-              //     institutionalDataLength: institutionalData.length
-              //   });
-              // }
-              
-              const markerData = {
-                name: Math.round(value).toString(), // 数值取整
-                coord: [timeStr, yValue],
-                symbol: 'circle',
-                symbolSize: 4,
-                itemStyle: {
-                  color: 'transparent', // 透明圆点
-                  borderColor: 'transparent',
-                  borderWidth: 0
-                },
-                label: {
-                  show: true,
-                  position: position,
-                  color: color,
-                  fontSize: 9, // 加大字体
-                  fontWeight: 'bold',
-                  backgroundColor: 'transparent', // 透明背景
-                  padding: [2, 4],
-                  borderRadius: 2
-                }
-              };
+        // 兼容后端新格式 {type, amount} 和旧格式 {t, v}，金额单位均为万元
+        const filteredData = timeData
+          .filter(item => parseFloat(item.amount ?? item.v) > filterThreshold)
+          .sort((a, b) => parseFloat(b.amount ?? b.v) - parseFloat(a.amount ?? a.v));
 
-              institutionalMarkers.push(markerData);
-            } else {
-              // 如果主力线数据为空，尝试使用价格数据
-                              if (timeStr === '15:00') {
-                  // console.log('❌ 15:00 yValue为null，尝试使用价格数据');
-                  const priceIndex = fullTimeAxis.indexOf(timeStr);
-                  if (priceIndex !== -1 && fenshi[priceIndex]) {
-                    const price = parseFloat(fenshi[priceIndex]);
-                    const percentChange = ((price - prevClosePrice) / prevClosePrice) * 100;
-                  
-                  // 智能分配位置
-                  const usedPos = usedPositions.get(timeStr) || [];
-                  let position = 'top';
-                  
-                  if (type === 1 || type === 2) {
-                    if (!usedPos.includes('top')) {
-                      position = 'top';
-                    } else if (!usedPos.includes('right')) {
-                      position = 'right';
-                    } else if (!usedPos.includes('bottom')) {
-                      position = 'bottom';
-                    } else {
-                      position = 'left';
-                    }
-                  } else {
-                    if (!usedPos.includes('bottom')) {
-                      position = 'bottom';
-                    } else if (!usedPos.includes('left')) {
-                      position = 'left';
-                    } else if (!usedPos.includes('top')) {
-                      position = 'top';
-                    } else {
-                      position = 'right';
-                    }
-                  }
-                  
-                  usedPositions.set(timeStr, [...usedPos, position]);
-                  
-                  const markerData = {
-                    name: Math.round(value).toString(),
-                    coord: [timeStr, percentChange],
-                    symbol: 'circle',
-                    symbolSize: 4,
-                    itemStyle: {
-                      color: 'transparent',
-                      borderColor: 'transparent',
-                      borderWidth: 0
-                    },
-                    label: {
-                      show: true,
-                      position: position,
-                      color: color,
-                      fontSize: 9,
-                      fontWeight: 'bold',
-                      backgroundColor: 'transparent',
-                      padding: [2, 4],
-                      borderRadius: 2
-                    }
-                  };
+        filteredData.filter(isBuyOrder).forEach((item, stackIndex) => {
+          const marker = buildMarker(timeStr, item, stackIndex, 'buy');
+          if (marker) institutionalMarkers.push(marker);
+        });
 
-                  institutionalMarkers.push(markerData);
-                  // console.log('✅ 15:00使用价格数据生成标注:', {
-                  //   timeStr,
-                  //   value,
-                  //   type,
-                  //   color,
-                  //   position,
-                  //   percentChange
-                  // });
-                }
-              }
-            }
-          }
+        filteredData.filter(isSellOrder).forEach((item, stackIndex) => {
+          const marker = buildMarker(timeStr, item, stackIndex, 'sell');
+          if (marker) institutionalMarkers.push(marker);
         });
       });
 
@@ -509,8 +404,9 @@ const StockChart = () => {
     });
     
     // 根据base_info动态计算Y轴范围
-    const highPrice = parseFloat(base_info?.highPrice || 6.08);
-    const lowPrice = parseFloat(base_info?.lowPrice || 5.53);
+    const validPrices = (fenshi || []).filter(price => price !== null && price !== undefined).map(price => parseFloat(price));
+    const highPrice = Math.max(parseFloat(base_info?.highPrice || 0), ...(validPrices.length ? validPrices : [0]));
+    const lowPrice = Math.min(parseFloat(base_info?.lowPrice || Number.MAX_VALUE), ...(validPrices.length ? validPrices : [Number.MAX_VALUE]));
     
     // 计算涨停价和跌停价（A股涨跌停幅度为10%）
     const upperLimitPrice = prevClosePrice * 1.1; // 涨停价
@@ -541,8 +437,32 @@ const StockChart = () => {
       institutionalData,
       retailData,
       fullTimeAxis,
-      filterThreshold // 传递筛选阈值
+      filterThreshold, // 传递筛选阈值
+      yAxisMin,
+      yAxisMax
     );
+
+    const isBuyOrder = (item) => ['主买', '被买'].includes(item.type ?? item.t) || [1, 2].includes(parseInt(item.type ?? item.t, 10));
+    const isSellOrder = (item) => ['主卖', '被卖'].includes(item.type ?? item.t) || [3, 4].includes(parseInt(item.type ?? item.t, 10));
+    const buildOrderLineData = (matcher) => fullTimeAxis.map((timePoint, index) => {
+      const minuteOrders = (timeshareData.big_map?.[timePoint] || [])
+        .filter(item => parseFloat(item.amount ?? item.v) > filterThreshold)
+        .filter(matcher);
+
+      if (minuteOrders.length === 0) {
+        return [timePoint, null];
+      }
+
+      const largestOrder = minuteOrders.reduce((max, item) => (
+        parseFloat(item.amount ?? item.v) > parseFloat(max.amount ?? max.v) ? item : max
+      ), minuteOrders[0]);
+      const price = largestOrder.price || fenshi[index];
+      const yValue = price ? ((parseFloat(price) - prevClosePrice) / prevClosePrice) * 100 : null;
+      return [timePoint, yValue];
+    });
+
+    const buyOrderLineData = buildOrderLineData(isBuyOrder);
+    const sellOrderLineData = buildOrderLineData(isSellOrder);
     
     // 详细调试big_map数据处理
     if (timeshareData.big_map) {
@@ -552,7 +472,7 @@ const StockChart = () => {
       
       Object.keys(timeshareData.big_map).forEach(timeStr => {
         const timeData = timeshareData.big_map[timeStr];
-        const filteredData = timeData.filter(item => parseFloat(item.v) > filterThreshold);
+        const filteredData = timeData.filter(item => parseFloat(item.amount ?? item.v) > filterThreshold);
         if (filteredData.length > 0) {
           const timeIndex = fullTimeAxis.indexOf(timeStr);
           // console.log(`时间 ${timeStr} (索引: ${timeIndex}):`, filteredData);
@@ -568,7 +488,7 @@ const StockChart = () => {
     }
 
     const chartOption = {
-      backgroundColor: '#141213',
+      backgroundColor: 'transparent',
       tooltip: {
         show: false
       },
@@ -576,13 +496,13 @@ const StockChart = () => {
         {
           left: '5%',
           right: '12%',
-          height: '58%',
-          top: '15%'
+          height: '46%',
+          top: '30%'
         },
         {
           left: '5%',
           right: '12%',
-          top: '80%',
+          top: '83%',
           height: '12%'
         }
       ],
@@ -849,6 +769,40 @@ const StockChart = () => {
           silent: true
         },
         {
+          name: '买入大单线',
+          type: 'line',
+          data: buyOrderLineData,
+          smooth: false,
+          connectNulls: false,
+          lineStyle: {
+            width: 1.2,
+            color: '#ff2f4b',
+          },
+          itemStyle: {
+            color: '#ff2f4b',
+          },
+          symbol: 'none',
+          silent: true,
+          z: 8,
+        },
+        {
+          name: '卖出大单线',
+          type: 'line',
+          data: sellOrderLineData,
+          smooth: false,
+          connectNulls: false,
+          lineStyle: {
+            width: 1.2,
+            color: '#22c55e',
+          },
+          itemStyle: {
+            color: '#22c55e',
+          },
+          symbol: 'none',
+          silent: true,
+          z: 8,
+        },
+        {
           name: '成交量',
           type: 'bar',
           xAxisIndex: 1,
@@ -865,6 +819,27 @@ const StockChart = () => {
 
   // 获取大单汇总数据
   const getLargeOrderSummaryData = () => {
+    if (largeOrdersData?.levelStats) {
+      const levels = [
+        { key: 'D300', label: '大于300万' },
+        { key: 'D100', label: '大于100万' },
+        { key: 'D50', label: '大于50万' },
+        { key: 'D30', label: '大于30万' },
+        { key: 'under_D30', label: '小于30万' }
+      ];
+
+      return levels.map(level => {
+        const stats = largeOrdersData.levelStats[level.key] || {};
+        return {
+          level: level.label,
+          buyCount: stats.buy_count || 0,
+          sellCount: (stats.sell_count || 0) + (stats.neutral_count || 0),
+          buyAmount: Number(stats.buy_amount || 0).toFixed(2),
+          sellAmount: (Number(stats.sell_amount || 0) + Number(stats.neutral_amount || 0)).toFixed(2)
+        };
+      });
+    }
+
     if (!timeshareData?.big_map) return [];
     
     // 从big_map数据中统计不同金额级别的数据
@@ -882,14 +857,16 @@ const StockChart = () => {
       if (!Array.isArray(timeData)) return;
       
       timeData.forEach(item => {
-        const value = parseFloat(item.v);
-        const type = parseInt(item.t);
+        const value = parseFloat(item.amount ?? item.v);
+        const rawType = item.type ?? item.t;
+        const type = Number.isNaN(parseInt(rawType, 10)) ? rawType : parseInt(rawType, 10);
         
         // 判断买入还是卖出
-        const isBuy = type === 1 || type === 2; // 主买或被买
-        const isSell = type === 3 || type === 4; // 主卖或被卖
+        const isBuy = type === 1 || type === 2 || type === '主买' || type === '被买';
+        const isSell = type === 3 || type === 4 || type === '主卖' || type === '被卖';
+        const isNeutral = type === 4 || type === '中性';
         
-        if (isBuy || isSell) {
+        if (isBuy || isSell || isNeutral) {
           // 根据金额分类
           let level;
           if (value >= 300) {
@@ -908,9 +885,12 @@ const StockChart = () => {
           if (isBuy) {
             levelStats[level].buy_count++;
             levelStats[level].buy_amount += value;
-          } else {
+          } else if (isSell) {
             levelStats[level].sell_count++;
             levelStats[level].sell_amount += value;
+          } else {
+            levelStats[level].neutral_count = (levelStats[level].neutral_count || 0) + 1;
+            levelStats[level].neutral_amount = (levelStats[level].neutral_amount || 0) + value;
           }
         }
       });
@@ -931,9 +911,9 @@ const StockChart = () => {
       return {
         level: level.label,
         buyCount: stats.buy_count || 0,
-        sellCount: stats.sell_count || 0,
+        sellCount: (stats.sell_count || 0) + (stats.neutral_count || 0),
         buyAmount: (stats.buy_amount || 0).toFixed(2),
-        sellAmount: (stats.sell_amount || 0).toFixed(2)
+        sellAmount: ((stats.sell_amount || 0) + (stats.neutral_amount || 0)).toFixed(2)
       };
     });
   };
@@ -1026,13 +1006,6 @@ const StockChart = () => {
       <div className="stock-card chart-container">
         {/* 图例和导航区域 */}
         <div className="chart-legend-nav">
-          {/* 时间导航 */}
-          <div className="date-navigation">
-            <Button type="text" size="small" style={{ color: '#fff' }}>&lt;&lt;</Button>
-            <span style={{ color: '#fff', margin: '0 10px' }}>2025-7-16</span>
-            <Button type="text" size="small" style={{ color: '#fff' }}>&gt;&gt;</Button>
-          </div>
-
           {/* 时间段选择按钮 */}
           <div className="period-buttons">
             <Button 
@@ -1085,11 +1058,11 @@ const StockChart = () => {
           <div className="chart-legend">
             <div className="legend-item">
               <span className="legend-line main-line"></span>
-              <span className="legend-text">主力净流入</span>
+              <span className="legend-text">买入大单线</span>
             </div>
             <div className="legend-item">
               <span className="legend-line retail-line"></span>
-              <span className="legend-text">散户净流入</span>
+              <span className="legend-text">卖出大单线</span>
             </div>
             {/* <div className="legend-item">
               <span className="legend-line avg-line"></span>

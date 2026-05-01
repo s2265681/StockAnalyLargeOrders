@@ -3,10 +3,12 @@ import { useAtom } from 'jotai';
 import { useSearchParams } from 'react-router-dom';
 import StockBasicInfo from './components/StockBasicInfo';
 import StockChart from './components/StockChart';
+import ThemeLimitUpPanel from './components/ThemeLimitUpPanel';
 import StockOrderDetails from './components/StockOrderDetails';
 import {
   stockCodeAtom,
-  fetchL2DashboardAtom
+  fetchL2DashboardAtom,
+  fetchLimitUpThemesAtom
 } from '../../store/atoms';
 
 const POLL_INTERVAL = 5000; // 5秒轮询
@@ -32,6 +34,7 @@ const StockDashboard = () => {
   const [searchParams] = useSearchParams();
   const [stockCode, setStockCode] = useAtom(stockCodeAtom);
   const [, fetchL2Dashboard] = useAtom(fetchL2DashboardAtom);
+  const [, fetchLimitUpThemes] = useAtom(fetchLimitUpThemesAtom);
   const timerRef = useRef(null);
 
   const handleStockCodeChange = (newCode) => {
@@ -42,8 +45,9 @@ const StockDashboard = () => {
   const fetchData = useCallback(() => {
     if (stockCode) {
       fetchL2Dashboard(stockCode);
+      fetchLimitUpThemes(stockCode);
     }
-  }, [stockCode, fetchL2Dashboard]);
+  }, [stockCode, fetchL2Dashboard, fetchLimitUpThemes]);
 
   // 初始加载 + 轮询
   useEffect(() => {
@@ -65,9 +69,10 @@ const StockDashboard = () => {
   }, [fetchData]);
 
   return (
-    <div className='stock-dashboard-container' style={{ backgroundColor: '#141213', minHeight: '100vh' }}>
+    <div className='stock-dashboard-container' style={{ minHeight: '100vh' }}>
       <StockBasicInfo onStockCodeChange={handleStockCodeChange} />
       <StockChart />
+      <ThemeLimitUpPanel />
       <StockOrderDetails />
     </div>
   );

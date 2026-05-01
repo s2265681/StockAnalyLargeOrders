@@ -17,10 +17,13 @@ class EastMoneyL2Source:
     def get_realtime_quote(self, code):
         raise NotImplementedError("L2数据源尚未实现，请先开通东方财富Level-2服务")
 
-    def get_tick_details(self, code, pos=-1):
+    def get_tick_details(self, code, pos=-100000, dt=None):
         raise NotImplementedError("L2数据源尚未实现，请先开通东方财富Level-2服务")
 
-    def get_timeshare(self, code):
+    def get_timeshare(self, code, dt=None):
+        raise NotImplementedError("L2数据源尚未实现，请先开通东方财富Level-2服务")
+
+    def get_daily_kline(self, code, dt):
         raise NotImplementedError("L2数据源尚未实现，请先开通东方财富Level-2服务")
 
     def infer_direction(self, buy_sell_type):

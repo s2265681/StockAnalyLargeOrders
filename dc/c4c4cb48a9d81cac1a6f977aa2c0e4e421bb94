@@ -1,0 +1,23 @@
+frontend/src/pages/StockDashboard/components/ThemeLimitUpPanel.js
+  63e1161c005eec49 34-47,50-65,84-88
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "dcc4c4cb48a9d81cac1a6f977aa2c0e4e421bb94",
+  "prompts": {
+    "63e1161c005eec49": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e3d6f0f9-9ced-4c81-a19d-410443c7c887",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "佳伟",
+      "messages": [],
+      "total_additions": 35,
+      "total_deletions": 0,
+      "accepted_lines": 36,
+      "overriden_lines": 0
+    }
+  }
+}

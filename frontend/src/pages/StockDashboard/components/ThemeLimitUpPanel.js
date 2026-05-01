@@ -31,8 +31,38 @@ const ThemeLimitUpPanel = () => {
     ? `当前股票属于${data.current_theme}题材，当天该题材有${data.current_theme_count || 0}家涨停`
     : currentStock.reason || '当前股票未在当日涨停池中，暂无涨停原因';
 
+  const sentiment = data.market_sentiment || {};
+  const sentimentColor = {
+    '强势': '#ff4d4f',
+    '偏强': '#faad14',
+    '中性': '#1890ff',
+    '偏弱': '#52c41a',
+  }[sentiment.sentiment_label] || '#999';
+
+  const linkageColor = (label) => {
+    if (label === '强联动') return '#52c41a';
+    if (label === '中等联动') return '#faad14';
+    return '#999';
+  };
+
   return (
     <Card className="stock-card theme-limit-card" title="题材与涨停归纳">
+      {sentiment.sentiment_label && (
+        <div className="market-sentiment-bar" style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          padding: '6px 12px', marginBottom: 8,
+          background: 'rgba(255,255,255,0.04)', borderRadius: 4,
+        }}>
+          <Tag color={sentimentColor}>{sentiment.sentiment_label}</Tag>
+          <span style={{ color: '#ff4d4f' }}>涨停 {sentiment.limit_up_count}</span>
+          <span style={{ color: '#52c41a' }}>跌停 {sentiment.limit_down_count}</span>
+          {(sentiment.lone_wolf_stocks || []).length > 0 && (
+            <span style={{ color: '#faad14', fontSize: 12 }}>
+              独狼 {sentiment.lone_wolf_stocks.length} 只
+            </span>
+          )}
+        </div>
+      )}
       <div className="theme-current-box">
         <div className="theme-current-title">
           {currentStock.name || currentStock.code || '当前股票'}
@@ -51,6 +81,11 @@ const ThemeLimitUpPanel = () => {
               <div className="theme-rank-header">
                 <span className="theme-rank-name">{theme.theme}</span>
                 <span className="theme-rank-count">涨停 {theme.count} 家</span>
+                {theme.linkage_label && (
+                  <Tag color={linkageColor(theme.linkage_label)} style={{ marginLeft: 4, fontSize: 11 }}>
+                    {theme.linkage_label}
+                  </Tag>
+                )}
               </div>
               <div className="theme-stock-list">
                 {(theme.stocks || []).slice(0, 8).map((stock) => (

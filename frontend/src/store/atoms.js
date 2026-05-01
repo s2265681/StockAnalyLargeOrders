@@ -69,6 +69,12 @@ export const errorAtom = atom(null);
 // 数据验证相关原子
 export const dataValidationAtom = atom(null);
 
+// WebSocket 连接状态
+export const wsConnectedAtom = atom(false);
+
+// 封单监控数据
+export const limitUpMonitorAtom = atom(null);
+
 // 获取股票基础数据的异步原子（使用竞品接口）
 export const fetchStockBasicAtom = atom(
   null,
@@ -352,6 +358,75 @@ const determineCategoryFromWan = (amountWan) => {
   return 'under_D30';
 };
 
+/**
+ * 解析 L2 Dashboard 返回数据并更新 atoms
+ * 供 HTTP 轮询和 WebSocket 推送共用
+ */
+export const applyL2DashboardData = (set, data) => {
+  if (!data?.success || !data?.data) return false;
+
+  const d = data.data;
+
+  // 1. 分时图
+  const timeshare = d.timeshare || [];
+  const alignedTimeshare = alignTimeshareToTradingAxis(timeshare);
+  set(timeshareDataAtom, {
+    timeAxis: alignedTimeshare.axis,
+    fenshi: alignedTimeshare.fenshi,
+    volume: alignedTimeshare.volume,
+    zhuli: [],
+    sanhu: [],
+    big_map: d.big_map || {},
+    order_book: d.order_book || null,
+    base_info: {
+      prevClosePrice: d.stock_info.yesterday_close,
+      openPrice: d.stock_info.open,
+      highPrice: d.stock_info.high,
+      lowPrice: d.stock_info.low,
+    },
+  });
+
+  // 2. 大单数据
+  const orders = d.large_orders || d.orders || [];
+  const stats = d.statistics || {};
+  const buyCount = orders.filter(o => o.direction === '被买' || o.direction === '主买').length;
+  const sellCount = orders.filter(o => o.direction === '被卖' || o.direction === '主卖').length;
+  const neutralCount = orders.length - buyCount - sellCount;
+  const totalAmount = orders.reduce((sum, o) => sum + (o.amount || 0), 0);
+  const buyAmount = orders.filter(o => o.direction === '被买' || o.direction === '主买').reduce((sum, o) => sum + (o.amount || 0), 0);
+  const netInflow = buyAmount - (totalAmount - buyAmount);
+
+  set(largeOrdersDataAtom, {
+    summary: { buyCount, sellCount, neutralCount, totalAmount, netInflow },
+    largeOrders: orders.map(order => ({
+      time: order.time,
+      type: (order.direction === '被买' || order.direction === '主买') ? 'buy' : 'sell',
+      price: order.price,
+      volume: order.volume_lots,
+      amount: order.amount * 10000,
+      category: determineCategoryFromWan(order.amount),
+      direction: order.direction,
+    })),
+    levelStats: {
+      D300: stats.above_300,
+      D100: stats.above_100,
+      D50: stats.above_50,
+      D30: stats.above_30,
+      under_D30: stats.below_30,
+    },
+  });
+
+  // 3. 股票基础数据
+  set(stockBasicDataAtom, d.stock_info);
+
+  // 4. 封单监控
+  if (d.limit_up_monitor) {
+    set(limitUpMonitorAtom, d.limit_up_monitor);
+  }
+
+  return true;
+};
+
 // 获取L2看板统一数据的异步原子
 // 参数可以是 code 字符串，或 { code, dt } 对象
 export const fetchL2DashboardAtom = atom(
@@ -372,63 +447,7 @@ export const fetchL2DashboardAtom = atom(
       }
       const data = await apiRequest(`/api/v1/l2_dashboard?${query.toString()}`, { timeout: 15000 });
 
-      if (data.success === true && data.data) {
-        const d = data.data;
-
-        // 1. 设置分时图数据（兼容 StockChart.js 格式）
-        const timeshare = d.timeshare || [];
-
-        const alignedTimeshare = alignTimeshareToTradingAxis(timeshare);
-
-        set(timeshareDataAtom, {
-          timeAxis: alignedTimeshare.axis,
-          fenshi: alignedTimeshare.fenshi,
-          volume: alignedTimeshare.volume,
-          zhuli: [],
-          sanhu: [],
-          big_map: d.big_map || {},
-          order_book: d.order_book || null,
-          base_info: {
-            prevClosePrice: d.stock_info.yesterday_close,
-            openPrice: d.stock_info.open,
-            highPrice: d.stock_info.high,
-            lowPrice: d.stock_info.low,
-          },
-        });
-
-        // 2. 设置大单数据
-        const orders = d.large_orders || d.orders || [];
-        const stats = d.statistics || {};
-        const buyCount = orders.filter(o => o.direction === '被买' || o.direction === '主买').length;
-        const sellCount = orders.filter(o => o.direction === '被卖' || o.direction === '主卖').length;
-        const neutralCount = orders.length - buyCount - sellCount;
-        const totalAmount = orders.reduce((sum, o) => sum + (o.amount || 0), 0);
-        const buyAmount = orders.filter(o => o.direction === '被买' || o.direction === '主买').reduce((sum, o) => sum + (o.amount || 0), 0);
-        const netInflow = buyAmount - (totalAmount - buyAmount);
-
-        set(largeOrdersDataAtom, {
-          summary: { buyCount, sellCount, neutralCount, totalAmount, netInflow },
-          largeOrders: orders.map(order => ({
-            time: order.time,
-            type: (order.direction === '被买' || order.direction === '主买') ? 'buy' : 'sell',
-            price: order.price,
-            volume: order.volume_lots,
-            amount: order.amount * 10000, // 万元转元
-            category: determineCategoryFromWan(order.amount),
-            direction: order.direction,
-          })),
-          levelStats: {
-            D300: stats.above_300,
-            D100: stats.above_100,
-            D50: stats.above_50,
-            D30: stats.above_30,
-            under_D30: stats.below_30,
-          },
-        });
-
-        // 3. 设置股票基础数据
-        set(stockBasicDataAtom, d.stock_info);
-      } else {
+      if (!applyL2DashboardData(set, data)) {
         set(errorAtom, data.message || '获取L2看板数据失败');
       }
     } catch (error) {

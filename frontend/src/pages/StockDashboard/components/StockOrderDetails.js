@@ -42,8 +42,31 @@ const StockOrderDetails = () => {
 
   // 获取各级别的统计数据
   const getAmountLevelStats = () => {
-    if (!largeOrdersData || !largeOrdersData.largeOrders) return {};
-    
+    if (!largeOrdersData) return {};
+
+    // 优先使用后端返回的 levelStats（含精确金额）
+    if (largeOrdersData.levelStats) {
+      const ls = largeOrdersData.levelStats;
+      const mapLevel = (key) => {
+        const s = ls[key] || {};
+        return {
+          buy: s.buy_count || 0,
+          sell: s.sell_count || 0,
+          buyAmount: s.buy_amount || 0,
+          sellAmount: s.sell_amount || 0,
+          totalAmount: (s.buy_amount || 0) + (s.sell_amount || 0),
+        };
+      };
+      return {
+        300: mapLevel('D300'),
+        100: mapLevel('D100'),
+        50: mapLevel('D50'),
+        30: mapLevel('D30'),
+      };
+    }
+
+    // 降级：从 largeOrders 列表计算
+    if (!largeOrdersData.largeOrders) return {};
     const orders = largeOrdersData.largeOrders;
     const stats = {
       300: { buy: 0, sell: 0, totalAmount: 0, buyAmount: 0, sellAmount: 0 },
@@ -55,7 +78,6 @@ const StockOrderDetails = () => {
     orders.forEach(order => {
       const amountWan = order.amount / 10000;
       let level;
-      
       if (amountWan >= 300) level = 300;
       else if (amountWan >= 100) level = 100;
       else if (amountWan >= 50) level = 50;
@@ -71,7 +93,6 @@ const StockOrderDetails = () => {
       }
       stats[level].totalAmount += amountWan;
     });
-
     return stats;
   };
 
@@ -141,10 +162,13 @@ const StockOrderDetails = () => {
       const amountWan = trade.amount / 10000;
       let status;
       
-      if (trade.type === 'buy') {
+      // 优先使用后端返回的方向标识
+      if (trade.direction) {
+        status = trade.direction;
+      } else if (trade.type === 'buy') {
         status = amountWan >= 100 ? '主买' : '被买';
       } else {
-        status = '主卖';
+        status = amountWan >= 100 ? '主卖' : '被卖';
       }
       
       return {

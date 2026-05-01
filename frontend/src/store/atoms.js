@@ -305,5 +305,83 @@ const determineOrderSize = (amount) => {
   return 'small';
 };
 
+// 帮助函数：根据万元金额确定类别
+const determineCategoryFromWan = (amountWan) => {
+  if (amountWan >= 300) return 'D300';
+  if (amountWan >= 100) return 'D100';
+  if (amountWan >= 50) return 'D50';
+  if (amountWan >= 30) return 'D30';
+  return 'under_D30';
+};
+
+// 获取L2看板统一数据的异步原子
+export const fetchL2DashboardAtom = atom(
+  null,
+  async (get, set, code) => {
+    set(loadingAtom, true);
+    set(errorAtom, null);
+
+    try {
+      const data = await apiRequest(`/api/v1/l2_dashboard?code=${code}`, { timeout: 15000 });
+
+      if (data.success === true && data.data) {
+        const d = data.data;
+
+        // 1. 设置分时图数据（兼容 StockChart.js 格式）
+        set(timeshareDataAtom, {
+          fenshi: d.timeshare.map(t => t.price),
+          volume: d.timeshare.map(t => t.volume),
+          zhuli: [],
+          sanhu: [],
+          big_map: d.big_map || {},
+          base_info: {
+            prevClosePrice: d.stock_info.yesterday_close,
+            highPrice: d.stock_info.high,
+            lowPrice: d.stock_info.low,
+          },
+        });
+
+        // 2. 设置大单数据
+        const orders = d.orders || [];
+        const stats = d.statistics || {};
+        const buyCount = orders.filter(o => o.direction === '被买' || o.direction === '主买').length;
+        const sellCount = orders.length - buyCount;
+        const totalAmount = orders.reduce((sum, o) => sum + (o.amount || 0), 0);
+        const buyAmount = orders.filter(o => o.direction === '被买' || o.direction === '主买').reduce((sum, o) => sum + (o.amount || 0), 0);
+        const netInflow = buyAmount - (totalAmount - buyAmount);
+
+        set(largeOrdersDataAtom, {
+          summary: { buyCount, sellCount, totalAmount, netInflow },
+          largeOrders: orders.map(order => ({
+            time: order.time,
+            type: (order.direction === '被买' || order.direction === '主买') ? 'buy' : 'sell',
+            price: order.price,
+            volume: order.volume_lots,
+            amount: order.amount * 10000, // 万元转元
+            category: determineCategoryFromWan(order.amount),
+            direction: order.direction,
+          })),
+          levelStats: {
+            D300: stats.above_300,
+            D100: stats.above_100,
+            D50: stats.above_50,
+            D30: stats.above_30,
+            under_D30: stats.below_30,
+          },
+        });
+
+        // 3. 设置股票基础数据
+        set(stockBasicDataAtom, d.stock_info);
+      } else {
+        set(errorAtom, data.message || '获取L2看板数据失败');
+      }
+    } catch (error) {
+      set(errorAtom, `获取L2看板数据失败: ${error.message}`);
+    } finally {
+      set(loadingAtom, false);
+    }
+  }
+);
+
 // 环境信息原子 (用于调试)
 export const environmentInfoAtom = atom(getEnvironmentInfo()); 

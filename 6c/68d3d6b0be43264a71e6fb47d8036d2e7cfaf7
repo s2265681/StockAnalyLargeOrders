@@ -1,0 +1,51 @@
+backend/services/eastmoney_free.py
+  8ca2bd460162df04 5-6,14-15,17-35,41-47,51-57,59-130,171,175-176,181,184-187,208-214,230,235-373,379,385,396,403,407-408,418,543-554,556-559,562,569-576,578,581-584,596-597,600-601,603,605-607,609-611,616-617,620,622-637,639-642,730-735,737,748,752-754,781-782,785-787
+backend/services/data_source_adapter.py
+  8ca2bd460162df04 27-60,94-238,249-262,265-275
+backend/services/eastmoney_playwright.py
+  8ca2bd460162df04 1-676
+frontend/src/index.js
+  8ca2bd460162df04 29-33
+frontend/src/pages/StockDashboard/components/StockChart.js
+  8ca2bd460162df04 218,223,287,443-444,447,473
+frontend/src/pages/StockDashboard/index.js
+  8ca2bd460162df04 3,12,22-23,55,71-74,92,94,149,153-163,176-180,191
+backend/websocket_manager.py
+  8ca2bd460162df04 3-8,17,22-23,25,27,29,37-54,62,71-72,75-76,96,102,104,112-116,126-127,131,133-134,136,141,147-164
+frontend/src/pages/StockDashboard/components/HandicapLanguagePanel.js
+  8ca2bd460162df04 61-68
+frontend/src/store/atoms.js
+  8ca2bd460162df04 3,431-432,443-460,462-476,479-532,565-578
+backend/requirements.txt
+  8ca2bd460162df04 8-10
+backend/app.py
+  8ca2bd460162df04 52-81
+backend/routes/l2_dashboard.py
+  8ca2bd460162df04 20,35-77
+frontend/src/pages/StockDashboard/components/StockBasicInfo.js
+  8ca2bd460162df04 49,52,54,59
+frontend/src/pages/StockDashboard/utils/l2Analysis.js
+  8ca2bd460162df04 105-108,215,229-313
+backend/utils/date_utils.py
+  8ca2bd460162df04 3,6,11-47,50-52,61,64,66-75,80-82,86,88-94,96-99,101-106,113-114
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "6c68d3d6b0be43264a71e6fb47d8036d2e7cfaf7",
+  "prompts": {
+    "8ca2bd460162df04": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "dfc76ffe-c05a-499f-b747-f3011459d704",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟",
+      "messages": [],
+      "total_additions": 2213,
+      "total_deletions": 945,
+      "accepted_lines": 1723,
+      "overriden_lines": 0
+    }
+  }
+}

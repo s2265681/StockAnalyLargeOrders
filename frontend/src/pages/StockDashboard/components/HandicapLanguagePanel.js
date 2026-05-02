@@ -56,7 +56,17 @@ const HandicapLanguagePanel = () => {
         <div className="handicap-metrics">
           <div className="handicap-metric">
             <span>当前价</span>
+            <div className='handicap-metric_change'>
             <strong>{formatPrice(signal.metrics?.currentPrice)}</strong>
+            {signal.metrics?.changePercent != null && (
+              <span style={{
+                marginLeft: 4, fontSize: 12,
+                color: signal.metrics.changePercent >= 0 ? '#ff4d4f' : '#52c41a',
+              }}>
+                {signal.metrics.changePercent >= 0 ? '+' : ''}{signal.metrics.changePercent}%
+              </span>
+            )}
+            </div>
           </div>
           <div className="handicap-metric">
             <span>均线</span>

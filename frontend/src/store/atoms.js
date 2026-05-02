@@ -1,6 +1,6 @@
 import { atom } from 'jotai';
 import { apiRequest, getEnvironmentInfo } from '../config/api.js';
-import { alignTimeshareToTradingAxis } from '../pages/StockDashboard/utils/l2Analysis.js';
+import { alignTimeshareToTradingAxis, sliceL2DataByTime } from '../pages/StockDashboard/utils/l2Analysis.js';
 // import quote from '../mock/quote.json'
 
 
@@ -428,7 +428,8 @@ export const applyL2DashboardData = (set, data) => {
 };
 
 // 获取L2看板统一数据的异步原子
-// 参数可以是 code 字符串，或 { code, dt } 对象
+// 并行请求分时和大单两个接口，Promise.all 同时等待，合并后一次性写入 atoms（无竞态）。
+// 参数可以是 code 字符串，或 { code, dt } 对象（simulate/simulateTime 仍走全量接口）
 export const fetchL2DashboardAtom = atom(
   null,
   async (get, set, params) => {
@@ -439,16 +440,96 @@ export const fetchL2DashboardAtom = atom(
     set(loadingAtom, true);
     set(errorAtom, null);
 
-    try {
-      const query = new URLSearchParams({ code, dt });
-      if (simulate && simulateTime) {
-        query.set('simulate', '1');
-        query.set('simulate_time', simulateTime);
+    // 模拟回放 / 有 simulate_time 参数 → 仍走全量接口（前端切片用）
+    if (simulate && simulateTime) {
+      try {
+        const query = new URLSearchParams({ code, dt, simulate: '1', simulate_time: simulateTime });
+        const data = await apiRequest(`/api/v1/l2_dashboard?${query.toString()}`, { timeout: 45000 });
+        if (!applyL2DashboardData(set, data)) {
+          set(errorAtom, data.message || '获取L2看板数据失败');
+        }
+      } catch (error) {
+        set(errorAtom, `获取L2看板数据失败: ${error.message}`);
+      } finally {
+        set(loadingAtom, false);
       }
-      const data = await apiRequest(`/api/v1/l2_dashboard?${query.toString()}`, { timeout: 45000 });
+      return;
+    }
 
-      if (!applyL2DashboardData(set, data)) {
-        set(errorAtom, data.message || '获取L2看板数据失败');
+    // 正常模式：并行请求，Promise.all 等待两个都完成，合并写入（避免竞态）
+    const query = new URLSearchParams({ code, dt });
+    try {
+      const [timeshareResp, ordersResp] = await Promise.all([
+        apiRequest(`/api/v1/l2_timeshare?${query}`, { timeout: 45000 }).catch(e => {
+          console.warn('分时接口失败:', e.message); return null;
+        }),
+        apiRequest(`/api/v1/l2_orders?${query}`, { timeout: 45000 }).catch(e => {
+          console.warn('大单接口失败:', e.message); return null;
+        }),
+      ]);
+
+      const timeshareOk = timeshareResp?.success && timeshareResp?.data;
+      const ordersOk = ordersResp?.success && ordersResp?.data;
+
+      if (!timeshareOk && !ordersOk) {
+        set(errorAtom, '分时和大单数据均获取失败，请检查网络');
+        return;
+      }
+
+      // 写入分时图数据（big_map 直接用大单接口的结果，一次写入，无竞态）
+      if (timeshareOk) {
+        const d = timeshareResp.data;
+        const timeshare = d.timeshare || [];
+        const aligned = alignTimeshareToTradingAxis(timeshare);
+        set(timeshareDataAtom, {
+          timeAxis: aligned.axis,
+          fenshi: aligned.fenshi,
+          volume: aligned.volume,
+          zhuli: [],
+          sanhu: [],
+          big_map: ordersResp?.data?.big_map || {},   // 直接注入，不用第二次 set
+          order_book: timeshareResp.data.order_book || null,
+          base_info: {
+            prevClosePrice: d.stock_info?.yesterday_close,
+            openPrice: d.stock_info?.open,
+            highPrice: d.stock_info?.high,
+            lowPrice: d.stock_info?.low,
+          },
+        });
+        set(stockBasicDataAtom, d.stock_info);
+      }
+
+      // 写入大单数据
+      if (ordersOk) {
+        const d = ordersResp.data;
+        const orders = d.large_orders || d.orders || [];
+        const stats = d.statistics || {};
+        const buyCount = orders.filter(o => o.direction === '被买' || o.direction === '主买').length;
+        const sellCount = orders.filter(o => o.direction === '被卖' || o.direction === '主卖').length;
+        const neutralCount = orders.length - buyCount - sellCount;
+        const totalAmount = orders.reduce((sum, o) => sum + (o.amount || 0), 0);
+        const buyAmount = orders
+          .filter(o => o.direction === '被买' || o.direction === '主买')
+          .reduce((sum, o) => sum + (o.amount || 0), 0);
+        set(largeOrdersDataAtom, {
+          summary: { buyCount, sellCount, neutralCount, totalAmount, netInflow: buyAmount - (totalAmount - buyAmount) },
+          largeOrders: orders.map(order => ({
+            time: order.time,
+            type: (order.direction === '被买' || order.direction === '主买') ? 'buy' : 'sell',
+            price: order.price,
+            volume: order.volume_lots,
+            amount: order.amount * 10000,
+            category: determineCategoryFromWan(order.amount),
+            direction: order.direction,
+          })),
+          levelStats: {
+            D300: stats.above_300,
+            D100: stats.above_100,
+            D50: stats.above_50,
+            D30: stats.above_30,
+            under_D30: stats.below_30,
+          },
+        });
       }
     } catch (error) {
       set(errorAtom, `获取L2看板数据失败: ${error.message}`);
@@ -481,4 +562,17 @@ export const fetchLimitUpThemesAtom = atom(
 );
 
 // 环境信息原子 (用于调试)
-export const environmentInfoAtom = atom(getEnvironmentInfo()); 
+export const environmentInfoAtom = atom(getEnvironmentInfo());
+
+/**
+ * 前端模拟回放专用写原子
+ * 直接接受完整看板数据 + 截止时间，本地切片后更新所有 atoms，不发任何网络请求
+ * 用法：applySimulatedData({ fullData, cutoffTime: 'HH:MM' })
+ */
+export const applySimulatedDataAtom = atom(
+  null,
+  (get, set, { fullData, cutoffTime }) => {
+    const sliced = sliceL2DataByTime(fullData, cutoffTime);
+    if (sliced) applyL2DashboardData(set, sliced);
+  }
+); 

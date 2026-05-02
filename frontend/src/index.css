@@ -1136,6 +1136,12 @@ code {
   background: rgba(255, 255, 255, 0.03);
 }
 
+.metric_change{
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
 .handicap-metric span {
   color: rgba(255, 255, 255, 0.46);
   font-size: 12px;

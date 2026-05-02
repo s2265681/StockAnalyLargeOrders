@@ -102,6 +102,10 @@ export const buildHandicapLanguage = ({ timeshareData = {}, largeOrdersData = {}
 
   const currentPrice = prices[prices.length - 1];
   const openPrice = Number(timeshareData.base_info?.openPrice || prices[0]);
+  const prevClosePrice = Number(timeshareData.base_info?.prevClosePrice || openPrice);
+  const changePercent = prevClosePrice
+    ? parseFloat(((currentPrice - prevClosePrice) / prevClosePrice * 100).toFixed(2))
+    : null;
   const avgPrice = prices.reduce((sum, price) => sum + price, 0) / prices.length;
   const highPrice = Math.max(...prices);
   const lowPrice = Math.min(...prices);
@@ -208,6 +212,7 @@ export const buildHandicapLanguage = ({ timeshareData = {}, largeOrdersData = {}
     advice,
     metrics: {
       currentPrice,
+      changePercent,
       openPrice,
       avgPrice: Number(avgPrice.toFixed(2)),
       buyAmount,
@@ -218,6 +223,91 @@ export const buildHandicapLanguage = ({ timeshareData = {}, largeOrdersData = {}
       askAmount,
       bookBidRatio,
       spread: Number(orderBook.spread || 0),
+    },
+  };
+};
+
+/**
+ * 模拟回放时按时间截断 L2 看板数据（纯前端，不发额外请求）
+ *
+ * @param {object} fullData  完整的 /api/v1/l2_dashboard 响应
+ * @param {string} cutoffTime  截止时间 'HH:MM'，只保留 <= 该时间的数据
+ * @returns {object|null}  与 fullData 格式相同的切片数据，失败返回 null
+ */
+export const sliceL2DataByTime = (fullData, cutoffTime) => {
+  if (!fullData?.success || !fullData?.data) return null;
+  const d = fullData.data;
+  const cutoff = String(cutoffTime || '').slice(0, 5);
+  const timeKey = (t) => String(t || '').slice(0, 5);
+
+  // 分时截断
+  const timeshare = (d.timeshare || []).filter(t => timeKey(t.time) <= cutoff);
+
+  // 大单截断
+  const large_orders = (d.large_orders || []).filter(o => timeKey(o.time) <= cutoff);
+
+  // 重建 big_map（与后端 _build_big_map 格式保持一致：direction → type）
+  const big_map = {};
+  large_orders.forEach(order => {
+    const k = timeKey(order.time);
+    if (!big_map[k]) big_map[k] = [];
+    big_map[k].push({
+      type: order.direction,      // StockChart isBuyOrder 检查 item.type
+      time: order.time,
+      price: order.price,
+      volume: order.volume_lots,
+      amount: order.amount,       // 万元
+    });
+  });
+
+  // 重建 statistics（amount 单位：万元）
+  const calcLevel = (orders, minWan, maxWan = null) => {
+    const f = orders.filter(o => {
+      const a = o.amount || 0;
+      return a >= minWan && (maxWan === null || a < maxWan);
+    });
+    const buy = f.filter(o => ['被买', '主买'].includes(o.direction));
+    const sell = f.filter(o => ['被卖', '主卖'].includes(o.direction));
+    return {
+      buy_count: buy.length,
+      sell_count: sell.length,
+      neutral_count: f.length - buy.length - sell.length,
+      buy_amount: buy.reduce((s, o) => s + (o.amount || 0), 0),
+      sell_amount: sell.reduce((s, o) => s + (o.amount || 0), 0),
+      neutral_amount: 0,
+    };
+  };
+
+  const statistics = {
+    above_300: calcLevel(large_orders, 300),
+    above_100: calcLevel(large_orders, 100),
+    above_50:  calcLevel(large_orders, 50),
+    above_30:  calcLevel(large_orders, 30),
+    below_30:  calcLevel(large_orders, 0, 30),
+  };
+
+  return {
+    ...fullData,
+    data: {
+      ...d,
+      timeshare,
+      large_orders,
+      big_map,
+      statistics,
+      // 模拟回放：用截止时刻的最后一条分时价格更新股票基础信息
+      stock_info: (() => {
+        const lastTs = timeshare[timeshare.length - 1];
+        const currentPrice = lastTs?.price ?? d.stock_info?.price;
+        const prevClose = d.stock_info?.yesterday_close;
+        const changePct = (prevClose && currentPrice)
+          ? parseFloat(((currentPrice - prevClose) / prevClose * 100).toFixed(2))
+          : d.stock_info?.change_percent;
+        return {
+          ...(d.stock_info || {}),
+          price: currentPrice,
+          change_percent: changePct,
+        };
+      })(),
     },
   };
 };

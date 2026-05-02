@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useRef, useCallback, useMemo, useState } from 'react';
-import { Radio, Switch, Tag } from 'antd';
+import { Radio, Switch } from 'antd';
 import { useAtom } from 'jotai';
 import StockBasicInfo from './components/StockBasicInfo';
 import StockChart from './components/StockChart';
@@ -9,6 +9,7 @@ import ThemeLimitUpPanel from './components/ThemeLimitUpPanel';
 import StockOrderDetails from './components/StockOrderDetails';
 import { buildTradingTimeAxis, alignTimeshareToTradingAxis } from './utils/l2Analysis';
 import { stockWS } from '../../services/websocket';
+import { apiRequest } from '../../config/api';
 import {
   stockCodeAtom,
   fetchL2DashboardAtom,
@@ -18,6 +19,8 @@ import {
   largeOrdersDataAtom,
   stockBasicDataAtom,
   limitUpMonitorAtom,
+  applySimulatedDataAtom,
+  selectedDateAtom,
 } from '../../store/atoms';
 
 const L2_POLL_INTERVAL = 10000;
@@ -49,6 +52,7 @@ const StockDashboard = () => {
   const [stockCode, setStockCode] = useAtom(stockCodeAtom);
   const [, fetchL2Dashboard] = useAtom(fetchL2DashboardAtom);
   const [, fetchLimitUpThemes] = useAtom(fetchLimitUpThemesAtom);
+  const [selectedDate] = useAtom(selectedDateAtom);
   const l2TimerRef = useRef(null);
   const themeTimerRef = useRef(null);
   const simulationTimerRef = useRef(null);
@@ -64,6 +68,10 @@ const StockDashboard = () => {
   const [, setLargeOrdersData] = useAtom(largeOrdersDataAtom);
   const [, setStockBasicData] = useAtom(stockBasicDataAtom);
   const [, setLimitUpMonitor] = useAtom(limitUpMonitorAtom);
+  const [, applySimulatedData] = useAtom(applySimulatedDataAtom);
+
+  // 完整看板数据缓存（模拟回放用，只取一次）
+  const fullSimDataRef = useRef(null);
 
   const handleStockCodeChange = (newCode) => {
     setStockCode(newCode);
@@ -81,14 +89,9 @@ const StockDashboard = () => {
 
   const fetchL2Data = useCallback((simIndex = 1) => {
     if (stockCode) {
-      if (simulationEnabled) {
-        const nextTime = tradingAxis[Math.min(simIndex, tradingAxis.length - 1)] || '09:31';
-        fetchL2Dashboard({ code: stockCode, simulate: true, simulateTime: nextTime });
-      } else {
-        fetchL2Dashboard(stockCode);
-      }
+      fetchL2Dashboard(stockCode);
     }
-  }, [stockCode, fetchL2Dashboard, simulationEnabled, tradingAxis]);
+  }, [stockCode, fetchL2Dashboard]);
 
   const fetchThemeData = useCallback(() => {
     if (stockCode) {
@@ -143,15 +146,21 @@ const StockDashboard = () => {
     }
 
     if (!simulationEnabled) {
+      fullSimDataRef.current = null;  // 退出模拟时清除缓存
       return undefined;
     }
 
-    const currentIndex = simulationIndexRef.current;
-    fetchL2Dashboard({
-      code: stockCode,
-      simulate: true,
-      simulateTime: tradingAxis[currentIndex] || '09:31'
-    });
+    // 重置到起始帧
+    simulationIndexRef.current = 1;
+    setSimulationIndex(1);
+
+    // 取一次完整数据，后续全部在前端切片，不再发请求
+    apiRequest(`/api/v1/l2_dashboard?code=${stockCode}&dt=${selectedDate}`, { timeout: 45000 })
+      .then(data => {
+        fullSimDataRef.current = data;
+        applySimulatedData({ fullData: data, cutoffTime: tradingAxis[1] || '09:31' });
+      })
+      .catch(err => console.error('模拟回放数据加载失败:', err));
 
     simulationTimerRef.current = setInterval(() => {
       setSimulationIndex(prevIndex => {
@@ -164,7 +173,11 @@ const StockDashboard = () => {
         const nextIndex = Math.min(prevIndex + 1, tradingAxis.length - 1);
         simulationIndexRef.current = nextIndex;
         const nextTime = tradingAxis[nextIndex] || '15:00';
-        fetchL2Dashboard({ code: stockCode, simulate: true, simulateTime: nextTime });
+
+        // 纯前端切片，不发网络请求
+        if (fullSimDataRef.current) {
+          applySimulatedData({ fullData: fullSimDataRef.current, cutoffTime: nextTime });
+        }
         return nextIndex;
       });
     }, simulationInterval);
@@ -175,7 +188,7 @@ const StockDashboard = () => {
         simulationTimerRef.current = null;
       }
     };
-  }, [simulationEnabled, stockCode, fetchL2Dashboard, tradingAxis, simulationInterval]);
+  }, [simulationEnabled, stockCode, tradingAxis, simulationInterval, applySimulatedData]);
 
   // WebSocket 连接管理
   useEffect(() => {
@@ -288,11 +301,6 @@ const StockDashboard = () => {
             />
             <span className="simulation-time">回放到 {simulationTime}</span>
           </>
-        )}
-        {!simulationEnabled && (
-          <Tag color={wsConnected ? 'green' : 'default'} style={{ marginLeft: 'auto' }}>
-            {wsConnected ? 'WS 实时' : 'HTTP 轮询'}
-          </Tag>
         )}
       </div>
       <div className="dashboard-layout">

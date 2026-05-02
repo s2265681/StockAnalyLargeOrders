@@ -46,17 +46,17 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
                   {/* 中部：当前价格和涨跌幅 */}
             <div className="main-price">
               <span className="label">当前价格</span>
-              <span 
+              <span
                 className={`price ${stockBasicData?.change_percent >= 0 ? 'price-up' : 'price-down'}`}
               >
-                {stockBasicData?.current_price}
+                {stockBasicData?.current_price ?? stockBasicData?.price}
               </span>
-              <span 
+              <span
                 className={`change ${stockBasicData?.change_percent >= 0 ? 'price-up' : 'price-down'}`}
               >
                 {stockBasicData?.change_percent >= 0 ? '+' : ''}{stockBasicData?.change_percent}%
               </span>
-          </div>
+            </div>
 
               {/* <span className="stock-code">{stockBasicData.code}</span> */}
             </div>

@@ -24,6 +24,40 @@ LEVEL_THRESHOLDS = {
 _cache = {}
 CACHE_TTL = 2  # 秒
 
+# Playwright 数据源（懒加载）
+_playwright_source = None
+
+def _get_playwright_source():
+    global _playwright_source
+    if _playwright_source is None:
+        try:
+            from .eastmoney_playwright import EastMoneyPlaywrightSource
+            import os
+            # 从系统代理设置自动推断
+            proxy = os.environ.get('https_proxy') or os.environ.get('http_proxy') or None
+            # 尝试从 macOS 系统代理读取
+            if not proxy:
+                try:
+                    import subprocess
+                    r = subprocess.run(['networksetup', '-getsecurewebproxy', 'Wi-Fi'],
+                                       capture_output=True, text=True, timeout=2)
+                    lines = {l.split(':')[0].strip(): l.split(':', 1)[-1].strip()
+                             for l in r.stdout.splitlines() if ':' in l}
+                    if lines.get('Enabled', '').lower() == 'yes':
+                        host = lines.get('Server', '127.0.0.1')
+                        port = lines.get('Port', '7890')
+                        proxy = f"http://{host}:{port}"
+                except Exception:
+                    pass
+            if proxy:
+                EastMoneyPlaywrightSource.set_proxy(proxy)
+                logger.info(f"Playwright 数据源已配置代理: {proxy}")
+            _playwright_source = EastMoneyPlaywrightSource()
+        except ImportError:
+            logger.warning("playwright 未安装，逐笔数据将使用估算模式")
+            _playwright_source = None
+    return _playwright_source
+
 
 class DataSourceAdapter:
     """数据源适配器，统一免费/L2数据源，输出标准格式"""
@@ -49,7 +83,6 @@ class DataSourceAdapter:
 
         if cache_key in _cache:
             cached_time, cached_data = _cache[cache_key]
-            # 历史数据缓存更久（5分钟），当天数据5秒
             ttl = CACHE_TTL if is_today else 300
             if now - cached_time < ttl:
                 return cached_data
@@ -57,6 +90,151 @@ class DataSourceAdapter:
         result = self._build_dashboard(code, dt=dt, simulate_time=simulate_time)
         _cache[cache_key] = (now, result)
         return result
+
+    def get_timeshare_data(self, code, dt=None):
+        """只返回分时走势 + 股票基础信息（轻量，适合首屏快速渲染）"""
+        today = datetime.now().strftime('%Y-%m-%d')
+        if dt is None:
+            dt = today
+        is_today = (dt == today)
+
+        cache_key = f'l2_timeshare_{code}_{dt}'
+        now = time.time()
+        if cache_key in _cache:
+            ts, cached = _cache[cache_key]
+            if now - ts < (CACHE_TTL if is_today else 300):
+                return cached
+
+        result = self._build_timeshare(code, dt=dt)
+        _cache[cache_key] = (now, result)
+        return result
+
+    def get_orders_data(self, code, dt=None):
+        """只返回大单列表 + 分级统计 + big_map（依赖逐笔，稍慢）"""
+        today = datetime.now().strftime('%Y-%m-%d')
+        if dt is None:
+            dt = today
+        is_today = (dt == today)
+
+        cache_key = f'l2_orders_{code}_{dt}'
+        now = time.time()
+        if cache_key in _cache:
+            ts, cached = _cache[cache_key]
+            if now - ts < (CACHE_TTL if is_today else 300):
+                return cached
+
+        result = self._build_orders(code, dt=dt)
+        _cache[cache_key] = (now, result)
+        return result
+
+    def _build_timeshare(self, code, dt=None):
+        """构建分时 + 股票基础信息（不含逐笔/大单）"""
+        today = datetime.now().strftime('%Y-%m-%d')
+        if dt is None:
+            dt = today
+        is_today = (dt == today)
+
+        quote = self.source.get_realtime_quote(code)
+        pw = _get_playwright_source()
+        if pw:
+            try:
+                timeshare = pw.get_timeshare(code, dt=dt)
+                if not timeshare:
+                    timeshare = self.source.get_timeshare(code, dt=dt)
+            except Exception as e:
+                logger.warning(f"Playwright 分时失败，回退: {e}")
+                timeshare = self.source.get_timeshare(code, dt=dt)
+        else:
+            timeshare = self.source.get_timeshare(code, dt=dt)
+        if not quote:
+            quote = self._build_fallback_quote(code, dt, timeshare)
+
+        if is_today or not timeshare:
+            stock_info = {
+                'code': quote['code'], 'name': quote['name'],
+                'price': quote['price'], 'yesterday_close': quote['yesterday_close'],
+                'open': quote['open'], 'high': quote['high'], 'low': quote['low'],
+                'volume': quote['volume'], 'turnover': quote['turnover'],
+                'change_percent': quote['change_percent'],
+            }
+        else:
+            hist_kline = self.source.get_daily_kline(code, dt)
+            if hist_kline:
+                stock_info = {
+                    'code': quote['code'], 'name': quote['name'],
+                    'price': hist_kline['close'], 'yesterday_close': hist_kline['preclose'],
+                    'open': hist_kline['open'], 'high': hist_kline['high'], 'low': hist_kline['low'],
+                    'volume': hist_kline['volume'], 'turnover': hist_kline['turnover'],
+                    'change_percent': hist_kline['change_percent'],
+                }
+            else:
+                prices = [t['price'] for t in timeshare if t.get('price')]
+                stock_info = {
+                    'code': quote['code'], 'name': quote['name'],
+                    'price': prices[-1] if prices else 0,
+                    'yesterday_close': prices[0] if prices else 0,
+                    'open': prices[0] if prices else 0,
+                    'high': max(prices) if prices else 0,
+                    'low': min(prices) if prices else 0,
+                    'volume': 0, 'turnover': 0, 'change_percent': 0,
+                }
+
+        return {
+            'success': True,
+            'data': {
+                'stock_info': stock_info,
+                'timeshare': timeshare,
+                'order_book': (self.source.get_order_book(code)
+                               if hasattr(self.source, 'get_order_book') else self._empty_order_book()),
+                'update_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            }
+        }
+
+    def _build_orders(self, code, dt=None):
+        """构建大单列表 + 分级统计 + big_map（依赖逐笔数据）"""
+        today = datetime.now().strftime('%Y-%m-%d')
+        if dt is None:
+            dt = today
+
+        pw = _get_playwright_source()
+        if pw:
+            try:
+                tick_result = pw.get_tick_details(code, dt=dt)
+                if not tick_result.get('details'):
+                    tick_result = self.source.get_tick_details(code, dt=dt)
+            except Exception as e:
+                logger.warning(f"Playwright 逐笔失败，回退: {e}")
+                tick_result = self.source.get_tick_details(code, dt=dt)
+        else:
+            tick_result = self.source.get_tick_details(code, dt=dt)
+        all_details = tick_result.get('details', [])
+
+        if not all_details:
+            # 无逐笔时用分时估算（复用 Playwright 缓存，不重复加载）
+            if pw:
+                try:
+                    timeshare = pw.get_timeshare(code, dt=dt)
+                except Exception:
+                    timeshare = self.source.get_timeshare(code, dt=dt)
+            else:
+                timeshare = self.source.get_timeshare(code, dt=dt)
+            all_details = self._build_minute_amount_details(timeshare)
+
+        self._annotate_directions(all_details)
+        large_orders = self._identify_large_orders(all_details)
+        statistics = self._calculate_statistics(all_details)
+        big_map = self._build_big_map(large_orders)
+
+        return {
+            'success': True,
+            'data': {
+                'large_orders': large_orders,
+                'orders': large_orders,
+                'statistics': statistics,
+                'big_map': big_map,
+                'update_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            }
+        }
 
     def _build_dashboard(self, code, dt=None, simulate_time=None):
         """构建完整的看板数据"""
@@ -68,12 +246,33 @@ class DataSourceAdapter:
         # 1. 获取实时行情（总是获取最新的）
         quote = self.source.get_realtime_quote(code)
 
-        # 2. 获取逐笔成交明细
-        tick_result = self.source.get_tick_details(code, dt=dt)
+        # 2. 获取逐笔成交明细：优先用 Playwright（绕过 TLS 指纹检测），失败回退到原接口
+        pw = _get_playwright_source()
+        if pw:
+            try:
+                tick_result = pw.get_tick_details(code, dt=dt)
+                n = len(tick_result.get('details', []))
+                logger.info(f"Playwright 逐笔: {n} 条")
+                if n == 0:
+                    tick_result = self.source.get_tick_details(code, dt=dt)
+            except Exception as e:
+                logger.warning(f"Playwright 逐笔失败，回退: {e}")
+                tick_result = self.source.get_tick_details(code, dt=dt)
+        else:
+            tick_result = self.source.get_tick_details(code, dt=dt)
         all_details = tick_result.get('details', [])
 
-        # 3. 获取分时走势
-        timeshare = self.source.get_timeshare(code, dt=dt)
+        # 3. 获取分时走势：优先用 Playwright，失败回退
+        if pw:
+            try:
+                timeshare = pw.get_timeshare(code, dt=dt)
+                if not timeshare:
+                    timeshare = self.source.get_timeshare(code, dt=dt)
+            except Exception as e:
+                logger.warning(f"Playwright 分时失败，回退: {e}")
+                timeshare = self.source.get_timeshare(code, dt=dt)
+        else:
+            timeshare = self.source.get_timeshare(code, dt=dt)
         if not quote:
             quote = self._build_fallback_quote(code, dt, timeshare)
         order_book = self.source.get_order_book(code) if hasattr(self.source, 'get_order_book') else self._empty_order_book()

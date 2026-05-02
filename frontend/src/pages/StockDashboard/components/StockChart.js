@@ -215,12 +215,12 @@ const StockChart = () => {
 
       const institutionalMarkers = [];
       const isBuyOrder = (item) => {
-        const rawType = item.type ?? item.t;
+        const rawType = item.type ?? item.t ?? item.direction;
         const type = Number.isNaN(parseInt(rawType, 10)) ? rawType : parseInt(rawType, 10);
         return type === 1 || type === 2 || type === '主买' || type === '被买';
       };
       const isSellOrder = (item) => {
-        const rawType = item.type ?? item.t;
+        const rawType = item.type ?? item.t ?? item.direction;
         const type = Number.isNaN(parseInt(rawType, 10)) ? rawType : parseInt(rawType, 10);
         return type === 3 || type === 4 || type === '主卖' || type === '被卖';
       };
@@ -284,7 +284,7 @@ const StockChart = () => {
         
         // 兼容后端新格式 {type, amount} 和旧格式 {t, v}，金额单位均为万元
         const filteredData = timeData
-          .filter(item => parseFloat(item.amount ?? item.v) > filterThreshold)
+          .filter(item => parseFloat(item.amount ?? item.v) >= filterThreshold)
           .sort((a, b) => parseFloat(b.amount ?? b.v) - parseFloat(a.amount ?? a.v));
 
         filteredData.filter(isBuyOrder).forEach((item, stackIndex) => {
@@ -440,11 +440,11 @@ const StockChart = () => {
       yAxisMax
     );
 
-    const isBuyOrder = (item) => ['主买', '被买'].includes(item.type ?? item.t) || [1, 2].includes(parseInt(item.type ?? item.t, 10));
-    const isSellOrder = (item) => ['主卖', '被卖'].includes(item.type ?? item.t) || [3, 4].includes(parseInt(item.type ?? item.t, 10));
+    const isBuyOrder = (item) => ['主买', '被买'].includes(item.type ?? item.t ?? item.direction) || [1, 2].includes(parseInt(item.type ?? item.t, 10));
+    const isSellOrder = (item) => ['主卖', '被卖'].includes(item.type ?? item.t ?? item.direction) || [3, 4].includes(parseInt(item.type ?? item.t, 10));
     const buildOrderLineData = (matcher) => fullTimeAxis.map((timePoint, index) => {
       const minuteOrders = (timeshareData.big_map?.[timePoint] || [])
-        .filter(item => parseFloat(item.amount ?? item.v) > filterThreshold)
+        .filter(item => parseFloat(item.amount ?? item.v) >= filterThreshold)
         .filter(matcher);
 
       if (minuteOrders.length === 0) {
@@ -470,7 +470,7 @@ const StockChart = () => {
       
       Object.keys(timeshareData.big_map).forEach(timeStr => {
         const timeData = timeshareData.big_map[timeStr];
-        const filteredData = timeData.filter(item => parseFloat(item.amount ?? item.v) > filterThreshold);
+        const filteredData = timeData.filter(item => parseFloat(item.amount ?? item.v) >= filterThreshold);
         if (filteredData.length > 0) {
           const timeIndex = fullTimeAxis.indexOf(timeStr);
           // console.log(`时间 ${timeStr} (索引: ${timeIndex}):`, filteredData);

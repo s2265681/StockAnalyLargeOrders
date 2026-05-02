@@ -49,6 +49,36 @@ def health():
     }
 
 
+@app.route('/api/v1/data_source_status')
+def data_source_status():
+    """检测东方财富数据源可用性（被动，不发额外请求，不加剧限流）"""
+    from services.eastmoney_free import EastMoneyFreeSource
+    health = EastMoneyFreeSource.get_health()
+    return {'success': True, 'data': health}
+
+
+@app.route('/api/v1/set_cookie', methods=['POST'])
+def set_cookie():
+    """设置东方财富登录 Cookie，用于访问历史逐笔等需要登录的接口。
+    Body: { "cookie": "<浏览器复制的 Cookie 字符串>" }
+    """
+    from flask import request as req
+    from services.eastmoney_free import EastMoneyFreeSource
+    body = req.get_json(silent=True) or {}
+    cookie_str = (body.get('cookie') or '').strip()
+    if not cookie_str:
+        return {'success': False, 'message': 'cookie 字段不能为空'}, 400
+    EastMoneyFreeSource.set_em_cookie(cookie_str)
+    return {'success': True, 'message': 'Cookie 已更新，历史逐笔接口将使用新 Cookie'}
+
+
+@app.route('/api/v1/get_cookie_status')
+def get_cookie_status():
+    """返回当前 Cookie 是否已设置"""
+    from services.eastmoney_free import EastMoneyFreeSource
+    return {'success': True, 'data': EastMoneyFreeSource.get_cookie_status()}
+
+
 @app.route('/')
 def index():
     return {

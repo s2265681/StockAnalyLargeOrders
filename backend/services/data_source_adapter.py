@@ -4,7 +4,7 @@
 """
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from .eastmoney_free import EastMoneyFreeSource
 from .eastmoney_l2 import EastMoneyL2Source
@@ -136,7 +136,8 @@ class DataSourceAdapter:
 
         quote = self.source.get_realtime_quote(code)
         pw = _get_playwright_source()
-        if pw:
+        # 历史日期：页面 SSE 只有当日分时，Playwright 按日期过滤会得到空列表，必须走 REST trends2
+        if pw and is_today:
             try:
                 timeshare = pw.get_timeshare(code, dt=dt)
                 if not timeshare:
@@ -179,15 +180,125 @@ class DataSourceAdapter:
                     'volume': 0, 'turnover': 0, 'change_percent': 0,
                 }
 
+        order_book = (self.source.get_order_book(code)
+                       if hasattr(self.source, 'get_order_book') else self._empty_order_book())
+        limit_up_data = self.limit_up_monitor.analyze(code, quote, order_book)
+        snap = self._session_snapshot(
+            code, dt, timeshare, quote, is_today, simulate_time=None,
+            order_book=order_book, limit_up_data=limit_up_data,
+        )
         return {
             'success': True,
             'data': {
                 'stock_info': stock_info,
                 'timeshare': timeshare,
-                'order_book': (self.source.get_order_book(code)
-                               if hasattr(self.source, 'get_order_book') else self._empty_order_book()),
+                'order_book': order_book,
+                'session_snapshot': snap,
                 'update_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             }
+        }
+
+    def _session_snapshot(self, code, dt, timeshare, quote, is_today, simulate_time=None,
+                          order_book=None, limit_up_data=None):
+        """集合竞价成交量、尾盘相对昨日全日量比等（volume 单位：手）"""
+        if not timeshare:
+            return {}
+
+        order_book = order_book or {}
+        limit_up_data = limit_up_data or {}
+
+        def _tkey(t):
+            return str(t.get('time', '') or '')[:5]
+
+        auction_rows = [t for t in timeshare if _tkey(t) and _tkey(t) < '09:30']
+        auction_vol = 0
+        auction_amt = 0.0
+        if auction_rows:
+            sorted_a = sorted(auction_rows, key=lambda x: _tkey(x))
+            fv = int(sorted_a[0].get('volume', 0) or 0)
+            lv = int(sorted_a[-1].get('volume', 0) or 0)
+            fa = float(sorted_a[0].get('amount', 0) or 0)
+            la = float(sorted_a[-1].get('amount', 0) or 0)
+            # 累计量额：末减首；否则按分钟相加（兼容不同字段语义）
+            if lv >= fv:
+                auction_vol = lv - fv
+            else:
+                auction_vol = sum(int(t.get('volume', 0) or 0) for t in sorted_a)
+            if la >= fa:
+                auction_amt = max(la - fa, 0.0)
+            else:
+                auction_amt = sum(float(t.get('amount', 0) or 0) for t in sorted_a)
+        auction_last = None
+        for t in sorted(auction_rows, key=lambda x: _tkey(x)):
+            if t.get('price') is not None:
+                auction_last = float(t['price'])
+
+        # 东财 trends2 多数不含 9:15–9:25 竞价点，分时里筛不到竞价价；用今开作匹配价近似（与 9:25 统一价一致）
+        auction_from_open_fallback = False
+        if auction_last is None and quote:
+            op = float(quote.get('open', 0) or 0)
+            if op > 0:
+                auction_last = op
+                auction_from_open_fallback = True
+
+        # 模拟切片：必须用分时累计量；否则当日优先用行情接口总量（更贴近交易所）
+        if simulate_time:
+            day_vol = sum(int(t.get('volume', 0) or 0) for t in timeshare)
+        elif is_today and quote and quote.get('volume'):
+            day_vol = int(quote['volume'])
+        else:
+            day_vol = sum(int(t.get('volume', 0) or 0) for t in timeshare)
+
+        yvol = None
+        try:
+            d0 = datetime.strptime(dt, '%Y-%m-%d')
+            for i in range(1, 15):
+                d1 = d0 - timedelta(days=i)
+                if d1.weekday() >= 5:
+                    continue
+                pd = d1.strftime('%Y-%m-%d')
+                yk = self.source.get_daily_kline(code, pd)
+                if yk and yk.get('volume'):
+                    yvol = int(yk['volume'])
+                    break
+        except Exception as e:
+            logger.debug(f"session_snapshot 昨日量: {e}")
+
+        prev_close = float(quote.get('yesterday_close', 0) or 0) if quote else 0.0
+        auction_chg = None
+        if auction_last and prev_close > 0:
+            auction_chg = round((auction_last - prev_close) / prev_close * 100, 2)
+
+        ratio = None
+        if yvol and yvol > 0 and day_vol >= 0:
+            ratio = round(day_vol / yvol * 100, 1)
+
+        # 五档卖单合计（手）：盘口 volume 为股
+        total_ask_volume_hands = None
+        asks = order_book.get('asks') or []
+        if asks:
+            share_sum = sum(int(a.get('volume', 0) or 0) for a in asks)
+            if share_sum > 0:
+                total_ask_volume_hands = round(share_sum / 100, 2)
+
+        # 封成比：涨停封单金额 / 当日成交额（%）
+        seal_to_turnover_percent = None
+        seal_wan = float(limit_up_data.get('seal_amount', 0) or 0)
+        turnover = float(quote.get('turnover', 0) or 0) if quote else 0.0
+        if seal_wan > 0 and turnover > 0:
+            seal_to_turnover_percent = round(seal_wan * 10000 / turnover * 100, 2)
+
+        return {
+            'auction_last_price': auction_last,
+            'auction_change_percent': auction_chg,
+            'auction_volume_hands': auction_vol,
+            'auction_amount': round(auction_amt, 2),
+            'auction_from_open_fallback': auction_from_open_fallback,
+            'today_volume_hands': day_vol,
+            'yesterday_volume_hands': yvol,
+            'volume_vs_yesterday_percent': ratio,
+            'total_ask_volume_hands': total_ask_volume_hands,
+            'seal_to_turnover_percent': seal_to_turnover_percent,
         }
 
     def _build_orders(self, code, dt=None):
@@ -209,9 +320,10 @@ class DataSourceAdapter:
             tick_result = self.source.get_tick_details(code, dt=dt)
         all_details = tick_result.get('details', [])
 
+        is_today = dt == today
         if not all_details:
-            # 无逐笔时用分时估算（复用 Playwright 缓存，不重复加载）
-            if pw:
+            # 无逐笔时用分时估算（仅当日复用 Playwright 分时缓存）
+            if pw and is_today:
                 try:
                     timeshare = pw.get_timeshare(code, dt=dt)
                 except Exception:
@@ -262,8 +374,8 @@ class DataSourceAdapter:
             tick_result = self.source.get_tick_details(code, dt=dt)
         all_details = tick_result.get('details', [])
 
-        # 3. 获取分时走势：优先用 Playwright，失败回退
-        if pw:
+        # 3. 获取分时走势：仅当日走 Playwright（历史日页面无该日 trends）
+        if pw and is_today:
             try:
                 timeshare = pw.get_timeshare(code, dt=dt)
                 if not timeshare:
@@ -356,6 +468,11 @@ class DataSourceAdapter:
         # 6. 封单监控
         limit_up_data = self.limit_up_monitor.analyze(code, quote, order_book)
 
+        snap = self._session_snapshot(
+            code, dt, timeshare, quote, is_today, simulate_time=simulate_time,
+            order_book=order_book, limit_up_data=limit_up_data,
+        )
+
         return {
             'success': True,
             'data': {
@@ -366,6 +483,7 @@ class DataSourceAdapter:
                 'orders': large_orders,
                 'big_map': big_map,
                 'order_book': order_book,
+                'session_snapshot': snap,
                 'limit_up_monitor': limit_up_data,
                 'simulation': {
                     'enabled': bool(simulate_time),
@@ -561,7 +679,7 @@ class DataSourceAdapter:
                 'price': price,
                 'volume': volume,
                 'amount': amount,
-                'type': 1 if direction == '被买' else 2,
+                'type': 1 if direction in ('主买', '被买') else 2,
                 'direction': direction,
                 'estimated': True,
             })

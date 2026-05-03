@@ -112,6 +112,51 @@ describe('l2Analysis helpers', () => {
     expect(signal.reasons.join('')).toContain('五档卖盘');
   });
 
+  test('detects limit-down crash even when buy orders dominate', () => {
+    // 模拟002210场景：跌停但大单买入远多于卖出（被动成交）
+    const prices = [];
+    const startPrice = 3.36;
+    const endPrice = 2.98; // ~-11% 跌停
+    for (let i = 0; i < 30; i++) {
+      prices.push(startPrice - (startPrice - endPrice) * (i / 29));
+    }
+    const signal = buildHandicapLanguage({
+      timeshareData: {
+        fenshi: prices,
+        base_info: { prevClosePrice: 3.31, openPrice: 3.36 },
+      },
+      largeOrdersData: {
+        largeOrders: [
+          { type: 'buy', direction: '被买', amount: 270508_0000 },
+          { type: 'buy', direction: '主买', amount: 5000_0000 },
+          { type: 'sell', direction: '主卖', amount: 33005_0000 },
+        ],
+      },
+    });
+
+    expect(signal.tone).toBe('negative');
+    expect(signal.score).toBeLessThan(25);
+  });
+
+  test('detects strong drop with passive buy orders as weak', () => {
+    const prices = [10, 9.8, 9.6, 9.5, 9.4, 9.3, 9.2, 9.15, 9.1, 9.05];
+    const signal = buildHandicapLanguage({
+      timeshareData: {
+        fenshi: prices,
+        base_info: { prevClosePrice: 10, openPrice: 10 },
+      },
+      largeOrdersData: {
+        largeOrders: [
+          { type: 'buy', direction: '被买', amount: 5_000_000 },
+          { type: 'sell', direction: '主卖', amount: 1_000_000 },
+        ],
+      },
+    });
+
+    expect(signal.tone).toBe('negative');
+    expect(signal.score).toBeLessThan(30);
+  });
+
   test('uses five-level order book to identify lower support', () => {
     const signal = buildHandicapLanguage({
       timeshareData: {

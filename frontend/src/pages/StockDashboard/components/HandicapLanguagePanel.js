@@ -134,8 +134,8 @@ const HandicapLanguagePanel = () => {
             <strong className="sell-count">{formatWan(signal.metrics?.sellAmount)}</strong>
           </div>
           <div className="handicap-metric">
-            <span>买占比</span>
-            <strong>{Math.round((signal.metrics?.buyRatio || 0) * 100)}%</strong>
+            <span>买占比(加权)</span>
+            <strong>{Math.round((signal.metrics?.wBuyRatio || signal.metrics?.buyRatio || 0) * 100)}%</strong>
           </div>
           <div className="handicap-metric">
             <span>盘口买占比</span>

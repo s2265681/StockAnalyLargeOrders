@@ -5,6 +5,7 @@ import { useAtom } from 'jotai';
 import StockBasicInfo from './components/StockBasicInfo';
 import StockChart from './components/StockChart';
 import HandicapLanguagePanel from './components/HandicapLanguagePanel';
+import AuctionVolumePanel from './components/AuctionVolumePanel';
 import ThemeLimitUpPanel from './components/ThemeLimitUpPanel';
 import StockOrderDetails from './components/StockOrderDetails';
 import { buildTradingTimeAxis, alignTimeshareToTradingAxis } from './utils/l2Analysis';
@@ -215,6 +216,7 @@ const StockDashboard = () => {
           sanhu: [],
           big_map: d.big_map || {},
           order_book: d.order_book || null,
+          session_snapshot: d.session_snapshot || null,
           base_info: {
             prevClosePrice: d.stock_info?.yesterday_close,
             openPrice: d.stock_info?.open,
@@ -312,6 +314,9 @@ const StockDashboard = () => {
         </div>
         <aside className="dashboard-side">
           <HandicapLanguagePanel />
+        </aside>
+        <aside className="dashboard-auction">
+          <AuctionVolumePanel />
         </aside>
       </div>
     </div>

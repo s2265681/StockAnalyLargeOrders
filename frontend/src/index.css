@@ -1030,14 +1030,14 @@ code {
 }
 
 .stock-dashboard-container{
-  max-width: 1380px;
+  max-width: 1580px;
   margin: 0 auto;
 }
 
 .dashboard-layout {
   display: grid;
-  grid-template-columns: minmax(0, 980px) 300px;
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 300px) minmax(168px, 200px);
+  gap: 14px;
   align-items: start;
 }
 
@@ -1048,6 +1048,64 @@ code {
 .dashboard-side {
   position: sticky;
   top: 12px;
+}
+
+.dashboard-auction {
+  position: sticky;
+  top: 12px;
+}
+
+.auction-volume-panel .ant-card-head-title {
+  font-size: 14px;
+}
+
+.auction-block-title {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.auction-block--volume {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.auction-volume-panel .auction-block--volume:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.auction-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 13px;
+}
+
+.auction-label {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.auction-value {
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.auction-hint {
+  margin-top: 10px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.42);
+  line-height: 1.45;
+}
+
+.auction-hint--inline {
+  margin-top: 6px;
 }
 
 .handicap-panel {
@@ -1216,6 +1274,10 @@ code {
   .dashboard-side {
     position: static;
   }
+
+  .dashboard-auction {
+    position: static;
+  }
 }
 
 .stock-dashboard-container .ant-card,
@@ -1228,7 +1290,8 @@ code {
 .stock-dashboard-container .filter-level-item,
 .stock-dashboard-container .analysis-metric,
 .stock-dashboard-container .five-day-panel,
-.stock-dashboard-container .peak-order-panel {
+.stock-dashboard-container .peak-order-panel,
+.stock-dashboard-container .auction-volume-panel {
   background: transparent !important;
   background-color: transparent !important;
 }

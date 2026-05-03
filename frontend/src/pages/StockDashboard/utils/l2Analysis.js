@@ -47,6 +47,7 @@ export const buildAnalysisCards = (analysis = {}) => [
 export const buildTradingTimeAxis = () => {
   const timePoints = [];
 
+  // 不含集合竞价时段，分时图从连续竞价 09:30 起
   for (let hour = 9; hour <= 11; hour++) {
     const startMinute = hour === 9 ? 30 : 0;
     const endMinute = hour === 11 ? 30 : 59;
@@ -80,9 +81,41 @@ const sumOrderAmount = (orders, type) => orders
   .filter(order => order.type === type)
   .reduce((sum, order) => sum + Number(order.amount || 0), 0);
 
+/** 按主动/被动分别统计大单金额 */
+const sumOrderByActivity = (orders, type) => {
+  const matched = orders.filter(order => order.type === type);
+  const active = matched.filter(o => (o.direction || '').startsWith('主'));
+  const passive = matched.filter(o => (o.direction || '').startsWith('被'));
+  // 没有 direction 字段的订单（兼容旧数据）归入 unknown
+  const unknown = matched.filter(o => !o.direction || (!(o.direction).startsWith('主') && !(o.direction).startsWith('被')));
+  return {
+    active: active.reduce((s, o) => s + Number(o.amount || 0), 0),
+    passive: passive.reduce((s, o) => s + Number(o.amount || 0), 0),
+    unknown: unknown.reduce((s, o) => s + Number(o.amount || 0), 0),
+    total: matched.reduce((s, o) => s + Number(o.amount || 0), 0),
+  };
+};
+
+/** 计算加权大单金额：主动权重1.0，被动权重0.3，无分类信息默认权重1.0 */
+const weightedAmount = (detail) => detail.active + detail.passive * 0.3 + (detail.unknown || 0);
+
 const getValidPrices = (timeshareData = {}) => ((timeshareData || {}).fenshi || [])
   .filter(price => price !== null && price !== undefined && !Number.isNaN(Number(price)))
   .map(Number);
+
+/** 检测价格趋势强度：返回 -1~1，负值=持续下跌，正值=持续上涨 */
+const calcTrendStrength = (prices) => {
+  if (prices.length < 3) return 0;
+  const sample = prices.length > 20 ? prices.slice(-20) : prices;
+  let drops = 0;
+  let rises = 0;
+  for (let i = 1; i < sample.length; i++) {
+    if (sample[i] < sample[i - 1]) drops++;
+    else if (sample[i] > sample[i - 1]) rises++;
+  }
+  const total = sample.length - 1;
+  return (rises - drops) / total; // -1 = 全部下跌, +1 = 全部上涨
+};
 
 export const buildHandicapLanguage = ({ timeshareData = {}, largeOrdersData = {} } = {}) => {
   const prices = getValidPrices(timeshareData);
@@ -110,10 +143,20 @@ export const buildHandicapLanguage = ({ timeshareData = {}, largeOrdersData = {}
   const highPrice = Math.max(...prices);
   const lowPrice = Math.min(...prices);
   const rangePercent = openPrice ? ((highPrice - lowPrice) / openPrice) * 100 : 0;
-  const buyAmount = sumOrderAmount(orders, 'buy');
-  const sellAmount = sumOrderAmount(orders, 'sell');
+
+  // --- 大单：按主动/被动分别统计 ---
+  const buyDetail = sumOrderByActivity(orders, 'buy');
+  const sellDetail = sumOrderByActivity(orders, 'sell');
+  const buyAmount = buyDetail.total;
+  const sellAmount = sellDetail.total;
+  // 加权金额：主动成交权重高，被动成交权重低
+  const wBuy = weightedAmount(buyDetail);
+  const wSell = weightedAmount(sellDetail);
+  const wTotal = wBuy + wSell;
+  const wBuyRatio = wTotal ? wBuy / wTotal : 0.5;
   const totalAmount = buyAmount + sellAmount;
   const buyRatio = totalAmount ? buyAmount / totalAmount : 0.5;
+
   const bidAmount = Number(orderBook.bid_amount || 0);
   const askAmount = Number(orderBook.ask_amount || 0);
   const bookTotalAmount = bidAmount + askAmount;
@@ -125,6 +168,17 @@ export const buildHandicapLanguage = ({ timeshareData = {}, largeOrdersData = {}
   const aboveAvg = currentPrice >= avgPrice;
   const recent = prices.slice(-5);
   const rising = recent.length >= 2 && recent[recent.length - 1] >= recent[0];
+
+  // --- 价格趋势 ---
+  const trendStrength = calcTrendStrength(prices);
+  const absChange = Math.abs(changePercent || 0);
+  const isLimitDown = changePercent !== null && changePercent <= -9.5;
+  const isNearLimitDown = changePercent !== null && changePercent <= -7;
+  const isLimitUp = changePercent !== null && changePercent >= 9.5;
+  const isNearLimitUp = changePercent !== null && changePercent >= 7;
+  const isStrongDrop = changePercent !== null && changePercent <= -4 && trendStrength < -0.4;
+  const isStrongRise = changePercent !== null && changePercent >= 4 && trendStrength > 0.4;
+
   const tags = [];
   const reasons = [];
 
@@ -133,7 +187,64 @@ export const buildHandicapLanguage = ({ timeshareData = {}, largeOrdersData = {}
   let score = 50;
   let advice = '买卖力量接近，先观察是否放量突破均线或跌破开盘价。';
 
-  if (bookAvailable && askAmount > bidAmount * 1.8) {
+  // === 最高优先级：极端行情（跌停/涨停区域），价格走势直接定性 ===
+  if (isLimitDown) {
+    primaryLabel = '跌停崩溃';
+    tone = 'negative';
+    score = 8;
+    tags.push('跌停', '极弱');
+    reasons.push('股价已至跌停板，卖方完全主导');
+    if (buyAmount > sellAmount) {
+      reasons.push('大单显示买多卖少，但多为被动成交或跌停挂单承接，非主动买入');
+    }
+    advice = '跌停板不可操作，切勿抄底。等开板后观察成交量和资金流向再判断。';
+  } else if (isLimitUp) {
+    primaryLabel = '涨停封板';
+    tone = 'positive';
+    score = 92;
+    tags.push('涨停', '极强');
+    reasons.push('股价已至涨停板，买方完全主导');
+    advice = '涨停封板中，关注封单量是否稳固，注意尾盘炸板风险。';
+  } else if (isNearLimitDown) {
+    primaryLabel = '急速杀跌';
+    tone = 'negative';
+    score = 15;
+    tags.push('暴跌', '风险');
+    reasons.push(`跌幅${changePercent}%，接近跌停板`);
+    if (trendStrength < -0.5) reasons.push('价格持续单边下行，无有效反弹');
+    if (buyAmount > sellAmount) reasons.push('大单买入多为被动承接，未能阻止下跌');
+    advice = '极弱走势，避免抄底。等跌势企稳、出现放量反弹信号后再观察。';
+  } else if (isNearLimitUp) {
+    primaryLabel = '强势冲板';
+    tone = 'positive';
+    score = 85;
+    tags.push('冲板', '强势');
+    reasons.push(`涨幅${changePercent}%，接近涨停板`);
+    if (trendStrength > 0.5) reasons.push('价格持续上攻，多方强势');
+    advice = '高位强势，注意追高风险，关注是否能封涨停。';
+  // === 次优先级：强趋势行情，价格走势权重高于大单 ===
+  } else if (isStrongDrop) {
+    primaryLabel = '单边下杀';
+    tone = 'negative';
+    score = 22;
+    tags.push('杀跌', '趋势空');
+    reasons.push(`跌幅${changePercent}%，价格持续走低`);
+    if (wBuyRatio > 0.6) {
+      reasons.push('大单买入占比高但多为被动成交，主动卖压主导实际走势');
+    } else {
+      reasons.push('大单卖出力量明显');
+    }
+    advice = '下跌趋势明确，不宜抄底。等止跌企稳并出现主动买入放量信号后再观察。';
+  } else if (isStrongRise) {
+    primaryLabel = '单边拉升';
+    tone = 'positive';
+    score = 78;
+    tags.push('拉升', '趋势多');
+    reasons.push(`涨幅${changePercent}%，价格持续走高`);
+    if (wBuyRatio > 0.6) reasons.push('主动买入大单力量强劲');
+    advice = '上涨趋势明确，但注意追高风险，可等回踩均线不破后介入。';
+  // === 常规判断（使用加权买卖比 wBuyRatio 代替原始 buyRatio）===
+  } else if (bookAvailable && askAmount > bidAmount * 1.8) {
     primaryLabel = '上方压单';
     tone = 'negative';
     score = 38;
@@ -153,50 +264,60 @@ export const buildHandicapLanguage = ({ timeshareData = {}, largeOrdersData = {}
       reasons.push('买一挂单明显厚于卖一，盘口短线有托举');
     }
     advice = '偏强观察，可等回踩买盘密集区不破；若托单撤掉且跌破均线，需要降低预期。';
-  } else if (sellAmount > buyAmount * 1.3 && (!aboveOpen || !aboveAvg)) {
+  } else if (wSell > wBuy * 1.3 && (!aboveOpen || !aboveAvg)) {
     primaryLabel = '压单明显';
     tone = 'negative';
     score = 35;
     tags.push('压单', '转弱');
-    reasons.push('卖出大单金额明显高于买入大单');
+    reasons.push('主动卖出大单金额明显高于主动买入');
     reasons.push(currentPrice < openPrice ? '价格运行在开盘价下方' : '价格未能稳定站上均线');
     advice = '先谨慎，等重新站回均线或开盘价后再看承接，跌破开盘价且卖单放大时避免追高。';
-  } else if (buyAmount > sellAmount * 1.3 && aboveAvg) {
+  } else if (wBuy > wSell * 1.3 && aboveAvg) {
     primaryLabel = aboveOpen ? '均线上承接' : '托单修复';
     tone = 'positive';
     score = 68;
     tags.push('堆单', '承接');
-    reasons.push('买入大单金额明显高于卖出大单');
+    reasons.push('主动买入大单金额明显高于主动卖出');
     reasons.push(aboveOpen ? '价格保持在开盘价上方' : '价格回到均线附近并有承接');
     advice = '偏强观察，可等回踩均线或开盘价不破时看承接，放量上穿前高再确认主动性。';
-  } else if (buyRatio > 0.58 && rising) {
+  } else if (wBuyRatio > 0.58 && rising) {
     primaryLabel = '扫单进攻';
     tone = 'positive';
     score = 74;
     tags.push('扫单', '主动买');
-    reasons.push('买方大单占优，最近价格重心抬升');
+    reasons.push('主动买方大单占优，最近价格重心抬升');
     advice = '进攻信号较强，避免急追，优先等回踩均线不破或突破后缩量回踩确认。';
-  } else if (Math.abs(buyRatio - 0.5) < 0.12 && rangePercent < 1.2 && orders.length >= 6) {
+  } else if (Math.abs(wBuyRatio - 0.5) < 0.12 && rangePercent < 1.2 && orders.length >= 6) {
     primaryLabel = '夹单震荡';
     tone = 'neutral';
     score = 52;
     tags.push('夹单', '等方向');
     reasons.push('买卖大单接近，价格波动区间收窄');
     advice = '方向未选出，等放量突破区间上沿或跌破开盘价后再判断。';
-  } else if (!aboveOpen && sellAmount >= buyAmount) {
+  } else if (!aboveOpen && wSell >= wBuy) {
     primaryLabel = '跌破开盘价';
     tone = 'negative';
     score = 40;
     tags.push('开盘价失守', '谨慎');
     reasons.push('价格低于开盘价，卖方力量不弱');
     advice = '等跌破开盘价后的承接是否出现，重新站回均线前以观察为主。';
+  } else if (!aboveOpen && changePercent !== null && changePercent < -2 && trendStrength < -0.3) {
+    // 大单显示买多但价格持续下跌 — 被动买入为主，实际偏弱
+    primaryLabel = '承接乏力';
+    tone = 'negative';
+    score = 35;
+    tags.push('虚买', '偏弱');
+    reasons.push('价格持续下行，大单买入多为被动承接，未能扭转跌势');
+    advice = '大单买入未能止跌，说明卖压较重，避免抄底，等止跌信号。';
   } else {
     tags.push('观察');
     reasons.push('当前买卖力量没有形成明显单边盘口语言');
   }
 
+  // 补充大单信息（使用加权比例展示）
   if (totalAmount > 0) {
-    reasons.push(`买卖大单占比约 ${Math.round(buyRatio * 100)}% / ${Math.round((1 - buyRatio) * 100)}%`);
+    const activeBuyPct = Math.round(wBuyRatio * 100);
+    reasons.push(`加权买卖大单占比约 ${activeBuyPct}% / ${100 - activeBuyPct}%（主动成交权重高）`);
   }
 
   if (!bookAvailable) {
@@ -208,7 +329,7 @@ export const buildHandicapLanguage = ({ timeshareData = {}, largeOrdersData = {}
     tone,
     score,
     tags,
-    reasons: reasons.slice(0, 3),
+    reasons: reasons.slice(0, 4),
     advice,
     metrics: {
       currentPrice,
@@ -218,12 +339,82 @@ export const buildHandicapLanguage = ({ timeshareData = {}, largeOrdersData = {}
       buyAmount,
       sellAmount,
       buyRatio,
+      wBuyRatio,
       bookAvailable,
       bidAmount,
       askAmount,
       bookBidRatio,
       spread: Number(orderBook.spread || 0),
     },
+  };
+};
+
+/** 根据分时列表重算集合竞价与量比（模拟切片用） */
+export const recomputeSessionSnapshot = (
+  timeshare,
+  stockInfo,
+  prevSnap = {},
+  orderBook = null,
+  limitUpData = null,
+) => {
+  const tk = (t) => String(t?.time || '').slice(0, 5);
+  const auction = (timeshare || []).filter((t) => tk(t) && tk(t) < '09:30');
+  const sortedA = [...auction].sort((a, b) => tk(a).localeCompare(tk(b)));
+  let auctionVol = 0;
+  let auctionAmt = 0;
+  if (sortedA.length >= 1) {
+    const fv = Number(sortedA[0].volume) || 0;
+    const lv = Number(sortedA[sortedA.length - 1].volume) || 0;
+    const fa = Number(sortedA[0].amount) || 0;
+    const la = Number(sortedA[sortedA.length - 1].amount) || 0;
+    auctionVol = lv >= fv ? lv - fv : sortedA.reduce((s, t) => s + (Number(t.volume) || 0), 0);
+    auctionAmt = la >= fa ? la - fa : sortedA.reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  }
+  let auctionLast = null;
+  sortedA.forEach((t) => {
+    if (t.price != null && !Number.isNaN(Number(t.price))) auctionLast = Number(t.price);
+  });
+  let auctionFromOpenFallback = false;
+  const openPx = Number(stockInfo?.open);
+  if (auctionLast == null && openPx > 0) {
+    auctionLast = openPx;
+    auctionFromOpenFallback = true;
+  }
+  const prevClose = Number(stockInfo?.yesterday_close || 0);
+  let auctionChg = null;
+  if (auctionLast && prevClose > 0) {
+    auctionChg = parseFloat(((auctionLast - prevClose) / prevClose * 100).toFixed(2));
+  }
+  const dayVol = (timeshare || []).reduce((s, t) => s + (Number(t.volume) || 0), 0);
+  const yvol = prevSnap?.yesterday_volume_hands;
+  let ratio = null;
+  if (yvol && yvol > 0) ratio = Math.round((dayVol / yvol) * 1000) / 10;
+
+  let totalAskVolumeHands = prevSnap?.total_ask_volume_hands ?? null;
+  const asks = orderBook?.asks || [];
+  if (asks.length) {
+    const shareSum = asks.reduce((s, a) => s + (Number(a.volume) || 0), 0);
+    if (shareSum > 0) totalAskVolumeHands = Math.round((shareSum / 100) * 100) / 100;
+  }
+
+  const sealWan = Number(limitUpData?.seal_amount || 0);
+  const turnover = Number(stockInfo?.turnover || 0);
+  let sealToTurnoverPercent = prevSnap?.seal_to_turnover_percent ?? null;
+  if (sealWan > 0 && turnover > 0) {
+    sealToTurnoverPercent = Math.round((sealWan * 10000 / turnover) * 10000) / 100;
+  }
+
+  return {
+    ...prevSnap,
+    auction_last_price: auctionLast,
+    auction_change_percent: auctionChg,
+    auction_volume_hands: auctionVol,
+    auction_amount: Math.round(auctionAmt * 100) / 100, // 元
+    auction_from_open_fallback: auctionFromOpenFallback,
+    today_volume_hands: dayVol,
+    volume_vs_yesterday_percent: ratio,
+    total_ask_volume_hands: totalAskVolumeHands ?? prevSnap?.total_ask_volume_hands,
+    seal_to_turnover_percent: sealToTurnoverPercent,
   };
 };
 
@@ -286,6 +477,26 @@ export const sliceL2DataByTime = (fullData, cutoffTime) => {
     below_30:  calcLevel(large_orders, 0, 30),
   };
 
+  const lastTs = timeshare[timeshare.length - 1];
+  const currentPrice = lastTs?.price ?? d.stock_info?.price;
+  const prevClose = d.stock_info?.yesterday_close;
+  const changePct = (prevClose && currentPrice)
+    ? parseFloat(((currentPrice - prevClose) / prevClose * 100).toFixed(2))
+    : d.stock_info?.change_percent;
+  const stock_info = {
+    ...(d.stock_info || {}),
+    price: currentPrice,
+    change_percent: changePct,
+  };
+
+  const session_snapshot = recomputeSessionSnapshot(
+    timeshare,
+    stock_info,
+    d.session_snapshot || {},
+    d.order_book || null,
+    d.limit_up_monitor || null,
+  );
+
   return {
     ...fullData,
     data: {
@@ -294,20 +505,8 @@ export const sliceL2DataByTime = (fullData, cutoffTime) => {
       large_orders,
       big_map,
       statistics,
-      // 模拟回放：用截止时刻的最后一条分时价格更新股票基础信息
-      stock_info: (() => {
-        const lastTs = timeshare[timeshare.length - 1];
-        const currentPrice = lastTs?.price ?? d.stock_info?.price;
-        const prevClose = d.stock_info?.yesterday_close;
-        const changePct = (prevClose && currentPrice)
-          ? parseFloat(((currentPrice - prevClose) / prevClose * 100).toFixed(2))
-          : d.stock_info?.change_percent;
-        return {
-          ...(d.stock_info || {}),
-          price: currentPrice,
-          change_percent: changePct,
-        };
-      })(),
+      stock_info,
+      session_snapshot,
     },
   };
 };

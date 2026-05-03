@@ -77,30 +77,6 @@ const StockChart = () => {
     setFilterThreshold(threshold);
   };
 
-  // 生成完整的交易时间轴（09:30-15:00）
-  const generateFullTimeAxis = () => {
-    const timePoints = [];
-    
-    // 上午：09:30-11:30
-    for (let hour = 9; hour <= 11; hour++) {
-      const startMinute = hour === 9 ? 30 : 0;
-      const endMinute = hour === 11 ? 30 : 59;
-      for (let minute = startMinute; minute <= endMinute; minute++) {
-        timePoints.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
-      }
-    }
-    
-    // 下午：13:00-15:00
-    for (let hour = 13; hour <= 15; hour++) {
-      const endMinute = hour === 15 ? 0 : 59;
-      for (let minute = 0; minute <= endMinute; minute++) {
-        timePoints.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
-      }
-    }
-    
-    return timePoints;
-  };
-
   // 生成筛选金额标注点（使用百分比坐标）
   const generateFilteredAmountMarkers = (fenshiData, largeOrders, filterAmount, yesterdayClose) => {
     if (!fenshiData || !largeOrders || largeOrders.length === 0 || !filterAmount) {
@@ -401,25 +377,27 @@ const StockChart = () => {
       return [timePoint, null];
     });
     
-    // 根据base_info动态计算Y轴范围
-    const validPrices = (fenshi || []).filter(price => price !== null && price !== undefined).map(price => parseFloat(price));
-    const highPrice = Math.max(parseFloat(base_info?.highPrice || 0), ...(validPrices.length ? validPrices : [0]));
-    const lowPrice = Math.min(parseFloat(base_info?.lowPrice || Number.MAX_VALUE), ...(validPrices.length ? validPrices : [Number.MAX_VALUE]));
-    
-    // 计算涨停价和跌停价（A股涨跌停幅度为10%）
-    const upperLimitPrice = prevClosePrice * 1.1; // 涨停价
-    const lowerLimitPrice = prevClosePrice * 0.9; // 跌停价
-    
-    // 计算最高价与涨停价的比值，最低价与跌停价的比值
-    const highToUpperRatio = ((highPrice - prevClosePrice) / (upperLimitPrice - prevClosePrice)) * 10; // 转换为百分比
-    const lowToLowerRatio = ((lowPrice - prevClosePrice) / (lowerLimitPrice - prevClosePrice)) * 10; // 转换为百分比
-    
-    // 设置Y轴范围，取较大的绝对值作为范围，确保上下对称
-    const maxRange = Math.max(Math.abs(highToUpperRatio), Math.abs(lowToLowerRatio));
-    // 确保最小范围为±1%，最大范围为±10%
-    const adjustedRange = Math.max(1, Math.min(10, maxRange));
-    const yAxisMax = adjustedRange; // 例如5%
-    const yAxisMin = -adjustedRange; // 例如-5%
+    // Y 轴：按分时实际涨跌幅区间收紧，避免 ±1% 把曲线压扁
+    const pricePercents = (fenshi || [])
+      .map((p) => (p != null && prevClosePrice
+        ? ((parseFloat(p) - prevClosePrice) / prevClosePrice) * 100
+        : null))
+      .filter((v) => v != null && !Number.isNaN(v));
+    const avgPercents = avgPriceData
+      .map((pt) => (Array.isArray(pt) ? pt[1] : null))
+      .filter((v) => v != null && !Number.isNaN(Number(v)))
+      .map(Number);
+    const allPct = [...pricePercents, ...avgPercents];
+    let lo = allPct.length ? Math.min(...allPct, 0) : -0.15;
+    let hi = allPct.length ? Math.max(...allPct, 0) : 0.15;
+    const span = Math.max(hi - lo, 0.08);
+    const pad = Math.max(span * 0.15, 0.03);
+    let yAxisMax = hi + pad;
+    let yAxisMin = lo - pad;
+    if (!Number.isFinite(yAxisMax) || !Number.isFinite(yAxisMin) || yAxisMax <= yAxisMin) {
+      yAxisMax = 0.2;
+      yAxisMin = -0.2;
+    }
     
     // 生成筛选金额标注
     const { institutionalMarkers, retailMarkers } = generateFilteredAmountMarkers(
@@ -464,16 +442,11 @@ const StockChart = () => {
     
     // 详细调试big_map数据处理
     if (timeshareData.big_map) {
-      // console.log('🔍 详细big_map数据处理:');
-      // console.log('时间轴范围:', fullTimeAxis[0], '到', fullTimeAxis[fullTimeAxis.length - 1]);
-      // console.log('时间轴长度:', fullTimeAxis.length);
-      
       Object.keys(timeshareData.big_map).forEach(timeStr => {
         const timeData = timeshareData.big_map[timeStr];
         const filteredData = timeData.filter(item => parseFloat(item.amount ?? item.v) >= filterThreshold);
         if (filteredData.length > 0) {
           const timeIndex = fullTimeAxis.indexOf(timeStr);
-          // console.log(`时间 ${timeStr} (索引: ${timeIndex}):`, filteredData);
         }
       });
       
@@ -492,17 +465,17 @@ const StockChart = () => {
       },
       grid: [
         {
-          left: '5%',
-          right: '12%',
-          height: '46%',
-          top: '30%'
+          left: '4%',
+          right: '10%',
+          top: '8%',
+          height: '72%',
         },
         {
-          left: '5%',
-          right: '12%',
-          top: '83%',
-          height: '12%'
-        }
+          left: '4%',
+          right: '10%',
+          top: '84%',
+          height: '12%',
+        },
       ],
       xAxis: [
         {
@@ -527,7 +500,7 @@ const StockChart = () => {
                 return '';
               }
               
-              const targetTimes = ['09:30', '10:30', '11:30', '14:00', '15:00'];
+              const targetTimes = ['09:30', '10:30', '11:30', '13:00', '14:00', '15:00'];
               
               if (targetTimes.includes(value)) {
                 return value;
@@ -567,7 +540,7 @@ const StockChart = () => {
           scale: false,
           min: yAxisMin,
           max: yAxisMax,
-          interval: Math.ceil((yAxisMax - yAxisMin) / 6), // 确保上下各3个刻度，总共7个刻度（包括0轴）
+          splitNumber: 6,
           position: 'right',
           splitArea: { 
             show: false
@@ -1092,7 +1065,7 @@ const StockChart = () => {
         <ReactEChartsCore
           echarts={echarts}
           option={getTimeshareChartOption()}
-          style={{  }}
+          style={{ width: '100%', height: 480, minHeight: 420 }}
           opts={{ 
             renderer: 'canvas',
             devicePixelRatio: window.devicePixelRatio || 1

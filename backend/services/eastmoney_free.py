@@ -16,7 +16,10 @@ _COOKIE_FILE = os.path.join(os.path.dirname(__file__), '..', 'em_cookie.json')
 
 
 def _safe_request(func, timeout_seconds=8, retry=1):
-    """在 eventlet 环境下为网络请求添加可靠的超时保护，支持简单退避重试"""
+    """为网络请求添加可靠的超时保护，支持简单退避重试。
+    优先使用 eventlet.Timeout；若 eventlet 导致请求异常，
+    回退到子进程执行，彻底绕过 monkey_patch 的干扰。
+    """
     for attempt in range(retry + 1):
         try:
             import eventlet
@@ -29,9 +32,27 @@ def _safe_request(func, timeout_seconds=8, retry=1):
                 return None
         except Exception:
             if attempt < retry:
-                time.sleep(0.5 * (attempt + 1))   # 退避：0.5s, 1s
+                time.sleep(0.5 * (attempt + 1))
                 continue
             return None
+    return None
+
+
+def _subprocess_fetch_json(url, headers=None, cookies=None, timeout=10):
+    """在子进程中用 curl 获取 JSON，彻底绕过 eventlet monkey_patch 对 SSL 的干扰。"""
+    import subprocess, json as _json
+    cmd = ['curl', '-s', '--max-time', str(timeout), url]
+    if headers:
+        for k, v in headers.items():
+            cmd += ['-H', f'{k}: {v}']
+    if cookies:
+        cmd += ['-b', cookies]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout + 2)
+        if result.returncode == 0 and result.stdout.strip():
+            return _json.loads(result.stdout)
+    except Exception as e:
+        logger.warning(f"subprocess curl 失败: {e}")
     return None
 
 
@@ -197,6 +218,13 @@ class EastMoneyFreeSource:
         try:
             data = _safe_request(_do_request, timeout_seconds=10)
             if data is None:
+                from urllib.parse import urlencode
+                full_url = f"{url}?{urlencode(params)}"
+                data = _subprocess_fetch_json(full_url, headers={
+                    'Referer': 'https://quote.eastmoney.com/',
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+                })
+            if data is None:
                 logger.warning("东方财富行情接口超时或不可达")
                 return None
 
@@ -306,11 +334,25 @@ class EastMoneyFreeSource:
             resp.raise_for_status()
             return resp.json()
 
+        data = None
         try:
             data = _safe_request(_do_request, timeout_seconds=10)
-            if not data or data.get('rc') != 0 or not data.get('data'):
-                return None
+        except Exception as e:
+            logger.error(f"获取五档盘口失败: {e}")
 
+        if data is None:
+            from urllib.parse import urlencode
+            full_url = f"{url}?{urlencode(params)}"
+            logger.info("eventlet 请求失败，尝试 subprocess curl（五档盘口）")
+            data = _subprocess_fetch_json(full_url, headers={
+                'Referer': 'https://quote.eastmoney.com/',
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+            })
+
+        if not data or data.get('rc') != 0 or not data.get('data'):
+            return None
+
+        try:
             d = data['data']
 
             def _price(val):
@@ -474,6 +516,14 @@ class EastMoneyFreeSource:
         try:
             data = _safe_request(_do_request, timeout_seconds=10)
             if data is None:
+                from urllib.parse import urlencode
+                full_url = f"{url}?{urlencode(params)}"
+                logger.info("eventlet 请求失败，尝试 subprocess curl（当日逐笔）")
+                data = _subprocess_fetch_json(full_url, headers={
+                    'Referer': 'https://quote.eastmoney.com/',
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+                })
+            if data is None:
                 logger.warning("东方财富成交明细接口超时或不可达")
                 return self._get_intraday_details_sina(code, dt)
 
@@ -487,20 +537,22 @@ class EastMoneyFreeSource:
 
             for item in details_raw:
                 parts = item.split(',')
-                if len(parts) < 4:
+                if len(parts) < 5:
                     continue
 
                 time_str = parts[0]
                 price = float(parts[1])
                 volume = int(parts[2])  # 手
-                buy_sell_type = int(parts[3])
+                trade_count = int(parts[3])  # 笔数
+                buy_sell_type = int(parts[4])  # 买卖方向: 1=主买(外盘) 2=主卖(内盘) 4=中性
 
                 details.append({
                     'time': time_str,
                     'price': price,
                     'volume': volume,
                     'amount': round(price * volume * 100, 2),  # 手转股再算金额
-                    'type': buy_sell_type
+                    'type': buy_sell_type,
+                    'trade_count': trade_count,
                 })
 
             return {'details': details, 'pos': new_pos}
@@ -538,22 +590,33 @@ class EastMoneyFreeSource:
             resp.raise_for_status()
             return resp.json()
 
+        data = None
         try:
             data = _safe_request(_do_request, timeout_seconds=10)
-            if data and data.get('rc') == 0 and data.get('data'):
-                trends_raw = data['data'].get('trends', [])
-                result = []
-                for item in trends_raw:
-                    parsed = self.parse_trend_item(item)
-                    if parsed:
-                        result.append(parsed)
-                if result:
-                    return result
-                logger.warning(f"东方财富实时分时接口 trends 为空，降级到最近交易日 K 线 code={code}")
-            else:
-                logger.warning(f"东方财富实时分时接口异常，降级到最近交易日 K 线 code={code}")
         except Exception as e:
             logger.error(f"获取实时分时数据失败: {e}")
+
+        if data is None:
+            from urllib.parse import urlencode
+            full_url = f"{url}?{urlencode(params)}"
+            logger.info("eventlet 请求失败，尝试 subprocess curl（实时分时）")
+            data = _subprocess_fetch_json(full_url, headers={
+                'Referer': 'https://quote.eastmoney.com/',
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+            })
+
+        if data and data.get('rc') == 0 and data.get('data'):
+            trends_raw = data['data'].get('trends', [])
+            result = []
+            for item in trends_raw:
+                parsed = self.parse_trend_item(item)
+                if parsed:
+                    result.append(parsed)
+            if result:
+                return result
+            logger.warning(f"东方财富实时分时接口 trends 为空，降级到最近交易日 K 线 code={code}")
+        else:
+            logger.warning(f"东方财富实时分时接口异常，降级到最近交易日 K 线 code={code}")
 
         # 降级：往前找最近有数据的交易日（最多 7 天），用 1 分钟 K 线代替
         return self._get_latest_kline_timeshare(code, today)
@@ -592,6 +655,15 @@ class EastMoneyFreeSource:
 
         try:
             data = _safe_request(_do_request, timeout_seconds=10)
+            if data is None:
+                # eventlet 下请求失败，用子进程 curl 兜底
+                from urllib.parse import urlencode
+                full_url = f"{url}?{urlencode(params)}"
+                logger.info(f"eventlet 请求失败，尝试 subprocess curl（历史分时 {dt}）")
+                data = _subprocess_fetch_json(full_url, headers={
+                    'Referer': 'https://quote.eastmoney.com/',
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+                })
             if data is None:
                 logger.warning(f"东方财富 trends2 接口超时（历史分时 {dt}）")
                 return []
@@ -668,12 +740,26 @@ class EastMoneyFreeSource:
             resp.raise_for_status()
             return resp.json()
 
+        data = None
         try:
             data = _safe_request(_do_request, timeout_seconds=10)
-            if data is None:
-                logger.warning("东方财富日K线接口超时或不可达")
-                return None
+        except Exception as e:
+            logger.error(f"获取日K线失败: {e}")
 
+        if data is None:
+            from urllib.parse import urlencode
+            full_url = f"{url}?{urlencode(params)}"
+            logger.info(f"eventlet 请求失败，尝试 subprocess curl（日K线 {dt}）")
+            data = _subprocess_fetch_json(full_url, headers={
+                'Referer': 'https://quote.eastmoney.com/',
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+            })
+
+        if data is None:
+            logger.warning("东方财富日K线接口超时或不可达")
+            return None
+
+        try:
             if data.get('rc') != 0 or not data.get('data'):
                 return None
 
@@ -741,6 +827,15 @@ class EastMoneyFreeSource:
         try:
             data = _safe_request(_do_request, timeout_seconds=10)
             if data is None:
+                from urllib.parse import urlencode
+                full_url = f"{url}?{urlencode(params)}"
+                cookie_str = EastMoneyFreeSource._em_cookie or None
+                logger.info(f"eventlet 请求失败，尝试 subprocess curl（历史逐笔 {dt}）")
+                data = _subprocess_fetch_json(full_url, headers={
+                    'Referer': 'https://quote.eastmoney.com/',
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+                }, cookies=cookie_str)
+            if data is None:
                 logger.warning("东方财富历史成交明细接口超时或不可达")
                 return self._get_intraday_details_sina(code, dt)
 
@@ -756,20 +851,22 @@ class EastMoneyFreeSource:
 
             for item in details_raw:
                 parts = item.split(',')
-                if len(parts) < 4:
+                if len(parts) < 5:
                     continue
 
                 time_str = parts[0]
                 price = float(parts[1])
                 volume = int(parts[2])
-                buy_sell_type = int(parts[3])
+                trade_count = int(parts[3])  # 笔数
+                buy_sell_type = int(parts[4])  # 买卖方向: 1=主买(外盘) 2=主卖(内盘) 4=中性
 
                 details.append({
                     'time': time_str,
                     'price': price,
                     'volume': volume,
                     'amount': round(price * volume * 100, 2),
-                    'type': buy_sell_type
+                    'type': buy_sell_type,
+                    'trade_count': trade_count,
                 })
 
             return {'details': details, 'pos': 0}
@@ -787,14 +884,14 @@ class EastMoneyFreeSource:
         return {'details': [], 'pos': 0}
 
     def infer_direction(self, buy_sell_type):
-        """将东方财富的成交类型转换为买卖方向
-        1 = 买盘(主动买入) → '被买'
-        2 = 卖盘(主动卖出) → '被卖'
-        4 = 中性盘 → '中性'
+        """将东方财富的成交类型(f55)转换为买卖方向
+        1 = 外盘（成交在卖方挂单价，买方主动吃单）→ '主买'
+        2 = 内盘（成交在买方挂单价，卖方主动砸单）→ '主卖'
+        4 = 中性盘（集合竞价等，成交价在买卖之间）→ '中性'
         """
         if buy_sell_type == 1:
-            return '被买'
+            return '主买'
         elif buy_sell_type == 2:
-            return '被卖'
+            return '主卖'
         else:
             return '中性'

@@ -378,6 +378,7 @@ export const applyL2DashboardData = (set, data) => {
     sanhu: [],
     big_map: d.big_map || {},
     order_book: d.order_book || null,
+    session_snapshot: d.session_snapshot ?? null,
     base_info: {
       prevClosePrice: d.stock_info.yesterday_close,
       openPrice: d.stock_info.open,
@@ -489,6 +490,7 @@ export const fetchL2DashboardAtom = atom(
           sanhu: [],
           big_map: ordersResp?.data?.big_map || {},   // 直接注入，不用第二次 set
           order_book: timeshareResp.data.order_book || null,
+          session_snapshot: timeshareResp.data.session_snapshot || null,
           base_info: {
             prevClosePrice: d.stock_info?.yesterday_close,
             openPrice: d.stock_info?.open,

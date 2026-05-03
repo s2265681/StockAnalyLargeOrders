@@ -69,7 +69,8 @@ class FakeSource:
         }
 
     def infer_direction(self, buy_sell_type):
-        return {1: '被买', 2: '被卖', 4: '中性'}.get(buy_sell_type, '中性')
+        return {1: '主买', 2: '主卖', 4: '中性'}.get(buy_sell_type, '中性')
+
 
 
 class EmptyHistoryTickSource(FakeSource):
@@ -110,7 +111,7 @@ class DataSourceAdapterAnalysisTest(unittest.TestCase):
         self.assertEqual(set(big_map.keys()), {'09:31', '09:32', '10:15', '14:55'})
         self.assertEqual(big_map['10:15'][0]['amount'], 336.0)
         self.assertEqual(big_map['10:15'][0]['price'], 10.5)
-        self.assertEqual(big_map['10:15'][0]['type'], '被买')
+        self.assertEqual(big_map['10:15'][0]['type'], '主买')
         self.assertEqual(result['data']['order_book']['bids'][0]['price'], 10.19)
         self.assertGreater(result['data']['order_book']['bid_amount'], result['data']['order_book']['ask_amount'])
 
@@ -184,7 +185,7 @@ class DataSourceAdapterAnalysisTest(unittest.TestCase):
 
         self.adapter._annotate_directions(details)
 
-        self.assertEqual([d['direction'] for d in details], ['被买', '被买', '被卖'])
+        self.assertEqual([d['direction'] for d in details], ['主买', '被买', '被卖'])
 
     def test_history_dashboard_falls_back_to_minute_amount_orders_when_ticks_empty(self):
         adapter = DataSourceAdapter(use_l2=False)

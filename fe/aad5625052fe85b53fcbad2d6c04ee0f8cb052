@@ -1,0 +1,76 @@
+frontend/src/pages/StockDashboard/utils/l2Analysis.test.js
+  18fc4ebcec09ebf6 115-159
+frontend/src/store/atoms.js
+  8ca2bd460162df04 381,493
+frontend/src/index.css
+  8ca2bd460162df04 1033,1039-1040,1053-1074,1081-1106,1277-1280,1293-1294
+  e3c788f4a727b367 1075-1080,1107-1110
+frontend/src/pages/StockDashboard/utils/l2Analysis.js
+  e3c788f4a727b367 50,353-359,377-382,392-406,413,416-417,492-498
+  8ca2bd460162df04 352,360-376,383-391,407-412,414-415,418-420,480-491,499,508-509
+  18fc4ebcec09ebf6 84-101,106-119,146-156,159,171-181,190-247,267,272,275,280,283,288,290,297,304-311,317,319-320,332,342
+backend/services/eastmoney_free.py
+  18fc4ebcec09ebf6 19-22,35,41-58,220-226,337,340-353,355,518-525,540,546-547,554-555,593,599-620,658-666,743,746-760,762,829-837,854,860-861,868-869,887-890,893,895
+frontend/src/pages/StockDashboard/index.js
+  8ca2bd460162df04 8,219,318-320
+frontend/src/pages/StockDashboard/components/StockChart.js
+  e3c788f4a727b367 503
+  8ca2bd460162df04 380-400,468-471,474-478,543,1068
+backend/tests/test_data_source_adapter.py
+  18fc4ebcec09ebf6 72-73,114,188
+backend/services/data_source_adapter.py
+  8ca2bd460162df04 7,196,203-206,210-234,243-274,290-295,297-299,475,486
+  e3c788f4a727b367 139-140,183-189,195,201-202,207-209,235-242,275-289,296,300-303,323,325-326,377-378,471-474
+  18fc4ebcec09ebf6 682
+frontend/src/pages/StockDashboard/components/HandicapLanguagePanel.js
+  18fc4ebcec09ebf6 137-138
+frontend/src/pages/StockDashboard/components/AuctionVolumePanel.js
+  8ca2bd460162df04 1-10,16,18-23,25-47,56-57,61-67
+  e3c788f4a727b367 11-15,17,24,48-55,58-60
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "feaad5625052fe85b53fcbad2d6c04ee0f8cb052",
+  "prompts": {
+    "18fc4ebcec09ebf6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c93960de-025b-4831-a985-0abf0468f5d2",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "佳伟",
+      "messages": [],
+      "total_additions": 905,
+      "total_deletions": 408,
+      "accepted_lines": 316,
+      "overriden_lines": 0
+    },
+    "8ca2bd460162df04": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "dfc76ffe-c05a-499f-b747-f3011459d704",
+        "model": "default"
+      },
+      "human_author": "佳伟",
+      "messages": [],
+      "total_additions": 350,
+      "total_deletions": 94,
+      "accepted_lines": 274,
+      "overriden_lines": 0
+    },
+    "e3c788f4a727b367": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "15064815-e334-43af-98df-78138b672ffb",
+        "model": "default"
+      },
+      "human_author": "佳伟",
+      "messages": [],
+      "total_additions": 131,
+      "total_deletions": 76,
+      "accepted_lines": 118,
+      "overriden_lines": 0
+    }
+  }
+}

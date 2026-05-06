@@ -22,7 +22,8 @@ logger = logging.getLogger(__name__)
 _subscriptions = {}    # sid -> {code, room}
 _active_rooms = set()  # 当前有订阅者的房间名
 
-POLL_INTERVAL_FALLBACK = 30  # 非交易时间 / LiveFeed 故障时的回退轮询间隔（秒）
+POLL_INTERVAL_TRADING = 3    # 交易时间轮询间隔（秒），LiveFeed 的保底
+POLL_INTERVAL_CLOSED = 30    # 非交易时间轮询间隔（秒）
 
 # 共享实例
 adapter = DataSourceAdapter(use_l2=False)
@@ -128,17 +129,16 @@ def register_websocket_events(socketio):
 
 
 def start_push_loop(socketio):
-    """启动后台任务：管理 LiveFeed 生命周期 + 回退轮询"""
+    """启动后台任务：管理 LiveFeed 生命周期 + 轮询推送"""
 
     def _manage_loop():
         logger.info("WebSocket 管理循环已启动")
         while True:
-            socketio.sleep(POLL_INTERVAL_FALLBACK)
+            trading = is_trade_time()
+            socketio.sleep(POLL_INTERVAL_TRADING if trading else POLL_INTERVAL_CLOSED)
 
             if not _active_rooms:
                 continue
-
-            trading = is_trade_time()
 
             for room in list(_active_rooms):
                 if not room.startswith('stock_'):
@@ -146,12 +146,17 @@ def start_push_loop(socketio):
                 code = room[len('stock_'):]
 
                 if trading:
-                    # 交易时间：确保 LiveFeed 在运行
+                    # 交易时间：确保 LiveFeed 在运行 + 主动轮询推送（LiveFeed 的保底）
                     if code not in live_feed.active_codes:
                         live_feed.subscribe(code, _make_callback(socketio))
                         logger.info(f"管理循环补启 LiveFeed: {code}")
+                    try:
+                        result = adapter.get_l2_dashboard(code)
+                        socketio.emit('l2_update', result, room=room)
+                    except Exception as e:
+                        logger.error(f"交易时间推送失败 {code}: {e}")
                 else:
-                    # 非交易时间：停止 LiveFeed，回退轮询推送一次
+                    # 非交易时间：停止 LiveFeed，低频轮询
                     if code in live_feed.active_codes:
                         live_feed.unsubscribe(code)
                     try:

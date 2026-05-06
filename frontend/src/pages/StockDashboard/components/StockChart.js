@@ -4,15 +4,17 @@ import { useAtom } from 'jotai';
 import ReactEChartsCore from 'echarts-for-react/lib/core';
 import * as echarts from 'echarts/core';
 import { PieChart, LineChart, BarChart } from 'echarts/charts';
-import { 
-  TitleComponent, 
-  TooltipComponent, 
+import {
+  TitleComponent,
+  TooltipComponent,
   LegendComponent,
   GridComponent,
   DataZoomComponent,
   AxisPointerComponent,
   MarkPointComponent,
-  MarkLineComponent
+  MarkLineComponent,
+  ToolboxComponent,
+  GraphicComponent
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import {
@@ -34,6 +36,8 @@ echarts.use([
   AxisPointerComponent,
   MarkPointComponent,
   MarkLineComponent,
+  ToolboxComponent,
+  GraphicComponent,
   PieChart,
   LineChart,
   BarChart,
@@ -332,51 +336,6 @@ const StockChart = () => {
       }
     });
     
-    // 主力线数据（红色）- 净流入流出趋势线
-    const institutionalData = zhuli.map((value, index) => {
-      const timePoint = fullTimeAxis[index];
-      if (timePoint && value) {
-        const rawValue = parseFloat(value);
-        // 将主力资金数据转换为净流入流出趋势线
-        // 从0轴开始，净流入为正（向上），净流出为负（向下）
-        // 数据范围约-5000到+2000，转换为百分比变化
-        const netFlowPercent = (rawValue / 10000) * 2; // 每1万资金对应2%的变化
-        
-        // 限制在合理范围内
-        return [timePoint, Math.max(-10, Math.min(10, netFlowPercent))];
-      }
-      return [timePoint, null];
-    });
-    
-    // 调试15:00的主力线数据
-    const timeIndex15 = fullTimeAxis.indexOf('15:00');
-    if (timeIndex15 !== -1) {
-      // console.log('🔍 15:00主力线数据:', {
-      //   timeIndex15,
-      //   zhuliLength: zhuli.length,
-      //   institutionalDataLength: institutionalData.length,
-      //   zhuliAt15: zhuli[timeIndex15],
-      //   institutionalDataAt15: institutionalData[timeIndex15],
-      //   fullTimeAxisAt15: fullTimeAxis[timeIndex15]
-      // });
-    }
-    
-    // 散户线数据（绿色）- 净流入流出趋势线
-    const retailData = sanhu.map((value, index) => {
-      const timePoint = fullTimeAxis[index];
-      if (timePoint && value) {
-        const rawValue = parseFloat(value);
-        // 将散户资金数据转换为净流入流出趋势线
-        // 从0轴开始，净流入为正（向上），净流出为负（向下）
-        // 数据范围约-600到+2500，转换为百分比变化
-        const netFlowPercent = (rawValue / 10000) * 3; // 每1万资金对应3%的变化
-        
-        // 限制在合理范围内
-        return [timePoint, Math.max(-10, Math.min(10, netFlowPercent))];
-      }
-      return [timePoint, null];
-    });
-    
     // Y 轴：按分时实际涨跌幅区间收紧，避免 ±1% 把曲线压扁
     const pricePercents = (fenshi || [])
       .map((p) => (p != null && prevClosePrice
@@ -399,6 +358,68 @@ const StockChart = () => {
       yAxisMin = -0.2;
     }
     
+    // 主力线和散户线 - 基于 big_map 计算累计 VWAP（加权平均成本）
+    // 竞品原理：主力线 = 大单（>=阈值）的累计VWAP，散户线 = 小单（<阈值）的累计VWAP
+    // 放大偏离：以市场均价为基准，放大主力/散户成本与均价的差异，使趋势更明显
+    let largeCumAmount = 0;
+    let largeCumValue = 0;
+    let smallCumAmount = 0;
+    let smallCumValue = 0;
+    const deviationAmplify = 3; // 偏离放大倍数
+
+    const institutionalData = [];
+    const retailData = [];
+
+    fullTimeAxis.forEach((timePoint, index) => {
+      // 只在有分时数据的时间点画线，超出当前时间不填充
+      if (!fenshi[index] || fenshi[index] == null) {
+        institutionalData.push([timePoint, null]);
+        retailData.push([timePoint, null]);
+        return;
+      }
+
+      const currentPrice = parseFloat(fenshi[index]);
+      const orders = timeshareData.big_map?.[timePoint] || [];
+
+      orders.forEach(item => {
+        const amount = parseFloat(item.amount ?? item.v);
+        const price = parseFloat(item.price) || currentPrice;
+        if (!price || !amount || Number.isNaN(amount) || Number.isNaN(price)) return;
+
+        if (amount >= filterThreshold) {
+          largeCumAmount += amount;
+          largeCumValue += amount * price;
+        } else {
+          smallCumAmount += amount;
+          smallCumValue += amount * price;
+        }
+      });
+
+      // 当前分钟的市场均价（来自均价线）
+      const marketAvgPct = avgPriceData[index] && Array.isArray(avgPriceData[index])
+        ? avgPriceData[index][1] : null;
+
+      // 主力线：大单VWAP，放大与均价的偏离
+      if (largeCumAmount > 0 && marketAvgPct != null) {
+        const vwap = largeCumValue / largeCumAmount;
+        const vwapPct = ((vwap - prevClosePrice) / prevClosePrice) * 100;
+        const amplified = marketAvgPct + (vwapPct - marketAvgPct) * deviationAmplify;
+        institutionalData.push([timePoint, amplified]);
+      } else {
+        institutionalData.push([timePoint, null]);
+      }
+
+      // 散户线：小单VWAP，放大与均价的偏离
+      if (smallCumAmount > 0 && marketAvgPct != null) {
+        const vwap = smallCumValue / smallCumAmount;
+        const vwapPct = ((vwap - prevClosePrice) / prevClosePrice) * 100;
+        const amplified = marketAvgPct + (vwapPct - marketAvgPct) * deviationAmplify;
+        retailData.push([timePoint, amplified]);
+      } else {
+        retailData.push([timePoint, null]);
+      }
+    });
+
     // 生成筛选金额标注
     const { institutionalMarkers, retailMarkers } = generateFilteredAmountMarkers(
       fenshi, 
@@ -417,46 +438,6 @@ const StockChart = () => {
       yAxisMin,
       yAxisMax
     );
-
-    const isBuyOrder = (item) => ['主买', '被买'].includes(item.type ?? item.t ?? item.direction) || [1, 2].includes(parseInt(item.type ?? item.t, 10));
-    const isSellOrder = (item) => ['主卖', '被卖'].includes(item.type ?? item.t ?? item.direction) || [3, 4].includes(parseInt(item.type ?? item.t, 10));
-    const buildOrderLineData = (matcher) => fullTimeAxis.map((timePoint, index) => {
-      const minuteOrders = (timeshareData.big_map?.[timePoint] || [])
-        .filter(item => parseFloat(item.amount ?? item.v) >= filterThreshold)
-        .filter(matcher);
-
-      if (minuteOrders.length === 0) {
-        return [timePoint, null];
-      }
-
-      const largestOrder = minuteOrders.reduce((max, item) => (
-        parseFloat(item.amount ?? item.v) > parseFloat(max.amount ?? max.v) ? item : max
-      ), minuteOrders[0]);
-      const price = largestOrder.price || fenshi[index];
-      const yValue = price ? ((parseFloat(price) - prevClosePrice) / prevClosePrice) * 100 : null;
-      return [timePoint, yValue];
-    });
-
-    const buyOrderLineData = buildOrderLineData(isBuyOrder);
-    const sellOrderLineData = buildOrderLineData(isSellOrder);
-    
-    // 详细调试big_map数据处理
-    if (timeshareData.big_map) {
-      Object.keys(timeshareData.big_map).forEach(timeStr => {
-        const timeData = timeshareData.big_map[timeStr];
-        const filteredData = timeData.filter(item => parseFloat(item.amount ?? item.v) >= filterThreshold);
-        if (filteredData.length > 0) {
-          const timeIndex = fullTimeAxis.indexOf(timeStr);
-        }
-      });
-      
-      // 特别检查15:00的数据
-      if (timeshareData.big_map['15:00']) {
-        // console.log('🔍 15:00数据详情:', timeshareData.big_map['15:00']);
-        const timeIndex15 = fullTimeAxis.indexOf('15:00');
-        // console.log('15:00在时间轴中的索引:', timeIndex15);
-      }
-    }
 
     const chartOption = {
       backgroundColor: 'transparent',
@@ -610,9 +591,9 @@ const StockChart = () => {
           type: 'line',
           data: institutionalData,
           smooth: true,
-          connectNulls: false,
+          connectNulls: true,
           lineStyle: {
-            width: 1,
+            width: 1.5,
             color: '#ff4d4f',
             type: 'dashed'
           },
@@ -673,9 +654,9 @@ const StockChart = () => {
           type: 'line',
           data: retailData,
           smooth: true,
-          connectNulls: false,
+          connectNulls: true,
           lineStyle: {
-            width: 1,
+            width: 1.5,
             color: '#52c41a',
             type: 'dashed'
           },
@@ -738,40 +719,6 @@ const StockChart = () => {
             ]
           },
           silent: true
-        },
-        {
-          name: '买入大单线',
-          type: 'line',
-          data: buyOrderLineData,
-          smooth: false,
-          connectNulls: false,
-          lineStyle: {
-            width: 1.2,
-            color: '#ff2f4b',
-          },
-          itemStyle: {
-            color: '#ff2f4b',
-          },
-          symbol: 'none',
-          silent: true,
-          z: 8,
-        },
-        {
-          name: '卖出大单线',
-          type: 'line',
-          data: sellOrderLineData,
-          smooth: false,
-          connectNulls: false,
-          lineStyle: {
-            width: 1.2,
-            color: '#22c55e',
-          },
-          itemStyle: {
-            color: '#22c55e',
-          },
-          symbol: 'none',
-          silent: true,
-          z: 8,
         },
         {
           name: '成交量',
@@ -1029,11 +976,11 @@ const StockChart = () => {
           <div className="chart-legend">
             <div className="legend-item">
               <span className="legend-line main-line"></span>
-              <span className="legend-text">买入大单线</span>
+              <span className="legend-text">主力线 ---</span>
             </div>
             <div className="legend-item">
               <span className="legend-line retail-line"></span>
-              <span className="legend-text">卖出大单线</span>
+              <span className="legend-text">散户线 ---</span>
             </div>
             {/* <div className="legend-item">
               <span className="legend-line avg-line"></span>

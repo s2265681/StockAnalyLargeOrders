@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Card, Progress, Tag } from 'antd';
 import { useAtom } from 'jotai';
-import { largeOrdersDataAtom, timeshareDataAtom } from '../../../store/atoms';
+import { largeOrdersDataAtom, timeshareDataAtom, moneyflowAtom } from '../../../store/atoms';
 import { buildHandicapLanguage } from '../utils/l2Analysis';
 
 const toneColor = {
@@ -16,10 +16,12 @@ const formatPrice = (value) => (Number(value || 0) ? Number(value).toFixed(2) : 
 const HandicapLanguagePanel = () => {
   const [timeshareData] = useAtom(timeshareDataAtom);
   const [largeOrdersData] = useAtom(largeOrdersDataAtom);
+  const [moneyflowData] = useAtom(moneyflowAtom);
   const signal = useMemo(() => buildHandicapLanguage({
     timeshareData,
     largeOrdersData,
-  }), [timeshareData, largeOrdersData]);
+    moneyflowData,
+  }), [timeshareData, largeOrdersData, moneyflowData]);
 
   const color = toneColor[signal.tone] || toneColor.neutral;
   const orderBook = timeshareData?.order_book || {};

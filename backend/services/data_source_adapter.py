@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from .eastmoney_free import EastMoneyFreeSource
 from .eastmoney_l2 import EastMoneyL2Source
 from .limit_up_monitor import LimitUpMonitor
+from .ths_moneyflow import get_moneyflow
 
 logger = logging.getLogger(__name__)
 
@@ -473,6 +474,14 @@ class DataSourceAdapter:
             order_book=order_book, limit_up_data=limit_up_data,
         )
 
+        # 7. 同花顺资金分时（超大单/大单/小单流入流出）
+        moneyflow = {}
+        if is_today:
+            try:
+                moneyflow = get_moneyflow(code)
+            except Exception as e:
+                logger.warning(f"同花顺资金分时获取失败: {e}")
+
         return {
             'success': True,
             'data': {
@@ -485,6 +494,7 @@ class DataSourceAdapter:
                 'order_book': order_book,
                 'session_snapshot': snap,
                 'limit_up_monitor': limit_up_data,
+                'moneyflow': moneyflow,
                 'simulation': {
                     'enabled': bool(simulate_time),
                     'simulate_time': simulate_time,

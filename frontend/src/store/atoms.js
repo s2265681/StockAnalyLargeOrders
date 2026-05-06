@@ -51,6 +51,9 @@ export const largeOrdersDataAtom = atom(null);
 // 分时图数据原子
 export const timeshareDataAtom = atom(null);
 
+// 同花顺资金分时数据（超大单/大单/小单流入流出）
+export const moneyflowAtom = atom(null);
+
 // 题材与涨停池归纳
 export const limitUpThemesAtom = atom(null);
 
@@ -423,6 +426,11 @@ export const applyL2DashboardData = (set, data) => {
   // 4. 封单监控
   if (d.limit_up_monitor) {
     set(limitUpMonitorAtom, d.limit_up_monitor);
+  }
+
+  // 5. 同花顺资金分时
+  if (d.moneyflow) {
+    set(moneyflowAtom, d.moneyflow);
   }
 
   return true;

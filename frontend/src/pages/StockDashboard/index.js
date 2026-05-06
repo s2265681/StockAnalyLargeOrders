@@ -6,6 +6,7 @@ import StockBasicInfo from './components/StockBasicInfo';
 import StockChart from './components/StockChart';
 import HandicapLanguagePanel from './components/HandicapLanguagePanel';
 import AuctionVolumePanel from './components/AuctionVolumePanel';
+import MoneyFlowPanel from './components/MoneyFlowPanel';
 import ThemeLimitUpPanel from './components/ThemeLimitUpPanel';
 import StockOrderDetails from './components/StockOrderDetails';
 import { buildTradingTimeAxis, alignTimeshareToTradingAxis } from './utils/l2Analysis';
@@ -65,11 +66,26 @@ const StockDashboard = () => {
   const simulationTime = tradingAxis[Math.min(simulationIndex, tradingAxis.length - 1)] || '09:31';
 
   const [wsConnected, setWsConnected] = useAtom(wsConnectedAtom);
-  const [, setTimeshareData] = useAtom(timeshareDataAtom);
+  const [trading, setTrading] = useState(isTradeTime());
+  const [currentTime, setCurrentTime] = useState(() => new Date().toLocaleTimeString('zh-CN', { hour12: false }));
+
+  // 每秒刷新时间，每分钟刷新开盘状态
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date().toLocaleTimeString('zh-CN', { hour12: false }));
+      if (new Date().getSeconds() === 0) setTrading(isTradeTime());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+  const [timeshareData, setTimeshareData] = useAtom(timeshareDataAtom);
   const [, setLargeOrdersData] = useAtom(largeOrdersDataAtom);
   const [, setStockBasicData] = useAtom(stockBasicDataAtom);
   const [, setLimitUpMonitor] = useAtom(limitUpMonitorAtom);
   const [, applySimulatedData] = useAtom(applySimulatedDataAtom);
+
+  // 用 ref 持有最新 timeshareData，WS 回调中读取避免闭包陈旧
+  const timeshareRef = useRef(timeshareData);
+  useEffect(() => { timeshareRef.current = timeshareData; }, [timeshareData]);
 
   // 完整看板数据缓存（模拟回放用，只取一次）
   const fullSimDataRef = useRef(null);
@@ -206,25 +222,68 @@ const StockDashboard = () => {
     const removeUpdate = stockWS.onL2Update((data) => {
       if (data?.success && data?.data) {
         const d = data.data;
-        const timeshare = d.timeshare || [];
-        const aligned = alignTimeshareToTradingAxis(timeshare);
-        setTimeshareData({
-          timeAxis: aligned.axis,
-          fenshi: aligned.fenshi,
-          volume: aligned.volume,
-          zhuli: [],
-          sanhu: [],
-          big_map: d.big_map || {},
-          order_book: d.order_book || null,
-          session_snapshot: d.session_snapshot || null,
-          base_info: {
-            prevClosePrice: d.stock_info?.yesterday_close,
-            openPrice: d.stock_info?.open,
-            highPrice: d.stock_info?.high,
-            lowPrice: d.stock_info?.low,
-          },
-        });
+        const wsTimeshare = d.timeshare || [];
 
+        // 增量合并：将 WS 新数据合并到已有的全天数据（HTTP 加载）上
+        const prev = timeshareRef.current;
+
+        if (!prev || !prev.fenshi) {
+          // 还没有 HTTP 基础数据，用 WS 数据初始化
+          const aligned = alignTimeshareToTradingAxis(wsTimeshare);
+          setTimeshareData({
+            timeAxis: aligned.axis,
+            fenshi: aligned.fenshi,
+            volume: aligned.volume,
+            zhuli: [],
+            sanhu: [],
+            big_map: d.big_map || {},
+            order_book: d.order_book || null,
+            session_snapshot: d.session_snapshot || null,
+            base_info: {
+              prevClosePrice: d.stock_info?.yesterday_close,
+              openPrice: d.stock_info?.open,
+              highPrice: d.stock_info?.high,
+              lowPrice: d.stock_info?.low,
+            },
+          });
+        } else {
+          // 在已有全天数据基础上，用 WS 新数据覆盖对应时间点
+          const axis = prev.timeAxis || buildTradingTimeAxis();
+          const newFenshi = [...prev.fenshi];
+          const newVolume = [...prev.volume];
+
+          wsTimeshare.forEach(item => {
+            const idx = axis.indexOf(item.time);
+            if (idx !== -1) {
+              newFenshi[idx] = item.price;
+              newVolume[idx] = item.volume;
+            }
+          });
+
+          // 合并 big_map：WS 新数据覆盖已有时间点
+          const mergedBigMap = { ...prev.big_map };
+          const wsBigMap = d.big_map || {};
+          Object.keys(wsBigMap).forEach(time => {
+            mergedBigMap[time] = wsBigMap[time];
+          });
+
+          setTimeshareData({
+            ...prev,
+            fenshi: newFenshi,
+            volume: newVolume,
+            big_map: mergedBigMap,
+            order_book: d.order_book || prev.order_book,
+            session_snapshot: d.session_snapshot ?? prev.session_snapshot,
+            base_info: {
+              prevClosePrice: d.stock_info?.yesterday_close ?? prev.base_info?.prevClosePrice,
+              openPrice: d.stock_info?.open ?? prev.base_info?.openPrice,
+              highPrice: d.stock_info?.high ?? prev.base_info?.highPrice,
+              lowPrice: d.stock_info?.low ?? prev.base_info?.lowPrice,
+            },
+          });
+        }
+
+        // 大单数据：WS 推送的是全量，直接替换
         const orders = d.large_orders || d.orders || [];
         const stats = d.statistics || {};
         const buyCount = orders.filter(o => o.direction === '被买' || o.direction === '主买').length;
@@ -288,6 +347,12 @@ const StockDashboard = () => {
   return (
     <div className='stock-dashboard-container' style={{ minHeight: '100vh' }}>
       <div className="simulation-toolbar">
+        <span className={`market-status ${trading ? 'trading' : 'closed'}`}>
+          <span className="status-dot" />
+          {trading ? '开盘中' : '已休市'}
+        </span>
+        {wsConnected && <span className="ws-status">WS</span>}
+        <span className="toolbar-divider" />
         <span className="simulation-title">模拟开盘</span>
         <Switch size="small" checked={simulationEnabled} onChange={handleSimulationToggle} />
         {simulationEnabled && (
@@ -304,6 +369,7 @@ const StockDashboard = () => {
             <span className="simulation-time">回放到 {simulationTime}</span>
           </>
         )}
+        <span className="toolbar-clock">{currentTime}</span>
       </div>
       <div className="dashboard-layout">
         <div className="dashboard-main">
@@ -317,6 +383,7 @@ const StockDashboard = () => {
         </aside>
         <aside className="dashboard-auction">
           <AuctionVolumePanel />
+          <MoneyFlowPanel />
         </aside>
       </div>
     </div>

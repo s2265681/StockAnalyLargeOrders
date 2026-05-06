@@ -299,6 +299,68 @@ code {
   color: rgba(255, 255, 255, 0.78);
 }
 
+.market-status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.market-status.trading {
+  color: #52c41a;
+}
+
+.market-status.closed {
+  color: #888;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.market-status.trading .status-dot {
+  background: #52c41a;
+  box-shadow: 0 0 6px #52c41a;
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+.market-status.closed .status-dot {
+  background: #888;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.ws-status {
+  font-size: 10px;
+  color: #52c41a;
+  border: 1px solid #52c41a;
+  border-radius: 3px;
+  padding: 0 4px;
+  line-height: 16px;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.toolbar-clock {
+  margin-left: auto;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.5px;
+}
+
 .simulation-title {
   color: #fff;
   font-size: 13px;
@@ -2248,4 +2310,84 @@ code {
   .peak-minute-row {
     grid-template-columns: 1fr 1fr;
   }
+}
+
+/* ── 资金流向面板 ── */
+.moneyflow-panel .mf-hero {
+  text-align: center;
+  padding: 8px 0 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  margin-bottom: 10px;
+}
+.moneyflow-panel .mf-hero-label {
+  font-size: 12px;
+  color: rgba(255,255,255,0.45);
+}
+.moneyflow-panel .mf-hero-value {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 2px 0;
+}
+.moneyflow-panel .mf-hero-sub {
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+}
+.moneyflow-panel .mf-header {
+  display: grid;
+  grid-template-columns: 50px 1fr 1fr 1fr;
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+  padding: 0 0 4px;
+  text-align: right;
+}
+.moneyflow-panel .mf-header span:first-child {
+  text-align: left;
+}
+.moneyflow-panel .mf-row {
+  display: grid;
+  grid-template-columns: 50px 1fr;
+  align-items: center;
+  padding: 6px 0;
+  gap: 8px;
+}
+.moneyflow-panel .mf-label {
+  font-size: 12px;
+  color: rgba(255,255,255,0.65);
+}
+.moneyflow-panel .mf-bar-wrap {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.moneyflow-panel .mf-bar-in {
+  background: rgba(255,77,79,0.7);
+  transition: width 0.3s;
+}
+.moneyflow-panel .mf-bar-out {
+  background: rgba(82,196,26,0.7);
+  transition: width 0.3s;
+}
+.moneyflow-panel .mf-values {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  text-align: right;
+  font-size: 12px;
+  grid-column: 1 / -1;
+  padding-left: 50px;
+}
+.moneyflow-panel .mf-empty {
+  color: rgba(255,255,255,0.35);
+  text-align: center;
+  padding: 20px 0;
+  font-size: 13px;
+}
+.moneyflow-panel .mf-footer {
+  font-size: 10px;
+  color: rgba(255,255,255,0.2);
+  text-align: center;
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,0.04);
 }

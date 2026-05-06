@@ -117,10 +117,16 @@ const calcTrendStrength = (prices) => {
   return (rises - drops) / total; // -1 = 全部下跌, +1 = 全部上涨
 };
 
-export const buildHandicapLanguage = ({ timeshareData = {}, largeOrdersData = {} } = {}) => {
+export const buildHandicapLanguage = ({ timeshareData = {}, largeOrdersData = {}, moneyflowData = null } = {}) => {
   const prices = getValidPrices(timeshareData);
   const orders = (largeOrdersData || {}).largeOrders || [];
   const orderBook = (timeshareData || {}).order_book || {};
+
+  // 同花顺资金流汇总
+  const mfSummary = (moneyflowData && moneyflowData.success) ? moneyflowData.summary || {} : {};
+  const mfAvailable = Object.keys(mfSummary).length > 0;
+  const mainNetWan = mfSummary.main_net_wan || 0;         // 主力净额（万）
+  const superBigNetWan = mfSummary.super_big_net_wan || 0; // 超大单净额（万）
 
   if (prices.length === 0) {
     return {
@@ -324,12 +330,43 @@ export const buildHandicapLanguage = ({ timeshareData = {}, largeOrdersData = {}
     reasons.push('五档盘口暂不可用，当前按分时位置和大单方向降级判断');
   }
 
+  // --- 同花顺资金流信号：交叉验证 + score 微调 ---
+  if (mfAvailable) {
+    const mainFlowDir = mainNetWan > 0 ? 'in' : mainNetWan < 0 ? 'out' : 'flat';
+    const tickDir = wBuyRatio > 0.55 ? 'buy' : wBuyRatio < 0.45 ? 'sell' : 'flat';
+
+    // 资金流与逐笔方向矛盾时：降低 score 可信度
+    if (tickDir === 'buy' && mainFlowDir === 'out' && Math.abs(mainNetWan) > 100) {
+      score = Math.max(score - 8, 15);
+      reasons.push(`主力资金净流出${Math.abs(mainNetWan).toFixed(0)}万，与逐笔买入信号矛盾`);
+      if (!tags.includes('虚买')) tags.push('资金背离');
+    } else if (tickDir === 'sell' && mainFlowDir === 'in' && Math.abs(mainNetWan) > 100) {
+      score = Math.min(score + 8, 85);
+      reasons.push(`主力资金净流入${mainNetWan.toFixed(0)}万，卖压可能为洗盘`);
+      if (!tags.includes('洗盘')) tags.push('资金托底');
+    } else if (mainFlowDir === 'in' && mainNetWan > 500) {
+      // 大额主力净流入：增强多方信号
+      score = Math.min(score + 5, 85);
+      reasons.push(`主力资金大幅净流入${mainNetWan.toFixed(0)}万`);
+    } else if (mainFlowDir === 'out' && mainNetWan < -500) {
+      // 大额主力净流出：增强空方信号
+      score = Math.max(score - 5, 15);
+      reasons.push(`主力资金大幅净流出${Math.abs(mainNetWan).toFixed(0)}万`);
+    }
+
+    // 超大单独立信号
+    if (Math.abs(superBigNetWan) > 200) {
+      const sbDir = superBigNetWan > 0 ? '流入' : '流出';
+      reasons.push(`超大单净${sbDir}${Math.abs(superBigNetWan).toFixed(0)}万`);
+    }
+  }
+
   return {
     primaryLabel,
     tone,
     score,
     tags,
-    reasons: reasons.slice(0, 4),
+    reasons: reasons.slice(0, 5),
     advice,
     metrics: {
       currentPrice,
@@ -345,6 +382,8 @@ export const buildHandicapLanguage = ({ timeshareData = {}, largeOrdersData = {}
       askAmount,
       bookBidRatio,
       spread: Number(orderBook.spread || 0),
+      mainNetWan: mfAvailable ? mainNetWan : null,
+      superBigNetWan: mfAvailable ? superBigNetWan : null,
     },
   };
 };

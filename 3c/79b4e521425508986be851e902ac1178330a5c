@@ -1,0 +1,62 @@
+backend/websocket_manager.py
+  5c28e621fbd777b1 25-26,132,137-138,149,153-157,159
+frontend/src/pages/StockDashboard/components/MoneyFlowPanel.js
+  de21003de04b0acb 1-103
+frontend/src/index.css
+  de21003de04b0acb 2314-2393
+  5c28e621fbd777b1 302-363
+frontend/src/pages/StockDashboard/components/StockChart.js
+  5c28e621fbd777b1 7-9,15-17,39-40,361-422,594,596,657,659,979,983
+frontend/src/pages/StockDashboard/components/HandicapLanguagePanel.js
+  de21003de04b0acb 4,19,23-24
+backend/services/data_source_adapter.py
+  de21003de04b0acb 12,477-484,497
+backend/services/ths_moneyflow.py
+  de21003de04b0acb 1-167
+frontend/src/store/atoms.js
+  de21003de04b0acb 54-56,431-435
+tools/sniff_em_connections.sh
+  de21003de04b0acb 1-42
+tools/test_ths_l2.py
+  de21003de04b0acb 1-185
+tools/capture_l2.py
+  de21003de04b0acb 1-180
+frontend/src/pages/StockDashboard/utils/l2Analysis.js
+  de21003de04b0acb 120,125-130,333-363,369,385-386
+frontend/src/pages/StockDashboard/index.js
+  de21003de04b0acb 9,386
+  5c28e621fbd777b1 69-80,86-89,225-284,286,350-355,372
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "3c79b4e521425508986be851e902ac1178330a5c",
+  "prompts": {
+    "5c28e621fbd777b1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "aadf5010-782e-4bf5-8317-c771ddb11c02",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "佳伟",
+      "messages": [],
+      "total_additions": 381,
+      "total_deletions": 250,
+      "accepted_lines": 234,
+      "overriden_lines": 0
+    },
+    "de21003de04b0acb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2139a735-f400-42cf-98ab-23c7c1f6a985",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "佳伟",
+      "messages": [],
+      "total_additions": 822,
+      "total_deletions": 4,
+      "accepted_lines": 822,
+      "overriden_lines": 0
+    }
+  }
+}

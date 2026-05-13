@@ -1,0 +1,26 @@
+skills/board-hitting.md
+  s_5cb5cd4a5e74e8::t_12609a162286ac 1-111
+skills/stock-analysis.md
+  s_5cb5cd4a5e74e8::t_9831646f9b3857 1-115
+mcp-stock/server.py
+  s_5cb5cd4a5e74e8::t_a55247b162922f 14
+  s_5cb5cd4a5e74e8::t_ccb7a3f8c2d98c 1-13,15-453
+skills/market-sentiment.md
+  s_5cb5cd4a5e74e8::t_57900e1f28474d 1-65
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.4",
+  "base_commit_sha": "a2489ccc53b52e01c4a41cfcbc3e8e07d0934c4b",
+  "prompts": {},
+  "sessions": {
+    "s_5cb5cd4a5e74e8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b910f2ff-e107-4951-9c19-807d89641f05",
+        "model": "unknown"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

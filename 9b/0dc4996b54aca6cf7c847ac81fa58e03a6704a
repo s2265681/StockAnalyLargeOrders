@@ -1,0 +1,43 @@
+skills/market-sentiment.md
+  s_c2eba30c3317ba::t_c5a42dd853c74c 3,8-12,19-93,105-111,113-115,117-118,120-122,124-127
+backend/services/eastmoney_playwright.py
+  s_c2eba30c3317ba::t_9c7715cb153d4e 301
+  s_c2eba30c3317ba::t_88af748608f930 287,292-294,300
+  s_c2eba30c3317ba::t_30cc4874e3f153 680
+  s_c2eba30c3317ba::t_b915f47961f03f 666,671-673,679
+backend/services/data_source_adapter.py
+  s_c2eba30c3317ba::t_29870e35786e7b 771,773-778,782-821
+  s_c2eba30c3317ba::t_40daf3fc086633 826-827,835,893,895,897,899
+  s_c2eba30c3317ba::t_80105bb3a2273a 772,779
+  s_c2eba30c3317ba::t_0b23870b17cc74 655-660,667-668,673,675-676,695,719-721
+  s_c2eba30c3317ba::t_5ac9907fa43b19 396-397
+  s_c2eba30c3317ba::t_749f6dabff0ff9 6
+  s_c2eba30c3317ba::t_5b40c2d12b2b1c 662,670-671,674,678-693
+  s_c2eba30c3317ba::t_8611b1b43cddcd 828-834,845-846,850-890
+  s_c2eba30c3317ba::t_4c513bb781c100 371-372
+  s_c2eba30c3317ba::t_7606596ea5c7ac 337
+  s_c2eba30c3317ba::t_eb0c082e4e55ba 661,699-707,709-711
+  s_c2eba30c3317ba::t_7f026263294869 316
+skills/stock-analysis.md
+  s_c2eba30c3317ba::t_107782fd17d775 3,14-15,32-35,45,48,52-76,79,82-89,100,102-107,119,122-128,130-131,133-135,137-139,141-142,153-155
+skills/board-hitting.md
+  s_c2eba30c3317ba::t_e8e585e904267b 3,8-12,21,25-26,29-31,36,40-59,69,72,74-75,78-86,90-92,94-95,106-110,114-146,156,159-163,165-166,169-171,173,175,177-184
+backend/routes/stock_tick.py
+  s_c2eba30c3317ba::t_cf64acec8833bb 64-65
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "9b0dc4996b54aca6cf7c847ac81fa58e03a6704a",
+  "prompts": {},
+  "sessions": {
+    "s_c2eba30c3317ba": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b92f19c5-4469-44b7-9f42-720a18cc613f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

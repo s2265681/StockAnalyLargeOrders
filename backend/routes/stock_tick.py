@@ -61,6 +61,8 @@ def get_dadan():
                 'volume': o.get('volume_lots', 0),
                 'amount': o.get('amount', 0),  # 已是万元
                 'is_buy': o.get('direction', '') in ('被买', '主买'),
+                'concentrated': o.get('concentrated', False),  # 集中成交标记
+                'trade_count': o.get('trade_count', 1),
             }
             for o in orders
         ]

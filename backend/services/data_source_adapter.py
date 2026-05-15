@@ -3,6 +3,7 @@
 负责调用数据源获取原始数据，进行大单识别、分级统计，返回统一格式
 """
 import logging
+import math
 import time
 from datetime import datetime, timedelta
 
@@ -312,7 +313,7 @@ class DataSourceAdapter:
         if pw:
             try:
                 tick_result = pw.get_tick_details(code, dt=dt)
-                if not tick_result.get('details'):
+                if len(tick_result.get('details', [])) < 10:
                     tick_result = self.source.get_tick_details(code, dt=dt)
             except Exception as e:
                 logger.warning(f"Playwright 逐笔失败，回退: {e}")
@@ -333,6 +334,7 @@ class DataSourceAdapter:
                 timeshare = self.source.get_timeshare(code, dt=dt)
             all_details = self._build_minute_amount_details(timeshare)
 
+        all_details = self._split_aggregated_ticks(all_details)
         self._annotate_directions(all_details)
         large_orders = self._identify_large_orders(all_details)
         statistics = self._calculate_statistics(all_details)
@@ -366,7 +368,8 @@ class DataSourceAdapter:
                 tick_result = pw.get_tick_details(code, dt=dt)
                 n = len(tick_result.get('details', []))
                 logger.info(f"Playwright 逐笔: {n} 条")
-                if n == 0:
+                if n < 10:
+                    logger.info(f"Playwright 逐笔数据不足({n}条)，回退到free源")
                     tick_result = self.source.get_tick_details(code, dt=dt)
             except Exception as e:
                 logger.warning(f"Playwright 逐笔失败，回退: {e}")
@@ -390,7 +393,8 @@ class DataSourceAdapter:
             quote = self._build_fallback_quote(code, dt, timeshare)
         order_book = self.source.get_order_book(code) if hasattr(self.source, 'get_order_book') else self._empty_order_book()
 
-        # 4. 标注买卖方向。免费源的中性盘按相邻价格变化归因，便于统一红/绿展示。
+        # 4. 拆分聚合tick + 标注买卖方向
+        all_details = self._split_aggregated_ticks(all_details)
         self._annotate_directions(all_details)
         if not all_details:
             all_details = self._build_minute_amount_details(timeshare)
@@ -648,6 +652,73 @@ class DataSourceAdapter:
             logger.warning(f"涨停池行情兜底失败: {e}")
             return None
 
+    def _split_aggregated_ticks(self, details):
+        """将东方财富聚合tick拆分为近似的单笔交易
+
+        东方财富免费接口返回的是聚合后的tick数据，同一时刻多笔交易被合并为一条记录。
+        每条记录有 trade_count 字段表示实际包含的交易笔数。
+
+        拆分策略：
+        - trade_count=0（集合竞价快照等无笔数信息）：用成交额 / 经验均单估算笔数
+        - trade_count=1：真实单笔交易，直接保留
+        - trade_count>1：按笔数均分，用平均金额重新归类
+          - 均分后仍为大单（>=30万）：保留为多笔大单
+          - 均分后不再是大单：合并为一条小单记录（保持总金额，避免生成大量小记录）
+        """
+        split_details = []
+        min_large = LEVEL_THRESHOLDS['above_30']  # 30万元
+        # A股散户为主，经验均单约3-5万元，取4万作为估算基准
+        ESTIMATED_AVG_TRADE = 40000  # 4万元
+
+        for d in details:
+            trade_count = d.get('trade_count', 1)
+            total_volume = d['volume']  # 手
+            price = d['price']
+            total_amount = d['amount']  # 元
+
+            if trade_count == 0:
+                # trade_count=0: 集合竞价快照或其他无笔数信息的聚合数据
+                # 用经验均单估算笔数，避免将大量小单误判为大单
+                estimated_count = max(1, round(total_amount / ESTIMATED_AVG_TRADE))
+                avg_amount = total_amount / estimated_count
+                d['avg_amount'] = round(avg_amount, 2)
+                d['trade_count_estimated'] = estimated_count
+                split_details.append(d)
+                continue
+
+            if trade_count == 1:
+                split_details.append(d)
+                continue
+
+            # trade_count > 1: 按笔数均分
+            avg_amount = total_amount / trade_count
+
+            if avg_amount >= min_large:
+                # 均分后仍是大单，逐笔展开
+                base_volume = math.floor(total_volume / trade_count)
+                remainder_volume = total_volume - base_volume * (trade_count - 1)
+                for i in range(trade_count):
+                    vol = remainder_volume if i == trade_count - 1 else base_volume
+                    if vol <= 0:
+                        continue
+                    split_details.append({
+                        'time': d['time'],
+                        'price': price,
+                        'volume': vol,
+                        'amount': round(price * vol * 100, 2),
+                        'type': d['type'],
+                        'trade_count': 1,
+                        'split_from_count': trade_count,
+                    })
+            else:
+                # 均分后是小单，保留为一条记录但用平均金额做分级
+                # volume和amount保持原始总量（保证全市场统计不失真），
+                # 但标记 avg_amount 供大单识别使用
+                d['avg_amount'] = round(avg_amount, 2)
+                split_details.append(d)
+
+        return split_details
+
     def _annotate_directions(self, details):
         """为逐笔成交标注买卖方向，中性盘按价格变化归因到买/卖"""
         previous_price = None
@@ -697,22 +768,71 @@ class DataSourceAdapter:
         return details
 
     def _identify_large_orders(self, details):
-        """从逐笔明细中识别大单（成交额>=30万），按金额降序"""
+        """从逐笔明细中识别大单和集中成交，按金额降序
+
+        三类记录：
+        1. 真实大单：trade_count=1 且金额>=阈值 → 确认大单
+        2. 拆分后仍为大单：均分后每笔>=阈值 → 确认大单
+        3. 集中成交：聚合tick总金额>=阈值，但均分后每笔不够大 →
+           可能包含隐藏大单，标记为"集中成交"供参考
+           仅保留交易时段内(09:25后)、总金额>=300万的记录
+        """
         large = []
         for d in details:
-            if d['amount'] >= LEVEL_THRESHOLDS['above_30']:
-                large.append({
-                    'time': d['time'],
-                    'direction': d['direction'],
-                    'price': d['price'],
-                    'volume_lots': d['volume'],
-                    'amount': round(d['amount'] / 10000, 2),  # 万元
-                })
+            amount = d['amount']  # 原始总金额（元）
+            avg_amount = d.get('avg_amount')  # 拆分后的平均金额
+            trade_count = d.get('trade_count', 1)
+            time_str = d.get('time', '')
+
+            if avg_amount is not None:
+                # 聚合tick已标记avg_amount
+                if avg_amount >= LEVEL_THRESHOLDS['above_30']:
+                    # 均分后仍为大单
+                    large.append({
+                        'time': time_str,
+                        'direction': d['direction'],
+                        'price': d['price'],
+                        'volume_lots': d['volume'],
+                        'amount': round(amount / 10000, 2),
+                        'trade_count': trade_count,
+                    })
+                elif amount >= LEVEL_THRESHOLDS['above_300'] and time_str >= '09:25':
+                    # 集中成交：总金额>=300万，可能包含隐藏大单
+                    large.append({
+                        'time': time_str,
+                        'direction': d['direction'],
+                        'price': d['price'],
+                        'volume_lots': d['volume'],
+                        'amount': round(amount / 10000, 2),
+                        'trade_count': trade_count,
+                        'concentrated': True,  # 标记为集中成交
+                    })
+            else:
+                # 真实单笔或已拆分的记录
+                if amount >= LEVEL_THRESHOLDS['above_30']:
+                    large.append({
+                        'time': time_str,
+                        'direction': d['direction'],
+                        'price': d['price'],
+                        'volume_lots': d['volume'],
+                        'amount': round(amount / 10000, 2),
+                        'trade_count': trade_count,
+                    })
+
         large.sort(key=lambda x: x['amount'], reverse=True)
         return large
 
     def _calculate_statistics(self, details):
-        """按分级统计大单买卖笔数和金额"""
+        """按分级统计大单买卖笔数和金额
+
+        分级策略：
+        - 真实单笔/已拆分记录：用实际金额分级
+        - 聚合tick（有avg_amount标记）：
+          - 交易时段内(>=09:25)总金额>=300万的集中成交：
+            保守估算其中可能有一笔大单（取总额的30%作为估算大单金额进行分级），
+            剩余部分归入小单。这是对"可能有大单隐藏在聚合数据中"的折中处理。
+          - 其余：用avg_amount分级，金额按原始总额统计
+        """
         stats = {}
         for level_key in list(LEVEL_THRESHOLDS.keys()) + ['below_30']:
             stats[level_key] = {
@@ -722,19 +842,61 @@ class DataSourceAdapter:
             }
 
         for d in details:
-            amount = d['amount']
+            amount = d['amount']  # 原始总金额（元）
+            avg_amount = d.get('avg_amount')
             direction = d['direction']
             is_buy = direction in ('被买', '主买')
             is_sell = direction in ('被卖', '主卖')
+            time_str = d.get('time', '')
+
+            # 集中成交拆分统计：总额>=300万的交易时段聚合tick
+            if (avg_amount is not None
+                    and avg_amount < LEVEL_THRESHOLDS['above_30']
+                    and amount >= LEVEL_THRESHOLDS['above_300']
+                    and time_str >= '09:25'):
+                # 保守估算：取总额30%作为可能的大单部分
+                estimated_large = amount * 0.3
+                estimated_small = amount - estimated_large
+
+                # 大单部分按估算金额分级
+                if estimated_large >= LEVEL_THRESHOLDS['above_300']:
+                    large_key = 'above_300'
+                elif estimated_large >= LEVEL_THRESHOLDS['above_100']:
+                    large_key = 'above_100'
+                else:
+                    large_key = 'above_50'
+
+                large_wan = estimated_large / 10000
+                small_wan = estimated_small / 10000
+
+                if is_buy:
+                    stats[large_key]['buy_count'] += 1
+                    stats[large_key]['buy_amount'] = round(stats[large_key]['buy_amount'] + large_wan, 2)
+                    stats['below_30']['buy_count'] += 1
+                    stats['below_30']['buy_amount'] = round(stats['below_30']['buy_amount'] + small_wan, 2)
+                elif is_sell:
+                    stats[large_key]['sell_count'] += 1
+                    stats[large_key]['sell_amount'] = round(stats[large_key]['sell_amount'] + large_wan, 2)
+                    stats['below_30']['sell_count'] += 1
+                    stats['below_30']['sell_amount'] = round(stats['below_30']['sell_amount'] + small_wan, 2)
+                else:
+                    stats[large_key]['neutral_count'] += 1
+                    stats[large_key]['neutral_amount'] = round(stats[large_key]['neutral_amount'] + large_wan, 2)
+                    stats['below_30']['neutral_count'] += 1
+                    stats['below_30']['neutral_amount'] = round(stats['below_30']['neutral_amount'] + small_wan, 2)
+                continue
+
+            # 常规分级
+            classify_amount = avg_amount if avg_amount is not None else amount
             amount_wan = amount / 10000
 
-            if amount >= LEVEL_THRESHOLDS['above_300']:
+            if classify_amount >= LEVEL_THRESHOLDS['above_300']:
                 level_key = 'above_300'
-            elif amount >= LEVEL_THRESHOLDS['above_100']:
+            elif classify_amount >= LEVEL_THRESHOLDS['above_100']:
                 level_key = 'above_100'
-            elif amount >= LEVEL_THRESHOLDS['above_50']:
+            elif classify_amount >= LEVEL_THRESHOLDS['above_50']:
                 level_key = 'above_50'
-            elif amount >= LEVEL_THRESHOLDS['above_30']:
+            elif classify_amount >= LEVEL_THRESHOLDS['above_30']:
                 level_key = 'above_30'
             else:
                 level_key = 'below_30'

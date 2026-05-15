@@ -284,17 +284,21 @@ class EastMoneyPlaywrightSource:
         details = []
         for item in raw:
             parts = item.split(',')
-            if len(parts) < 4:
+            if len(parts) < 5:
                 continue
             try:
                 price = float(parts[1])
                 volume = int(parts[2])
+                # 格式: 时间,价格,成交量(手),笔数,买卖方向
+                trade_count = int(parts[3])
+                buy_sell_type = int(parts[4])
                 details.append({
                     'time': parts[0],
                     'price': price,
                     'volume': volume,
                     'amount': round(price * volume * 100, 2),
-                    'type': int(parts[3]),
+                    'type': buy_sell_type,
+                    'trade_count': trade_count,
                 })
             except (ValueError, IndexError):
                 continue
@@ -659,17 +663,21 @@ class EastMoneyPlaywrightSource:
         details = []
         for item in raw:
             parts = item.split(',')
-            if len(parts) < 4:
+            if len(parts) < 5:
                 continue
             try:
                 price = float(parts[1])
                 volume = int(parts[2])
+                # 格式: 时间,价格,成交量(手),笔数,买卖方向
+                trade_count = int(parts[3])
+                buy_sell_type = int(parts[4])
                 details.append({
                     'time': parts[0],
                     'price': price,
                     'volume': volume,
                     'amount': round(price * volume * 100, 2),
-                    'type': int(parts[3]),
+                    'type': buy_sell_type,
+                    'trade_count': trade_count,
                 })
             except (ValueError, IndexError):
                 continue

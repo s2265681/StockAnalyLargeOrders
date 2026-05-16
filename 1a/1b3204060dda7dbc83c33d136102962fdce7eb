@@ -1,0 +1,33 @@
+backend/routes/limit_up_echelon.py
+  s_0c0c45e652cc73::t_8dabf9a5a3a418 83-84,86-103
+  s_0c0c45e652cc73::t_81b3987e42cd11 482-524
+  s_0c0c45e652cc73::t_66a63a5ca271de 664,669,716,720-722,742
+  s_fb7678489d4804::t_a87dfa7a2094f0 104
+backend/routes/emotion_cycle.py
+  s_fb7678489d4804::t_70e4b1abe09dfd 395-521
+  s_fb7678489d4804::t_2dc99a56140a58 236-269
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "1a1b3204060dda7dbc83c33d136102962fdce7eb",
+  "prompts": {},
+  "sessions": {
+    "s_0c0c45e652cc73": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "da02e7b5-99dc-4286-9c49-c811b67ef9bc",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_fb7678489d4804": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3f3ff6c2-7664-49cf-abb8-f611780af96a",
+        "model": "claude-haiku-4-5-20251001"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

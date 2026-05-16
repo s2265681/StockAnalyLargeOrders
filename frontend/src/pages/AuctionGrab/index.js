@@ -65,8 +65,8 @@ function AuctionGrab() {
   }, []);
 
   const fetchData = useCallback(async (dt, tab, sort) => {
-    const type = tab === 'tail' ? '2' : '1';
-    const cacheKey = `${dt}_${type}_${sort}`;
+    const period = tab === 'tail' ? '1' : '0';
+    const cacheKey = `${dt}_${period}_${sort}`;
 
     if (dataCache.current[cacheKey]) {
       setData(dataCache.current[cacheKey]);
@@ -76,7 +76,7 @@ function AuctionGrab() {
 
     setLoading(true);
     try {
-      const res = await apiRequest(`/api/v1/auction-grab?dt=${dt}&type=${type}&sort=${sort}&size=100`);
+      const res = await apiRequest(`/api/v1/auction-grab?dt=${dt}&period=${period}&sort=${sort}`);
       if (res?.data) {
         dataCache.current[cacheKey] = res.data;
         setData(res.data);
@@ -99,6 +99,13 @@ function AuctionGrab() {
     if (num > 0) return '#ff4d4f';
     if (num < 0) return '#52c41a';
     return '#999';
+  };
+
+  const formatAmount = (val) => {
+    const num = parseFloat(val);
+    if (isNaN(num)) return '--';
+    if (num >= 10000) return `${(num / 10000).toFixed(2)}亿`;
+    return `${num.toFixed(2)}万`;
   };
 
   const currentSortLabel = SORT_OPTIONS.find(o => o.key === sortBy)?.label || '委托金额';
@@ -205,7 +212,7 @@ function AuctionGrab() {
                 <span className="ag-stock-code">{item.code}</span>
               </div>
               <div className="ag-col ag-col-amount">
-                {item.open_amount}万
+                {formatAmount(item.open_amount)}
               </div>
               <div
                 className="ag-col ag-col-change"
@@ -214,10 +221,10 @@ function AuctionGrab() {
                 {parseFloat(item.grab_change_pct) > 0 ? '+' : ''}{item.grab_change_pct}%
               </div>
               <div className="ag-col ag-col-turnover">
-                {item.grab_turnover}万
+                {formatAmount(item.grab_turnover)}
               </div>
               <div className="ag-col ag-col-order">
-                {item.grab_order_amount}万
+                {formatAmount(item.grab_order_amount)}
               </div>
               <div className="ag-col ag-col-date">
                 {item.date}

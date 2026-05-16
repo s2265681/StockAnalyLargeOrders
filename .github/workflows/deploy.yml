@@ -239,14 +239,28 @@ jobs:
             ln -sf /etc/nginx/sites-available/stock-analysis /etc/nginx/sites-enabled/stock-analysis
 
             echo "===> Restart backend via PM2"
-            pm2 restart StockAnalysisLargeOrders || pm2 start ecosystem.config.js
+            pm2 restart StockAnalysisLargeOrders --update-env || pm2 start ecosystem.config.js
             pm2 save
 
             echo "===> Reload Nginx (frontend is static, no need to restart)"
             nginx -t && systemctl reload nginx
 
             echo "===> Health check"
-            curl -fsS http://127.0.0.1:9001/health > /dev/null
+            for attempt in $(seq 1 30); do
+              if curl -fsS http://127.0.0.1:9001/health > /dev/null 2>&1; then
+                echo "Backend health check passed"
+                break
+              fi
+              if [ "$attempt" -eq 30 ]; then
+                echo "Backend health check failed after ${attempt} attempts"
+                pm2 status || true
+                pm2 logs StockAnalysisLargeOrders --lines 80 --nostream || true
+                (ss -ltnp 2>/dev/null || netstat -ltnp 2>/dev/null || true) | grep ':9001' || true
+                exit 1
+              fi
+              echo "Backend is not ready yet, retrying in 2s... (${attempt}/30)"
+              sleep 2
+            done
             test -f /www/StockAnalyLargeOrders/frontend/build/index.html
 
             echo "===> Deploy success"

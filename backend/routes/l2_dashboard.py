@@ -60,7 +60,7 @@ def l2_timeshare():
             result = ts_future.result(timeout=30)
 
             try:
-                mf = mf_future.result(timeout=1.5)
+                mf = mf_future.result(timeout=8)
                 if mf and result.get('success') and result.get('data'):
                     result['data']['money_flow'] = mf
             except TimeoutError:
@@ -96,4 +96,24 @@ def l2_orders():
         return jsonify(result)
     except Exception as e:
         logger.error(f"l2_orders 接口异常: {e}", exc_info=True)
+        return jsonify({'success': False, 'message': f'服务异常: {str(e)}'}), 500
+
+
+@l2_dashboard_bp.route('/api/v1/l2_money_flow')
+def l2_money_flow():
+    """独立返回大/小资金线需要的分钟资金流数据。"""
+    code = request.args.get('code', '000001')
+
+    if not code.isdigit() or len(code) != 6:
+        return jsonify({'success': False, 'message': f'无效的股票代码: {code}'}), 400
+
+    try:
+        from routes.stock_timeshare import get_eastmoney_money_flow_data
+
+        money_flow = get_eastmoney_money_flow_data(code)
+        if not money_flow:
+            return jsonify({'success': False, 'message': '资金流数据暂不可用', 'data': None})
+        return jsonify({'success': True, 'data': money_flow})
+    except Exception as e:
+        logger.error(f"l2_money_flow 接口异常: {e}", exc_info=True)
         return jsonify({'success': False, 'message': f'服务异常: {str(e)}'}), 500

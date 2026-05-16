@@ -224,6 +224,8 @@ class DataSourceAdapterAnalysisTest(unittest.TestCase):
         self.assertTrue(result['success'])
         self.assertEqual(len(result['data']['timeshare']), 2)
         self.assertEqual(result['data']['stock_info']['price'], 10.2)
+        self.assertEqual(result['data']['stock_info']['yesterday_close'], 9.8)
+        self.assertEqual(result['data']['stock_info']['change_percent'], 4.08)
         self.assertEqual(result['data']['order_book']['source'], 'empty')
         self.assertEqual(result['data']['session_snapshot'], {})
 

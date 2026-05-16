@@ -6,7 +6,8 @@ import { useAtom } from 'jotai';
 import {
   stockCodeAtom,
   stockBasicDataAtom,
-  fetchStockBasicAtom
+  fetchStockBasicAtom,
+  loadingAtom
 } from '../../../store/atoms';
 import LimitUpMonitorPanel from './LimitUpMonitorPanel';
 import { apiRequest } from '../../../config/api';
@@ -15,7 +16,9 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
   const [stockCode, setStockCode] = useAtom(stockCodeAtom);
   const [stockBasicData] = useAtom(stockBasicDataAtom);
   const [, fetchStockBasic] = useAtom(fetchStockBasicAtom);
+  const [loading] = useAtom(loadingAtom);
   const [_innerCode, setInnerCode] = useState(stockCode);
+  const [isEditingSearch, setIsEditingSearch] = useState(false);
   const [themeTags, setThemeTags] = useState([]);
   const [themeLoading, setThemeLoading] = useState(false);
 
@@ -26,6 +29,12 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
   // 切换股票时清空题材标签
   useEffect(() => { setThemeTags([]); }, [stockCode]);
 
+  useEffect(() => {
+    if (!isEditingSearch) {
+      setInnerCode(stockBasicData?.name || stockCode);
+    }
+  }, [isEditingSearch, stockBasicData?.name, stockCode]);
+
   // 股票代码搜索
   const handleSearch = (value) => {
       setInnerCode(value)
@@ -33,7 +42,9 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
 
   // 点击搜索图标触发搜索
   const handleSearchIconClick = () => {
-    onStockCodeChange(_innerCode);
+    const nextCode = /^\d{6}$/.test(_innerCode) ? _innerCode : stockCode;
+    onStockCodeChange(nextCode);
+    setIsEditingSearch(false);
   };
 
   //调用basic 接口数据
@@ -130,13 +141,22 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
                 onChange={(value) => {
                   setInnerCode(value)
                 }}
+                onFocus={() => {
+                  setIsEditingSearch(true);
+                  setInnerCode(stockCode);
+                }}
+                onBlur={() => {
+                  setIsEditingSearch(false);
+                }}
                 style={{ width: 200 }}
                 placeholder="输入股票代码或名称搜索"
                 // allowClear
               >
                 <Input
                   onPressEnter={(e) => {
-                    setInnerCode(e.target.value)
+                    const nextCode = /^\d{6}$/.test(e.target.value) ? e.target.value : stockCode;
+                    onStockCodeChange(nextCode);
+                    setIsEditingSearch(false);
                   }}
                   style={{
                     backgroundColor: 'var(--bg-input)',
@@ -146,12 +166,10 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
                   suffix={
                     <SearchOutlined
                       style={{ color: 'var(--text-primary)', cursor: 'pointer' }} 
-                      onClick={()=>{
-                        onStockCodeChange(_innerCode)
-                      }}
+                      onClick={handleSearchIconClick}
                     />
                   }
-                  loading={searchLoading}
+                  loading={searchLoading || loading}
                 />
               </AutoComplete>
             </div>

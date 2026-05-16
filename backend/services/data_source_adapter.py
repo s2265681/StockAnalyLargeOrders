@@ -139,20 +139,11 @@ class DataSourceAdapter:
         timeshare = self.source.get_timeshare(code, dt=dt)
         if not is_today and timeshare:
             prices = [t['price'] for t in timeshare if t.get('price')]
-            open_price = prices[0] if prices else 0
-            last_price = prices[-1] if prices else 0
-            quote = {
-                'code': code,
-                'name': self._get_fallback_stock_name(code),
-                'price': last_price,
-                'yesterday_close': open_price,
-                'open': open_price,
-                'high': max(prices) if prices else 0,
-                'low': min(prices) if prices else 0,
-                'volume': sum(t.get('volume', 0) for t in timeshare),
-                'turnover': sum(t.get('amount', 0) for t in timeshare),
-                'change_percent': round((last_price - open_price) / open_price * 100, 2) if open_price else 0,
-            }
+            quote = self._get_limit_up_quote(code, dt) or self._build_fallback_quote(code, dt, timeshare)
+            quote['high'] = max(prices) if prices else quote.get('high', 0)
+            quote['low'] = min(prices) if prices else quote.get('low', 0)
+            quote['volume'] = sum(t.get('volume', 0) for t in timeshare)
+            quote['turnover'] = sum(t.get('amount', 0) for t in timeshare)
             order_book = self._empty_order_book()
             return {
                 'success': True,

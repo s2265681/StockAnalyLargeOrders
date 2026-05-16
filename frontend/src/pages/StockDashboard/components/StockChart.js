@@ -292,14 +292,16 @@ const StockChart = () => {
       return { institutionalMarkers, retailMarkers: [] };
     };
     
-    // 价格数据（转换为百分比坐标）
+    // 价格数据（转换为百分比坐标）。部分数据源在封板后会缺分钟点，沿用最近有效价格保持分时线连续。
+    let lastPricePct = null;
     const priceData = fenshi.map((price, index) => {
       const timePoint = fullTimeAxis[index];
       if (timePoint && price) {
         const percentChange = ((parseFloat(price) - prevClosePrice) / prevClosePrice) * 100;
+        lastPricePct = percentChange;
         return [timePoint, percentChange];
       }
-      return [fullTimeAxis[index], null];
+      return [fullTimeAxis[index], lastPricePct];
     });
     
     // 成交量数据
@@ -343,7 +345,8 @@ const StockChart = () => {
         const percentChange = ((avgPrice - prevClosePrice) / prevClosePrice) * 100;
         avgPriceData.push([timePoint, percentChange]);
       } else {
-        avgPriceData.push([timePoint, null]);
+        const lastAvgPoint = avgPriceData[avgPriceData.length - 1];
+        avgPriceData.push([timePoint, Array.isArray(lastAvgPoint) ? lastAvgPoint[1] : null]);
       }
     });
     
@@ -736,7 +739,7 @@ const StockChart = () => {
           type: 'line',
           data: avgPriceData,
           smooth: true,
-          connectNulls: false,
+          connectNulls: true,
           lineStyle: {
             width: 1,
             color: '#ffd700'
@@ -753,7 +756,7 @@ const StockChart = () => {
           data: priceData,
           smooth: true,
           symbol: 'none',
-          connectNulls: false,
+          connectNulls: true,
           lineStyle: {
             width: 2,
             color: isDark ? '#ffffff' : '#1a1a1a'

@@ -477,7 +477,14 @@
 
 .loading-container {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
+  gap: 12px;
   padding: 100px 0;
+}
+
+.loading-text {
+  color: var(--text-secondary);
+  font-size: 14px;
 }

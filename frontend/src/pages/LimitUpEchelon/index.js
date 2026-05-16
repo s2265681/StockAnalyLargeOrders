@@ -74,12 +74,15 @@ const formatDateDisplay = (dateStr) => {
   return `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
 };
 
+const MIN_LOADING_MS = 300;
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function LimitUpEchelon() {
   const navigate = useNavigate();
   const todayStr = useMemo(() => getLastTradingDayStr(), []);
   const [currentDate, setCurrentDate] = useState(getLastTradingDayStr);
   const dataCache = useRef({}); // dateStr -> data
+  const requestSeq = useRef(0);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -89,22 +92,38 @@ function LimitUpEchelon() {
 
   const fetchData = useCallback(async (dt) => {
     const targetDate = dt || getLastTradingDayStr();
+    const requestId = requestSeq.current + 1;
+    requestSeq.current = requestId;
+    const startedAt = Date.now();
+
+    const finishLoading = async () => {
+      const elapsed = Date.now() - startedAt;
+      if (elapsed < MIN_LOADING_MS) {
+        await wait(MIN_LOADING_MS - elapsed);
+      }
+      if (requestSeq.current === requestId) {
+        setLoading(false);
+      }
+    };
+
+    setLoading(true);
 
     // 已缓存则直接使用，不重新请求
     if (dataCache.current[targetDate]) {
-      setData(dataCache.current[targetDate]);
       const cached = dataCache.current[targetDate];
-      setAiStatus(cached.ai?.status || 'none');
-      setLoading(false);
+      if (requestSeq.current === requestId) {
+        setData(cached);
+        setAiStatus(cached.ai?.status || 'none');
+      }
+      await finishLoading();
       return;
     }
 
-    setLoading(true);
     try {
       // 初始加载：读取股票数据 + 自动加载 DB 已有标签（不触发 AI）
       const dtParam = targetDate !== getLastTradingDayStr() ? `dt=${targetDate}` : '';
       const res = await apiRequest(`/api/v1/limit-up-echelon${dtParam ? `?${dtParam}` : ''}`);
-      if (res?.data) {
+      if (res?.data && requestSeq.current === requestId) {
         dataCache.current[targetDate] = res.data;
         setData(res.data);
         const status = res.data.ai?.status || 'none';
@@ -113,7 +132,7 @@ function LimitUpEchelon() {
     } catch (err) {
       console.error('Failed to fetch limit up echelon:', err);
     } finally {
-      setLoading(false);
+      await finishLoading();
     }
   }, []);
 
@@ -274,7 +293,8 @@ function LimitUpEchelon() {
     return (
       <div className="echelon-container">
         <div className="loading-container">
-          <Spin size="large" tip="加载涨停板梯队..." />
+          <Spin size="large" />
+          <div className="loading-text">加载涨停板梯队...</div>
         </div>
       </div>
     );

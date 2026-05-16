@@ -133,6 +133,7 @@ function DragonTiger() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date: currentDate, code }),
+        timeout: 100000,
       });
       if (res?.data?.analysis) {
         setAiResults((prev) => ({ ...prev, [code]: res.data.analysis }));

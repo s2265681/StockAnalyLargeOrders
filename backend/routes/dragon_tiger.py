@@ -153,8 +153,8 @@ def _call_claude(prompt: str) -> str:
              "-d", f"@{payload_file}"],
             capture_output=True, text=True, timeout=95,
         )
-        os.unlink(payload_file)
         if proc.returncode != 0:
+            logger.error(f"Claude API curl失败(code={proc.returncode}): {proc.stderr[:200]}")
             return ""
         body = json.loads(proc.stdout)
         if "error" in body:
@@ -166,6 +166,11 @@ def _call_claude(prompt: str) -> str:
     except Exception as e:
         logger.error(f"Claude API调用失败: {e}")
         return ""
+    finally:
+        try:
+            os.unlink(payload_file)
+        except OSError:
+            pass
 
 
 def _build_ai_prompt(stock: dict) -> str:

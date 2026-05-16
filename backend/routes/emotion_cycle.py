@@ -408,53 +408,90 @@ def get_emotion_analysis_cache():
     return v1_success_response(data=None)
 
 
-# ---------- 4. 情绪周期分析 + 数据库存储 ----------
+# ---------- 4. 全量情绪周期分析（为每一天生成分析） ----------
+
+BATCH_ANALYSIS_PROMPT = """你是短线情绪博弈的高手。下面是连续多个交易日的情绪周期数据。
+
+请为【每一个交易日】都做出独立的情绪分析判断。分析时要结合该日之前的趋势（而非只看单日数据）。
+
+## 数据字段说明
+- date: 日期
+- rise_pct: 上涨比例(%)
+- consec_limit: 连板家数
+- pressure_height: 压力高度
+- latest_height: 最新高度
+- big_loss_mood: 大面情绪(越高=亏钱效应越强)
+- big_profit_mood: 大肉情绪(越高=赚钱效应越强)
+- limit_up_count: 涨停家数
+- board_hit_rate: 打板成功率(%)
+- limit_down_count: 跌停家数
+- monster_stock: 妖股名称
+- broken_board_count: 炸板家数
+
+## 情绪周期五阶段
+1. 冰点期：涨停<30，跌停>50，无3板以上
+2. 修复期：涨停30-50，跌停减少，出现3板
+3. 升温期：涨停50-80，有5板以上龙头，连板明显增多
+4. 高潮期：涨停>100，多只7板+，连板>15
+5. 退潮期：涨停骤降30%+，大面急升>15
+
+请严格按以下JSON格式返回（不要返回其他内容）：
+[
+  {
+    "date": "2026-03-17",
+    "stage": "冰点期/修复期/升温期/高潮期/退潮期",
+    "analysis": "当日分析（100字以内，结合前几日趋势）",
+    "advice": "操作建议（50字以内）"
+  },
+  ...
+]
+每个交易日一条，按日期从旧到新排列。"""
+
 
 @emotion_cycle_bp.route('/api/v1/emotion-analysis-with-storage', methods=['POST'])
 def post_emotion_analysis_with_storage():
     """
-    接收情绪周期数据，查库或调用 Claude 分析，结果存入数据库
-    支持 force=1 参数强制重新分析
+    全量分析：接收所有交易日数据，让 Claude 为每天生成分析，批量存库
+    支持 force=1 强制重新分析
     """
     try:
         body = request.get_json(silent=True) or {}
         records = body.get("records")
-        dt = body.get("date")  # 用户选中的分析日期，格式 YYYYMMDD
         force = request.args.get("force", "0") == "1"
 
         if not records or not isinstance(records, list):
             return v1_error_response(message="请在 body 中提供 records 数组")
-        if not dt:
-            from datetime import datetime
-            dt = datetime.now().strftime("%Y%m%d")
 
-        # 1. 尝试从数据库查询
+        # 1. 检查哪些日期已有分析（非 force 模式跳过已有的）
+        all_dates = [r["date"].replace("-", "") for r in records]
+        need_analysis_dates = set(all_dates)
+
         if not force:
-            db_result = _get_analysis_from_db(dt)
-            if db_result:
-                logger.info(f"从数据库返回已有分析结果 (date={dt})")
-                return v1_success_response(data=db_result, message="(来自数据库缓存)")
+            from utils.db import execute_query
+            placeholders = ",".join(["%s"] * len(all_dates))
+            existing = execute_query(
+                f"SELECT date FROM emotion_analysis_results WHERE date IN ({placeholders})",
+                tuple(all_dates),
+            )
+            existing_dates = {row["date"] for row in existing} if existing else set()
+            need_analysis_dates -= existing_dates
 
-        # 2. 调用 Claude API 进行分析
-        hot_sectors = _fetch_hot_sectors()
+            if not need_analysis_dates:
+                logger.info("所有日期已有分析结果，跳过 AI 调用")
+                return v1_success_response(data={"analyzed": 0, "total": len(all_dates)},
+                                           message="所有日期已有分析缓存")
+
+        # 2. 调用 Claude 批量分析
         data_text = json.dumps(records, ensure_ascii=False, indent=2)
-        user_prompt = (
-            f"以下是最近的情绪周期数据（从旧到新），截止日期 {dt}：\n{data_text}\n\n"
-            f"当日热门板块题材信息：\n{hot_sectors}\n\n"
-            "请分析：\n"
-            "1. 当前情绪阶段（冰点/修复/升温/高潮/退潮）\n"
-            "2. 判断依据\n"
-            "3. 操作建议\n"
-            "4. 推荐1-2只强势连板股及仓位建议\n"
-        )
+        user_prompt = f"以下是连续交易日的情绪周期数据（共{len(records)}天）：\n{data_text}"
 
         import subprocess, tempfile
         payload = json.dumps({
             "model": CLAUDE_MODEL,
             "messages": [
-                {"role": "user", "content": SYSTEM_PROMPT + "\n\n" + user_prompt},
+                {"role": "user", "content": BATCH_ANALYSIS_PROMPT + "\n\n" + user_prompt},
             ],
-            "max_tokens": 2048,
+            "max_tokens": 16000,
         })
         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
             f.write(payload)
@@ -462,13 +499,13 @@ def post_emotion_analysis_with_storage():
         try:
             proc = subprocess.run(
                 [
-                    "curl", "-s", "--max-time", "60",
+                    "curl", "-s", "--max-time", "180",
                     CLAUDE_API_URL,
                     "-H", f"Authorization: Bearer {CLAUDE_API_KEY}",
                     "-H", "Content-Type: application/json",
                     "-d", f"@{payload_file}",
                 ],
-                capture_output=True, text=True, timeout=65,
+                capture_output=True, text=True, timeout=185,
             )
             import os
             os.unlink(payload_file)
@@ -478,51 +515,52 @@ def post_emotion_analysis_with_storage():
             if "error" in claude_body:
                 raise Exception(f"Claude API 错误: {claude_body['error']}")
         except subprocess.TimeoutExpired:
-            raise Exception("Claude API 调用超时(60s)")
+            raise Exception("Claude API 调用超时(180s)")
 
-        # 3. 解析 Claude 返回
+        # 3. 解析返回的 JSON 数组
         content = (
             claude_body.get("choices", [{}])[0]
             .get("message", {})
             .get("content", "")
         )
+        logger.info(f"批量分析返回 (前500字): {content[:500]}")
 
-        logger.info(f"Claude 原始返回 content (前500字): {content[:500]}")
-        # 尝试解析 JSON
         import re
-        result = None
+        results = None
         clean = content.strip()
-        # 去掉 markdown 代码块包裹
         if clean.startswith("```"):
             clean = clean.split("\n", 1)[-1]
             clean = clean.rsplit("```", 1)[0].strip()
-        # 尝试直接解析
         try:
-            result = json.loads(clean)
+            results = json.loads(clean)
         except json.JSONDecodeError:
-            pass
-        # 如果失败，用正则提取第一个 { ... } 块
-        if result is None:
-            match = re.search(r'\{[\s\S]*\}', content)
+            match = re.search(r'\[[\s\S]*\]', content)
             if match:
                 try:
-                    result = json.loads(match.group())
+                    results = json.loads(match.group())
                 except json.JSONDecodeError:
                     pass
-        # 最终 fallback
-        if result is None:
-            logger.warning(f"Claude 返回非 JSON 内容: {content[:500]}")
-            result = {
-                "stage": "未知",
-                "analysis": content,
-                "advice": "",
-                "recommendations": [],
-            }
 
-        # 4. 保存到数据库
-        _save_analysis_to_db(dt, result)
+        if not isinstance(results, list) or not results:
+            logger.warning("Claude 批量分析返回非数组，尝试单对象 fallback")
+            return v1_error_response(message="AI 分析返回格式异常，请重试")
 
-        return v1_success_response(data=result, message="(新分析结果)")
+        # 4. 批量存库
+        saved = 0
+        for item in results:
+            if not isinstance(item, dict) or "date" not in item:
+                continue
+            dt = item["date"].replace("-", "")
+            # force 模式全部更新，非 force 只更新新的
+            if force or dt in need_analysis_dates:
+                _save_analysis_to_db(dt, item)
+                saved += 1
+
+        logger.info(f"批量分析完成: 共 {len(results)} 条, 存库 {saved} 条")
+        return v1_success_response(
+            data={"analyzed": saved, "total": len(records)},
+            message=f"已分析 {saved} 个交易日"
+        )
 
     except requests.Timeout:
         logger.error("调用 Claude API 超时")

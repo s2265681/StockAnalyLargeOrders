@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Button, Spin, Tag, Space, Typography } from 'antd';
+import { Button, Spin, Tag } from 'antd';
 import { ThunderboltOutlined, LeftOutlined, RightOutlined, ReloadOutlined } from '@ant-design/icons';
 import ReactEChartsCore from 'echarts-for-react/lib/core';
 import * as echarts from 'echarts/core';
@@ -16,7 +16,6 @@ import { CanvasRenderer } from 'echarts/renderers';
 import { apiRequest } from '../../config/api';
 import './index.css';
 
-const { Title, Text } = Typography;
 
 echarts.use([
   LineChart,
@@ -132,100 +131,32 @@ function EmotionCycle() {
     }
   }, [selectedDate, records.length]);
 
-  const handleAnalysis = async () => {
+  // 全量分析：把所有数据传给AI，为每天生成分析，批量存库
+  const handleAnalysis = async (force = false) => {
     if (records.length === 0) return;
 
-    // 取截止到选中日期的最近10天数据（让AI看趋势）
-    const filteredRecords = records
-      .filter(r => r.date.replace(/-/g, '') <= selectedDate)
-      .slice(-10);
-
     setAnalysisLoading(true);
+    setAnalysisResult(null);
     try {
-      const res = await apiRequest('/api/v1/emotion-analysis-with-storage', {
+      const url = force
+        ? '/api/v1/emotion-analysis-with-storage?force=1'
+        : '/api/v1/emotion-analysis-with-storage';
+      const res = await apiRequest(url, {
         method: 'POST',
-        body: JSON.stringify({
-          records: filteredRecords,
-          date: selectedDate,
-        }),
-        timeout: 90000,
+        body: JSON.stringify({ records }),
+        timeout: 200000,
       });
       if (res?.data) {
-        let result = res.data;
-        // 如果 analysis 是未解析的 JSON 字符串，尝试解析
-        if (result.stage === '未知' && typeof result.analysis === 'string') {
-          try {
-            let clean = result.analysis.trim();
-            // 去掉 markdown 代码块
-            if (clean.startsWith('```')) {
-              clean = clean.split('\n').slice(1).join('\n');
-              clean = clean.replace(/```\s*$/, '');
-            }
-            // 尝试直接解析
-            let parsed = null;
-            try {
-              parsed = JSON.parse(clean);
-            } catch (_) {
-              // 尝试用正则提取 JSON 块
-              const match = clean.match(/\{[\s\S]*\}/);
-              if (match) {
-                try { parsed = JSON.parse(match[0]); } catch (_2) { /* skip */ }
-              }
-            }
-            if (parsed && parsed.stage) result = parsed;
-          } catch (e) { /* keep original */ }
-        }
-        setAnalysisResult(result);
+        // 分析完成后，加载当前选中日期的缓存
+        try {
+          const cacheRes = await apiRequest(`/api/v1/emotion-analysis-cache?date=${selectedDate}`);
+          if (cacheRes?.data) {
+            setAnalysisResult(cacheRes.data);
+          }
+        } catch (_) { /* ignore */ }
       }
     } catch (err) {
-      console.error('Failed to fetch emotion analysis:', err);
-    } finally {
-      setAnalysisLoading(false);
-    }
-  };
-
-  const handleAnalysisRefresh = async () => {
-    if (records.length === 0) return;
-
-    const filteredRecords = records
-      .filter(r => r.date.replace(/-/g, '') <= selectedDate)
-      .slice(-10);
-
-    setAnalysisLoading(true);
-    try {
-      const res = await apiRequest('/api/v1/emotion-analysis-with-storage?force=1', {
-        method: 'POST',
-        body: JSON.stringify({
-          records: filteredRecords,
-          date: selectedDate,
-        }),
-        timeout: 90000,
-      });
-      if (res?.data) {
-        let result = res.data;
-        if (result.stage === '未知' && typeof result.analysis === 'string') {
-          try {
-            let clean = result.analysis.trim();
-            if (clean.startsWith('```')) {
-              clean = clean.split('\n').slice(1).join('\n');
-              clean = clean.replace(/```\s*$/, '');
-            }
-            let parsed = null;
-            try {
-              parsed = JSON.parse(clean);
-            } catch (_) {
-              const match = clean.match(/\{[\s\S]*\}/);
-              if (match) {
-                try { parsed = JSON.parse(match[0]); } catch (_2) { /* skip */ }
-              }
-            }
-            if (parsed && parsed.stage) result = parsed;
-          } catch (e) { /* keep original */ }
-        }
-        setAnalysisResult(result);
-      }
-    } catch (err) {
-      console.error('Failed to refresh emotion analysis:', err);
+      console.error('Failed to batch analyze:', err);
     } finally {
       setAnalysisLoading(false);
     }
@@ -351,68 +282,34 @@ function EmotionCycle() {
   const renderAnalysis = () => {
     if (!analysisResult) return null;
 
-    const { stage, analysis, advice, recommendations } = analysisResult;
+    const { stage, analysis, advice } = analysisResult;
     const stageColor = stageColorMap[stage]
       || Object.entries(stageColorMap).find(([k]) => stage?.includes(k))?.[1]
       || '#1890ff';
 
     return (
-      <Card
-        className="analysis-card"
-        title={
-          <span style={{ color: '#fff' }}>
-            <ThunderboltOutlined style={{ marginRight: 8 }} />
-            AI 情绪分析结果
-          </span>
-        }
-        style={{ background: '#1e1d1e', border: '1px solid #2a2a2a' }}
-        headStyle={{ background: '#1e1d1e', borderBottom: '1px solid #2a2a2a', color: '#fff' }}
-        bodyStyle={{ background: '#1e1d1e' }}
-      >
+      <div className="analysis-content">
         <Tag
           color={stageColor}
-          style={{ fontSize: 16, padding: '4px 16px', marginBottom: 16, fontWeight: 'bold' }}
+          style={{ fontSize: 15, padding: '4px 14px', marginBottom: 12, fontWeight: 'bold' }}
         >
-          当前阶段: {stage}
+          {stage}
         </Tag>
 
         {analysis && (
-          <div style={{ marginBottom: 16 }}>
-            <Title level={5} style={{ color: '#fff', marginBottom: 8 }}>
-              分析
-            </Title>
+          <div style={{ marginBottom: 12 }}>
+            <div className="analysis-section-title">分析</div>
             <div className="analysis-text">{analysis}</div>
           </div>
         )}
 
         {advice && (
-          <div style={{ marginBottom: 16 }}>
-            <Title level={5} style={{ color: '#fff', marginBottom: 8 }}>
-              建议
-            </Title>
+          <div>
+            <div className="analysis-section-title">建议</div>
             <div className="advice-text">{advice}</div>
           </div>
         )}
-
-        {recommendations && recommendations.length > 0 && (
-          <div>
-            <Title level={5} style={{ color: '#fff', marginBottom: 12 }}>
-              推荐标的
-            </Title>
-            <Space wrap size={12}>
-              {recommendations.map((rec, idx) => (
-                <div key={idx} className="recommendation-card">
-                  <div className="stock-name">{rec.stock || rec.name}</div>
-                  <div className="stock-reason">{rec.reason}</div>
-                  {rec.position && (
-                    <div className="stock-position">仓位: {rec.position}</div>
-                  )}
-                </div>
-              ))}
-            </Space>
-          </div>
-        )}
-      </Card>
+      </div>
     );
   };
 
@@ -447,7 +344,7 @@ function EmotionCycle() {
           <Button
             type="primary"
             icon={<ThunderboltOutlined />}
-            onClick={handleAnalysis}
+            onClick={() => handleAnalysis(false)}
             loading={analysisLoading}
             disabled={records.length === 0}
             className="ai-analysis-btn"
@@ -457,12 +354,9 @@ function EmotionCycle() {
           <Button
             type="text"
             icon={<ReloadOutlined />}
-            onClick={() => {
-              setAnalysisResult(null);
-              handleAnalysisRefresh();
-            }}
+            onClick={() => handleAnalysis(true)}
             loading={analysisLoading}
-            disabled={records.length === 0 || !analysisResult}
+            disabled={records.length === 0}
             className="ai-refresh-btn"
           >
             刷新
@@ -470,31 +364,41 @@ function EmotionCycle() {
         </div>
       </div>
 
-      <div className="emotion-chart-card">
-        {loading ? (
-          <div className="loading-container">
-            <Spin size="large" tip="加载中..." />
-          </div>
-        ) : (
-          <ReactEChartsCore
-            echarts={echarts}
-            option={getChartOption()}
-            style={{ height: 450 }}
-            notMerge={true}
-            lazyUpdate={true}
-            theme="dark"
-          />
-        )}
-      </div>
+      <div className="emotion-main-layout">
+        <div className="emotion-chart-card">
+          {loading ? (
+            <div className="loading-container">
+              <Spin size="large" tip="加载中..." />
+            </div>
+          ) : (
+            <ReactEChartsCore
+              echarts={echarts}
+              option={getChartOption()}
+              style={{ height: 'calc(100vh - 160px)', minHeight: 400 }}
+              notMerge={true}
+              lazyUpdate={true}
+              theme="dark"
+            />
+          )}
+        </div>
 
-      <div className="ai-analysis-section">
-        {analysisLoading && !analysisResult && (
-          <div className="loading-container">
-            <Spin size="large" tip="AI 正在分析中..." />
-          </div>
-        )}
+        <div className="ai-analysis-panel">
+          {analysisLoading && !analysisResult && (
+            <div className="loading-container">
+              <Spin size="large" tip="AI 正在分析中..." />
+            </div>
+          )}
 
-        {renderAnalysis()}
+          {analysisResult ? renderAnalysis() : (
+            !analysisLoading && (
+              <div className="analysis-empty">
+                <ThunderboltOutlined style={{ fontSize: 32, color: '#444', marginBottom: 12 }} />
+                <div>点击「AI 情绪分析」生成全部日期的分析</div>
+                <div style={{ marginTop: 4, fontSize: 12 }}>切换日期可查看对应分析</div>
+              </div>
+            )
+          )}
+        </div>
       </div>
     </div>
   );

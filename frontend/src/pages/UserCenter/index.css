@@ -1,0 +1,52 @@
+/* frontend/src/pages/UserCenter/index.css */
+.user-center {
+  padding: 24px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.info-card {
+  background: #1e1e2e;
+  border: 1px solid #2a2a3a;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.info-card h3 {
+  color: #fff;
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.info-row {
+  display: flex;
+  padding: 10px 0;
+  border-bottom: 1px solid #2a2a3a;
+  color: #ccc;
+  font-size: 14px;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  width: 80px;
+  color: #888;
+}
+
+.info-value {
+  flex: 1;
+}
+
+.vip-badge {
+  color: #52c41a;
+  font-weight: bold;
+}
+
+.no-vip {
+  color: #ff4d4f;
+}

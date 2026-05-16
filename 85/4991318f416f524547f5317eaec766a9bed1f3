@@ -1,0 +1,19 @@
+backend/routes/auth.py
+  s_7c2a81bcd6c721::t_11f6ecabf64882 1-78
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "854991318f416f524547f5317eaec766a9bed1f3",
+  "prompts": {},
+  "sessions": {
+    "s_7c2a81bcd6c721": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a63b6fc9-c713-4a31-bf62-d8f010ba1f97",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

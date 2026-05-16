@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Spin, Tag, Space, Typography } from 'antd';
-import { ThunderboltOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
+import { ThunderboltOutlined, LeftOutlined, RightOutlined, ReloadOutlined } from '@ant-design/icons';
 import ReactEChartsCore from 'echarts-for-react/lib/core';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
@@ -161,6 +161,53 @@ function EmotionCycle() {
       }
     } catch (err) {
       console.error('Failed to fetch emotion analysis:', err);
+    } finally {
+      setAnalysisLoading(false);
+    }
+  };
+
+  const handleAnalysisRefresh = async () => {
+    if (records.length === 0) return;
+
+    const filteredRecords = records.filter(r => {
+      const rDate = r.date.replace(/-/g, '');
+      return rDate <= selectedDate;
+    });
+
+    setAnalysisLoading(true);
+    try {
+      const res = await apiRequest('/api/v1/emotion-analysis-with-storage?force=1', {
+        method: 'POST',
+        body: JSON.stringify({
+          records: filteredRecords,
+          date: selectedDate,
+        }),
+      });
+      if (res?.data) {
+        let result = res.data;
+        if (result.stage === '未知' && typeof result.analysis === 'string') {
+          try {
+            let clean = result.analysis.trim();
+            if (clean.startsWith('```')) {
+              clean = clean.split('\n').slice(1).join('\n');
+              clean = clean.replace(/```\s*$/, '');
+            }
+            let parsed = null;
+            try {
+              parsed = JSON.parse(clean);
+            } catch (_) {
+              const match = clean.match(/\{[\s\S]*\}/);
+              if (match) {
+                try { parsed = JSON.parse(match[0]); } catch (_2) { /* skip */ }
+              }
+            }
+            if (parsed && parsed.stage) result = parsed;
+          } catch (e) { /* keep original */ }
+        }
+        setAnalysisResult(result);
+      }
+    } catch (err) {
+      console.error('Failed to refresh emotion analysis:', err);
     } finally {
       setAnalysisLoading(false);
     }
@@ -397,17 +444,34 @@ function EmotionCycle() {
       </div>
 
       <div className="ai-analysis-section">
-        <Button
-          type="primary"
-          icon={<ThunderboltOutlined />}
-          onClick={handleAnalysis}
-          loading={analysisLoading}
-          disabled={records.length === 0}
-          size="large"
-          className="ai-analysis-btn"
-        >
-          AI 情绪分析
-        </Button>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <Button
+            type="primary"
+            icon={<ThunderboltOutlined />}
+            onClick={handleAnalysis}
+            loading={analysisLoading}
+            disabled={records.length === 0}
+            size="large"
+            className="ai-analysis-btn"
+          >
+            AI 情绪分析
+          </Button>
+
+          <Button
+            type="dashed"
+            icon={<ReloadOutlined />}
+            onClick={() => {
+              setAnalysisResult(null);
+              handleAnalysisRefresh();
+            }}
+            loading={analysisLoading}
+            disabled={records.length === 0 || !analysisResult}
+            size="large"
+            className="ai-analysis-refresh-btn"
+          >
+            刷新分析
+          </Button>
+        </div>
 
         {analysisLoading && !analysisResult && (
           <div className="loading-container">

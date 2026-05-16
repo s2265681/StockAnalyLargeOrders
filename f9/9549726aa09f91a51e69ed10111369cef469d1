@@ -1,0 +1,19 @@
+backend/migrations/create_dragon_tiger_tables.sql
+  s_4ce1d966e9c063::t_54a4fb7d774d0b 1-45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "f99549726aa09f91a51e69ed10111369cef469d1",
+  "prompts": {},
+  "sessions": {
+    "s_4ce1d966e9c063": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "16155e14-2c07-4deb-9bbb-9df938c7df29",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

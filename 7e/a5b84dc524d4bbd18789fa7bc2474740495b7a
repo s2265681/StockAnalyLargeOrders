@@ -1,0 +1,23 @@
+frontend/src/pages/EmotionCycle/index.js
+  s_fb7678489d4804::t_5c8e7fb938c516 169-215
+  s_fb7678489d4804::t_e2a7032a391d5a 447-474
+  s_fb7678489d4804::t_352754cb62a77e 3
+frontend/src/pages/EmotionCycle/index.css
+  s_fb7678489d4804::t_964a1e78b78a55 154-157
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "7ea5b84dc524d4bbd18789fa7bc2474740495b7a",
+  "prompts": {},
+  "sessions": {
+    "s_fb7678489d4804": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3f3ff6c2-7664-49cf-abb8-f611780af96a",
+        "model": "claude-haiku-4-5-20251001"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

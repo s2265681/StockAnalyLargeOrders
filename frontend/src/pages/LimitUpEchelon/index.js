@@ -6,13 +6,13 @@ import { apiRequest } from '../../config/api';
 import './index.css';
 
 const boardColorMap = {
-  1: { bg: '#1a2332', border: '#2a4a6b', tag: '#3b82f6', label: '首板' },
-  2: { bg: '#1a2f2a', border: '#2a6b4a', tag: '#10b981', label: '2板' },
-  3: { bg: '#2a2f1a', border: '#6b6a2a', tag: '#f59e0b', label: '3板' },
-  4: { bg: '#2f2a1a', border: '#6b4a2a', tag: '#f97316', label: '4板' },
-  5: { bg: '#2f1a1a', border: '#6b2a2a', tag: '#ef4444', label: '5板' },
-  6: { bg: '#2f1a2a', border: '#6b2a5a', tag: '#ec4899', label: '6板' },
-  7: { bg: '#2a1a2f', border: '#5a2a6b', tag: '#a855f7', label: '7板' },
+  1: { tag: '#3b82f6', label: '首板', rowClass: 'board-1' },
+  2: { tag: '#10b981', label: '2板', rowClass: 'board-2' },
+  3: { tag: '#f59e0b', label: '3板', rowClass: 'board-3' },
+  4: { tag: '#f97316', label: '4板', rowClass: 'board-4' },
+  5: { tag: '#ef4444', label: '5板', rowClass: 'board-5' },
+  6: { tag: '#ec4899', label: '6板', rowClass: 'board-6' },
+  7: { tag: '#a855f7', label: '7板', rowClass: 'board-7' },
 };
 
 const getBoardColor = (boards) => {
@@ -499,8 +499,7 @@ function LimitUpEchelon() {
                 return (
                   <div
                     key={stock.code}
-                    className="echelon-table-row"
-                    style={{ background: color.bg }}
+                    className={`echelon-table-row ${color.rowClass || 'board-1'}`}
                   >
                     <div className="col-name" onClick={() => navigate(`/stock-dashboard?code=${stock.code}`)} style={{ cursor: 'pointer' }}>
                       <span className="stock-name-wrap">

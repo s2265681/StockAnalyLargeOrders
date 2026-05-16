@@ -85,6 +85,15 @@ const formatDateDisplay = (dateStr) => {
   return `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
 };
 
+const getLatestRecordDate = (items) => {
+  if (!items || items.length === 0) return null;
+  const sortedDates = items
+    .map((item) => item.date?.replace(/-/g, ''))
+    .filter(Boolean)
+    .sort();
+  return sortedDates[sortedDates.length - 1] || null;
+};
+
 function EmotionCycle() {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -132,7 +141,7 @@ function EmotionCycle() {
   }, [selectedDate, records.length]);
 
   // 全量分析：把所有数据传给AI，为每天生成分析，批量存库
-  // force: false=只分析新日期, '1'=刷新最近3天, 'all'=全部重刷
+  // force: false=只分析新日期, 'all'=全部重刷
   const handleAnalysis = async (force = false) => {
     if (records.length === 0) return;
 
@@ -162,7 +171,42 @@ function EmotionCycle() {
     }
   };
 
+  const handleRefreshCurrent = async () => {
+    if (records.length === 0) return;
+
+    const latestDate = getLatestRecordDate(records);
+    setAnalysisLoading(true);
+    if (selectedDate === latestDate) {
+      setAnalysisResult(null);
+    }
+    try {
+      const res = await apiRequest('/api/v1/emotion-analysis-refresh-current', {
+        method: 'POST',
+        body: JSON.stringify({ records }),
+        timeout: 240000,
+      });
+      if (res?.data) {
+        if (latestDate && selectedDate !== latestDate) {
+          setSelectedDate(latestDate);
+        }
+        setAnalysisResult(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to refresh current emotion analysis:', err);
+    } finally {
+      setAnalysisLoading(false);
+    }
+  };
+
   const getChartOption = () => {
+    const isLightTheme =
+      typeof document !== 'undefined' &&
+      document.documentElement.getAttribute('data-theme') === 'light';
+    const legendTextColor = isLightTheme ? '#595959' : '#ccc';
+    const axisTextColor = isLightTheme ? '#666' : '#999';
+    const axisLineColor = isLightTheme ? '#c9c9c9' : '#333';
+    const splitLineColor = isLightTheme ? '#e6e6e6' : '#2a2a2a';
+
     // 过滤到选中日期的数据
     const filteredRecords = records.filter(r => {
       const rDate = r.date.replace(/-/g, '');
@@ -199,16 +243,16 @@ function EmotionCycle() {
       title: {
         text: '情绪周期走势图',
         left: 'center',
-        textStyle: { color: '#fff', fontSize: 16 },
+        textStyle: { color: isLightTheme ? '#262626' : '#fff', fontSize: 16 },
       },
       backgroundColor: 'transparent',
       legend: {
         top: 35,
         left: 'center',
         type: 'scroll',
-        textStyle: { color: '#ccc', fontSize: 12 },
-        pageTextStyle: { color: '#ccc' },
-        pageIconColor: '#aaa',
+        textStyle: { color: legendTextColor, fontSize: 12, fontWeight: 500 },
+        pageTextStyle: { color: legendTextColor },
+        pageIconColor: isLightTheme ? '#8c8c8c' : '#aaa',
         pageIconInactiveColor: '#555',
         selected: seriesConfig.reduce((acc, cfg) => {
           acc[cfg.name] = true;
@@ -244,28 +288,28 @@ function EmotionCycle() {
         type: 'category',
         data: dates,
         axisLabel: {
-          color: '#999',
+          color: axisTextColor,
           rotate: 45,
           fontSize: 11,
         },
-        axisLine: { lineStyle: { color: '#333' } },
+        axisLine: { lineStyle: { color: axisLineColor } },
       },
       yAxis: [
         {
           type: 'value',
           name: '数值',
-          nameTextStyle: { color: '#999' },
-          axisLabel: { color: '#999' },
-          splitLine: { lineStyle: { color: '#2a2a2a' } },
-          axisLine: { lineStyle: { color: '#333' } },
+          nameTextStyle: { color: axisTextColor },
+          axisLabel: { color: axisTextColor },
+          splitLine: { lineStyle: { color: splitLineColor } },
+          axisLine: { lineStyle: { color: axisLineColor } },
         },
         {
           type: 'value',
           name: '百分比',
-          nameTextStyle: { color: '#999' },
-          axisLabel: { color: '#999', formatter: '{value}%' },
+          nameTextStyle: { color: axisTextColor },
+          axisLabel: { color: axisTextColor, formatter: '{value}%' },
           splitLine: { show: false },
-          axisLine: { lineStyle: { color: '#333' } },
+          axisLine: { lineStyle: { color: axisLineColor } },
         },
       ],
       dataZoom: [
@@ -334,28 +378,30 @@ function EmotionCycle() {
     <div className="emotion-cycle-container">
       {/* 日期导航栏 + AI分析按钮 */}
       <div className="emotion-date-nav">
-        <Button
-          type="text"
-          icon={<LeftOutlined />}
+        <button
+          type="button"
+          className="date-nav-btn"
           onClick={() => setSelectedDate(offsetDate(selectedDate, -1))}
           disabled={selectedDate <= minDate}
-          className="date-nav-btn"
-        />
+        >
+          <LeftOutlined /> 前一天
+        </button>
         <span className="date-nav-label">{formatDateDisplay(selectedDate)}</span>
-        <Button
-          type="text"
-          icon={<RightOutlined />}
+        <button
+          type="button"
+          className="date-nav-btn"
           onClick={() => setSelectedDate(offsetDate(selectedDate, 1))}
           disabled={selectedDate >= getLastTradingDayStr()}
-          className="date-nav-btn"
-        />
-        <Button
-          type="text"
-          onClick={() => setSelectedDate(getLastTradingDayStr())}
-          className="date-nav-today-btn"
         >
-          今日
-        </Button>
+          后一天 <RightOutlined />
+        </button>
+        <button
+          type="button"
+          className="date-nav-btn date-nav-today"
+          onClick={() => setSelectedDate(getLastTradingDayStr())}
+        >
+          今天
+        </button>
 
         <div className="date-nav-ai-btns">
           <Button
@@ -371,7 +417,7 @@ function EmotionCycle() {
           <Button
             type="text"
             icon={<ReloadOutlined />}
-            onClick={() => handleAnalysis('1')}
+            onClick={handleRefreshCurrent}
             loading={analysisLoading}
             disabled={records.length === 0}
             className="ai-refresh-btn"

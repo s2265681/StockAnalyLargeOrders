@@ -51,7 +51,7 @@
 .analysis-section-title {
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-muted);
+  color: #b26a00;
   margin-bottom: 6px;
 }
 
@@ -150,49 +150,6 @@
   flex-shrink: 0;
 }
 
-.date-nav-btn {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 8px;
-  color: var(--text-secondary);
-  font-size: 13px;
-  background: var(--bg-input);
-  border: 1px solid #3a3a3a;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-}
-
-.date-nav-btn:hover:not(:disabled) {
-  background: #383838;
-  color: var(--text-primary);
-}
-
-.date-nav-btn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.date-nav-label {
-  font-size: 14px;
-  color: var(--text-secondary);
-  min-width: 100px;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-  font-weight: 500;
-}
-
-.date-nav-today-btn {
-  background: #1a3a2a;
-  border-color: #2a6b4a;
-  color: #10b981;
-}
-
-.date-nav-today-btn:hover {
-  background: #1f4a33 !important;
-  color: #34d399 !important;
-}
-
 .date-nav-ai-btns {
   display: flex;
   align-items: center;
@@ -239,8 +196,13 @@
 
 .rec-stock {
   font-weight: bold;
-  color: #faad14;
+  color: #b26a00;
   font-size: 13px;
+}
+
+[data-theme="dark"] .analysis-section-title,
+[data-theme="dark"] .rec-stock {
+  color: #faad14;
 }
 
 .rec-reason {

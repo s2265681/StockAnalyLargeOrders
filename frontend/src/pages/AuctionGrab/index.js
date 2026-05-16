@@ -108,6 +108,12 @@ function AuctionGrab() {
     return `${num.toFixed(2)}万`;
   };
 
+  const formatPct = (val) => {
+    const num = parseFloat(val);
+    if (isNaN(num)) return '--';
+    return `${num > 0 ? '+' : ''}${num.toFixed(2)}%`;
+  };
+
   const currentSortLabel = SORT_OPTIONS.find(o => o.key === sortBy)?.label || '委托金额';
 
   return (
@@ -188,7 +194,9 @@ function AuctionGrab() {
         <div className="ag-table-header">
           <div className="ag-col ag-col-name">股票名称</div>
           <div className="ag-col ag-col-amount">开盘金额</div>
-          <div className="ag-col ag-col-change">抢算涨幅</div>
+          <div className="ag-col ag-col-change">竞价涨幅</div>
+          <div className="ag-col ag-col-close-change">当日收盘涨幅</div>
+          <div className="ag-col ag-col-next-change">次日涨幅</div>
           <div className="ag-col ag-col-turnover">抢筹成交额</div>
           <div className="ag-col ag-col-order">抢筹委托金额</div>
           <div className="ag-col ag-col-date">时间</div>
@@ -201,7 +209,7 @@ function AuctionGrab() {
         ) : items.length === 0 ? (
           <div className="ag-empty">暂无数据</div>
         ) : (
-          items.map((item, idx) => (
+          items.map((item) => (
             <div
               key={item.code}
               className="ag-table-row"
@@ -219,6 +227,18 @@ function AuctionGrab() {
                 style={{ color: getChangeColor(item.grab_change_pct) }}
               >
                 {parseFloat(item.grab_change_pct) > 0 ? '+' : ''}{item.grab_change_pct}%
+              </div>
+              <div
+                className="ag-col ag-col-close-change"
+                style={{ color: getChangeColor(item.close_change_pct) }}
+              >
+                {formatPct(item.close_change_pct)}
+              </div>
+              <div
+                className="ag-col ag-col-next-change"
+                style={{ color: getChangeColor(item.next_day_change_pct) }}
+              >
+                {formatPct(item.next_day_change_pct)}
               </div>
               <div className="ag-col ag-col-turnover">
                 {formatAmount(item.grab_turnover)}

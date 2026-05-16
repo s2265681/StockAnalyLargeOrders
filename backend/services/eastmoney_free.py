@@ -7,7 +7,7 @@ import json
 import requests
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -170,6 +170,44 @@ class EastMoneyFreeSource:
         if code.startswith('6'):
             return f'sh{code}'
         return f'sz{code}'
+
+    def get_daily_change_percent(self, code, dt):
+        """用腾讯日线收盘价计算指定日期涨跌幅，作为东方财富日K为空时的轻量兜底。"""
+        try:
+            target_dt = datetime.strptime(dt, '%Y-%m-%d')
+        except ValueError:
+            return None
+
+        symbol = self._get_akshare_symbol(code)
+        start_dt = (target_dt - timedelta(days=30)).strftime('%Y-%m-%d')
+        from urllib.parse import urlencode
+        params = {
+            'param': f'{symbol},day,{start_dt},{dt},40,qfq',
+        }
+        url = f"https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?{urlencode(params)}"
+
+        data = _subprocess_fetch_json(url, headers={
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+            'Referer': 'https://gu.qq.com/',
+        })
+        if not data or data.get('code') != 0:
+            return None
+
+        try:
+            stock_data = data.get('data', {}).get(symbol, {})
+            rows = stock_data.get('qfqday') or stock_data.get('day') or []
+            target_index = next((i for i, row in enumerate(rows) if row and row[0] == dt), None)
+            if target_index is None or target_index <= 0:
+                return None
+
+            prev_close = float(rows[target_index - 1][2])
+            close = float(rows[target_index][2])
+            if prev_close <= 0:
+                return None
+            return round((close - prev_close) / prev_close * 100, 2)
+        except Exception as e:
+            logger.warning(f"腾讯日线涨幅解析失败 code={code} date={dt}: {e}")
+            return None
 
     @staticmethod
     def parse_trend_item(item):
@@ -622,13 +660,17 @@ class EastMoneyFreeSource:
         return self._get_latest_kline_timeshare(code, today)
 
     def _get_history_timeshare(self, code, dt):
-        """使用 trends2 接口获取历史日期分时数据（按日期过滤）
+        """获取历史日期分时数据（优先 AkShare/Tencent，东财 trends2 兜底）
         Args:
             code: 股票代码
             dt: 日期，格式 YYYY-MM-DD
         Returns:
             list of dict: [{'time': str, 'price': float, 'avg_price': float, 'volume': int(手)}]
         """
+        minute_rows = self._get_minute_timeshare_akshare(code, dt)
+        if minute_rows:
+            return minute_rows
+
         today = datetime.now().strftime('%Y-%m-%d')
         # 根据自然日差距估算需要多少交易日的数据（多加几天余量）
         try:
@@ -666,11 +708,11 @@ class EastMoneyFreeSource:
                 })
             if data is None:
                 logger.warning(f"东方财富 trends2 接口超时（历史分时 {dt}）")
-                return []
+                return self._get_minute_timeshare_akshare(code, dt)
 
             if data.get('rc') != 0 or not data.get('data'):
                 logger.warning(f"东方财富 trends2 接口异常（历史分时 {dt}）: rc={data.get('rc')}")
-                return []
+                return self._get_minute_timeshare_akshare(code, dt)
 
             trends_raw = data['data'].get('trends', [])
             result = []
@@ -686,10 +728,10 @@ class EastMoneyFreeSource:
                 return result
 
             logger.warning(f"trends2 返回数据中未找到 {dt} 的分时记录（ndays={ndays}）")
-            return []
+            return self._get_minute_timeshare_akshare(code, dt)
         except Exception as e:
             logger.error(f"获取历史分时数据失败({dt}): {e}")
-            return []
+            return self._get_minute_timeshare_akshare(code, dt)
 
     def _get_latest_kline_timeshare(self, code, from_date_str, max_days=7):
         """往前找最近有 1 分钟 K 线数据的交易日（跳过周末），用于实时分时降级"""
@@ -709,9 +751,126 @@ class EastMoneyFreeSource:
         return []
 
     def _get_minute_timeshare_akshare(self, code, dt=None):
-        """历史分时兜底：东方财富所有接口都失败时返回空"""
-        logger.warning(f"分时数据获取失败，返回空列表 code={code} dt={dt}")
-        return []
+        """历史分时兜底：优先直连新浪分钟线，AkShare 作为备用。"""
+        rows = self._get_minute_timeshare_sina_kline(code, dt)
+        if rows:
+            return rows
+
+        try:
+            import subprocess
+            import sys
+
+            symbol = self._get_akshare_symbol(code)
+            script = f"""
+import akshare as ak
+df = ak.stock_zh_a_minute(symbol={symbol!r}, period='1', adjust='')
+if df is None or df.empty:
+    print('[]')
+else:
+    df = df.copy()
+    df['day'] = df['day'].astype(str)
+    print(df[['day', 'close', 'volume']].to_json(orient='records', force_ascii=False))
+"""
+            proc = subprocess.run(
+                [sys.executable, '-c', script],
+                capture_output=True,
+                text=True,
+                timeout=20,
+            )
+            if proc.returncode != 0:
+                logger.warning(f"AkShare 分钟线子进程失败 code={code}: {proc.stderr[:200]}")
+                return []
+
+            records = json.loads(proc.stdout.strip() or '[]')
+            rows = self._build_timeshare_from_minute_records(records, dt)
+            if not rows:
+                logger.warning(f"AkShare 分钟线未找到目标日期 code={code} dt={dt}")
+            return rows
+        except Exception as e:
+            logger.warning(f"AkShare 分钟线兜底失败 code={code} dt={dt}: {e}")
+            return []
+
+    def _get_minute_timeshare_sina_kline(self, code, dt=None):
+        """直连新浪分钟线，避免 AkShare 冷启动导入开销。"""
+        try:
+            import subprocess
+            from urllib.parse import urlencode
+
+            symbol = self._get_akshare_symbol(code)
+            params = urlencode({
+                'symbol': symbol,
+                'scale': '1',
+                'ma': 'no',
+                'datalen': '1970',
+            })
+            url = (
+                'https://quotes.sina.cn/cn/api/jsonp_v2.php/=/'
+                f'CN_MarketDataService.getKLineData?{params}'
+            )
+            proc = subprocess.run(
+                ['curl', '-sS', '--max-time', '5', url],
+                capture_output=True,
+                text=True,
+                timeout=7,
+            )
+            if proc.returncode != 0 or not proc.stdout:
+                logger.warning(f"新浪分钟线请求失败 code={code}: {proc.stderr[:200]}")
+                return []
+
+            text = proc.stdout
+            if '=(' not in text:
+                logger.warning(f"新浪分钟线响应格式异常 code={code}")
+                return []
+
+            records = json.loads(text.split('=(', 1)[1].rsplit(');', 1)[0])
+            rows = self._build_timeshare_from_minute_records(records, dt)
+            if not rows:
+                logger.warning(f"新浪分钟线未找到目标日期 code={code} dt={dt}")
+            return rows
+        except Exception as e:
+            logger.warning(f"新浪分钟线兜底失败 code={code} dt={dt}: {e}")
+            return []
+
+    @staticmethod
+    def _build_timeshare_from_minute_records(records, dt=None):
+        """将 AkShare 分钟线记录转换为项目统一分时结构。"""
+        try:
+            rows = []
+            total_value = 0.0
+            total_volume = 0
+
+            for row in records:
+                day = str(row.get('day', ''))
+                if dt and not day.startswith(dt):
+                    continue
+
+                time_str = day[-8:-3] if len(day) >= 16 else day[-5:]
+                if not time_str or time_str < '09:30':
+                    continue
+
+                price = float(row.get('close') or 0)
+                raw_volume = int(float(row.get('volume') or 0))
+                if price <= 0:
+                    continue
+
+                # stock_zh_a_minute 的 volume 为股，项目内统一按“手”处理。
+                volume = raw_volume // 100 if raw_volume >= 100 else raw_volume
+                total_value += price * volume
+                total_volume += volume
+                avg_price = total_value / total_volume if total_volume else price
+
+                rows.append({
+                    'time': time_str,
+                    'price': price,
+                    'volume': volume,
+                    'amount': price * volume * 100,
+                    'avg_price': avg_price,
+                })
+
+            return rows
+        except Exception as e:
+            logger.warning(f"AkShare 分钟线记录解析失败 dt={dt}: {e}")
+            return []
 
     def get_daily_kline(self, code, dt):
         """获取指定日期的日K线数据（含昨收）

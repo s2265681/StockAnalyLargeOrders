@@ -4,7 +4,7 @@ L2大单看板统一API路由
 """
 import logging
 from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from flask import Blueprint, request, jsonify
 
 from services.data_source_adapter import DataSourceAdapter
@@ -53,17 +53,23 @@ def l2_timeshare():
         # 并行请求分时数据和资金流向数据
         from routes.stock_timeshare import get_eastmoney_money_flow_data
 
-        with ThreadPoolExecutor(max_workers=2) as executor:
+        executor = ThreadPoolExecutor(max_workers=2)
+        try:
             ts_future = executor.submit(adapter.get_timeshare_data, code, dt)
             mf_future = executor.submit(get_eastmoney_money_flow_data, code)
-
             result = ts_future.result(timeout=30)
+
             try:
-                mf = mf_future.result(timeout=15)
+                mf = mf_future.result(timeout=1.5)
                 if mf and result.get('success') and result.get('data'):
                     result['data']['money_flow'] = mf
+            except TimeoutError:
+                mf_future.cancel()
+                logger.warning("获取大单净量数据超时，先返回分时数据")
             except Exception as e:
                 logger.warning(f"获取大单净量数据失败: {e}")
+        finally:
+            executor.shutdown(wait=False, cancel_futures=True)
 
         return jsonify(result)
     except Exception as e:

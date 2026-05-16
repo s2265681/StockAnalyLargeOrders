@@ -8,24 +8,57 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - name: Deploy via SSH
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Build frontend
+        working-directory: frontend
+        env:
+          CI: "false"
+          GENERATE_SOURCEMAP: "false"
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: |
+          pnpm install --no-frozen-lockfile
+          pnpm run build:prod
+
+      - name: Prepare backend via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: 22
+          command_timeout: 10m
           script: |
             set -e
             cd /www/StockAnalyLargeOrders
 
             echo "===> Pull latest code"
             git fetch --all
-            git reset --hard origin/${GITHUB_REF_NAME:-main}
+            git reset --hard origin/${{ github.ref_name }}
+
+            echo "===> Ensure runtime directories"
+            mkdir -p logs backend/logs
 
             echo "===> Backend: install deps if requirements.txt changed"
             cd backend
+            if [ ! -d venv ]; then
+              python3 -m venv venv
+            fi
             source venv/bin/activate
             if ! diff -q requirements.txt venv/.last_requirements.txt > /dev/null 2>&1; then
               echo "requirements.txt changed, reinstalling..."
@@ -34,23 +67,176 @@ jobs:
             else
               echo "requirements.txt unchanged, skipping pip install"
             fi
+
+            echo "===> Backend: run database migrations"
+            command -v mysql > /dev/null
+            for migration in \
+              migrations/create_dragon_tiger_tables.sql \
+              migrations/create_user_auth_tables.sql \
+              migrations/20260516_create_dragon_tiger_seat_aliases.sql \
+              migrations/20260516_add_more_seat_aliases_from_image.sql \
+              migrations/20260516_cleanup_dragon_tiger_seat_duplicates.sql \
+              migrations/20260517_create_theme_tables.sql
+            do
+              if [ -f "$migration" ]; then
+                echo "Applying $migration"
+                MYSQL_PWD="${MYSQL_PASSWORD:-123456}" mysql \
+                  -h"${MYSQL_HOST:-127.0.0.1}" \
+                  -P"${MYSQL_PORT:-3306}" \
+                  -u"${MYSQL_USER:-root}" \
+                  "${MYSQL_DATABASE:-stock}" < "$migration"
+              fi
+            done
             deactivate
             cd ..
 
-            echo "===> Frontend: install + build"
-            cd frontend
-            if ! diff -q package.json node_modules/.last_pkg.json > /dev/null 2>&1; then
-              echo "package.json changed, reinstalling..."
-              pnpm install
-              cp package.json node_modules/.last_pkg.json
+            echo "===> Ensure PM2 interpreter compatibility"
+            ln -sfn backend/venv venv
+
+      - name: Upload frontend build
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: 22
+          source: frontend/build/**
+          target: /www/StockAnalyLargeOrders/frontend/build
+          strip_components: 2
+          rm: true
+
+      - name: Restart services via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: 22
+          command_timeout: 5m
+          script: |
+            set -e
+            cd /www/StockAnalyLargeOrders
+
+            echo "===> Configure Nginx"
+            mkdir -p /var/www/letsencrypt
+            if [ -f /etc/letsencrypt/live/stockai.xin/fullchain.pem ] && [ -f /etc/letsencrypt/live/stockai.xin/privkey.pem ]; then
+            cat > /etc/nginx/sites-available/stock-analysis <<'NGINX'
+            server {
+                listen 80 default_server;
+                listen [::]:80 default_server;
+                server_name stockai.xin www.stockai.xin;
+
+                location /.well-known/acme-challenge/ {
+                    root /var/www/letsencrypt;
+                }
+
+                location / {
+                    return 301 https://$host$request_uri;
+                }
+            }
+
+            server {
+                listen 443 ssl http2 default_server;
+                listen [::]:443 ssl http2 default_server;
+                server_name stockai.xin www.stockai.xin;
+
+                ssl_certificate /etc/letsencrypt/live/stockai.xin/fullchain.pem;
+                ssl_certificate_key /etc/letsencrypt/live/stockai.xin/privkey.pem;
+                ssl_protocols TLSv1.2 TLSv1.3;
+                ssl_prefer_server_ciphers off;
+
+                root /www/StockAnalyLargeOrders/frontend/build;
+                index index.html;
+
+                location /api/ {
+                    proxy_pass http://127.0.0.1:9001/api/;
+                    proxy_http_version 1.1;
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                }
+
+                location /health {
+                    proxy_pass http://127.0.0.1:9001/health;
+                    proxy_http_version 1.1;
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                }
+
+                location /socket.io/ {
+                    proxy_pass http://127.0.0.1:9001/socket.io/;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection "upgrade";
+                    proxy_set_header Host $host;
+                }
+
+                location / {
+                    try_files $uri $uri/ /index.html;
+                }
+            }
+            NGINX
+            else
+            cat > /etc/nginx/sites-available/stock-analysis <<'NGINX'
+            server {
+                listen 80 default_server;
+                listen [::]:80 default_server;
+                server_name stockai.xin www.stockai.xin;
+
+                root /www/StockAnalyLargeOrders/frontend/build;
+                index index.html;
+
+                location /.well-known/acme-challenge/ {
+                    root /var/www/letsencrypt;
+                }
+
+                location /api/ {
+                    proxy_pass http://127.0.0.1:9001/api/;
+                    proxy_http_version 1.1;
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                }
+
+                location /health {
+                    proxy_pass http://127.0.0.1:9001/health;
+                    proxy_http_version 1.1;
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                }
+
+                location /socket.io/ {
+                    proxy_pass http://127.0.0.1:9001/socket.io/;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection "upgrade";
+                    proxy_set_header Host $host;
+                }
+
+                location / {
+                    try_files $uri $uri/ /index.html;
+                }
+            }
+            NGINX
             fi
-            pnpm run build:prod
-            cd ..
+            rm -f /etc/nginx/sites-enabled/default
+            ln -sf /etc/nginx/sites-available/stock-analysis /etc/nginx/sites-enabled/stock-analysis
 
             echo "===> Restart backend via PM2"
             pm2 restart StockAnalysisLargeOrders || pm2 start ecosystem.config.js
+            pm2 save
 
             echo "===> Reload Nginx (frontend is static, no need to restart)"
             nginx -t && systemctl reload nginx
 
-            echo "===> Deploy success ✅"
+            echo "===> Health check"
+            curl -fsS http://127.0.0.1:9001/health > /dev/null
+            test -f /www/StockAnalyLargeOrders/frontend/build/index.html
+
+            echo "===> Deploy success"

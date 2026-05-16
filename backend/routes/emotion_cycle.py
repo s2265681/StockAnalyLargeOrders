@@ -2,6 +2,7 @@
 情绪周期接口模块
 - GET  /api/v1/emotion-cycle     代理 StockAPI 情绪周期数据
 - POST /api/v1/emotion-analysis  调用 Claude 分析情绪周期阶段
+- POST /api/v1/emotion-analysis-refresh-current  刷新最新交易日情绪分析
 """
 import json
 import logging
@@ -406,6 +407,64 @@ def get_emotion_analysis_cache():
     if db_result:
         return v1_success_response(data=db_result)
     return v1_success_response(data=None)
+
+
+def _record_date_key(record: dict) -> str:
+    """统一记录日期格式为 YYYYMMDD，方便比较和存库。"""
+    return str(record.get("date", "")).replace("-", "")
+
+
+@emotion_cycle_bp.route('/api/v1/emotion-analysis-refresh-current', methods=['POST'])
+def refresh_current_emotion_analysis():
+    """只刷新最新交易日的情绪分析，适合盘中数据更新后快速重算。"""
+    try:
+        body = request.get_json(silent=True) or {}
+        records = body.get("records")
+        if not records or not isinstance(records, list):
+            return v1_error_response(message="请在 body 中提供 records 数组")
+
+        valid_records = [r for r in records if isinstance(r, dict) and _record_date_key(r)]
+        if not valid_records:
+            return v1_error_response(message="records 中缺少有效日期")
+
+        ordered_records = sorted(valid_records, key=_record_date_key)
+        current_record = ordered_records[-1]
+        current_dt = _record_date_key(current_record)
+        current_index = len(ordered_records) - 1
+        context_start = max(0, current_index - 5)
+        records_to_analyze = ordered_records[context_start:current_index + 1]
+
+        logger.info(
+            f"刷新最新交易日情绪分析: {current_dt}, 上下文 {len(records_to_analyze)} 条"
+        )
+        results = _call_claude_batch(records_to_analyze)
+        current_result = next(
+            (
+                item for item in results
+                if isinstance(item, dict) and _record_date_key(item) == current_dt
+            ),
+            None,
+        )
+        if current_result is None:
+            return v1_error_response(message="AI 未返回最新交易日分析结果")
+
+        if not _save_analysis_to_db(current_dt, current_result):
+            return v1_error_response(message="保存最新交易日分析失败")
+
+        return v1_success_response(
+            data=current_result,
+            message=f"已刷新 {current_dt} 情绪分析"
+        )
+
+    except requests.Timeout:
+        logger.error("调用 Claude API 超时")
+        return v1_error_response(message="AI 分析超时，请稍后重试")
+    except requests.RequestException as e:
+        logger.error(f"调用 Claude API 失败: {e}")
+        return v1_error_response(message=f"AI 分析请求失败: {str(e)}")
+    except Exception as e:
+        logger.error(f"刷新最新交易日情绪分析异常: {e}")
+        return v1_error_response(message=f"情绪分析异常: {str(e)}")
 
 
 # ---------- 4. 全量情绪周期分析（为每一天生成分析） ----------

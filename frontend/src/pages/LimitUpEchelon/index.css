@@ -44,58 +44,6 @@
   background: #3a3020;
 }
 
-/* 日期导航 */
-.date-nav {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.date-nav-label {
-  font-size: 14px;
-  color: var(--text-secondary);
-  min-width: 90px;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
-
-.date-nav-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 12px;
-  background: var(--bg-input);
-  border: 1px solid #3a3a3a;
-  border-radius: 6px;
-  color: var(--text-secondary);
-  font-size: 13px;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-  white-space: nowrap;
-}
-
-.date-nav-btn:hover:not(:disabled) {
-  background: #383838;
-  color: var(--text-primary);
-}
-
-.date-nav-btn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.date-nav-today {
-  background: #1a3a2a;
-  border-color: #2a6b4a;
-  color: #10b981;
-}
-
-.date-nav-today:hover {
-  background: #1f4a33 !important;
-  color: #34d399 !important;
-}
-
-
 .summary-item {
   display: flex;
   flex-direction: column;
@@ -322,12 +270,36 @@
 }
 
 .echelon-table-row:hover {
-  background: rgba(255, 255, 255, 0.06) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
 }
 
 .echelon-table-row:last-child {
   border-bottom: none;
 }
+
+.echelon-table-row.board-1 { background: #1a2332; }
+.echelon-table-row.board-2 { background: #1a2f2a; }
+.echelon-table-row.board-3 { background: #2a2f1a; }
+.echelon-table-row.board-4 { background: #2f2a1a; }
+.echelon-table-row.board-5 { background: #2f1a1a; }
+.echelon-table-row.board-6 { background: #2f1a2a; }
+.echelon-table-row.board-7 { background: #2a1a2f; }
+
+[data-theme="light"] .echelon-table-row {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .echelon-table-row:hover {
+  background: #eceff3 !important;
+}
+
+[data-theme="light"] .echelon-table-row.board-1 { background: #eef5ff; }
+[data-theme="light"] .echelon-table-row.board-2 { background: #eefaf2; }
+[data-theme="light"] .echelon-table-row.board-3 { background: #fff8e8; }
+[data-theme="light"] .echelon-table-row.board-4 { background: #fff4ea; }
+[data-theme="light"] .echelon-table-row.board-5 { background: #ffefef; }
+[data-theme="light"] .echelon-table-row.board-6 { background: #fff0f8; }
+[data-theme="light"] .echelon-table-row.board-7 { background: #f7f1ff; }
 
 /* 列宽 */
 .col-name {

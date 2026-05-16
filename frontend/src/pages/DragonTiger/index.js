@@ -45,7 +45,62 @@ const fmtAmount = (val) => {
 const HOT_MONEY_KW = ['知春路', '成都', '宁波', '佛山', '拉萨', '乐清千帆', '温州', '绍兴', '华鑫', '财通', '游资'];
 const isHotMoney = (name) => HOT_MONEY_KW.some((kw) => name && name.includes(kw));
 
-function SeatTable({ seats, direction }) {
+// 前端兜底映射（优先使用后端返回 seat.trader_tag）
+const SEAT_TRADER_PATTERNS = [
+  { pattern: '成都北一环路', trader: '成都系' },
+  { pattern: '上海茅台路', trader: '炒股养家' },
+  { pattern: '赵老哥', trader: '赵老哥' },
+  { pattern: '作手新一', trader: '作手新一' },
+  { pattern: '方新侠', trader: '方新侠' },
+  { pattern: '章盟主', trader: '章盟主' },
+  { pattern: '小鳄鱼', trader: '小鳄鱼' },
+];
+
+const getSeatTraderName = (seatName = '') => {
+  const name = String(seatName || '');
+  const hit = SEAT_TRADER_PATTERNS.find(({ pattern }) => name.includes(pattern));
+  return hit ? hit.trader : '';
+};
+
+function renderAiAnalysisText(text) {
+  if (!text) return null;
+
+  const renderInline = (line, keyPrefix) => {
+    const chunks = line.split(/(\*\*[^*]+\*\*)/g).filter(Boolean);
+    return chunks.map((chunk, idx) => {
+      const match = chunk.match(/^\*\*([\s\S]+)\*\*$/);
+      if (match) {
+        return (
+          <strong key={`${keyPrefix}-strong-${idx}`} className="dt-ai-inline-strong">
+            {match[1]}
+          </strong>
+        );
+      }
+      return <span key={`${keyPrefix}-text-${idx}`}>{chunk}</span>;
+    });
+  };
+
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line, idx) => {
+      if (line.startsWith('## ')) {
+        return (
+          <div key={`ai-line-${idx}`} className="dt-ai-result-heading">
+            {line.slice(3).trim()}
+          </div>
+        );
+      }
+      return (
+        <div key={`ai-line-${idx}`} className="dt-ai-result-paragraph">
+          {renderInline(line, `ai-line-${idx}`)}
+        </div>
+      );
+    });
+}
+
+export function SeatTable({ seats, direction }) {
   if (!seats || seats.length === 0) {
     return <div style={{ padding: '20px 14px', color: '#555', fontSize: 12 }}>暂无数据</div>;
   }
@@ -59,11 +114,13 @@ function SeatTable({ seats, direction }) {
       </div>
       {seats.map((seat, i) => {
         const hot = seat.is_hot_money || isHotMoney(seat.seat_name || '');
+        const trader = seat.trader_tag || getSeatTraderName(seat.seat_name);
         const net = parseFloat(seat.net_amount || 0);
         return (
           <div key={i} className="dt-seat-row">
             <span className={`dt-seat-name ${hot ? 'hot-money' : ''}`} title={seat.seat_name}>
-              {seat.seat_name || '--'}
+              <span className="dt-seat-name-text">{seat.seat_name || '--'}</span>
+              {trader ? <em className="dt-seat-trader">{trader}</em> : null}
             </span>
             <span className="dt-seat-col buy-col">{fmtAmount(seat.buy_amount)}</span>
             <span className="dt-seat-col sell-col">{fmtAmount(seat.sell_amount)}</span>
@@ -155,13 +212,13 @@ function DragonTiger() {
     <div className="dt-container">
       {/* 顶部日期导航 */}
       <div className="dt-top-bar">
-        <div className="dt-date-nav">
-          <button className="dt-date-btn" onClick={() => handleDateChange(-1)}>
+        <div className="date-nav">
+          <button className="date-nav-btn" onClick={() => handleDateChange(-1)}>
             <LeftOutlined /> 前一天
           </button>
-          <span className="dt-date-label">{formatDateDisplay(currentDate)}</span>
+          <span className="date-nav-label">{formatDateDisplay(currentDate)}</span>
           <button
-            className="dt-date-btn"
+            className="date-nav-btn"
             disabled={currentDate >= todayStr}
             onClick={() => handleDateChange(1)}
           >
@@ -241,6 +298,18 @@ function DragonTiger() {
                 </button>
               </div>
 
+              {/* AI分析结果 */}
+              {aiResults[selectedStock.code] && (
+                <div className="dt-ai-result">
+                  <div className="dt-ai-result-title">
+                    <RobotOutlined style={{ marginRight: 6 }} />AI 资金意图解读
+                  </div>
+                  <div className="dt-ai-result-text">
+                    {renderAiAnalysisText(aiResults[selectedStock.code])}
+                  </div>
+                </div>
+              )}
+
               {/* 席位表格 */}
               <div className="dt-seats-row">
                 <div className="dt-seats-panel">
@@ -252,16 +321,6 @@ function DragonTiger() {
                   <SeatTable seats={selectedStock.sell_seats} direction="sell" />
                 </div>
               </div>
-
-              {/* AI分析结果 */}
-              {aiResults[selectedStock.code] && (
-                <div className="dt-ai-result">
-                  <div className="dt-ai-result-title">
-                    <RobotOutlined style={{ marginRight: 6 }} />AI 资金意图解读
-                  </div>
-                  <div className="dt-ai-result-text">{aiResults[selectedStock.code]}</div>
-                </div>
-              )}
             </>
           )}
         </div>

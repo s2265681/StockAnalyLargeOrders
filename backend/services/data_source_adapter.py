@@ -136,8 +136,36 @@ class DataSourceAdapter:
             dt = today
         is_today = (dt == today)
 
-        quote = self.source.get_realtime_quote(code)
         timeshare = self.source.get_timeshare(code, dt=dt)
+        if not is_today and timeshare:
+            prices = [t['price'] for t in timeshare if t.get('price')]
+            open_price = prices[0] if prices else 0
+            last_price = prices[-1] if prices else 0
+            quote = {
+                'code': code,
+                'name': self._get_fallback_stock_name(code),
+                'price': last_price,
+                'yesterday_close': open_price,
+                'open': open_price,
+                'high': max(prices) if prices else 0,
+                'low': min(prices) if prices else 0,
+                'volume': sum(t.get('volume', 0) for t in timeshare),
+                'turnover': sum(t.get('amount', 0) for t in timeshare),
+                'change_percent': round((last_price - open_price) / open_price * 100, 2) if open_price else 0,
+            }
+            order_book = self._empty_order_book()
+            return {
+                'success': True,
+                'data': {
+                    'stock_info': quote,
+                    'timeshare': timeshare,
+                    'order_book': order_book,
+                    'session_snapshot': {},
+                    'update_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                }
+            }
+
+        quote = self.source.get_realtime_quote(code)
         if not quote:
             quote = self._build_fallback_quote(code, dt, timeshare)
 
@@ -589,6 +617,7 @@ class DataSourceAdapter:
         return {
             'bids': [],
             'asks': [],
+            'source': 'empty',
             'spread': 0,
             'bid_amount': 0,
             'ask_amount': 0,

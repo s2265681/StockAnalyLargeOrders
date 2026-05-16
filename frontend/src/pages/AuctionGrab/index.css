@@ -121,67 +121,18 @@
   color: #1890ff;
 }
 
-/* 日期导航 - 复用 LimitUpEchelon 样式 */
-.date-nav {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.date-nav-label {
-  font-size: 14px;
-  color: var(--text-secondary);
-  min-width: 90px;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
-
-.date-nav-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 12px;
-  background: var(--bg-input);
-  border: 1px solid #3a3a3a;
-  border-radius: 6px;
-  color: var(--text-secondary);
-  font-size: 13px;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-  white-space: nowrap;
-}
-
-.date-nav-btn:hover:not(:disabled) {
-  background: #383838;
-  color: var(--text-primary);
-}
-
-.date-nav-btn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.date-nav-today {
-  background: #1a3a2a;
-  border-color: #2a6b4a;
-  color: #10b981;
-}
-
-.date-nav-today:hover {
-  background: #1f4a33 !important;
-  color: #34d399 !important;
-}
-
 /* 表格 */
 .ag-table-wrap {
   background: var(--bg-tooltip);
   border: 1px solid var(--border-secondary);
   border-radius: 8px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .ag-table-header {
   display: flex;
+  min-width: 1240px;
   padding: 10px 20px;
   background: var(--bg-card-hover);
   border-bottom: 1px solid var(--border-secondary);
@@ -191,6 +142,7 @@
 
 .ag-table-row {
   display: flex;
+  min-width: 1240px;
   padding: 12px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   align-items: center;
@@ -229,6 +181,16 @@
   font-weight: 500;
 }
 
+.ag-col-close-change {
+  flex: 0 0 130px;
+  font-weight: 500;
+}
+
+.ag-col-next-change {
+  flex: 0 0 110px;
+  font-weight: 500;
+}
+
 .ag-col-turnover {
   flex: 0 0 160px;
   color: var(--text-secondary);
@@ -240,7 +202,7 @@
 }
 
 .ag-col-date {
-  flex: 1;
+  flex: 0 0 130px;
   color: var(--text-muted);
 }
 

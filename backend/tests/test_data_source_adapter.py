@@ -1,8 +1,12 @@
 import unittest
+import types
+from unittest.mock import patch
+
+from flask import Flask
 
 from services.data_source_adapter import DataSourceAdapter
 from services.eastmoney_free import EastMoneyFreeSource
-from routes.stock_other import build_limit_up_theme_summary
+from routes.stock_other import build_limit_up_theme_summary, stock_other_bp
 
 
 class FakeSource:
@@ -94,6 +98,14 @@ class HolidayFallbackSource(FakeSource):
         if dt == '2026-05-01':
             return []
         return super().get_timeshare(code, dt=dt)
+
+
+class FastHistoricalTimeshareSource(FakeSource):
+    def get_realtime_quote(self, code):
+        raise AssertionError('historical lightweight timeshare should not wait for realtime quote')
+
+    def get_order_book(self, code):
+        raise AssertionError('historical lightweight timeshare should not wait for order book')
 
 
 class DataSourceAdapterAnalysisTest(unittest.TestCase):
@@ -201,6 +213,20 @@ class DataSourceAdapterAnalysisTest(unittest.TestCase):
         self.assertEqual(orders[0]['amount'], 153.0)
         self.assertEqual(result['data']['big_map']['09:31'][0]['amount'], 153.0)
 
+    def test_historical_lightweight_timeshare_skips_realtime_quote_and_order_book(self):
+        adapter = DataSourceAdapter(use_l2=False)
+        adapter.source = FastHistoricalTimeshareSource()
+        adapter.source_name = 'fake'
+        adapter._get_fallback_stock_name = lambda code: '测试股票'
+
+        result = adapter._build_timeshare('000001', dt='2026-05-15')
+
+        self.assertTrue(result['success'])
+        self.assertEqual(len(result['data']['timeshare']), 2)
+        self.assertEqual(result['data']['stock_info']['price'], 10.2)
+        self.assertEqual(result['data']['order_book']['source'], 'empty')
+        self.assertEqual(result['data']['session_snapshot'], {})
+
 if __name__ == '__main__':
     unittest.main()
 
@@ -217,6 +243,30 @@ class EastMoneyFreeSourceParseTest(unittest.TestCase):
         self.assertEqual(parsed['amount'], 55725414.0)
         self.assertEqual(parsed['avg_price'], 11.509)
 
+    def test_akshare_minute_fallback_filters_target_date(self):
+        rows = EastMoneyFreeSource._build_timeshare_from_minute_records([
+            {'day': '2026-05-14 15:00:00', 'close': 10.8, 'volume': 1000},
+            {'day': '2026-05-15 09:31:00', 'close': 11.03, 'volume': 4536800},
+            {'day': '2026-05-15 09:32:00', 'close': 11.04, 'volume': 1718400},
+        ], '2026-05-15')
+
+        self.assertEqual([row['time'] for row in rows], ['09:31', '09:32'])
+        self.assertEqual(rows[0]['price'], 11.03)
+        self.assertEqual(rows[0]['volume'], 45368)
+        self.assertGreater(rows[1]['avg_price'], rows[0]['avg_price'])
+
+    def test_history_timeshare_prefers_akshare_minute_source(self):
+        source = EastMoneyFreeSource()
+        expected_rows = [{'time': '09:31', 'price': 11.03, 'volume': 45368, 'amount': 50040904.0, 'avg_price': 11.03}]
+        source._get_minute_timeshare_akshare = lambda code, dt: expected_rows
+
+        with patch('services.eastmoney_free._safe_request') as eastmoney_request:
+            eastmoney_request.return_value = None
+            rows = source._get_history_timeshare('000001', '2026-05-15')
+
+        eastmoney_request.assert_not_called()
+        self.assertEqual(rows, expected_rows)
+
 
 class LimitUpThemeSummaryTest(unittest.TestCase):
     def test_groups_limit_up_stocks_by_theme_and_marks_current_stock(self):
@@ -232,3 +282,37 @@ class LimitUpThemeSummaryTest(unittest.TestCase):
         self.assertEqual(result['current_theme_count'], 2)
         self.assertEqual(result['themes'][0]['theme'], '银行')
         self.assertEqual(result['themes'][0]['count'], 2)
+
+    def test_limit_up_themes_falls_back_when_theme_tables_are_missing(self):
+        app = Flask(__name__)
+        app.register_blueprint(stock_other_bp)
+
+        fake_ak = types.SimpleNamespace(
+            stock_zt_pool_em=lambda date: FakeDataFrame([
+                {'代码': '000001', '名称': '平安银行', '最新价': 11.49, '所属行业': '银行', '涨停统计': '1/1', '连板数': 1, '封板资金': 1000},
+            ]),
+            stock_zt_pool_dtgc_em=lambda date: FakeDataFrame([]),
+        )
+
+        with patch.dict('sys.modules', {'akshare': fake_ak}):
+            with patch('services.theme_service.get_limit_up_stocks_by_date', side_effect=Exception("Table 'stock.limit_up_stocks' doesn't exist")):
+                response = app.test_client().get('/api/v1/limit_up_themes?code=000001&dt=2026-05-15')
+
+        payload = response.get_json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(payload['code'], 200)
+        self.assertEqual(payload['data']['data_source'], 'akshare.stock_zt_pool_em')
+        self.assertEqual(payload['data']['current_theme'], '银行')
+
+
+class FakeDataFrame:
+    def __init__(self, rows):
+        self._rows = rows
+
+    def to_dict(self, orient):
+        if orient != 'records':
+            raise ValueError(f'unsupported orient: {orient}')
+        return self._rows
+
+    def __len__(self):
+        return len(self._rows)

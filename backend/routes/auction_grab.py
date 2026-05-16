@@ -5,7 +5,9 @@
 import logging
 import time
 from datetime import datetime, timedelta
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from flask import Blueprint, request
+from services.eastmoney_free import EastMoneyFreeSource
 from utils.response import v1_success_response, v1_error_response
 
 logger = logging.getLogger(__name__)
@@ -18,6 +20,8 @@ _STOCKAPI_BASE = 'http://user.stockapi.com.cn/v1/base/jjqcUser'
 # 缓存
 _cache = {}
 _CACHE_TTL = 120
+_kline_cache = {}
+_KLINE_CACHE_TTL = 1800
 
 # type 映射：前端排序key -> stockapi type 参数
 _SORT_TYPE_MAP = {
@@ -43,6 +47,72 @@ def _format_date(dt_str):
     if len(dt_str) == 8:
         return f"{dt_str[:4]}-{dt_str[4:6]}-{dt_str[6:8]}"
     return dt_str
+
+
+def _offset_trading_date(date_str, delta):
+    """YYYY-MM-DD 偏移交易日（仅跳过周末）"""
+    d = datetime.strptime(date_str, '%Y-%m-%d')
+    moved = 0
+    step = 1 if delta > 0 else -1
+    while moved != delta:
+        d += timedelta(days=step)
+        if d.weekday() < 5:
+            moved += step
+    return d.strftime('%Y-%m-%d')
+
+
+def _get_daily_change_pct(code, trade_date):
+    """获取指定交易日涨跌幅（%），带短期缓存"""
+    cache_key = f"{code}_{trade_date}"
+    now = time.time()
+    cached = _kline_cache.get(cache_key)
+    if cached and (now - cached['ts']) < _KLINE_CACHE_TTL:
+        return cached['value']
+
+    try:
+        source = EastMoneyFreeSource()
+        kline = source.get_daily_kline(code, trade_date)
+        value = kline.get('change_percent') if kline else None
+        if value is None:
+            value = source.get_daily_change_percent(code, trade_date)
+        if value is not None:
+            value = round(float(value), 2)
+    except Exception as e:
+        logger.warning(f"获取日涨幅失败 code={code} date={trade_date}: {e}")
+        value = None
+
+    _kline_cache[cache_key] = {'ts': now, 'value': value}
+    return value
+
+
+def _enrich_close_and_next_change(items, trade_date):
+    """补充当日收盘涨幅与次日涨幅"""
+    if not items:
+        return
+
+    next_trade_date = _offset_trading_date(trade_date, 1)
+    code_set = {item.get('code') for item in items if item.get('code')}
+    if not code_set:
+        return
+
+    result_map = {code: {'close': None, 'next': None} for code in code_set}
+    futures = {}
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        for code in code_set:
+            futures[executor.submit(_get_daily_change_pct, code, trade_date)] = (code, 'close')
+            futures[executor.submit(_get_daily_change_pct, code, next_trade_date)] = (code, 'next')
+
+        for future in as_completed(futures):
+            code, field = futures[future]
+            try:
+                result_map[code][field] = future.result()
+            except Exception as e:
+                logger.warning(f"涨幅并发查询失败 code={code} field={field}: {e}")
+
+    for item in items:
+        code = item.get('code')
+        item['close_change_pct'] = result_map.get(code, {}).get('close')
+        item['next_day_change_pct'] = result_map.get(code, {}).get('next')
 
 
 def _fetch_from_stockapi(trade_date, period, api_type):
@@ -125,6 +195,8 @@ def get_auction_grab():
             'grab_order_amount': round(r.get('qcwtje', 0) / 10000, 2),
             'date': r.get('time', trade_date),
         })
+
+    _enrich_close_and_next_change(items, trade_date)
 
     return v1_success_response(data={
         'items': items,

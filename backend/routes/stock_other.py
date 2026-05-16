@@ -114,9 +114,14 @@ def get_limit_up_themes():
         import akshare as ak
         from services.theme_service import get_limit_up_stocks_by_date, get_tags_by_date
 
-        # 优先从数据库读取 AI 标签数据
-        db_stocks = get_limit_up_stocks_by_date(trade_date)
-        db_tags = get_tags_by_date(trade_date)
+        # 优先从数据库读取 AI 标签数据；表未初始化时降级到 akshare 原始行业分类。
+        try:
+            db_stocks = get_limit_up_stocks_by_date(trade_date)
+            db_tags = get_tags_by_date(trade_date)
+        except Exception as db_error:
+            logger.warning(f"读取涨停题材数据库失败，降级到 akshare: {db_error}")
+            db_stocks = []
+            db_tags = []
 
         if db_stocks and db_tags:
             # 数据库有数据，使用 AI 标签

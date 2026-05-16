@@ -13,7 +13,7 @@ const getApiConfig = () => {
       timeout: 30000, // 增加到30秒，适应成交明细数据获取
     },
     production: {
-      baseURL: 'http://18.141.179.222:9001', 
+      baseURL: '', // 生产环境走同域 Nginx 反向代理,无需写域名/IP
       timeout: 45000, // 增加到45秒，生产环境网络可能较慢
     }
   };

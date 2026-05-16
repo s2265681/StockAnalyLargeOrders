@@ -1,0 +1,72 @@
+backend/routes/__init__.py
+  s_30ad7005a0b8eb::t_17c0c1bbd5497b 10,21
+frontend/src/pages/EmotionCycle/index.js
+  s_fb7678489d4804::t_c67cedd9158f0f 117-134
+backend/services/dragon_tiger_service.py
+  s_4ce1d966e9c063::t_0b8b7c95d67928 54-58
+  s_4ce1d966e9c063::t_4fb21e6e3199cd 69,73-74,83-84
+frontend/src/pages/AuctionGrab/index.css
+  s_30ad7005a0b8eb::t_a83d9a426b3bd4 1-272
+backend/routes/emotion_cycle.py
+  s_fb7678489d4804::t_4205a37fd5a1d1 411
+  s_fb7678489d4804::t_742aec0f814f75 397-410
+backend/app.py
+  s_30ad7005a0b8eb::t_32abcd178e8322 41
+  s_30ad7005a0b8eb::t_3d4f729fcf97cd 21
+backend/routes/auction_grab.py
+  s_30ad7005a0b8eb::t_17e7534d4238e9 35-36,55-60,62-70
+  s_30ad7005a0b8eb::t_5bb5b5164a1931 37-39,71,74
+  s_30ad7005a0b8eb::t_305615f87db5a9 19
+  s_30ad7005a0b8eb::t_240791efcb3183 1-18,20-34,40-54,61,72-73,75-81,83-333
+  s_30ad7005a0b8eb::t_1b0b440a370edb 82
+frontend/src/pages/AuctionGrab/index.js
+  s_30ad7005a0b8eb::t_04132c21331ef9 1-233
+backend/routes/limit_up_echelon.py
+  s_0c0c45e652cc73::t_d2f95e80067c1e 904-905,920,925,927-928,938-940,942-943,945,947,951,953,956,958-959,963,969,974-980,984-986,990,992-999
+frontend/src/App.js
+  s_30ad7005a0b8eb::t_63eed85b8679ec 9
+  s_30ad7005a0b8eb::t_64b0fcb2333ae3 81-83
+  s_30ad7005a0b8eb::t_bb8bca2de5a08d 18
+frontend/src/pages/EmotionCycle/index.css
+  s_fb7678489d4804::t_151de10f24955c 154-174
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "d31c4594795333f07596b107cb3d5a489b44c24a",
+  "prompts": {},
+  "sessions": {
+    "s_0c0c45e652cc73": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "da02e7b5-99dc-4286-9c49-c811b67ef9bc",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_30ad7005a0b8eb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f183b359-00f9-41ec-8871-a2e232aa23ed",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_4ce1d966e9c063": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "16155e14-2c07-4deb-9bbb-9df938c7df29",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_fb7678489d4804": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3f3ff6c2-7664-49cf-abb8-f611780af96a",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

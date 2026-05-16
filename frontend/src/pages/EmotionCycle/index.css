@@ -1,6 +1,6 @@
 .emotion-cycle-container {
   padding: 16px;
-  background: #141213;
+  background: var(--bg-primary);
   height: calc(100vh - 64px);
   display: flex;
   flex-direction: column;
@@ -16,8 +16,8 @@
 
 .emotion-chart-card {
   flex: 1;
-  background: #1e1d1e;
-  border: 1px solid #2a2a2a;
+  background: var(--bg-tooltip);
+  border: 1px solid var(--border-secondary);
   border-radius: 8px;
   padding: 12px;
   min-width: 0;
@@ -26,8 +26,8 @@
 .ai-analysis-panel {
   width: 360px;
   flex-shrink: 0;
-  background: #1e1d1e;
-  border: 1px solid #2a2a2a;
+  background: var(--bg-tooltip);
+  border: 1px solid var(--border-secondary);
   border-radius: 8px;
   padding: 16px;
   overflow-y: auto;
@@ -39,19 +39,19 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: #555;
+  color: var(--text-muted);
   font-size: 13px;
   text-align: center;
 }
 
 .analysis-content {
-  color: #e0e0e0;
+  color: var(--text-secondary);
 }
 
 .analysis-section-title {
   font-size: 13px;
   font-weight: 600;
-  color: #999;
+  color: var(--text-muted);
   margin-bottom: 6px;
 }
 
@@ -64,18 +64,18 @@
 }
 
 .analysis-card {
-  background: #1e1d1e;
-  border: 1px solid #2a2a2a;
+  background: var(--bg-tooltip);
+  border: 1px solid var(--border-secondary);
   border-radius: 8px;
 }
 
 .analysis-card .ant-card-head {
-  border-bottom: 1px solid #2a2a2a;
-  color: #fff;
+  border-bottom: 1px solid var(--border-secondary);
+  color: var(--text-primary);
 }
 
 .analysis-card .ant-card-body {
-  color: #e0e0e0;
+  color: var(--text-secondary);
 }
 
 .stage-badge {
@@ -90,23 +90,23 @@
 .analysis-text {
   font-size: 13px;
   line-height: 1.7;
-  color: #d0d0d0;
+  color: var(--text-secondary);
   white-space: pre-wrap;
 }
 
 .advice-text {
   font-size: 13px;
   line-height: 1.7;
-  color: #b0b0b0;
+  color: var(--text-muted);
   padding: 10px;
-  background: #252425;
+  background: var(--bg-card-hover);
   border-radius: 6px;
   border-left: 3px solid #1890ff;
 }
 
 .recommendation-card {
-  background: #252425;
-  border: 1px solid #333;
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border-primary);
   border-radius: 6px;
   padding: 12px 16px;
   min-width: 200px;
@@ -115,13 +115,13 @@
 .recommendation-card .stock-name {
   font-size: 15px;
   font-weight: bold;
-  color: #fff;
+  color: var(--text-primary);
   margin-bottom: 6px;
 }
 
 .recommendation-card .stock-reason {
   font-size: 13px;
-  color: #aaa;
+  color: var(--text-muted);
   margin-bottom: 6px;
 }
 
@@ -144,8 +144,8 @@
   gap: 8px;
   margin-bottom: 12px;
   padding: 10px 16px;
-  background: #1e1d1e;
-  border: 1px solid #2a2a2a;
+  background: var(--bg-tooltip);
+  border: 1px solid var(--border-secondary);
   border-radius: 8px;
   flex-shrink: 0;
 }
@@ -154,9 +154,9 @@
   display: inline-flex;
   align-items: center;
   padding: 4px 8px;
-  color: #ccc;
+  color: var(--text-secondary);
   font-size: 13px;
-  background: #2a2a2a;
+  background: var(--bg-input);
   border: 1px solid #3a3a3a;
   border-radius: 4px;
   cursor: pointer;
@@ -165,7 +165,7 @@
 
 .date-nav-btn:hover:not(:disabled) {
   background: #383838;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .date-nav-btn:disabled {
@@ -175,7 +175,7 @@
 
 .date-nav-label {
   font-size: 14px;
-  color: #ccc;
+  color: var(--text-secondary);
   min-width: 100px;
   text-align: center;
   font-variant-numeric: tabular-nums;
@@ -207,11 +207,11 @@
 }
 
 .ai-refresh-btn {
-  color: #999;
+  color: var(--text-muted);
   font-size: 13px;
   height: 32px;
 }
 
 .ai-refresh-btn:hover:not(:disabled) {
-  color: #fff !important;
+  color: var(--text-primary) !important;
 }

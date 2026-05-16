@@ -4,8 +4,8 @@
   display: flex;
   flex-direction: column;
   height: calc(100vh - 64px);
-  background: #141213;
-  color: #fff;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   overflow: hidden;
 }
 
@@ -15,7 +15,7 @@
   justify-content: flex-end;
   align-items: center;
   padding: 10px 20px;
-  border-bottom: 1px solid #2a2a2a;
+  border-bottom: 1px solid var(--border-secondary);
   flex-shrink: 0;
 }
 
@@ -26,9 +26,9 @@
 }
 
 .dt-date-btn {
-  background: #1f1f1f;
-  border: 1px solid #333;
-  color: #ccc;
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  color: var(--text-secondary);
   padding: 4px 12px;
   border-radius: 4px;
   cursor: pointer;
@@ -37,8 +37,8 @@
 }
 
 .dt-date-btn:hover:not(:disabled) {
-  background: #2a2a2a;
-  color: #fff;
+  background: var(--bg-input);
+  color: var(--text-primary);
 }
 
 .dt-date-btn:disabled {
@@ -47,7 +47,7 @@
 }
 
 .dt-date-label {
-  color: #fff;
+  color: var(--text-primary);
   font-size: 14px;
   font-weight: 500;
   min-width: 90px;
@@ -65,9 +65,9 @@
 .dt-stock-list {
   width: 270px;
   flex-shrink: 0;
-  border-right: 1px solid #2a2a2a;
+  border-right: 1px solid var(--border-secondary);
   overflow-y: auto;
-  background: #1a1a1a;
+  background: var(--bg-card);
 }
 
 .dt-stock-list::-webkit-scrollbar {
@@ -75,19 +75,19 @@
 }
 
 .dt-stock-list::-webkit-scrollbar-thumb {
-  background: #444;
+  background: var(--border-input);
   border-radius: 2px;
 }
 
 .dt-stock-item {
   padding: 12px 14px;
-  border-bottom: 1px solid #222;
+  border-bottom: 1px solid var(--border-secondary);
   cursor: pointer;
   transition: background 0.15s;
 }
 
 .dt-stock-item:hover {
-  background: #222;
+  background: var(--bg-card-hover);
 }
 
 .dt-stock-item.selected {
@@ -105,12 +105,12 @@
 .dt-stock-name {
   font-size: 14px;
   font-weight: 600;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .dt-stock-code {
   font-size: 11px;
-  color: #666;
+  color: var(--text-muted);
 }
 
 .dt-stock-pct {
@@ -120,7 +120,7 @@
 
 .dt-stock-pct.up { color: #ff4d4f; }
 .dt-stock-pct.down { color: #52c41a; }
-.dt-stock-pct.flat { color: #888; }
+.dt-stock-pct.flat { color: var(--text-muted); }
 
 .dt-stock-net {
   font-size: 12px;
@@ -130,7 +130,7 @@
 
 .dt-stock-reason {
   font-size: 11px;
-  color: #666;
+  color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -148,7 +148,7 @@
 }
 
 .dt-detail::-webkit-scrollbar-thumb {
-  background: #444;
+  background: var(--border-input);
   border-radius: 2px;
 }
 
@@ -157,7 +157,7 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: #555;
+  color: var(--text-muted);
   font-size: 14px;
 }
 
@@ -181,17 +181,17 @@
 .dt-detail-name {
   font-size: 18px;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .dt-detail-code {
   font-size: 14px;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .dt-detail-meta {
   font-size: 13px;
-  color: #aaa;
+  color: var(--text-muted);
 }
 
 .dt-detail-net {
@@ -207,7 +207,7 @@
 .dt-ai-btn {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
-  color: #fff;
+  color: var(--text-primary);
   padding: 6px 16px;
   border-radius: 6px;
   cursor: pointer;
@@ -235,8 +235,8 @@
 }
 
 .dt-seats-panel {
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
+  background: var(--bg-card);
+  border: 1px solid var(--border-secondary);
   border-radius: 6px;
   overflow: hidden;
 }
@@ -245,7 +245,7 @@
   padding: 10px 14px;
   font-size: 13px;
   font-weight: 600;
-  border-bottom: 1px solid #2a2a2a;
+  border-bottom: 1px solid var(--border-secondary);
 }
 
 .dt-seats-title.buy { color: #ff4d4f; }
@@ -255,7 +255,7 @@
   display: grid;
   grid-template-columns: 1fr 90px 90px 90px;
   padding: 8px 14px;
-  border-bottom: 1px solid #1f1f1f;
+  border-bottom: 1px solid var(--border-secondary);
   font-size: 12px;
   align-items: center;
 }
@@ -265,7 +265,7 @@
 }
 
 .dt-seat-name {
-  color: #ccc;
+  color: var(--text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -278,7 +278,7 @@
 
 .dt-seat-col {
   text-align: right;
-  color: #888;
+  color: var(--text-muted);
 }
 
 .dt-seat-col.buy-col { color: #ff6666; }
@@ -291,9 +291,9 @@
   grid-template-columns: 1fr 90px 90px 90px;
   padding: 6px 14px;
   font-size: 11px;
-  color: #555;
-  border-bottom: 1px solid #2a2a2a;
-  background: #111;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-secondary);
+  background: var(--bg-primary);
 }
 
 .dt-seat-header-col {
@@ -322,7 +322,7 @@
 
 .dt-ai-result-text {
   font-size: 13px;
-  color: #ccc;
+  color: var(--text-secondary);
   line-height: 1.8;
   white-space: pre-wrap;
 }
@@ -339,11 +339,11 @@
 .dt-reason-badge {
   display: inline-block;
   background: #1f1f2e;
-  border: 1px solid #333;
+  border: 1px solid var(--border-primary);
   border-radius: 4px;
   padding: 2px 8px;
   font-size: 11px;
-  color: #aaa;
+  color: var(--text-muted);
   margin-right: 6px;
   max-width: 300px;
   overflow: hidden;

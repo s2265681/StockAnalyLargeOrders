@@ -7,6 +7,7 @@ import StockDashboard from './pages/StockDashboard';
 import EmotionCycle from './pages/EmotionCycle';
 import LimitUpEchelon from './pages/LimitUpEchelon';
 import AuctionGrab from './pages/AuctionGrab';
+import DragonTiger from './pages/DragonTiger';
 import { errorAtom } from './store/atoms';
 
 const { Content, Header } = Layout;
@@ -14,6 +15,7 @@ const { Content, Header } = Layout;
 const navItems = [
   { key: '/stock-dashboard', label: '个股分析' },
   { key: '/limit-up-echelon', label: '涨停梯队' },
+  { key: '/dragon-tiger', label: '核心游资' },
   { key: '/emotion-cycle', label: '情绪周期' },
   { key: '/auction-grab', label: '竞价抢筹' },
 ];
@@ -74,6 +76,9 @@ function App() {
 
           {/* 涨停梯队页面路由 */}
           <Route path="/limit-up-echelon" element={<LimitUpEchelon />} />
+
+          {/* 核心游资页面路由 */}
+          <Route path="/dragon-tiger" element={<DragonTiger />} />
 
           {/* 情绪周期页面路由 */}
           <Route path="/emotion-cycle" element={<EmotionCycle />} />

@@ -1,0 +1,24 @@
+frontend/src/pages/EmotionCycle/index.css
+  s_5abe22543c11e2::t_3861fbc89a16cf 218-250
+frontend/src/pages/EmotionCycle/index.js
+  s_5abe22543c11e2::t_dd29a379bd41c3 285,307,312-326
+backend/routes/emotion_cycle.py
+  s_5abe22543c11e2::t_497e95f43da6e4 558
+  s_5abe22543c11e2::t_b1b36c49693285 413-415,420-424,428-429,431-497,504-508,512
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "8aad09b4079c4208765f642cacb1b1fe82dec980",
+  "prompts": {},
+  "sessions": {
+    "s_5abe22543c11e2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5bc225c8-e0b2-4c63-bd0c-af8fe9267e57",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

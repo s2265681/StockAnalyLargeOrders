@@ -1,0 +1,41 @@
+frontend/src/pages/StockDashboard/components/StockBasicInfo.js
+  s_b89f04b586c8cd::t_d2655bf5442044 9-10,19,21,32-37,45-47,144-150,157-159,169,172
+frontend/src/store/atoms.js
+  s_b89f04b586c8cd::t_a677f42d800dfa 435,438,450,461,492
+  s_b89f04b586c8cd::t_1bdc7059d4622a 432,436-437,439,471-491,493-526
+backend/routes/l2_dashboard.py
+  s_b89f04b586c8cd::t_3cb9038bea03ed 63
+  s_b89f04b586c8cd::t_ad0bc6eada359d 100-119
+backend/services/data_source_adapter.py
+  s_b89f04b586c8cd::t_c84b4cab16c884 143-146
+  s_b89f04b586c8cd::t_cb81084ce0551b 142
+.github/workflows/deploy.yml
+  s_6d1db6dae35950::t_dfffc03d275418 250
+  s_6d1db6dae35950::t_9e87fcfe833f27 242,249,251-263
+backend/tests/test_data_source_adapter.py
+  s_b89f04b586c8cd::t_dfa13bc1f97fe1 227-228
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "c3a6427b5a67800b151d306d9eeafc7d37fb3061",
+  "prompts": {},
+  "sessions": {
+    "s_6d1db6dae35950": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "b067b8fd-cc2f-4244-b96f-24dc825c071d",
+        "model": "gpt-5.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_b89f04b586c8cd": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "98802729-2854-4025-b354-c37c0f9922f7",
+        "model": "gpt-5.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

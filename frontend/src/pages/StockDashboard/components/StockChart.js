@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Button } from 'antd';
+import { Button, Spin } from 'antd';
 import { useAtom } from 'jotai';
 import ReactEChartsCore from 'echarts-for-react/lib/core';
 import * as echarts from 'echarts/core';
@@ -22,6 +22,7 @@ import {
   largeOrdersDataAtom,
   timeshareDataAtom,
   filterAmountAtom,
+  loadingAtom,
   errorAtom,
   fetchTimeshareDataAtom
 } from '../../../store/atoms';
@@ -50,6 +51,7 @@ const StockChart = () => {
   const [timeshareData] = useAtom(timeshareDataAtom);
   const [filterAmount] = useAtom(filterAmountAtom);
   const [error] = useAtom(errorAtom);
+  const [loading] = useAtom(loadingAtom);
   const [, fetchTimeshareData] = useAtom(fetchTimeshareDataAtom);
 
   // 添加筛选阈值状态，默认300
@@ -975,7 +977,25 @@ const StockChart = () => {
       </div>
        */}
       {/* 分时图 */}
-      <div className="stock-card chart-container">
+      <div className="stock-card chart-container" style={{ position: 'relative' }}>
+        {/* 加载指示器 */}
+        {(loading || !timeshareData) && (
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'var(--bg-card)',
+            zIndex: 10,
+            borderRadius: 'inherit',
+          }}>
+            <Spin size="large" tip="分时数据加载中..." />
+          </div>
+        )}
         {/* 图例和导航区域 */}
         <div className="chart-legend-nav">
           {/* D300/D100/D50/D30 筛选按钮暂时隐藏 */}

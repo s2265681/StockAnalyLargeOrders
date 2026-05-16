@@ -137,18 +137,7 @@ class DataSourceAdapter:
         is_today = (dt == today)
 
         quote = self.source.get_realtime_quote(code)
-        pw = _get_playwright_source()
-        # 历史日期：页面 SSE 只有当日分时，Playwright 按日期过滤会得到空列表，必须走 REST trends2
-        if pw and is_today:
-            try:
-                timeshare = pw.get_timeshare(code, dt=dt)
-                if not timeshare:
-                    timeshare = self.source.get_timeshare(code, dt=dt)
-            except Exception as e:
-                logger.warning(f"Playwright 分时失败，回退: {e}")
-                timeshare = self.source.get_timeshare(code, dt=dt)
-        else:
-            timeshare = self.source.get_timeshare(code, dt=dt)
+        timeshare = self.source.get_timeshare(code, dt=dt)
         if not quote:
             quote = self._build_fallback_quote(code, dt, timeshare)
 

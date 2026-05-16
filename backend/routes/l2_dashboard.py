@@ -4,6 +4,7 @@ L2大单看板统一API路由
 """
 import logging
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor
 from flask import Blueprint, request, jsonify
 
 from services.data_source_adapter import DataSourceAdapter
@@ -49,15 +50,21 @@ def l2_timeshare():
         return jsonify({'success': False, 'message': f'无效的股票代码: {code}'}), 400
 
     try:
-        result = adapter.get_timeshare_data(code, dt=dt)
-        # 附带东方财富分时大单净量数据
-        try:
-            from routes.stock_timeshare import get_eastmoney_money_flow_data
-            mf = get_eastmoney_money_flow_data(code)
-            if mf and result.get('success') and result.get('data'):
-                result['data']['money_flow'] = mf
-        except Exception as e:
-            logger.warning(f"获取大单净量数据失败: {e}")
+        # 并行请求分时数据和资金流向数据
+        from routes.stock_timeshare import get_eastmoney_money_flow_data
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            ts_future = executor.submit(adapter.get_timeshare_data, code, dt)
+            mf_future = executor.submit(get_eastmoney_money_flow_data, code)
+
+            result = ts_future.result(timeout=30)
+            try:
+                mf = mf_future.result(timeout=15)
+                if mf and result.get('success') and result.get('data'):
+                    result['data']['money_flow'] = mf
+            except Exception as e:
+                logger.warning(f"获取大单净量数据失败: {e}")
+
         return jsonify(result)
     except Exception as e:
         logger.error(f"l2_timeshare 接口异常: {e}", exc_info=True)

@@ -1,51 +1,32 @@
-// frontend/src/context/AuthContext.js
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import {
-  getToken,
-  setToken,
-  removeToken,
-  login as apiLogin,
-  logout as apiLogout,
-  getProfile,
-} from '../services/auth';
+import { api } from '../config/api';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [isVip, setIsVip] = useState(false);
-  const [expireTime, setExpireTime] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const refreshUser = useCallback(async () => {
-    const token = getToken();
+    const token = localStorage.getItem('niuniu_token');
     if (!token) {
       setUser(null);
-      setIsVip(false);
-      setExpireTime(null);
       setLoading(false);
       return;
     }
     try {
-      const res = await getProfile();
+      const res = await api.get('/api/user/profile');
       if (res.success && res.data) {
         setUser(res.data);
-        setIsVip(res.data.is_vip || false);
-        setExpireTime(res.data.expire_time || null);
       } else {
-        removeToken();
+        localStorage.removeItem('niuniu_token');
         setUser(null);
-        setIsVip(false);
-        setExpireTime(null);
       }
     } catch {
-      removeToken();
+      localStorage.removeItem('niuniu_token');
       setUser(null);
-      setIsVip(false);
-      setExpireTime(null);
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -53,31 +34,41 @@ export function AuthProvider({ children }) {
   }, [refreshUser]);
 
   const login = async (username, password) => {
-    const res = await apiLogin(username, password);
-    if (res.success) {
-      setToken(res.token);
+    const res = await api.post('/api/auth/login', { username, password });
+    if (res.success && res.data?.token) {
+      localStorage.setItem('niuniu_token', res.data.token);
       await refreshUser();
+      return { success: true };
     }
-    return res;
+    return { success: false, message: res.message || '登录失败' };
   };
 
-  const logout = async () => {
-    try {
-      await apiLogout();
-    } catch {}
-    removeToken();
-    setUser(null);
-    setIsVip(false);
-    setExpireTime(null);
+  const register = async (username, password, phone) => {
+    const res = await api.post('/api/auth/register', { username, password, phone });
+    if (res.success && res.data?.token) {
+      localStorage.setItem('niuniu_token', res.data.token);
+      await refreshUser();
+      return { success: true };
+    }
+    return { success: false, message: res.message || '注册失败' };
   };
+
+  const logout = () => {
+    localStorage.removeItem('niuniu_token');
+    setUser(null);
+  };
+
+  const isVip = !!(user?.vip?.end_time && new Date(user.vip.end_time) > new Date());
 
   return (
-    <AuthContext.Provider
-      value={{ user, isVip, expireTime, loading, login, logout, refreshUser }}
-    >
+    <AuthContext.Provider value={{ user, loading, isVip, login, register, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export const useAuth = () => useContext(AuthContext);
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
+}

@@ -1,0 +1,65 @@
+/* frontend/src/pages/Login/index.css */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 64px);
+  background: var(--bg-primary);
+}
+
+.login-card {
+  width: 400px;
+  padding: 40px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  box-shadow: var(--shadow-card);
+}
+
+.login-title {
+  text-align: center;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.login-subtitle {
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 32px;
+}
+
+.login-card .ant-input {
+  background: var(--bg-input);
+  border-color: var(--border-input);
+  color: var(--text-primary);
+  height: 42px;
+}
+
+.login-card .ant-input:focus,
+.login-card .ant-input-focused {
+  border-color: var(--color-accent);
+}
+
+.login-card .ant-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.login-btn {
+  width: 100%;
+  height: 42px;
+  font-size: 16px;
+}
+
+.login-footer {
+  text-align: center;
+  margin-top: 16px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.login-footer a {
+  color: var(--color-accent);
+}

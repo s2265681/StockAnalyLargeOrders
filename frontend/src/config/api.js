@@ -46,10 +46,13 @@ export const buildApiUrl = (endpoint) => {
 // 通用的fetch封装，包含错误处理和超时
 export const apiRequest = async (endpoint, options = {}) => {
   const url = buildApiUrl(endpoint);
+  const token = localStorage.getItem('niuniu_token');
+  const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
   const config = {
     timeout: apiConfig.timeout,
     headers: {
       'Content-Type': 'application/json',
+      ...authHeaders,
       ...options.headers,
     },
     ...options,

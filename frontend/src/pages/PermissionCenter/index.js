@@ -1,152 +1,96 @@
-// frontend/src/pages/PermissionCenter/index.js
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button, Modal, message } from 'antd';
 import { useAuth } from '../../context/AuthContext';
-import { createOrder, mockPay } from '../../services/auth';
+import { api } from '../../config/api';
 import './index.css';
 
 const PLANS = [
-  { key: 'monthly',   name: '月度VIP',  price: '¥380/月',    amount: 380 },
-  { key: 'quarterly', name: '季度VIP',  price: '¥900/季',    amount: 900 },
-  { key: 'semi',      name: '半年VIP',  price: '¥1600/半年', amount: 1600 },
-  { key: 'annual',    name: '年度VIP',  price: '¥2500/年',   amount: 2500 },
+  { key: 'monthly',   name: '月度VIP',  price: 380,   unit: '/月',  days: 30 },
+  { key: 'quarterly', name: '季度VIP',  price: 900,   unit: '/季',  days: 90,  badge: '热门' },
+  { key: 'semi',      name: '半年VIP',  price: 1600,  unit: '/半年', days: 180 },
+  { key: 'annual',    name: '年度VIP',  price: 2500,  unit: '/年',  days: 365, badge: '最划算' },
 ];
 
-const FEATURES = ['level2大单数据', '情绪周期', '竞价抢筹', '板块抢筹', '风险预警'];
-
 export default function PermissionCenter() {
-  const { refreshUser } = useAuth();
-  const [confirmVisible, setConfirmVisible] = useState(false);
-  const [qrVisible, setQrVisible] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState(null);
-  const [currentOrder, setCurrentOrder] = useState(null);
+  const { user, isVip, refreshUser } = useAuth();
+  const navigate = useNavigate();
+  const [selected, setSelected] = useState('quarterly');
   const [loading, setLoading] = useState(false);
 
-  const onBuy = (plan) => {
-    setSelectedPlan(plan);
-    setConfirmVisible(true);
-  };
+  if (!user) {
+    navigate('/login');
+    return null;
+  }
 
-  const onConfirm = async () => {
+  const handlePurchase = async () => {
     setLoading(true);
     try {
-      const res = await createOrder(selectedPlan.key);
-      if (res.success) {
-        setCurrentOrder(res.data);
-        setConfirmVisible(false);
-        setQrVisible(true);
-      } else {
-        message.error(res.message || '创建订单失败');
+      const createRes = await api.post('/api/orders/create', { plan_type: selected });
+      if (!createRes.success) {
+        message.error(createRes.message);
+        setLoading(false);
+        return;
       }
-    } catch {
-      message.error('网络错误');
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const onMockPay = async () => {
-    if (!currentOrder) return;
-    setLoading(true);
-    try {
-      const res = await mockPay(currentOrder.order_no);
-      if (res.success) {
-        message.success(res.message || '支付成功！');
-        setQrVisible(false);
-        await refreshUser();
-      } else {
-        message.error(res.message || '支付失败');
-      }
+      const orderNo = createRes.data.order_no;
+
+      Modal.confirm({
+        title: '确认支付',
+        content: `订单号: ${orderNo}\n套餐: ${createRes.data.plan_name}\n金额: ¥${createRes.data.amount}\n\n（测试环境：点击确认将模拟支付）`,
+        okText: '确认支付',
+        cancelText: '取消',
+        onOk: async () => {
+          const payRes = await api.post('/api/orders/mock-pay', { order_no: orderNo });
+          if (payRes.success) {
+            message.success('支付成功，VIP 已激活！');
+            await refreshUser();
+          } else {
+            message.error(payRes.message);
+          }
+        },
+      });
     } catch {
-      message.error('网络错误');
-    } finally {
-      setLoading(false);
+      message.error('操作失败');
     }
+    setLoading(false);
   };
 
   return (
-    <div className="permission-center">
-      <h2>权限中心</h2>
-      <div className="plans-grid">
-        {PLANS.map((plan, i) => (
-          <div key={plan.key} className={`plan-card${i === 0 ? ' highlight' : ''}`}>
-            <div className="plan-name">{plan.name}</div>
-            <div className="plan-price">{plan.price}</div>
-            <ul className="plan-features">
-              {FEATURES.map((f) => (
-                <li key={f}>{f}</li>
-              ))}
-            </ul>
-            <Button type="primary" block size="large" onClick={() => onBuy(plan)}>
-              立即开通
-            </Button>
+    <div className="permission-center-container">
+      <div className="pc-title">开通 VIP</div>
+      <div className="pc-subtitle">
+        {isVip
+          ? `当前 VIP 有效期至 ${user.vip?.end_time?.split(' ')[0]}，可续费延长`
+          : '解锁情绪周期、竞价抢筹等高级分析功能'}
+      </div>
+
+      <div className="pc-plans">
+        {PLANS.map(plan => (
+          <div
+            key={plan.key}
+            className={`pc-plan-card ${selected === plan.key ? 'selected' : ''}`}
+            onClick={() => setSelected(plan.key)}
+          >
+            <div className="pc-plan-name">{plan.name}</div>
+            <div className="pc-plan-price">¥{plan.price}</div>
+            <div className="pc-plan-unit">{plan.days}天</div>
+            {plan.badge && <span className="pc-plan-badge">{plan.badge}</span>}
           </div>
         ))}
       </div>
 
-      {/* 确认购买弹窗 */}
-      <Modal
-        title="确认购买"
-        open={confirmVisible}
-        onCancel={() => setConfirmVisible(false)}
-        footer={[
-          <Button key="cancel" onClick={() => setConfirmVisible(false)}>
-            取消
-          </Button>,
-          <Button
-            key="confirm"
-            type="primary"
-            loading={loading}
-            onClick={onConfirm}
-          >
-            确认购买
-          </Button>,
-        ]}
-      >
-        {selectedPlan && (
-          <div style={{ textAlign: 'center', padding: '12px 0' }}>
-            <div style={{ color: '#888', marginBottom: 8 }}>
-              您选择的是 {selectedPlan.name}
-            </div>
-            <div style={{ color: '#1677ff', fontSize: 22, fontWeight: 700 }}>
-              价格：{selectedPlan.price}
-            </div>
-          </div>
-        )}
-      </Modal>
-
-      {/* 微信支付弹窗 */}
-      <Modal
-        title="微信支付"
-        open={qrVisible}
-        onCancel={() => setQrVisible(false)}
-        footer={[
-          <Button key="cancel" onClick={() => setQrVisible(false)}>
-            取消
-          </Button>,
-          <Button
-            key="pay"
-            type="primary"
-            loading={loading}
-            onClick={onMockPay}
-          >
-            已完成支付
-          </Button>,
-        ]}
-      >
-        {currentOrder && (
-          <div className="qr-modal-content">
-            <img
-              src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=wechat-pay-${currentOrder.order_no}`}
-              alt="微信支付二维码"
-            />
-            <div className="qr-price">
-              ¥{Number(currentOrder.amount).toFixed(2)} / {selectedPlan?.name}
-            </div>
-            <div className="qr-hint">请使用微信扫码支付</div>
-          </div>
-        )}
-      </Modal>
+      <div style={{ textAlign: 'center', marginTop: 32 }}>
+        <Button
+          type="primary"
+          size="large"
+          loading={loading}
+          onClick={handlePurchase}
+          style={{ width: 200, height: 44, fontSize: 16 }}
+        >
+          立即开通
+        </Button>
+      </div>
     </div>
   );
 }

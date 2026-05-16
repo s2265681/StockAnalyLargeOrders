@@ -10,10 +10,12 @@ import LimitUpEchelon from './pages/LimitUpEchelon';
 import AuctionGrab from './pages/AuctionGrab';
 import DragonTiger from './pages/DragonTiger';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import UserCenter from './pages/UserCenter';
 import PermissionCenter from './pages/PermissionCenter';
 import PermissionGuard from './components/PermissionGuard';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import ThemeToggle, { useTheme } from './components/ThemeToggle';
+import { useAuth } from './context/AuthContext';
 import { errorAtom } from './store/atoms';
 
 const { Content, Header } = Layout;
@@ -40,18 +42,19 @@ function AppInner() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const handleMenuClick = ({ key }) => navigate(key);
-  const isLoginPage = location.pathname === '/login';
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
 
   return (
     <Layout className="layout" style={{ minHeight: '100vh' }}>
-      {!isLoginPage && (
+      {!isAuthPage && (
         <Header
           style={{
             padding: 0,
-            background: '#141213',
-            borderBottom: '1px solid #2a2a2a',
+            background: 'var(--bg-header)',
+            borderBottom: '1px solid var(--border-secondary)',
             display: 'flex',
             alignItems: 'center',
           }}
@@ -62,44 +65,50 @@ function AppInner() {
             items={NAV_ITEMS}
             onClick={handleMenuClick}
             style={{
-              background: '#141213',
+              background: 'transparent',
               borderBottom: 'none',
-              color: '#fff',
               flex: 1,
               minWidth: 0,
             }}
-            theme="dark"
+            theme={theme === 'dark' ? 'dark' : 'light'}
           />
-          {user && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                paddingRight: 16,
-                gap: 8,
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
-              }}
-            >
-              <span
-                style={{ color: '#1677ff', cursor: 'pointer', fontSize: 14 }}
-                onClick={() => navigate('/user-center')}
-              >
-                {user.username}
-              </span>
-              <Button
-                type="text"
-                size="small"
-                style={{ color: '#aaa' }}
-                onClick={async () => {
-                  await logout();
-                  navigate('/login');
-                }}
-              >
-                退出
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              paddingRight: 16,
+              gap: 8,
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+            }}
+          >
+            <ThemeToggle theme={theme} onToggle={toggleTheme} />
+            {user ? (
+              <>
+                <span
+                  style={{ color: 'var(--color-accent)', cursor: 'pointer', fontSize: 14 }}
+                  onClick={() => navigate('/user-center')}
+                >
+                  {user.username}
+                </span>
+                <Button
+                  type="text"
+                  size="small"
+                  style={{ color: 'var(--text-muted)' }}
+                  onClick={async () => {
+                    await logout();
+                    navigate('/login');
+                  }}
+                >
+                  退出
+                </Button>
+              </>
+            ) : (
+              <Button size="small" type="primary" onClick={() => navigate('/login')}>
+                登录
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </Header>
       )}
       <Content>
@@ -122,6 +131,7 @@ function AppInner() {
         )}
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/" element={<Navigate to="/stock-dashboard" replace />} />
           <Route path="/home" element={<RequireAuth><Home /></RequireAuth>} />
           <Route
@@ -172,11 +182,7 @@ function AppInner() {
 }
 
 function App() {
-  return (
-    <AuthProvider>
-      <AppInner />
-    </AuthProvider>
-  );
+  return <AppInner />;
 }
 
 export default App;

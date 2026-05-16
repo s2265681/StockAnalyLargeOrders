@@ -1,52 +1,79 @@
 /* frontend/src/pages/UserCenter/index.css */
-.user-center {
+.user-center-container {
   padding: 24px;
-  max-width: 900px;
+  background: var(--bg-primary);
+  min-height: calc(100vh - 64px);
+  max-width: 800px;
   margin: 0 auto;
 }
 
-.info-card {
-  background: #1e1e2e;
-  border: 1px solid #2a2a3a;
+.uc-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
   border-radius: 8px;
   padding: 24px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
-.info-card h3 {
-  color: #fff;
-  text-align: center;
-  margin-bottom: 20px;
+.uc-section-title {
   font-size: 16px;
   font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-secondary);
 }
 
-.info-row {
+.uc-info-row {
   display: flex;
-  padding: 10px 0;
-  border-bottom: 1px solid #2a2a3a;
-  color: #ccc;
+  justify-content: space-between;
+  padding: 8px 0;
   font-size: 14px;
 }
 
-.info-row:last-child {
-  border-bottom: none;
+.uc-info-label { color: var(--text-muted); }
+.uc-info-value { color: var(--text-primary); }
+
+.uc-vip-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
 }
 
-.info-label {
-  width: 80px;
-  color: #888;
+.uc-vip-active {
+  background: rgba(255, 169, 64, 0.15);
+  color: #ffa940;
 }
 
-.info-value {
-  flex: 1;
+.uc-vip-inactive {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
 }
 
-.vip-badge {
-  color: #52c41a;
-  font-weight: bold;
+.uc-pwd-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 400px;
 }
 
-.no-vip {
-  color: #ff4d4f;
+.uc-pwd-form .ant-input {
+  background: var(--bg-input);
+  border-color: var(--border-input);
+  color: var(--text-primary);
 }
+
+.uc-order-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-secondary);
+  font-size: 13px;
+}
+
+.uc-order-item:last-child { border-bottom: none; }
+.uc-order-status-paid { color: #52c41a; }
+.uc-order-status-pending { color: #ffa940; }

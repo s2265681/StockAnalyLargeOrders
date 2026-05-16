@@ -1,0 +1,199 @@
+.github/workflows/deploy.yml
+  s_52124b82d956ed::t_edfbacfb88eecc 121-122,129-188,191-194
+  s_350f483452f1f3::t_0d440b73f0d9cd 11,13-38,45,52-55,59-61,93-120,123-126,128,189-190,195-226,228-229,233,238-242
+  s_8cc6cbe63ba658::t_d1bca2326b52d2 70-89
+  s_52124b82d956ed::t_b5e9cbc0d2c234 127
+frontend/src/pages/DragonTiger/index.test.js
+  s_c0b45e52bbf28e::t_629d03fe554b41 1-25,28-30
+  s_c0b45e52bbf28e::t_21e311c0a06d7e 26-27
+backend/tests/test_data_source_adapter.py
+  s_669cda541c0f0f::t_8fb75b37e478b4 103-110,216-227
+  s_669cda541c0f0f::t_3e31c98895f268 247-251
+  s_669cda541c0f0f::t_2b65bba2104ca3 263-264,267
+  s_669cda541c0f0f::t_b45ecdcb328467 228
+  s_669cda541c0f0f::t_558395e125a36f 3,265
+  s_669cda541c0f0f::t_a27cd5caef5a66 246,252-256
+  s_6e43a4967b009a::t_b4c3312f7edc76 2,5,9,285-318
+  s_669cda541c0f0f::t_83c8e2f8564da4 258-262,266,268-269
+backend/scripts/init_dragon_tiger_seat_aliases.sh
+  s_545363486eabeb::t_52bfc325934c7e 1-37
+frontend/src/pages/DragonTiger/index.js
+  s_545363486eabeb::t_91a3b1c11f0e23 48,117
+  s_545363486eabeb::t_ed9e31a70366ce 49-64
+  s_c0b45e52bbf28e::t_483fdcc7b00f69 103,123
+  s_545363486eabeb::t_ccdcb7960c07df 215-216,219,221
+  s_545363486eabeb::t_1f4bfd9d239750 301-305,309-312
+  s_545363486eabeb::t_53e8154ec6fffc 65-102,306-308
+  s_545363486eabeb::t_1d682ccd669bfd 122
+backend/migrations/20260516_add_more_seat_aliases_from_image.sql
+  s_545363486eabeb::t_9695189929c153 1-14
+backend/tests/test_emotion_cycle.py
+  s_b89f04b586c8cd::t_ef6145d1f55872 1-54
+backend/routes/stock_other.py
+  s_6e43a4967b009a::t_35a23cab2e484e 117-124
+backend/scripts/cleanup_dragon_tiger_seat_duplicates.sh
+  s_545363486eabeb::t_5b169631dbe876 1-33
+backend/routes/auction_grab.py
+  s_02283ab9980e7c::t_a98e54d902fb4d 8,10,23-24,52-72,75,78-117,199
+  s_8bae656f0139cb::t_22a7cb67da60b2 73-74,76-77
+frontend/src/pages/AuctionGrab/index.css
+  s_02283ab9980e7c::t_3e46769d9adda7 129-130,135,145,184-193,205
+backend/services/dragon_tiger_service.py
+  s_545363486eabeb::t_709982da09e40c 117
+  s_545363486eabeb::t_6f7bacfac86779 11-48,76-116,118-122
+  s_545363486eabeb::t_3c3efaf7ce8f1d 126-151,167,212-214
+  s_545363486eabeb::t_52a1b8d52762f0 49-75,123-125,168,171-173
+frontend/src/pages/LimitUpEchelon/index.css
+  s_545363486eabeb::t_bbfde639b28417 273,280-302
+frontend/src/pages/AuctionGrab/index.js
+  s_02283ab9980e7c::t_b342c919c3c0b7 111-116,197-199,212,231-241
+backend/tests/test_auction_grab.py
+  s_8bae656f0139cb::t_44d4a0c048b9ac 1-51
+backend/services/eastmoney_free.py
+  s_669cda541c0f0f::t_60b434d45982fa 754-758,791-831
+  s_669cda541c0f0f::t_e2e268723d069a 760-761,764-781,784-790,832-837,842,872
+  s_669cda541c0f0f::t_cd1ce211a64d3e 663,670-673
+  s_8bae656f0139cb::t_ff856fa087e8be 10,174-210
+  s_669cda541c0f0f::t_cf9bcc6e30182d 711,715,731,734,759,762-763,782-783,838-841,843-871,873
+frontend/src/pages/LimitUpEchelon/index.js
+  s_545363486eabeb::t_7da410d40d667f 9-15,502
+backend/routes/emotion_cycle.py
+  s_b89f04b586c8cd::t_1151d46744e882 5,412-467
+backend/routes/l2_dashboard.py
+  s_669cda541c0f0f::t_6324df0f43ead0 7,56-57,61,63,66-68,71-72
+frontend/src/pages/EmotionCycle/index.css
+  s_545363486eabeb::t_00db0def4b63a3 54,199,203-205
+frontend/src/pages/DragonTiger/index.css
+  s_c0b45e52bbf28e::t_8523452e6ea494 243,246,248,253,262
+  s_02283ab9980e7c::t_4c668a4ebb6c26 175,177,183-184,189-196
+  s_545363486eabeb::t_a9a119c323783b 314,328-329,350-360
+  s_545363486eabeb::t_133e050cc1b826 391-394,396-401,408
+  s_545363486eabeb::t_83715c5d9cd581 244-245,247,250-252,254
+  s_545363486eabeb::t_f7ffe4de143c16 330-349,361-364
+  s_545363486eabeb::t_b28444cf611035 50,52,62,395
+  s_545363486eabeb::t_3951a2cb106243 260-261,263-271,273-274,402-407
+frontend/src/pages/EmotionCycle/index.js
+  s_545363486eabeb::t_0839e8c885d01b 202-209,246,253-255,291,295,301-304,309-310,312
+  s_545363486eabeb::t_fb8410cf5ac45c 382,391,399
+  s_b89f04b586c8cd::t_23bb66b2cb5e50 88-89,91-92,95-96,144,174-195,420
+  s_b89f04b586c8cd::t_b5bf11426966d0 90,93-94
+  s_545363486eabeb::t_574a7c2e0bf497 381,383,386-388,390,392,395-398,400,403-404
+backend/routes/dragon_tiger.py
+  s_545363486eabeb::t_e1c4dc7395f34b 74,79-81,91-92,95-125
+  s_545363486eabeb::t_08560c5bece51f 23-24,67,150
+  s_545363486eabeb::t_8b8bbe1a87fb43 26,213-269,300-306,310,314-315,317,363,372-373
+frontend/src/config/api.js
+  s_63c14bd4d1c13f::t_b513fc7f27b34d 16
+backend/migrations/20260516_create_dragon_tiger_seat_aliases.sql
+  s_545363486eabeb::t_ff104dab23bea6 34-55
+  s_545363486eabeb::t_4d58f9f651f91f 1-33,56-61
+frontend/src/index.css
+  s_c0b45e52bbf28e::t_2a0aba88f801e6 403-408
+  s_545363486eabeb::t_c14003fb0269a7 139,145-150
+  s_545363486eabeb::t_675a1275b9960b 81-90,92-106,108-138,140-144,151-164
+  s_c0b45e52bbf28e::t_fc7aebcd7065b7 360-362,368,375,379,383-385,387-390,394-395,398-400
+  s_545363486eabeb::t_2c5756a6516db5 91,107
+backend/migrations/20260517_create_theme_tables.sql
+  s_8cc6cbe63ba658::t_102983468bc8ec 1-47
+backend/migrations/20260516_cleanup_dragon_tiger_seat_duplicates.sql
+  s_545363486eabeb::t_41fb5d35e60c90 1-25
+backend/services/data_source_adapter.py
+  s_669cda541c0f0f::t_8bc051a364d6ad 163
+  s_669cda541c0f0f::t_e00d060c8c92f3 140-162,164-168,620
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "94df9d60656be70f08f45018457578b77058c5ff",
+  "prompts": {},
+  "sessions": {
+    "s_02283ab9980e7c": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "dd5ff915-2e03-4527-a2b3-ffe9c8793ace",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_350f483452f1f3": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "23d8bb75-6aa5-4d14-9f5e-57766f506424",
+        "model": "gpt-5.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_52124b82d956ed": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "1a582694-a777-4ac1-8aa6-8f4601153fe0",
+        "model": "gpt-5.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_545363486eabeb": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "23496a9f-d488-46b1-b31e-d91d03c8a775",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_63c14bd4d1c13f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a082751d-d59e-409f-8b03-18bcb680ca5d",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_669cda541c0f0f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "15f93971-2f40-4754-a2d8-059cd1aa9490",
+        "model": "gpt-5.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_6e43a4967b009a": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "b2a29e0d-c29b-4899-970f-9c78797b1015",
+        "model": "gpt-5.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_8bae656f0139cb": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "94f17ec3-990d-4223-8521-909a624bc091",
+        "model": "gpt-5.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_8cc6cbe63ba658": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "4cee0922-4331-4b85-9b23-2aa7e3df989d",
+        "model": "gpt-5.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_b89f04b586c8cd": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "98802729-2854-4025-b354-c37c0f9922f7",
+        "model": "gpt-5.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_c0b45e52bbf28e": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "af1ef558-a568-4355-8964-499cbf146ae9",
+        "model": "gpt-5.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+frontend/src/pages/Login/index.js
+  s_7c2a81bcd6c721::t_659ba5ce869429 1-106
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "33d5ca935b7829e873959b512a9f8912e5fb6aa7",
+  "prompts": {},
+  "sessions": {
+    "s_7c2a81bcd6c721": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a63b6fc9-c713-4a31-bf62-d8f010ba1f97",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

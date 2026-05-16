@@ -1,0 +1,19 @@
+docs/superpowers/plans/2026-05-16-user-auth-permission.md
+  s_7c2a81bcd6c721::t_63533bdec8c53b 1-1429
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "510d2d9ad6b0e365c8bf5cb1aa1cc872c3e46c45",
+  "prompts": {},
+  "sessions": {
+    "s_7c2a81bcd6c721": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a63b6fc9-c713-4a31-bf62-d8f010ba1f97",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

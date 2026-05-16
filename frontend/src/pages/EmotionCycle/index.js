@@ -211,7 +211,7 @@ function EmotionCycle() {
         pageIconColor: '#aaa',
         pageIconInactiveColor: '#555',
         selected: seriesConfig.reduce((acc, cfg) => {
-          acc[cfg.name] = cfg.key === 'consec_limit';
+          acc[cfg.name] = true;
           return acc;
         }, {}),
       },

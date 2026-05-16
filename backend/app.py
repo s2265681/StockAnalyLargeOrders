@@ -20,6 +20,9 @@ from routes import (
     theme_manage_bp,
     auction_grab_bp,
     dragon_tiger_bp,
+    auth_bp,
+    user_bp,
+    orders_bp,
 )
 
 app = Flask(__name__)
@@ -41,6 +44,9 @@ def register_blueprints(app):
     app.register_blueprint(theme_manage_bp)
     app.register_blueprint(auction_grab_bp)
     app.register_blueprint(dragon_tiger_bp)
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(user_bp)
+    app.register_blueprint(orders_bp)
 
 
 register_blueprints(app)

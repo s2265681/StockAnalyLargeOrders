@@ -1,0 +1,19 @@
+.github/workflows/deploy.yml
+  s_b89f04b586c8cd::t_c0baa6441c03ad 51-61
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "388595017c932437e6777b76a84431a20b465264",
+  "prompts": {},
+  "sessions": {
+    "s_b89f04b586c8cd": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "98802729-2854-4025-b354-c37c0f9922f7",
+        "model": "gpt-5.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

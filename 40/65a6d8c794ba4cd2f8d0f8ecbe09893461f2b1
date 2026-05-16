@@ -1,0 +1,20 @@
+backend/routes/l2_dashboard.py
+  s_b89f04b586c8cd::t_e95ed01a0623d6 172,182
+  s_b89f04b586c8cd::t_2efc6b9aea11ad 19-84,181
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "4065a6d8c794ba4cd2f8d0f8ecbe09893461f2b1",
+  "prompts": {},
+  "sessions": {
+    "s_b89f04b586c8cd": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "98802729-2854-4025-b354-c37c0f9922f7",
+        "model": "gpt-5.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

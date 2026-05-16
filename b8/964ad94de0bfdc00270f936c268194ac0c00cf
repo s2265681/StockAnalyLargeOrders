@@ -1,0 +1,27 @@
+backend/routes/l2_dashboard.py
+  s_5abe22543c11e2::t_19783c8754f6a1 7
+  s_5abe22543c11e2::t_79a3491d26052b 53-67
+frontend/src/pages/StockDashboard/components/StockChart.js
+  s_5abe22543c11e2::t_3c9a82b5e1a19f 2
+  s_5abe22543c11e2::t_7d1dcc6f7b0541 980-998
+  s_5abe22543c11e2::t_efd6b27ac53b0a 25
+  s_5abe22543c11e2::t_5300e53c50b0b4 54
+backend/services/data_source_adapter.py
+  s_5abe22543c11e2::t_62a6dfa8eea40e 140
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "b8964ad94de0bfdc00270f936c268194ac0c00cf",
+  "prompts": {},
+  "sessions": {
+    "s_5abe22543c11e2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5bc225c8-e0b2-4c63-bd0c-af8fe9267e57",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

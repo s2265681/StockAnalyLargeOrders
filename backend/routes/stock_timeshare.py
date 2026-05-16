@@ -193,24 +193,47 @@ def get_eastmoney_money_flow_data(code):
         if not klines:
             return None
 
-        zhuli_data = []
-        sanhu_data = []
+        # kline字段: f51=时间, f52=主力净流入(超大+大单), f53=小单, f54=中单, f55=大单, f56=超大单
+        zhuli_data = []     # 主力 = 超大单+大单
+        sanhu_data = []     # 小单
+        chaoda_data = []    # 超大单
+        dadan_data = []     # 大单
+        zhongdan_data = []  # 中单
         for kline in klines:
             parts = kline.split(',')
+            zero = "0.000"
             if len(parts) < 6:
-                zhuli_data.append("0.000")
-                sanhu_data.append("0.000")
+                zhuli_data.append(zero)
+                sanhu_data.append(zero)
+                chaoda_data.append(zero)
+                dadan_data.append(zero)
+                zhongdan_data.append(zero)
                 continue
             try:
-                zhuli_net = (float(parts[2] or 0) + float(parts[3] or 0))
-                sanhu_net = float(parts[5] or 0)
-                zhuli_data.append(f"{zhuli_net / 10000:.3f}")
-                sanhu_data.append(f"{sanhu_net / 10000:.3f}")
+                zhuli = float(parts[1] or 0)
+                xiaodan = float(parts[2] or 0)
+                zhongdan = float(parts[3] or 0)
+                dadan = float(parts[4] or 0)
+                chaoda = float(parts[5] or 0)
+                zhuli_data.append(f"{zhuli / 10000:.3f}")
+                sanhu_data.append(f"{xiaodan / 10000:.3f}")
+                chaoda_data.append(f"{chaoda / 10000:.3f}")
+                dadan_data.append(f"{dadan / 10000:.3f}")
+                zhongdan_data.append(f"{zhongdan / 10000:.3f}")
             except (ValueError, IndexError):
-                zhuli_data.append("0.000")
-                sanhu_data.append("0.000")
+                zhuli_data.append(zero)
+                sanhu_data.append(zero)
+                chaoda_data.append(zero)
+                dadan_data.append(zero)
+                zhongdan_data.append(zero)
 
-        return {'zhuli': zhuli_data, 'sanhu': sanhu_data}
+        return {
+            'zhuli': zhuli_data,
+            'sanhu': sanhu_data,
+            'chaoda': chaoda_data,
+            'dadan': dadan_data,
+            'zhongdan': zhongdan_data,
+        }
     except Exception as e:
         logger.warning(f"东方财富资金流向数据获取失败: {e}")
         return None

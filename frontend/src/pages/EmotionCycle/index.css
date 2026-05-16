@@ -1,0 +1,97 @@
+.emotion-cycle-container {
+  padding: 24px;
+  background: #141213;
+  min-height: calc(100vh - 64px);
+}
+
+.emotion-chart-card {
+  background: #1e1d1e;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.ai-analysis-section {
+  margin-top: 24px;
+}
+
+.ai-analysis-btn {
+  margin-bottom: 16px;
+}
+
+.analysis-card {
+  background: #1e1d1e;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+}
+
+.analysis-card .ant-card-head {
+  border-bottom: 1px solid #2a2a2a;
+  color: #fff;
+}
+
+.analysis-card .ant-card-body {
+  color: #e0e0e0;
+}
+
+.stage-badge {
+  font-size: 16px;
+  font-weight: bold;
+  padding: 4px 16px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: 16px;
+}
+
+.analysis-text {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #d0d0d0;
+  margin-bottom: 16px;
+  white-space: pre-wrap;
+}
+
+.advice-text {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #b0b0b0;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #252425;
+  border-radius: 6px;
+  border-left: 3px solid #1890ff;
+}
+
+.recommendation-card {
+  background: #252425;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 12px 16px;
+  min-width: 200px;
+}
+
+.recommendation-card .stock-name {
+  font-size: 15px;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.recommendation-card .stock-reason {
+  font-size: 13px;
+  color: #aaa;
+  margin-bottom: 6px;
+}
+
+.recommendation-card .stock-position {
+  font-size: 13px;
+  color: #faad14;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 0;
+}

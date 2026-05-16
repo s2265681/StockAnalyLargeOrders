@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useRef, useCallback, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Radio, Switch } from 'antd';
 import { useAtom } from 'jotai';
 import StockBasicInfo from './components/StockBasicInfo';
@@ -51,10 +52,19 @@ const isTradeTime = () => {
 };
 
 const StockDashboard = () => {
+  const [searchParams] = useSearchParams();
   const [stockCode, setStockCode] = useAtom(stockCodeAtom);
   const [, fetchL2Dashboard] = useAtom(fetchL2DashboardAtom);
   const [, fetchLimitUpThemes] = useAtom(fetchLimitUpThemesAtom);
   const [selectedDate] = useAtom(selectedDateAtom);
+
+  // URL 参数变化时同步 stockCode
+  useEffect(() => {
+    const urlCode = searchParams.get('code');
+    if (urlCode && urlCode !== stockCode) {
+      setStockCode(urlCode);
+    }
+  }, [searchParams]);
   const l2TimerRef = useRef(null);
   const themeTimerRef = useRef(null);
   const simulationTimerRef = useRef(null);
@@ -89,6 +99,7 @@ const StockDashboard = () => {
 
   // 完整看板数据缓存（模拟回放用，只取一次）
   const fullSimDataRef = useRef(null);
+  const fullMoneyFlowRef = useRef(null); // 东方财富资金流缓存（模拟用）
 
   const handleStockCodeChange = (newCode) => {
     setStockCode(newCode);
@@ -163,7 +174,8 @@ const StockDashboard = () => {
     }
 
     if (!simulationEnabled) {
-      fullSimDataRef.current = null;  // 退出模拟时清除缓存
+      fullSimDataRef.current = null;
+      fullMoneyFlowRef.current = null;
       return undefined;
     }
 
@@ -171,11 +183,19 @@ const StockDashboard = () => {
     simulationIndexRef.current = 1;
     setSimulationIndex(1);
 
-    // 取一次完整数据，后续全部在前端切片，不再发请求
-    apiRequest(`/api/v1/l2_dashboard?code=${stockCode}&dt=${selectedDate}`, { timeout: 45000 })
-      .then(data => {
-        fullSimDataRef.current = data;
-        applySimulatedData({ fullData: data, cutoffTime: tradingAxis[1] || '09:31' });
+    // 取一次完整数据 + 东方财富资金流，后续全部在前端切片
+    Promise.all([
+      apiRequest(`/api/v1/l2_dashboard?code=${stockCode}&dt=${selectedDate}`, { timeout: 45000 }),
+      apiRequest(`/api/v1/l2_timeshare?code=${stockCode}&dt=${selectedDate}`, { timeout: 45000 }),
+    ])
+      .then(([dashData, tsData]) => {
+        fullSimDataRef.current = dashData;
+        fullMoneyFlowRef.current = tsData?.data?.money_flow || null;
+        applySimulatedData({
+          fullData: dashData,
+          cutoffTime: tradingAxis[1] || '09:31',
+          moneyFlow: fullMoneyFlowRef.current,
+        });
       })
       .catch(err => console.error('模拟回放数据加载失败:', err));
 
@@ -193,7 +213,11 @@ const StockDashboard = () => {
 
         // 纯前端切片，不发网络请求
         if (fullSimDataRef.current) {
-          applySimulatedData({ fullData: fullSimDataRef.current, cutoffTime: nextTime });
+          applySimulatedData({
+            fullData: fullSimDataRef.current,
+            cutoffTime: nextTime,
+            moneyFlow: fullMoneyFlowRef.current,
+          });
         }
         return nextIndex;
       });

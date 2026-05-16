@@ -420,6 +420,86 @@ const StockChart = () => {
       }
     });
 
+    // 资金博弈线：红线 = (超大单+大单)/2，绿线 = (小单+中单)/2
+    const bigFlowData = [];
+    const smallFlowData = [];
+    let bigFlowMarkers = [];
+    const moneyFlow = timeshareData.money_flow;
+    if (moneyFlow && moneyFlow.chaoda && moneyFlow.chaoda.length > 0) {
+      const chaodaArr = moneyFlow.chaoda;
+      const dadanArr = moneyFlow.dadan || [];
+      const xiaoArr = moneyFlow.sanhu || [];
+      const zhongArr = moneyFlow.zhongdan || [];
+      const len = chaodaArr.length;
+
+      // 计算合并后的原始值
+      const bigRaw = [];   // (超大单+大单)/2
+      const smallRaw = []; // (小单+中单)/2
+      for (let i = 0; i < len; i++) {
+        bigRaw.push(((parseFloat(chaodaArr[i]) || 0) + (parseFloat(dadanArr[i]) || 0)) / 2);
+        smallRaw.push(((parseFloat(xiaoArr[i]) || 0) + (parseFloat(zhongArr[i]) || 0)) / 2);
+      }
+
+      // 共用归一化基准
+      const maxAbsFlow = Math.max(
+        ...bigRaw.map(Math.abs),
+        ...smallRaw.map(Math.abs),
+        0.01
+      );
+      const yRange = (yAxisMax - yAxisMin) * 0.3;
+      const yMid = (yAxisMax + yAxisMin) / 2;
+
+      for (let i = 0; i < len; i++) {
+        const timePoint = fullTimeAxis[i];
+        if (!timePoint || !fenshi[i]) {
+          bigFlowData.push([fullTimeAxis[i] || '', null]);
+          smallFlowData.push([fullTimeAxis[i] || '', null]);
+          continue;
+        }
+        bigFlowData.push([timePoint, yMid + (bigRaw[i] / maxAbsFlow) * yRange]);
+        smallFlowData.push([timePoint, yMid + (smallRaw[i] / maxAbsFlow) * yRange]);
+      }
+
+      // 在关键时间点标注金额（整点/半点 + 最后一个有效点）
+      const markerTimes = ['09:30', '10:00', '10:30', '11:00', '11:30', '13:00', '13:30', '14:00', '14:30', '15:00'];
+      const timeToIndex = {};
+      for (let i = 0; i < len; i++) {
+        if (fullTimeAxis[i]) timeToIndex[fullTimeAxis[i]] = i;
+      }
+      const formatFlowLabel = (val) => {
+        const absVal = Math.abs(val);
+        return absVal >= 10000
+          ? `${(val / 10000).toFixed(2)}亿`
+          : `${Math.round(val)}万`;
+      };
+      for (const t of markerTimes) {
+        const idx = timeToIndex[t];
+        if (idx !== undefined && bigFlowData[idx] && bigFlowData[idx][1] !== null) {
+          const totalVal = bigRaw[idx] * 2;
+          bigFlowMarkers.push({
+            coord: bigFlowData[idx],
+            name: formatFlowLabel(totalVal),
+            value: formatFlowLabel(totalVal),
+          });
+        }
+      }
+      // 确保最后一个有效点一定标注
+      for (let i = len - 1; i >= 0; i--) {
+        if (bigFlowData[i] && bigFlowData[i][1] !== null) {
+          const t = fullTimeAxis[i];
+          if (!markerTimes.includes(t)) {
+            const totalVal = bigRaw[i] * 2;
+            bigFlowMarkers.push({
+              coord: bigFlowData[i],
+              name: formatFlowLabel(totalVal),
+              value: formatFlowLabel(totalVal),
+            });
+          }
+          break;
+        }
+      }
+    }
+
     // 生成筛选金额标注
     const { institutionalMarkers, retailMarkers } = generateFilteredAmountMarkers(
       fenshi, 
@@ -586,86 +666,60 @@ const StockChart = () => {
       graphic: [],
       silent: true,
       series: [
-        {
-          name: '主力线',
+        // 主力线、散户线暂时隐藏（数据不准，代码保留）
+        // {
+        //   name: '主力线', type: 'line', data: institutionalData, ...
+        // },
+        // {
+        //   name: '散户线', type: 'line', data: retailData, ...
+        // },
+        ...(bigFlowData.length > 0 ? [{
+          name: '大资金',
           type: 'line',
-          data: institutionalData,
+          data: bigFlowData,
           smooth: true,
           connectNulls: true,
           lineStyle: {
-            width: 1.5,
-            color: '#ff4d4f',
-            type: 'dashed'
+            width: 2,
+            color: '#ff4500'
           },
           itemStyle: {
-            color: '#ff4d4f'
+            color: '#ff4500'
           },
           symbol: 'none',
-          markLine: {
-            silent: true,
-            symbol: 'none',
-            data: [
-              {
-                yAxis: 0,
-                symbol: 'none',
-                lineStyle: {
-                  color: '#666',
-                  width: 1,
-                  type: 'dashed'
-                },
-                label: {
-                  show: true,
-                  position: 'end',
-                  color: '#666',
-                  fontSize: 10,
-                  formatter: '0%'
-                }
-              }
-            ]
-          },
           markPoint: {
             symbol: 'circle',
-            symbolSize: 4,
-            z: 100,
-            itemStyle: {
-              color: 'transparent', // 透明圆点
-              borderColor: 'transparent',
-              borderWidth: 0
-            },
+            symbolSize: 0,
             label: {
               show: true,
               position: 'top',
-              color: '#ff4d4f',
-              fontSize: 12, // 缩小字体
+              color: '#ff4500',
+              fontSize: 11,
               fontWeight: 'bold',
-              backgroundColor: 'transparent', // 去掉背景
-              padding: [2, 4], // 减少padding
-              borderRadius: 2,
               formatter: function(params) {
-                return params.name || params.value || '0';
+                return params.name || '';
               }
             },
-            data: bigMapInstitutionalMarkers
+            data: bigFlowMarkers,
           },
           silent: true
-        },
-        {
-          name: '散户线',
+        }] : []),
+        ...(smallFlowData.length > 0 ? [{
+          name: '小资金',
           type: 'line',
-          data: retailData,
+          data: smallFlowData,
           smooth: true,
           connectNulls: true,
           lineStyle: {
             width: 1.5,
-            color: '#52c41a',
-            type: 'dashed'
+            color: '#22c55e'
           },
           itemStyle: {
-            color: '#52c41a'
+            color: '#22c55e'
           },
           symbol: 'none',
           silent: true
-        },
+        }] : []),
         {
           name: '均价',
           type: 'line',
@@ -924,70 +978,19 @@ const StockChart = () => {
       <div className="stock-card chart-container">
         {/* 图例和导航区域 */}
         <div className="chart-legend-nav">
-          {/* 时间段选择按钮 */}
+          {/* D300/D100/D50/D30 筛选按钮暂时隐藏 */}
           <div className="period-buttons">
-            <Button 
-              type="text" 
-              size="small" 
-              style={{ 
-                color: filterThreshold === 300 ? '#ffa940' : '#fff', 
-                backgroundColor: filterThreshold === 300 ? 'rgba(255, 169, 64, 0.1)' : 'transparent' 
-              }}
-              onClick={() => handleFilterChange(300)}
-            >
-              D300
-            </Button>
-            <Button 
-              type="text" 
-              size="small" 
-              style={{ 
-                color: filterThreshold === 100 ? '#ffa940' : '#fff', 
-                backgroundColor: filterThreshold === 100 ? 'rgba(255, 169, 64, 0.1)' : 'transparent' 
-              }}
-              onClick={() => handleFilterChange(100)}
-            >
-              D100
-            </Button>
-            <Button 
-              type="text" 
-              size="small" 
-              style={{ 
-                color: filterThreshold === 50 ? '#ffa940' : '#fff', 
-                backgroundColor: filterThreshold === 50 ? 'rgba(255, 169, 64, 0.1)' : 'transparent' 
-              }}
-              onClick={() => handleFilterChange(50)}
-            >
-              D50
-            </Button>
-            <Button 
-              type="text" 
-              size="small" 
-              style={{ 
-                color: filterThreshold === 30 ? '#ffa940' : '#fff', 
-                backgroundColor: filterThreshold === 30 ? 'rgba(255, 169, 64, 0.1)' : 'transparent' 
-              }}
-              onClick={() => handleFilterChange(30)}
-            >
-              D30
-            </Button>
           </div>
 
           {/* 图例 */}
           <div className="chart-legend">
             <div className="legend-item">
-              <span className="legend-line main-line"></span>
-              <span className="legend-text">主力线 ---</span>
+              <span className="legend-line" style={{ borderTop: '2px solid #ff4500', width: 20, display: 'inline-block', verticalAlign: 'middle', marginRight: 4 }}></span>
+              <span className="legend-text" style={{ color: '#ff4500' }}>大资金</span>
             </div>
             <div className="legend-item">
-              <span className="legend-line retail-line"></span>
-              <span className="legend-text">散户线 ---</span>
-            </div>
-            {/* <div className="legend-item">
-              <span className="legend-line avg-line"></span>
-              <span className="legend-text">价格均线 ——</span>
-            </div> */}
-            <div className="cost-indicator">
-              <span style={{ color: '#ffa940' }}>D300成本: {getD300Cost()}</span>
+              <span className="legend-line" style={{ borderTop: '2px solid #22c55e', width: 20, display: 'inline-block', verticalAlign: 'middle', marginRight: 4 }}></span>
+              <span className="legend-text" style={{ color: '#22c55e' }}>小资金</span>
             </div>
           </div>
         </div>
@@ -1030,26 +1033,7 @@ const StockChart = () => {
         />
       </div>
 
-      {/* 大单数据分析 */}
-      {timeshareData?.big_map && (
-          <div className="large-orders-table">
-            {getLargeOrderSummaryData() && getLargeOrderSummaryData().map((item, index) => (
-              <div key={index} className="order-row">
-                <div className="order-level">{item.level}</div>
-                <div className="order-counts">
-                  <span className="buy-count" style={{ color: '#ff4d4f' }}>{item.buyCount}笔</span>
-                  <span className="separator"> | </span>
-                  <span className="sell-count" style={{ color: '#52c41a' }}>{item.sellCount}笔</span>
-                </div>
-                <div className="order-amounts">
-                  <span className="buy-amount" style={{ color: '#ff4d4f' }}>{item.buyAmount}万</span>
-                  <span className="separator"> | </span>
-                  <span className="sell-amount" style={{ color: '#52c41a' }}>{item.sellAmount}万</span>
-                </div>
-              </div>
-            ))}
-          </div>
-      )}
+      {/* 大单数据分析 - 暂时隐藏 */}
     </div>
   );
 };

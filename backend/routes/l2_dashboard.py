@@ -50,6 +50,14 @@ def l2_timeshare():
 
     try:
         result = adapter.get_timeshare_data(code, dt=dt)
+        # 附带东方财富分时大单净量数据
+        try:
+            from routes.stock_timeshare import get_eastmoney_money_flow_data
+            mf = get_eastmoney_money_flow_data(code)
+            if mf and result.get('success') and result.get('data'):
+                result['data']['money_flow'] = mf
+        except Exception as e:
+            logger.warning(f"获取大单净量数据失败: {e}")
         return jsonify(result)
     except Exception as e:
         logger.error(f"l2_timeshare 接口异常: {e}", exc_info=True)

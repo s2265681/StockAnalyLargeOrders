@@ -1,6 +1,6 @@
 import { atom } from 'jotai';
 import { apiRequest, getEnvironmentInfo } from '../config/api.js';
-import { alignTimeshareToTradingAxis, sliceL2DataByTime } from '../pages/StockDashboard/utils/l2Analysis.js';
+import { alignTimeshareToTradingAxis, buildTradingTimeAxis, sliceL2DataByTime } from '../pages/StockDashboard/utils/l2Analysis.js';
 // import quote from '../mock/quote.json'
 
 
@@ -365,7 +365,7 @@ const determineCategoryFromWan = (amountWan) => {
  * 解析 L2 Dashboard 返回数据并更新 atoms
  * 供 HTTP 轮询和 WebSocket 推送共用
  */
-export const applyL2DashboardData = (set, data) => {
+export const applyL2DashboardData = (set, data, cutoffTime, moneyFlow) => {
   if (!data?.success || !data?.data) return false;
 
   const d = data.data;
@@ -373,6 +373,27 @@ export const applyL2DashboardData = (set, data) => {
   // 1. 分时图
   const timeshare = d.timeshare || [];
   const alignedTimeshare = alignTimeshareToTradingAxis(timeshare);
+
+  // 资金流切片：moneyFlow 数组按分钟排列（从 09:31 开始），根据 cutoffTime 截断
+  let slicedMoneyFlow = moneyFlow || d.money_flow || null;
+  if (slicedMoneyFlow && cutoffTime) {
+    const axis = buildTradingTimeAxis(); // 09:30, 09:31, ..., 15:00
+    const cutoff = String(cutoffTime).slice(0, 5);
+    // 资金流数据从 09:31 开始，axis[1] 对应 moneyFlow[0]
+    const cutoffIdx = axis.indexOf(cutoff);
+    if (cutoffIdx > 0) {
+      const sliceLen = cutoffIdx; // axis[1]->mf[0], axis[cutoffIdx]->mf[cutoffIdx-1]
+      const sliceArr = (arr) => Array.isArray(arr) ? arr.slice(0, sliceLen) : arr;
+      slicedMoneyFlow = {
+        zhuli: sliceArr(slicedMoneyFlow.zhuli),
+        sanhu: sliceArr(slicedMoneyFlow.sanhu),
+        chaoda: sliceArr(slicedMoneyFlow.chaoda),
+        dadan: sliceArr(slicedMoneyFlow.dadan),
+        zhongdan: sliceArr(slicedMoneyFlow.zhongdan),
+      };
+    }
+  }
+
   set(timeshareDataAtom, {
     timeAxis: alignedTimeshare.axis,
     fenshi: alignedTimeshare.fenshi,
@@ -382,6 +403,7 @@ export const applyL2DashboardData = (set, data) => {
     big_map: d.big_map || {},
     order_book: d.order_book || null,
     session_snapshot: d.session_snapshot ?? null,
+    money_flow: slicedMoneyFlow,
     base_info: {
       prevClosePrice: d.stock_info.yesterday_close,
       openPrice: d.stock_info.open,
@@ -465,82 +487,43 @@ export const fetchL2DashboardAtom = atom(
       return;
     }
 
-    // 正常模式：并行请求，Promise.all 等待两个都完成，合并写入（避免竞态）
+    // 轻量模式：只请求分时数据（含东方财富资金流），跳过耗时的 l2_orders 大单接口
     const query = new URLSearchParams({ code, dt });
     try {
-      const [timeshareResp, ordersResp] = await Promise.all([
-        apiRequest(`/api/v1/l2_timeshare?${query}`, { timeout: 45000 }).catch(e => {
-          console.warn('分时接口失败:', e.message); return null;
-        }),
-        apiRequest(`/api/v1/l2_orders?${query}`, { timeout: 45000 }).catch(e => {
-          console.warn('大单接口失败:', e.message); return null;
-        }),
-      ]);
+      const timeshareResp = await apiRequest(`/api/v1/l2_timeshare?${query}`, { timeout: 45000 }).catch(e => {
+        console.warn('分时接口失败:', e.message); return null;
+      });
 
       const timeshareOk = timeshareResp?.success && timeshareResp?.data;
-      const ordersOk = ordersResp?.success && ordersResp?.data;
 
-      if (!timeshareOk && !ordersOk) {
-        set(errorAtom, '分时和大单数据均获取失败，请检查网络');
+      if (!timeshareOk) {
+        set(errorAtom, '分时数据获取失败，请检查网络');
         return;
       }
 
-      // 写入分时图数据（big_map 直接用大单接口的结果，一次写入，无竞态）
-      if (timeshareOk) {
-        const d = timeshareResp.data;
-        const timeshare = d.timeshare || [];
-        const aligned = alignTimeshareToTradingAxis(timeshare);
-        set(timeshareDataAtom, {
-          timeAxis: aligned.axis,
-          fenshi: aligned.fenshi,
-          volume: aligned.volume,
-          zhuli: [],
-          sanhu: [],
-          big_map: ordersResp?.data?.big_map || {},   // 直接注入，不用第二次 set
-          order_book: timeshareResp.data.order_book || null,
-          session_snapshot: timeshareResp.data.session_snapshot || null,
-          base_info: {
-            prevClosePrice: d.stock_info?.yesterday_close,
-            openPrice: d.stock_info?.open,
-            highPrice: d.stock_info?.high,
-            lowPrice: d.stock_info?.low,
-          },
-        });
-        set(stockBasicDataAtom, d.stock_info);
-      }
+      const d = timeshareResp.data;
+      const timeshare = d.timeshare || [];
+      const aligned = alignTimeshareToTradingAxis(timeshare);
+      set(timeshareDataAtom, {
+        timeAxis: aligned.axis,
+        fenshi: aligned.fenshi,
+        volume: aligned.volume,
+        zhuli: [],
+        sanhu: [],
+        big_map: {},
+        order_book: timeshareResp.data.order_book || null,
+        session_snapshot: timeshareResp.data.session_snapshot || null,
+        money_flow: d.money_flow || null,
+        base_info: {
+          prevClosePrice: d.stock_info?.yesterday_close,
+          openPrice: d.stock_info?.open,
+          highPrice: d.stock_info?.high,
+          lowPrice: d.stock_info?.low,
+        },
+      });
+      set(stockBasicDataAtom, d.stock_info);
 
-      // 写入大单数据
-      if (ordersOk) {
-        const d = ordersResp.data;
-        const orders = d.large_orders || d.orders || [];
-        const stats = d.statistics || {};
-        const buyCount = orders.filter(o => o.direction === '被买' || o.direction === '主买').length;
-        const sellCount = orders.filter(o => o.direction === '被卖' || o.direction === '主卖').length;
-        const neutralCount = orders.length - buyCount - sellCount;
-        const totalAmount = orders.reduce((sum, o) => sum + (o.amount || 0), 0);
-        const buyAmount = orders
-          .filter(o => o.direction === '被买' || o.direction === '主买')
-          .reduce((sum, o) => sum + (o.amount || 0), 0);
-        set(largeOrdersDataAtom, {
-          summary: { buyCount, sellCount, neutralCount, totalAmount, netInflow: buyAmount - (totalAmount - buyAmount) },
-          largeOrders: orders.map(order => ({
-            time: order.time,
-            type: (order.direction === '被买' || order.direction === '主买') ? 'buy' : 'sell',
-            price: order.price,
-            volume: order.volume_lots,
-            amount: order.amount * 10000,
-            category: determineCategoryFromWan(order.amount),
-            direction: order.direction,
-          })),
-          levelStats: {
-            D300: stats.above_300,
-            D100: stats.above_100,
-            D50: stats.above_50,
-            D30: stats.above_30,
-            under_D30: stats.below_30,
-          },
-        });
-      }
+      // l2_orders 大单接口暂时跳过（主力线/散户线/D300筛选已隐藏，不需要 big_map）
     } catch (error) {
       set(errorAtom, `获取L2看板数据失败: ${error.message}`);
     } finally {
@@ -581,8 +564,8 @@ export const environmentInfoAtom = atom(getEnvironmentInfo());
  */
 export const applySimulatedDataAtom = atom(
   null,
-  (get, set, { fullData, cutoffTime }) => {
+  (get, set, { fullData, cutoffTime, moneyFlow }) => {
     const sliced = sliceL2DataByTime(fullData, cutoffTime);
-    if (sliced) applyL2DashboardData(set, sliced);
+    if (sliced) applyL2DashboardData(set, sliced, cutoffTime, moneyFlow);
   }
 ); 

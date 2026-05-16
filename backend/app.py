@@ -14,7 +14,9 @@ from routes import (
     stock_timeshare_bp,
     stock_tick_bp,
     stock_other_bp,
-    l2_dashboard_bp
+    l2_dashboard_bp,
+    emotion_cycle_bp,
+    limit_up_echelon_bp,
 )
 
 app = Flask(__name__)
@@ -31,6 +33,8 @@ def register_blueprints(app):
     app.register_blueprint(stock_tick_bp)
     app.register_blueprint(stock_other_bp)
     app.register_blueprint(l2_dashboard_bp)
+    app.register_blueprint(emotion_cycle_bp)
+    app.register_blueprint(limit_up_echelon_bp)
 
 
 register_blueprints(app)

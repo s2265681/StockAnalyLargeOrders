@@ -25,8 +25,76 @@
 
 .echelon-summary {
   display: flex;
+  align-items: center;
   gap: 24px;
 }
+
+.ai-group-btn {
+  display: flex;
+  align-items: center;
+  padding: 4px 10px;
+  background: #2a2418;
+  border: 1px solid #5a4a18;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.ai-group-btn:hover {
+  background: #3a3020;
+}
+
+/* 日期导航 */
+.date-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-nav-label {
+  font-size: 14px;
+  color: #ccc;
+  min-width: 90px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.date-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  color: #ccc;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.date-nav-btn:hover:not(:disabled) {
+  background: #383838;
+  color: #fff;
+}
+
+.date-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.date-nav-today {
+  background: #1a3a2a;
+  border-color: #2a6b4a;
+  color: #10b981;
+}
+
+.date-nav-today:hover {
+  background: #1f4a33 !important;
+  color: #34d399 !important;
+}
+
 
 .summary-item {
   display: flex;

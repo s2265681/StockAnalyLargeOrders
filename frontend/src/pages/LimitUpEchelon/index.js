@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Spin, Tag, Tooltip, Popover, Button } from 'antd';
-import { FireOutlined, ClockCircleOutlined, LoadingOutlined, ReloadOutlined } from '@ant-design/icons';
+import { FireOutlined, ClockCircleOutlined, LoadingOutlined, ReloadOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { apiRequest } from '../../config/api';
 import './index.css';
@@ -43,8 +43,43 @@ const getSealQuality = (stock) => {
   return { label: 'C', color: '#666' };
 };
 
+// 获取最近交易日（周末自动退到周五）
+const getLastTradingDayStr = () => {
+  const d = new Date();
+  const dow = d.getDay();
+  if (dow === 6) d.setDate(d.getDate() - 1); // 周六 -> 周五
+  if (dow === 0) d.setDate(d.getDate() - 2); // 周日 -> 周五
+  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+};
+
+// 日期偏移（跳过周末）
+const offsetDate = (dateStr, delta) => {
+  const d = new Date(
+    parseInt(dateStr.slice(0, 4)),
+    parseInt(dateStr.slice(4, 6)) - 1,
+    parseInt(dateStr.slice(6, 8))
+  );
+  let count = 0;
+  const step = delta > 0 ? 1 : -1;
+  while (count !== delta) {
+    d.setDate(d.getDate() + step);
+    const dow = d.getDay();
+    if (dow !== 0 && dow !== 6) count += step;
+  }
+  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+};
+
+const formatDateDisplay = (dateStr) => {
+  if (!dateStr || dateStr.length !== 8) return dateStr;
+  return `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
+};
+
+
 function LimitUpEchelon() {
   const navigate = useNavigate();
+  const todayStr = useMemo(() => getLastTradingDayStr(), []);
+  const [currentDate, setCurrentDate] = useState(getLastTradingDayStr);
+  const dataCache = useRef({}); // dateStr -> data
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -52,12 +87,25 @@ function LimitUpEchelon() {
   const [aiStatus, setAiStatus] = useState('none'); // none | pending | done | error
   const [refreshingThemes, setRefreshingThemes] = useState(false);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (dt) => {
+    const targetDate = dt || getLastTradingDayStr();
+
+    // 已缓存则直接使用，不重新请求
+    if (dataCache.current[targetDate]) {
+      setData(dataCache.current[targetDate]);
+      const cached = dataCache.current[targetDate];
+      setAiStatus(cached.ai?.status || 'none');
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
-      // 带 analysis=1：有缓存直接返回完整数据，无缓存触发后台AI并立即返回基础数据
-      const res = await apiRequest('/api/v1/limit-up-echelon?analysis=1');
+      // 初始加载：读取股票数据 + 自动加载 DB 已有标签（不触发 AI）
+      const dtParam = targetDate !== getLastTradingDayStr() ? `dt=${targetDate}` : '';
+      const res = await apiRequest(`/api/v1/limit-up-echelon${dtParam ? `?${dtParam}` : ''}`);
       if (res?.data) {
+        dataCache.current[targetDate] = res.data;
         setData(res.data);
         const status = res.data.ai?.status || 'none';
         setAiStatus(status);
@@ -70,19 +118,20 @@ function LimitUpEchelon() {
   }, []);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchData(currentDate);
+  }, [fetchData, currentDate]);
 
-  // 刷新题材标签（force=1 清除缓存重新AI分组）
-  // 只触发后台AI，不更新当前数据，等轮询完成后一次性替换
+  // 手动触发 AI 分组
   const refreshThemes = useCallback(async () => {
     setRefreshingThemes(true);
     try {
-      const res = await apiRequest('/api/v1/limit-up-echelon?analysis=1&force=1');
+      const dtParam = currentDate !== getLastTradingDayStr() ? `&dt=${currentDate}` : '';
+      const res = await apiRequest(`/api/v1/limit-up-echelon?force=1${dtParam}`);
       if (res?.data) {
         const status = res.data.ai?.status || 'none';
         if (status === 'done') {
           // AI 已经完成（命中缓存等），直接更新数据
+          dataCache.current[currentDate] = res.data;
           setData(res.data);
           setAiStatus('done');
           setRefreshingThemes(false);
@@ -95,21 +144,24 @@ function LimitUpEchelon() {
       console.error('刷新题材标签失败:', err);
       setRefreshingThemes(false);
     }
-  }, []);
+  }, [currentDate]);
 
   // AI分组轮询：pending 时每2秒查一次
   useEffect(() => {
     if (aiStatus !== 'pending') return;
     const timer = setInterval(async () => {
       try {
-        const res = await apiRequest('/api/v1/limit-up-echelon/ai-status');
+        const dtParam = currentDate !== getLastTradingDayStr() ? `?dt=${currentDate}` : '';
+        const res = await apiRequest(`/api/v1/limit-up-echelon/ai-status${dtParam}`);
         if (res?.data?.status === 'done') {
           setAiStatus('done');
           setRefreshingThemes(false);
           // 重新拉取完整数据，一次性刷新所有标签和分类
           try {
-            const fullRes = await apiRequest('/api/v1/limit-up-echelon?analysis=1');
+            const dtParam = currentDate !== getLastTradingDayStr() ? `?dt=${currentDate}` : '';
+            const fullRes = await apiRequest(`/api/v1/limit-up-echelon${dtParam}`);
             if (fullRes?.data) {
+              dataCache.current[currentDate] = fullRes.data;
               setData(fullRes.data);
             }
           } catch (_) {
@@ -141,7 +193,7 @@ function LimitUpEchelon() {
       }
     }, 2000);
     return () => clearInterval(timer);
-  }, [aiStatus]);
+  }, [aiStatus, currentDate]);
 
   const echelons = useMemo(() => data?.echelons || [], [data]);
   const summary = data?.summary || {};
@@ -238,7 +290,7 @@ function LimitUpEchelon() {
 
   return (
     <div className="echelon-container">
-      {/* 顶部统计 + AI分析按钮 */}
+      {/* 顶部统计 + 日期导航 */}
       <div className="echelon-top-bar">
         <div className="echelon-summary">
           <div className="summary-item">
@@ -262,6 +314,53 @@ function LimitUpEchelon() {
               <LoadingOutlined style={{ marginRight: 4, color: '#1890ff' }} />
               <span style={{ color: '#1890ff', fontSize: 12 }}>AI分组中...</span>
             </div>
+          )}
+          {aiStatus !== 'pending' && (
+            <div
+              className={`summary-item ai-group-btn ${refreshingThemes ? 'refreshing' : ''}`}
+              onClick={refreshingThemes ? undefined : refreshThemes}
+              style={{ cursor: refreshingThemes ? 'not-allowed' : 'pointer', opacity: refreshingThemes ? 0.6 : 1 }}
+            >
+              {refreshingThemes
+                ? <LoadingOutlined style={{ fontSize: 14, color: '#1890ff' }} />
+                : <ReloadOutlined style={{ fontSize: 14, color: '#faad14' }} />
+              }
+              <span style={{ marginLeft: 4, fontSize: 12, color: '#faad14', whiteSpace: 'nowrap' }}>AI分组</span>
+            </div>
+          )}
+        </div>
+        <div className="date-nav">
+          <button
+            className="date-nav-btn"
+            onClick={() => {
+              const prev = offsetDate(currentDate, -1);
+              setCurrentDate(prev);
+              setAiStatus('none');
+            }}
+          >
+            <LeftOutlined /> 前一天
+          </button>
+          <span className="date-nav-label">{formatDateDisplay(currentDate)}</span>
+          <button
+            className="date-nav-btn"
+            disabled={currentDate >= todayStr}            onClick={() => {
+              const next = offsetDate(currentDate, 1);
+              setCurrentDate(next);
+              setAiStatus('none');
+            }}
+          >
+            后一天 <RightOutlined />
+          </button>
+          {currentDate !== todayStr && (
+            <button
+              className="date-nav-btn date-nav-today"
+              onClick={() => {
+                setCurrentDate(todayStr);
+                setAiStatus('none');
+              }}
+            >
+              今天
+            </button>
           )}
         </div>
       </div>

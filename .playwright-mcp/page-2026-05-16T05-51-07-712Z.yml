@@ -1,0 +1,51 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - menu [ref=e5]:
+      - menuitem "个股分析" [ref=e6] [cursor=pointer]
+      - menuitem "涨停梯队" [ref=e7] [cursor=pointer]
+      - menuitem "情绪周期" [ref=e8] [cursor=pointer]
+      - menuitem [disabled]:
+        - img:
+          - img
+  - main [ref=e9]:
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - button "left" [ref=e12] [cursor=pointer]:
+          - img "left" [ref=e14]:
+            - img [ref=e15]
+        - generic [ref=e17]: 2026-05-15
+        - button "right" [disabled] [ref=e18]:
+          - generic:
+            - img "right":
+              - img
+        - button "今日" [ref=e19] [cursor=pointer]:
+          - generic [ref=e20]: 今日
+      - generic [ref=e30]:
+        - generic [ref=e31]:
+          - button "thunderbolt AI 情绪分析" [active] [ref=e32] [cursor=pointer]:
+            - img "thunderbolt" [ref=e43]:
+              - img [ref=e44]
+            - generic [ref=e41]: AI 情绪分析
+          - button "reload 刷新分析" [ref=e33] [cursor=pointer]:
+            - img "reload" [ref=e47]:
+              - img [ref=e48]
+            - generic [ref=e50]: 刷新分析
+        - generic [ref=e51]:
+          - generic [ref=e55]:
+            - img "thunderbolt" [ref=e56]:
+              - img [ref=e57]
+            - text: AI 情绪分析结果
+          - generic [ref=e59]:
+            - generic [ref=e60]: "当前阶段: 修复期"
+            - generic [ref=e61]:
+              - heading "分析" [level=5] [ref=e62]
+              - generic [ref=e63]: 数据极度有限，仅有2026-05-14单日数据：上涨比例2.5%，连板家数8只。缺少涨停数、跌停数、大面/大肉情绪、打板成功率、最新高度、妖股名称等关键字段，无法进行多维交叉验证。从有限数据推断：连板家数8只说明市场仍有一定活跃度，并非冰点；但上涨比例仅2.5%偏低，赚钱效应一般，不具备升温期特征。综合判断市场处于'修复期'特征——有局部连板效应但赚钱面未打开，资金谨慎试探。由于缺乏历史对比数据（前几日趋势、高度变化、打板成功率拐点），无法准确判断拐点位置，也无法识别龙头标的及板块主线。当日热门板块题材接口返回登录错误，缺失题材方向信息，无法精准锁定主线龙头。建议后续补充完整数据后再做精细化研判。
+            - generic [ref=e64]:
+              - heading "建议" [level=5] [ref=e65]
+              - generic [ref=e66]: 数据严重缺失，建议保守观望为主，仓位控制在2-3成以内。优先等待数据完整后再做决策。若必须参与，只做当日封板最早、板块效应最强的主线龙头首板一进二，单票不超过1成。严格止损，跌破首板涨停价立即出局，避免重仓和追高。
+            - generic [ref=e67]:
+              - heading "推荐标的" [level=5] [ref=e68]
+              - generic [ref=e71]:
+                - generic [ref=e72]: 数据不足，无法推荐具体标的
+                - generic [ref=e73]: 当前仅提供单日宏观数据（上涨比例、连板家数），缺少monster_stock妖股名称、板块题材、个股封板时间/换手率/封成比等关键筛选要素，无法按'龙头首阴低吸''爆量涨停弱转强''首板一进二'三大战法进行个股筛选。建议补充完整数据字段（特别是monster_stock、热门板块、近5日趋势）后再做推荐。可观察方向：当日8只连板股中封板最早、所属板块涨停家数最多者作为次日一进二备选池。
+                - generic [ref=e74]: "仓位: 0成（数据不足，建议空仓等待）"

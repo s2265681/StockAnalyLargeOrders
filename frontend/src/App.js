@@ -44,8 +44,7 @@ function App() {
       <Content>
         {error && (
           <Alert
-            message="错误"
-            description={error}
+            message={error}
             type="error"
             showIcon
             closable

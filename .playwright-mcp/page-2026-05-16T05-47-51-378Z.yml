@@ -1,0 +1,33 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - menu [ref=e5]:
+      - menuitem "个股分析" [ref=e6] [cursor=pointer]
+      - menuitem "涨停梯队" [ref=e7] [cursor=pointer]
+      - menuitem "情绪周期" [ref=e8] [cursor=pointer]
+      - menuitem [disabled]:
+        - img:
+          - img
+  - main [ref=e9]:
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - button "left" [ref=e12] [cursor=pointer]:
+          - img "left" [ref=e14]:
+            - img [ref=e15]
+        - generic [ref=e17]: 2026-05-15
+        - button "right" [disabled] [ref=e18]:
+          - generic:
+            - img "right":
+              - img
+        - button "今日" [ref=e19] [cursor=pointer]:
+          - generic [ref=e20]: 今日
+      - generic [ref=e31]:
+        - button "thunderbolt AI 情绪分析" [disabled] [ref=e32]:
+          - generic:
+            - img "thunderbolt":
+              - img
+          - generic: AI 情绪分析
+        - button "reload 刷新分析" [disabled] [ref=e33]:
+          - generic:
+            - img "reload":
+              - img
+          - generic: 刷新分析

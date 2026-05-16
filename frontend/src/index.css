@@ -1440,6 +1440,57 @@ code {
   font-family: 'Courier New', monospace;
 }
 
+/* 智能题材按钮 & 标签 */
+.smart-theme-area {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 12px;
+  flex-wrap: wrap;
+}
+
+.smart-theme-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  background: #1a2332;
+  border: 1px solid #2a4a6b;
+  border-radius: 6px;
+  color: #60a5fa;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.smart-theme-btn:hover:not(:disabled) {
+  background: #1f3050;
+}
+
+.smart-theme-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.smart-theme-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: default;
+  white-space: nowrap;
+}
+
+.smart-theme-count {
+  font-style: normal;
+  font-size: 11px;
+  opacity: 0.85;
+  font-weight: bold;
+}
+
 .basic-stats {
   border-top: 1px solid #333;
   padding-top: 16px;

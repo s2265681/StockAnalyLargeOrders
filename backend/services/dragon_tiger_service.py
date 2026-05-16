@@ -17,8 +17,6 @@ def get_daily_stocks(date: str) -> list:
     if not stocks:
         return []
     codes = [s["code"] for s in stocks]
-    if not codes:
-        return stocks
     placeholders = ",".join(["%s"] * len(codes))
     seats = execute_query(
         f"SELECT * FROM dragon_tiger_seats WHERE date = %s AND code IN ({placeholders})"
@@ -53,9 +51,11 @@ def save_daily_stocks(date: str, stocks: list) -> None:
           reason=VALUES(reason), interpret=VALUES(interpret)
     """
     params = [
-        (date, s["code"], s["name"], s["change_pct"], s["close_price"],
-         s["net_buy"], s["buy_amount"], s["sell_amount"],
-         s["lhb_amount"], s["total_amount"], s["reason"], s["interpret"])
+        (date, s.get("code", ""), s.get("name", ""),
+         s.get("change_pct", 0), s.get("close_price", 0),
+         s.get("net_buy", 0), s.get("buy_amount", 0), s.get("sell_amount", 0),
+         s.get("lhb_amount", 0), s.get("total_amount", 0),
+         s.get("reason", ""), s.get("interpret", ""))
         for s in stocks
     ]
     execute_many(sql, params)
@@ -66,15 +66,12 @@ def save_seats(date: str, seats: list) -> None:
     if not seats:
         return
     codes = list({s["code"] for s in seats})
-    directions = list({s["direction"] for s in seats})
-    if not codes or not directions:
+    if not codes:
         return
     code_ph = ",".join(["%s"] * len(codes))
-    dir_ph = ",".join(["%s"] * len(directions))
     execute_write(
-        f"DELETE FROM dragon_tiger_seats WHERE date=%s AND code IN ({code_ph})"
-        f" AND direction IN ({dir_ph})",
-        [date] + codes + directions,
+        f"DELETE FROM dragon_tiger_seats WHERE date=%s AND code IN ({code_ph})",
+        [date] + codes,
     )
     sql = """
         INSERT INTO dragon_tiger_seats
@@ -83,8 +80,8 @@ def save_seats(date: str, seats: list) -> None:
         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
     """
     params = [
-        (date, s["code"], s["direction"], s["rank_no"], s["seat_name"],
-         s["buy_amount"], s["sell_amount"], s["net_amount"], s["is_hot_money"])
+        (date, s.get("code", ""), s.get("direction", "buy"), s.get("rank_no", 0), s.get("seat_name", ""),
+         s.get("buy_amount", 0), s.get("sell_amount", 0), s.get("net_amount", 0), s.get("is_hot_money", 0))
         for s in seats
     ]
     execute_many(sql, params)

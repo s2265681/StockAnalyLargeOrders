@@ -7,6 +7,7 @@ from .l2_dashboard import l2_dashboard_bp
 from .emotion_cycle import emotion_cycle_bp
 from .limit_up_echelon import limit_up_echelon_bp
 from .theme_manage import theme_manage_bp
+from .auction_grab import auction_grab_bp
 
 __all__ = [
     'stock_basic_bp',
@@ -17,4 +18,5 @@ __all__ = [
     'emotion_cycle_bp',
     'limit_up_echelon_bp',
     'theme_manage_bp',
+    'auction_grab_bp',
 ]

@@ -114,14 +114,31 @@ function EmotionCycle() {
     fetchData();
   }, [fetchData]);
 
+  // 切换日期时自动加载已有的分析结果
+  useEffect(() => {
+    const loadCachedAnalysis = async () => {
+      setAnalysisResult(null);
+      try {
+        const res = await apiRequest(`/api/v1/emotion-analysis-cache?date=${selectedDate}`);
+        if (res?.data) {
+          setAnalysisResult(res.data);
+        }
+      } catch (err) {
+        // 无缓存，忽略
+      }
+    };
+    if (records.length > 0) {
+      loadCachedAnalysis();
+    }
+  }, [selectedDate, records.length]);
+
   const handleAnalysis = async () => {
     if (records.length === 0) return;
 
-    // 过滤到选中日期的数据
-    const filteredRecords = records.filter(r => {
-      const rDate = r.date.replace(/-/g, '');
-      return rDate <= selectedDate;
-    });
+    // 取截止到选中日期的最近10天数据（让AI看趋势）
+    const filteredRecords = records
+      .filter(r => r.date.replace(/-/g, '') <= selectedDate)
+      .slice(-10);
 
     setAnalysisLoading(true);
     try {
@@ -131,6 +148,7 @@ function EmotionCycle() {
           records: filteredRecords,
           date: selectedDate,
         }),
+        timeout: 90000,
       });
       if (res?.data) {
         let result = res.data;
@@ -169,10 +187,9 @@ function EmotionCycle() {
   const handleAnalysisRefresh = async () => {
     if (records.length === 0) return;
 
-    const filteredRecords = records.filter(r => {
-      const rDate = r.date.replace(/-/g, '');
-      return rDate <= selectedDate;
-    });
+    const filteredRecords = records
+      .filter(r => r.date.replace(/-/g, '') <= selectedDate)
+      .slice(-10);
 
     setAnalysisLoading(true);
     try {
@@ -182,6 +199,7 @@ function EmotionCycle() {
           records: filteredRecords,
           date: selectedDate,
         }),
+        timeout: 90000,
       });
       if (res?.data) {
         let result = res.data;
@@ -400,7 +418,7 @@ function EmotionCycle() {
 
   return (
     <div className="emotion-cycle-container">
-      {/* 日期导航栏 */}
+      {/* 日期导航栏 + AI分析按钮 */}
       <div className="emotion-date-nav">
         <Button
           type="text"
@@ -424,6 +442,32 @@ function EmotionCycle() {
         >
           今日
         </Button>
+
+        <div className="date-nav-ai-btns">
+          <Button
+            type="primary"
+            icon={<ThunderboltOutlined />}
+            onClick={handleAnalysis}
+            loading={analysisLoading}
+            disabled={records.length === 0}
+            className="ai-analysis-btn"
+          >
+            AI 情绪分析
+          </Button>
+          <Button
+            type="text"
+            icon={<ReloadOutlined />}
+            onClick={() => {
+              setAnalysisResult(null);
+              handleAnalysisRefresh();
+            }}
+            loading={analysisLoading}
+            disabled={records.length === 0 || !analysisResult}
+            className="ai-refresh-btn"
+          >
+            刷新
+          </Button>
+        </div>
       </div>
 
       <div className="emotion-chart-card">
@@ -444,35 +488,6 @@ function EmotionCycle() {
       </div>
 
       <div className="ai-analysis-section">
-        <div style={{ display: 'flex', gap: 12 }}>
-          <Button
-            type="primary"
-            icon={<ThunderboltOutlined />}
-            onClick={handleAnalysis}
-            loading={analysisLoading}
-            disabled={records.length === 0}
-            size="large"
-            className="ai-analysis-btn"
-          >
-            AI 情绪分析
-          </Button>
-
-          <Button
-            type="dashed"
-            icon={<ReloadOutlined />}
-            onClick={() => {
-              setAnalysisResult(null);
-              handleAnalysisRefresh();
-            }}
-            loading={analysisLoading}
-            disabled={records.length === 0 || !analysisResult}
-            size="large"
-            className="ai-analysis-refresh-btn"
-          >
-            刷新分析
-          </Button>
-        </div>
-
         {analysisLoading && !analysisResult && (
           <div className="loading-container">
             <Spin size="large" tip="AI 正在分析中..." />

@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import StockDashboard from './pages/StockDashboard';
 import EmotionCycle from './pages/EmotionCycle';
 import LimitUpEchelon from './pages/LimitUpEchelon';
+import AuctionGrab from './pages/AuctionGrab';
 import { errorAtom } from './store/atoms';
 
 const { Content, Header } = Layout;
@@ -14,6 +15,7 @@ const navItems = [
   { key: '/stock-dashboard', label: '个股分析' },
   { key: '/limit-up-echelon', label: '涨停梯队' },
   { key: '/emotion-cycle', label: '情绪周期' },
+  { key: '/auction-grab', label: '竞价抢筹' },
 ];
 
 function App() {
@@ -75,6 +77,9 @@ function App() {
 
           {/* 情绪周期页面路由 */}
           <Route path="/emotion-cycle" element={<EmotionCycle />} />
+
+          {/* 竞价抢筹页面路由 */}
+          <Route path="/auction-grab" element={<AuctionGrab />} />
 
           {/* 404页面 - 重定向到股票分析页面 */}
           <Route path="*" element={<Navigate to="/stock-dashboard" replace />} />

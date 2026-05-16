@@ -394,7 +394,21 @@ def post_emotion_analysis():
         return v1_error_response(message=f"情绪分析异常: {str(e)}")
 
 
-# ---------- 3. 情绪周期分析 + 数据库存储 ----------
+# ---------- 3. 查询已有分析结果 ----------
+
+@emotion_cycle_bp.route('/api/v1/emotion-analysis-cache', methods=['GET'])
+def get_emotion_analysis_cache():
+    """查询数据库中已有的分析结果（不触发新分析）"""
+    dt = request.args.get('date')
+    if not dt:
+        return v1_error_response(message="请提供 date 参数")
+    db_result = _get_analysis_from_db(dt)
+    if db_result:
+        return v1_success_response(data=db_result)
+    return v1_success_response(data=None)
+
+
+# ---------- 4. 情绪周期分析 + 数据库存储 ----------
 
 @emotion_cycle_bp.route('/api/v1/emotion-analysis-with-storage', methods=['POST'])
 def post_emotion_analysis_with_storage():

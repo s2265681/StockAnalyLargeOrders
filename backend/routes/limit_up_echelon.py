@@ -896,14 +896,13 @@ def get_stock_theme_tags():
     """智能分析单只股票的题材归属，返回最多2个标签+各自涨停家数（不存库）"""
     code = request.args.get('code', '').strip().zfill(6)
     dt = request.args.get('dt', datetime.now().strftime('%Y%m%d')).replace('-', '')
-    # 前端可以传来已知的行业字段作为兜底
-    frontend_industry = request.args.get('industry', '').strip()
     if not code:
         return v1_error_response(message='缺少 code 参数')
 
     try:
         import akshare as ak
-        # 1. 获取当日涨停池（用于统计）
+
+        # 1. 获取当日涨停池（用于统计同行业/同题材涨停数）
         try:
             df = ak.stock_zt_pool_em(date=dt)
         except Exception:
@@ -916,23 +915,17 @@ def get_stock_theme_tags():
                     'name': str(row.get('名称', '')),
                     'industry': str(row.get('所属行业', '')),
                 })
-
         total_limit_up = len(all_stocks)
 
-        # 2. 读取当天 DB 里的题材分组（含 AI 标签）
+        # 2. 读取当天 DB 题材分组
         db_stocks = get_limit_up_stocks_by_date(dt)
         db_code_to_tag = {s['code']: s['tag_name'] for s in db_stocks if s.get('tag_name')}
         db_tags = get_tags_by_date(dt)
         db_tag_names = [t['tag_name'] for t in db_tags if t.get('tag_name')]
+        db_tag_reasons = {t['tag_name']: t.get('reason', '') for t in db_tags}
 
-        # 3. 找当前股票的行业
-        target_industry = ''
-        for s in all_stocks:
-            if s['code'] == code:
-                target_industry = s['industry']
-                break
-
-        # 如果当天涨停池没有这只股票，从同花顺热股里找行业
+        # 3. 获取股票行业（优先涨停池 → THS热股 → 前端传参）
+        target_industry = next((s['industry'] for s in all_stocks if s['code'] == code), '')
         ths_info = {}
         if not target_industry:
             try:
@@ -942,96 +935,68 @@ def get_stock_theme_tags():
             except Exception:
                 pass
 
-        # 仍然没有行业 → 用前端传来的行业字段兜底
-        if not target_industry and frontend_industry:
-            target_industry = frontend_industry
-
-        # 最终兜底 → 从 A 股实时行情查行业（含所有股票）
-        if not target_industry:
+        # 4. 获取股票名称
+        stock_name = next((s['name'] for s in all_stocks if s['code'] == code), '')
+        if not stock_name:
             try:
-                spot_df = ak.stock_zh_a_spot_em()
-                if spot_df is not None and not spot_df.empty and '代码' in spot_df.columns:
-                    row = spot_df[spot_df['代码'] == code]
-                    if not row.empty and '所属行业' in row.columns:
-                        target_industry = str(row.iloc[0]['所属行业'] or '')
+                from utils.stock_utils import get_stock_name_by_code as _get_name
+                stock_name = _get_name(code) or code
             except Exception:
-                pass
+                stock_name = code
 
-        # 4. 统计同行业涨停数
-        industry_count = sum(1 for s in all_stocks if s['industry'] == target_industry and target_industry) if target_industry else 0
-
-        # 5. 确定 AI/DB 题材标签
+        # 5. 确定题材标签（DB有则直接用，否则用AI分析）
         db_theme = db_code_to_tag.get(code, '')
-
-        # 5a. 如果 DB 有标签，直接用
         if db_theme and db_theme not in ('其他概念', '其他', '其他行业'):
             theme_label = db_theme
-            theme_reason = next((t.get('reason', '') for t in db_tags if t.get('tag_name') == db_theme), '')
+            theme_reason = db_tag_reasons.get(db_theme, '')
         else:
-            # 5b. DB 没有 → 用 Claude 分析
+            # 用 Claude 分析：给出已有 theme_tags，让 AI 判断归属或建议新标签
             theme_label = ''
             theme_reason = ''
-            if CLAUDE_API_KEY and all_stocks:
+            if CLAUDE_API_KEY:
                 try:
-                    ths_map_local = {}
-                    try:
-                        _, ths_map_local = _fetch_ths_hot_stocks()
-                    except Exception:
-                        pass
-                    info = ths_map_local.get(code, ths_info)
-                    existing_text = '、'.join(db_tag_names[:15]) if db_tag_names else '（无）'
-                    try:
-                        from utils.stock_utils import get_stock_name_by_code as _get_name
-                        _sname = _get_name(code) or next((s['name'] for s in all_stocks if s['code'] == code), code)
-                    except Exception:
-                        _sname = next((s['name'] for s in all_stocks if s['code'] == code), code)
+                    info = ths_info or {}
+                    existing_text = '、'.join(db_tag_names[:20]) if db_tag_names else '（今日暂无题材标签）'
                     prompt = (
                         _STOCK_THEME_PROMPT
                         .replace('{code}', code)
-                        .replace('{name}', _sname)
+                        .replace('{name}', stock_name)
                         .replace('{industry}', target_industry or '未知')
                         .replace('{ths_rank}', str(info.get('ths_rank') or '-'))
                         .replace('{ths_title}', str(info.get('ths_analyse_title') or ''))
                         .replace('{ths_tags}', ','.join(info.get('ths_concept_tags') or []))
                         .replace('{ths_analyse}', str(info.get('ths_analyse') or '')[:300])
-                        .replace('{reason}', str(info.get('ths_analyse_title') or ''))
+                        .replace('{reason}', str(info.get('ths_analyse_title') or target_industry or ''))
                         .replace('{existing_labels}', existing_text)
                     )
                     content = _call_claude(prompt, max_tokens=256)
                     import json as _json
-                    parsed = _json.loads(content.strip())
-                    theme_label = parsed.get('label', '')
-                    theme_reason = parsed.get('reason', '')
+                    # 容错：提取 JSON 部分
+                    content = content.strip()
+                    if '{' in content:
+                        content = content[content.index('{'):content.rindex('}')+1]
+                    parsed = _json.loads(content)
+                    theme_label = (parsed.get('label') or '').strip()
+                    theme_reason = (parsed.get('reason') or '').strip()
                 except Exception as e:
                     logger.warning(f'AI题材分析失败: {e}')
 
-        # 6. 统计同题材涨停数（与 DB 同标签的股票数）
-        theme_count = 0
-        if theme_label:
-            theme_count = sum(1 for c, lbl in db_code_to_tag.items() if lbl == theme_label)
+        # 6. 统计涨停数
+        industry_count = sum(1 for s in all_stocks if s['industry'] == target_industry) if target_industry else 0
+        theme_count = sum(1 for lbl in db_code_to_tag.values() if lbl == theme_label) if theme_label else 0
 
         # 7. 构建最多2个标签，按涨停数降序
         tags = []
-        if theme_label and theme_count > 0:
+        if theme_label and theme_label not in ('其他概念', '其他', '其他行业'):
             tags.append({'label': theme_label, 'count': theme_count, 'type': 'theme', 'reason': theme_reason})
-        if target_industry and industry_count > 0:
-            tags.append({'label': target_industry, 'count': industry_count, 'type': 'industry', 'reason': f'{target_industry}行业今日涨停 {industry_count} 只'})
+        if target_industry:
+            # 若行业名与题材名不同才加
+            if not any(t['label'] == target_industry for t in tags):
+                tags.append({'label': target_industry, 'count': industry_count, 'type': 'industry',
+                             'reason': f'{target_industry}行业今日涨停 {industry_count} 只'})
 
-        # 去重（题材和行业名称相同时合并）
-        seen = set()
-        deduped = []
-        for t in tags:
-            if t['label'] not in seen:
-                seen.add(t['label'])
-                deduped.append(t)
-
-        # 按涨停数排序，最多2个
-        deduped.sort(key=lambda x: x['count'], reverse=True)
-        result_tags = deduped[:2]
-
-        # 如果题材/行业都没数据，至少返回行业
-        if not result_tags and target_industry:
-            result_tags = [{'label': target_industry, 'count': industry_count, 'type': 'industry', 'reason': '行业标签'}]
+        tags.sort(key=lambda x: x['count'], reverse=True)
+        result_tags = tags[:2]
 
         return v1_success_response(data={
             'code': code,

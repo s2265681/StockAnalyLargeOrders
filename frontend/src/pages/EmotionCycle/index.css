@@ -144,7 +144,6 @@
   background: #1a3a2a;
   border-color: #2a6b4a;
   color: #10b981;
-  margin-left: auto;
 }
 
 .date-nav-today-btn:hover {
@@ -152,6 +151,25 @@
   color: #34d399 !important;
 }
 
-.ai-analysis-refresh-btn {
-  height: 36px;
+.date-nav-ai-btns {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.date-nav-ai-btns .ai-analysis-btn {
+  margin-bottom: 0;
+  height: 32px;
+  font-size: 13px;
+}
+
+.ai-refresh-btn {
+  color: #999;
+  font-size: 13px;
+  height: 32px;
+}
+
+.ai-refresh-btn:hover:not(:disabled) {
+  color: #fff !important;
 }

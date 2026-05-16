@@ -1,0 +1,77 @@
+frontend/src/pages/StockDashboard/components/StockBasicInfo.js
+  s_5abe22543c11e2::t_993e765d518702 141-144,147-148
+frontend/src/pages/StockDashboard/components/StockOrderDetails.js
+  s_5abe22543c11e2::t_7b56d5fe8eff17 400-403
+frontend/src/pages/StockDashboard/components/MoneyFlowPanel.js
+  s_5abe22543c11e2::t_5bd2bdf6edc358 71
+frontend/src/index.css
+  s_5abe22543c11e2::t_6dfae563aa5777 1228,2406
+  s_5abe22543c11e2::t_adcf7b2e374dcc 2464,2470,2512
+  s_5abe22543c11e2::t_aa0defdf0a6a84 224,494,1784,2268
+  s_5abe22543c11e2::t_0e406be2bc8fed 38
+  s_5abe22543c11e2::t_a7308bfe0c8df6 349,2431
+  s_5abe22543c11e2::t_3f42d99d374a73 367,1273
+  s_5abe22543c11e2::t_6ac7467f10d430 379,1301
+  s_5abe22543c11e2::t_ad1453ca9d3ada 482,521,765,839,902,933,969,1005,1060,1721,1774,1936,1997,2216,2259
+  s_5abe22543c11e2::t_357b9b3eff3432 1245
+  s_5abe22543c11e2::t_5df81cabbf8ef4 350,460
+  s_5abe22543c11e2::t_1cf39abfa7331b 1364,1406
+  s_5abe22543c11e2::t_c2e7114c26bc59 2332
+  s_5abe22543c11e2::t_335cc41c9bca15 2360
+  s_5abe22543c11e2::t_c6b9083d2f6a9d 2450
+  s_5abe22543c11e2::t_21e5db69bbcbf6 2523
+  s_5abe22543c11e2::t_d704990981a889 28-37
+  s_5abe22543c11e2::t_b3f5f18809c78f 1383,2420
+  s_5abe22543c11e2::t_478a5e76d4a884 1206,1233
+  s_5abe22543c11e2::t_8ec3b8d178c7c6 493,841,936,971,1007,1122,1783,1930,2183,2223,2267
+  s_5abe22543c11e2::t_fb31d7abff7543 459,1292
+  s_5abe22543c11e2::t_8c6f0059acb056 1351
+  s_5abe22543c11e2::t_89057460452f58 2347
+  s_5abe22543c11e2::t_c3c34e55fafc39 68-78
+  s_5abe22543c11e2::t_2ed5384f45a53d 314,378,1336
+  s_5abe22543c11e2::t_790aff9d37702e 461,1404
+  s_5abe22543c11e2::t_811735e14197ab 1214,1287,1334,2384
+  s_5abe22543c11e2::t_7b55a50b9d13c0 346
+  s_5abe22543c11e2::t_5028524ebe941c 1239
+  s_5abe22543c11e2::t_b3338cc858dc83 1346
+  s_5abe22543c11e2::t_c7a3f5ecdbfdc4 2402
+  s_5abe22543c11e2::t_831748f3739360 2455
+  s_5abe22543c11e2::t_6b0bea9f0e9f64 2519
+  s_5abe22543c11e2::t_2ceb9e4132a068 432
+  s_5abe22543c11e2::t_fadd87e57f97d3 439
+  s_5abe22543c11e2::t_6e1acccd7bf017 221,311,376,484,524,767,776,815,833,904,913,988,1062,1725,1734,1775,1818,2210,2218,2260,2294,2333
+  s_5abe22543c11e2::t_fc48ab094b2ee2 2486
+.github/workflows/deploy.yml
+  s_63c14bd4d1c13f::t_f8cfbe87cc8c85 1,5-6,12-56
+frontend/src/pages/StockDashboard/components/StockChart.js
+  s_5abe22543c11e2::t_01e751c8228c3c 123
+  s_5abe22543c11e2::t_0f9789941f0625 569
+  s_5abe22543c11e2::t_ed04bd8564bd9f 759,762
+  s_5abe22543c11e2::t_298b57412d28d3 60-68
+  s_5abe22543c11e2::t_cc800514cdba53 630
+  s_5abe22543c11e2::t_21a5e05fd9abc3 560,596
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "f185ee139a11026cecd2d19bfeb8edc7d67f8992",
+  "prompts": {},
+  "sessions": {
+    "s_5abe22543c11e2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5bc225c8-e0b2-4c63-bd0c-af8fe9267e57",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_63c14bd4d1c13f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a082751d-d59e-409f-8b03-18bcb680ca5d",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Spin, Tag, Space, Typography } from 'antd';
-import { ThunderboltOutlined } from '@ant-design/icons';
+import { ThunderboltOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
 import ReactEChartsCore from 'echarts-for-react/lib/core';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
@@ -54,11 +54,47 @@ const seriesConfig = [
   { key: 'limit_down_count', name: '跌停家数', color: '#40a9ff', yAxisIndex: 0 },
 ];
 
+// 获取最近交易日（周末自动退到周五）
+const getLastTradingDayStr = () => {
+  const d = new Date();
+  const dow = d.getDay();
+  if (dow === 6) d.setDate(d.getDate() - 1); // 周六 -> 周五
+  if (dow === 0) d.setDate(d.getDate() - 2); // 周日 -> 周五
+  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+};
+
+// 日期偏移（跳过周末）
+const offsetDate = (dateStr, delta) => {
+  const d = new Date(
+    parseInt(dateStr.slice(0, 4)),
+    parseInt(dateStr.slice(4, 6)) - 1,
+    parseInt(dateStr.slice(6, 8))
+  );
+  let count = 0;
+  const step = delta > 0 ? 1 : -1;
+  while (count !== delta) {
+    d.setDate(d.getDate() + step);
+    const dow = d.getDay();
+    if (dow !== 0 && dow !== 6) count += step;
+  }
+  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+};
+
+// 格式化日期显示（YYYYMMDD -> YYYY-MM-DD）
+const formatDateDisplay = (dateStr) => {
+  if (!dateStr || dateStr.length !== 8) return dateStr;
+  return `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
+};
+
 function EmotionCycle() {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
+
+  // 新增：日期选择 state
+  const [selectedDate, setSelectedDate] = useState(() => getLastTradingDayStr());
+  const minDate = records.length > 0 ? records[0].date.replace(/-/g, '') : '20000101';
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -80,12 +116,21 @@ function EmotionCycle() {
 
   const handleAnalysis = async () => {
     if (records.length === 0) return;
+
+    // 过滤到选中日期的数据
+    const filteredRecords = records.filter(r => {
+      const rDate = r.date.replace(/-/g, '');
+      return rDate <= selectedDate;
+    });
+
     setAnalysisLoading(true);
     try {
-      const last10 = records.slice(-10);
-      const res = await apiRequest('/api/v1/emotion-analysis', {
+      const res = await apiRequest('/api/v1/emotion-analysis-with-storage', {
         method: 'POST',
-        body: JSON.stringify({ records: last10 }),
+        body: JSON.stringify({
+          records: filteredRecords,
+          date: selectedDate,
+        }),
       });
       if (res?.data) {
         let result = res.data;
@@ -122,7 +167,13 @@ function EmotionCycle() {
   };
 
   const getChartOption = () => {
-    const dates = records.map((r) => r.date);
+    // 过滤到选中日期的数据
+    const filteredRecords = records.filter(r => {
+      const rDate = r.date.replace(/-/g, '');
+      return rDate <= selectedDate;
+    });
+
+    const dates = filteredRecords.map((r) => r.date);
 
     const series = seriesConfig.map((cfg) => ({
       name: cfg.name,
@@ -145,7 +196,7 @@ function EmotionCycle() {
             fontWeight: 'bold',
           }
         : { show: false },
-      data: records.map((r) => r[cfg.key]),
+      data: filteredRecords.map((r) => r[cfg.key]),
     }));
 
     return {
@@ -302,6 +353,32 @@ function EmotionCycle() {
 
   return (
     <div className="emotion-cycle-container">
+      {/* 日期导航栏 */}
+      <div className="emotion-date-nav">
+        <Button
+          type="text"
+          icon={<LeftOutlined />}
+          onClick={() => setSelectedDate(offsetDate(selectedDate, -1))}
+          disabled={selectedDate <= minDate}
+          className="date-nav-btn"
+        />
+        <span className="date-nav-label">{formatDateDisplay(selectedDate)}</span>
+        <Button
+          type="text"
+          icon={<RightOutlined />}
+          onClick={() => setSelectedDate(offsetDate(selectedDate, 1))}
+          disabled={selectedDate >= getLastTradingDayStr()}
+          className="date-nav-btn"
+        />
+        <Button
+          type="text"
+          onClick={() => setSelectedDate(getLastTradingDayStr())}
+          className="date-nav-today-btn"
+        >
+          今日
+        </Button>
+      </div>
+
       <div className="emotion-chart-card">
         {loading ? (
           <div className="loading-container">

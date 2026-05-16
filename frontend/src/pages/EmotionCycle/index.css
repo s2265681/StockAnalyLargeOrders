@@ -95,3 +95,59 @@
   align-items: center;
   padding: 60px 0;
 }
+
+/* 日期导航栏 */
+.emotion-date-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: #1e1d1e;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+}
+
+.date-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  color: #ccc;
+  font-size: 13px;
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.date-nav-btn:hover:not(:disabled) {
+  background: #383838;
+  color: #fff;
+}
+
+.date-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.date-nav-label {
+  font-size: 14px;
+  color: #ccc;
+  min-width: 100px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.date-nav-today-btn {
+  background: #1a3a2a;
+  border-color: #2a6b4a;
+  color: #10b981;
+  margin-left: auto;
+}
+
+.date-nav-today-btn:hover {
+  background: #1f4a33 !important;
+  color: #34d399 !important;
+}

@@ -1,0 +1,36 @@
+frontend/src/pages/EmotionCycle/index.css
+  s_fb7678489d4804::t_d95193f90cc648 137
+  s_fb7678489d4804::t_9f0d02a0172a18 2,4-14,18-28,33-55,63
+  s_fb7678489d4804::t_afe741d5cc85ac 91-92,98-99,101
+  s_fb7678489d4804::t_00a4d1b860f018 145-146,150
+backend/routes/auction_grab.py
+  s_30ad7005a0b8eb::t_2d46f07893ef58 3,7,15-16,18-20,22-28,41-45,48-67,69-77,79-80,88,92,95-98,100,105,107-108,110,112-114,116,118,120-126,131,133
+frontend/src/pages/AuctionGrab/index.js
+  s_30ad7005a0b8eb::t_18502e8c90aefb 215,224,227
+  s_30ad7005a0b8eb::t_aab739fc2bec72 68-69,79
+  s_30ad7005a0b8eb::t_620a2f97dfc644 104-110
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "e5a95eb9df33d80d28c4659a555d6e10e616ba9b",
+  "prompts": {},
+  "sessions": {
+    "s_30ad7005a0b8eb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f183b359-00f9-41ec-8871-a2e232aa23ed",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_fb7678489d4804": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3f3ff6c2-7664-49cf-abb8-f611780af96a",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+backend/routes/orders.py
+  s_7c2a81bcd6c721::t_73649e4376a8cb 1-151
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "990edfe039b80aa6146ab4b8356f07eedd4d7413",
+  "prompts": {},
+  "sessions": {
+    "s_7c2a81bcd6c721": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a63b6fc9-c713-4a31-bf62-d8f010ba1f97",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

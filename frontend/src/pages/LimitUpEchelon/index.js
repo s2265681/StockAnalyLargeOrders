@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Spin, Tag, Tooltip, Popover, Button } from 'antd';
-import { FireOutlined, ClockCircleOutlined, LoadingOutlined } from '@ant-design/icons';
+import { FireOutlined, ClockCircleOutlined, LoadingOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { apiRequest } from '../../config/api';
 import './index.css';
@@ -50,6 +50,7 @@ function LimitUpEchelon() {
 
 
   const [aiStatus, setAiStatus] = useState('none'); // none | pending | done | error
+  const [refreshingThemes, setRefreshingThemes] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -72,6 +73,30 @@ function LimitUpEchelon() {
     fetchData();
   }, [fetchData]);
 
+  // 刷新题材标签（force=1 清除缓存重新AI分组）
+  // 只触发后台AI，不更新当前数据，等轮询完成后一次性替换
+  const refreshThemes = useCallback(async () => {
+    setRefreshingThemes(true);
+    try {
+      const res = await apiRequest('/api/v1/limit-up-echelon?analysis=1&force=1');
+      if (res?.data) {
+        const status = res.data.ai?.status || 'none';
+        if (status === 'done') {
+          // AI 已经完成（命中缓存等），直接更新数据
+          setData(res.data);
+          setAiStatus('done');
+          setRefreshingThemes(false);
+        } else {
+          // pending：只更新 aiStatus 触发轮询，保留当前展示数据不变
+          setAiStatus(status);
+        }
+      }
+    } catch (err) {
+      console.error('刷新题材标签失败:', err);
+      setRefreshingThemes(false);
+    }
+  }, []);
+
   // AI分组轮询：pending 时每2秒查一次
   useEffect(() => {
     if (aiStatus !== 'pending') return;
@@ -80,26 +105,36 @@ function LimitUpEchelon() {
         const res = await apiRequest('/api/v1/limit-up-echelon/ai-status');
         if (res?.data?.status === 'done') {
           setAiStatus('done');
-          // 合并AI分组到现有数据
-          setData((prev) => {
-            if (!prev) return prev;
-            const themedStocks = res.data.themed_stocks || {};
-            const newEchelons = prev.echelons.map((echelon) => ({
-              ...echelon,
-              stocks: echelon.stocks.map((stock) => {
-                const ai = themedStocks[stock.code];
-                return ai ? { ...stock, ...ai } : stock;
-              }),
-            }));
-            return {
-              ...prev,
-              echelons: newEchelons,
-              theme_ranking: res.data.theme_ranking || prev.theme_ranking,
-              ai: { ...prev.ai, ok: true, status: 'done' },
-            };
-          });
+          setRefreshingThemes(false);
+          // 重新拉取完整数据，一次性刷新所有标签和分类
+          try {
+            const fullRes = await apiRequest('/api/v1/limit-up-echelon?analysis=1');
+            if (fullRes?.data) {
+              setData(fullRes.data);
+            }
+          } catch (_) {
+            // fallback: 合并AI分组到现有数据
+            setData((prev) => {
+              if (!prev) return prev;
+              const themedStocks = res.data.themed_stocks || {};
+              const newEchelons = prev.echelons.map((echelon) => ({
+                ...echelon,
+                stocks: echelon.stocks.map((stock) => {
+                  const ai = themedStocks[stock.code];
+                  return ai ? { ...stock, ...ai } : stock;
+                }),
+              }));
+              return {
+                ...prev,
+                echelons: newEchelons,
+                theme_ranking: res.data.theme_ranking || prev.theme_ranking,
+                ai: { ...prev.ai, ok: true, status: 'done' },
+              };
+            });
+          }
         } else if (res?.data?.status === 'error') {
           setAiStatus('error');
+          setRefreshingThemes(false);
         }
       } catch (e) {
         console.error('AI status poll failed:', e);
@@ -281,6 +316,19 @@ function LimitUpEchelon() {
               </Popover>
             );
           })}
+          <Tooltip title="重新分析题材标签（优先使用已有标签，新股票调用AI归类）">
+            <span
+              className={`theme-ranking-item theme-refresh-btn ${refreshingThemes || aiStatus === 'pending' ? 'refreshing' : ''}`}
+              onClick={refreshingThemes || aiStatus === 'pending' ? undefined : refreshThemes}
+              style={{ cursor: refreshingThemes || aiStatus === 'pending' ? 'not-allowed' : 'pointer', color: '#fff', opacity: refreshingThemes || aiStatus === 'pending' ? 0.7 : 1 }}
+            >
+              {refreshingThemes || aiStatus === 'pending'
+                ? <LoadingOutlined spin style={{ fontSize: 14 }} />
+                : <ReloadOutlined style={{ fontSize: 14 }} />
+              }
+              <span style={{ marginLeft: 4 }}>{refreshingThemes || aiStatus === 'pending' ? 'AI分组中...' : '更新'}</span>
+            </span>
+          </Tooltip>
         </div>
       )}
 

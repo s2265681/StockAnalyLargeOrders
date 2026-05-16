@@ -17,6 +17,7 @@ from routes import (
     l2_dashboard_bp,
     emotion_cycle_bp,
     limit_up_echelon_bp,
+    theme_manage_bp,
 )
 
 app = Flask(__name__)
@@ -35,6 +36,7 @@ def register_blueprints(app):
     app.register_blueprint(l2_dashboard_bp)
     app.register_blueprint(emotion_cycle_bp)
     app.register_blueprint(limit_up_echelon_bp)
+    app.register_blueprint(theme_manage_bp)
 
 
 register_blueprints(app)

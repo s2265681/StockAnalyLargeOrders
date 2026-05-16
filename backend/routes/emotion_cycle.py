@@ -18,6 +18,30 @@ logger = logging.getLogger(__name__)
 
 emotion_cycle_bp = Blueprint('emotion_cycle', __name__)
 
+
+def _init_emotion_analysis_table():
+    """初始化情绪分析结果表"""
+    from utils.db import execute_write
+    sql = """
+    CREATE TABLE IF NOT EXISTS emotion_analysis_results (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        date VARCHAR(8) UNIQUE NOT NULL,
+        analysis_result_json LONGTEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+    """
+    try:
+        execute_write(sql)
+        logger.info("emotion_analysis_results 表初始化成功")
+    except Exception as e:
+        logger.warning(f"emotion_analysis_results 表可能已存在: {e}")
+
+
+# 模块加载时初始化
+_init_emotion_analysis_table()
+
+
 # ---------- 常量 ----------
 STOCKAPI_EMOTION_URL = (
     "http://user.stockapi.com.cn/v1/base/emotionalCycle"

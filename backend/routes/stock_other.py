@@ -104,16 +104,30 @@ def _enrich_current_stock_info(data, code, ak):
 
 @stock_other_bp.route('/api/v1/limit_up_themes', methods=['GET'])
 def get_limit_up_themes():
-    """获取当前股票题材和当天涨停池按题材归纳"""
+    """获取当前股票题材和当天涨停池按题材归纳
+    优先使用数据库中的 AI 标签，没有则 fallback 到行业分类
+    """
     code = request.args.get('code', '000001')
     dt = request.args.get('dt', datetime.now().strftime('%Y-%m-%d'))
     trade_date = dt.replace('-', '')
 
     try:
         import akshare as ak
-        df = ak.stock_zt_pool_em(date=trade_date)
-        rows = df.to_dict('records') if df is not None else []
-        data = build_limit_up_theme_summary(rows, code)
+        from services.theme_service import get_limit_up_stocks_by_date, get_tags_by_date
+
+        # 优先从数据库读取 AI 标签数据
+        db_stocks = get_limit_up_stocks_by_date(trade_date)
+        db_tags = get_tags_by_date(trade_date)
+
+        if db_stocks and db_tags:
+            # 数据库有数据，使用 AI 标签
+            data = _build_theme_summary_from_db(db_stocks, db_tags, code)
+        else:
+            # fallback: 用 akshare 原始行业分类
+            df = ak.stock_zt_pool_em(date=trade_date)
+            rows = df.to_dict('records') if df is not None else []
+            data = build_limit_up_theme_summary(rows, code)
+            data = _enrich_current_stock_info(data, code, ak)
 
         limit_down_count = 0
         try:
@@ -138,13 +152,71 @@ def get_limit_up_themes():
             'sentiment_label': sentiment_label,
             'lone_wolf_stocks': data.get('lone_wolf_stocks', []),
         }
-        data = _enrich_current_stock_info(data, code, ak)
         data['trade_date'] = dt
-        data['data_source'] = 'akshare.stock_zt_pool_em'
+        data['data_source'] = 'database' if (db_stocks and db_tags) else 'akshare.stock_zt_pool_em'
         return success_response(data=data)
     except Exception as e:
         logger.error(f"获取涨停题材归纳失败: {e}", exc_info=True)
         return error_response(message=f'获取涨停题材归纳失败: {str(e)}')
+
+
+def _build_theme_summary_from_db(db_stocks, db_tags, code):
+    """从数据库的 AI 标签构建题材归纳"""
+    normalized_code = _normalize_code(code)
+    reason_map = {t["tag_name"]: t.get("reason", "") for t in db_tags}
+
+    theme_map = {}
+    current_stock = None
+
+    for s in db_stocks:
+        stock_code = s.get("code", "")
+        tag = s.get("tag_name") or s.get("industry") or "未分类"
+        item = {
+            "code": stock_code,
+            "name": s.get("name", ""),
+            "price": float(s.get("price", 0) or 0),
+            "limit_up_stat": s.get("zt_stat", ""),
+            "consecutive_boards": int(s.get("boards", 1) or 1),
+            "seal_amount": float(s.get("seal_amount", 0) or 0),
+            "reason": reason_map.get(tag, f"{tag}题材涨停"),
+        }
+        theme_map.setdefault(tag, {"theme": tag, "count": 0, "stocks": []})
+        theme_map[tag]["count"] += 1
+        theme_map[tag]["stocks"].append(item)
+        if stock_code == normalized_code:
+            current_stock = {**item, "theme": tag}
+
+    themes = sorted(theme_map.values(), key=lambda x: x["count"], reverse=True)
+    for t in themes:
+        cnt = len(t["stocks"])
+        t["reason"] = reason_map.get(t["theme"], "")
+        if cnt >= 4:
+            t["linkage_score"] = round(min(cnt / 5, 1.0), 2)
+            t["linkage_label"] = "强联动"
+        elif cnt >= 2:
+            t["linkage_score"] = round(cnt / 5, 2)
+            t["linkage_label"] = "中等联动"
+        else:
+            t["linkage_score"] = 0.1
+            t["linkage_label"] = "弱联动"
+
+    lone_wolf = [s["code"] for t in themes if t["count"] == 1 for s in t["stocks"]]
+    current_theme = current_stock.get("theme") if current_stock else ""
+    current_theme_count = theme_map.get(current_theme, {}).get("count", 0) if current_theme else 0
+
+    return {
+        "current_stock": current_stock or {
+            "code": normalized_code,
+            "name": "",
+            "theme": "",
+            "reason": "当前股票未在当日涨停池中，暂无涨停原因",
+        },
+        "current_theme": current_theme,
+        "current_theme_count": current_theme_count,
+        "themes": themes,
+        "lone_wolf_stocks": lone_wolf,
+        "total_limit_up_count": len(db_stocks),
+    }
 
 
 @stock_other_bp.route('/api/trading-date/navigate', methods=['GET'])

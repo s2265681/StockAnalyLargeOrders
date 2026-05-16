@@ -132,19 +132,19 @@ function EmotionCycle() {
   }, [selectedDate, records.length]);
 
   // 全量分析：把所有数据传给AI，为每天生成分析，批量存库
+  // force: false=只分析新日期, '1'=刷新最近3天, 'all'=全部重刷
   const handleAnalysis = async (force = false) => {
     if (records.length === 0) return;
 
     setAnalysisLoading(true);
     setAnalysisResult(null);
     try {
-      const url = force
-        ? '/api/v1/emotion-analysis-with-storage?force=1'
-        : '/api/v1/emotion-analysis-with-storage';
+      let url = '/api/v1/emotion-analysis-with-storage';
+      if (force) url += `?force=${force}`;
       const res = await apiRequest(url, {
         method: 'POST',
         body: JSON.stringify({ records }),
-        timeout: 200000,
+        timeout: 600000,
       });
       if (res?.data) {
         // 分析完成后，加载当前选中日期的缓存
@@ -371,7 +371,7 @@ function EmotionCycle() {
           <Button
             type="text"
             icon={<ReloadOutlined />}
-            onClick={() => handleAnalysis(true)}
+            onClick={() => handleAnalysis('1')}
             loading={analysisLoading}
             disabled={records.length === 0}
             className="ai-refresh-btn"

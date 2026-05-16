@@ -1,0 +1,22 @@
+backend/app.py
+  s_7c2a81bcd6c721::t_e45675232df678 23-25
+  s_7c2a81bcd6c721::t_ba5b580e63f5be 47-49
+backend/routes/__init__.py
+  s_7c2a81bcd6c721::t_5663f29776218f 12-14,27-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "bf7ea29c8c43e3aca4dd00435caf2d6dd0fa52e3",
+  "prompts": {},
+  "sessions": {
+    "s_7c2a81bcd6c721": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a63b6fc9-c713-4a31-bf62-d8f010ba1f97",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

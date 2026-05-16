@@ -19,6 +19,7 @@ from routes import (
     limit_up_echelon_bp,
     theme_manage_bp,
     auction_grab_bp,
+    dragon_tiger_bp,
 )
 
 app = Flask(__name__)
@@ -39,6 +40,7 @@ def register_blueprints(app):
     app.register_blueprint(limit_up_echelon_bp)
     app.register_blueprint(theme_manage_bp)
     app.register_blueprint(auction_grab_bp)
+    app.register_blueprint(dragon_tiger_bp)
 
 
 register_blueprints(app)

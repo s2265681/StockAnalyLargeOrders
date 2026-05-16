@@ -1,0 +1,19 @@
+frontend/src/pages/EmotionCycle/index.js
+  s_5abe22543c11e2::t_72c0198a9779cc 214
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "c4473b3a4c38cdad8636030792b7a862bd7f0bcd",
+  "prompts": {},
+  "sessions": {
+    "s_5abe22543c11e2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5bc225c8-e0b2-4c63-bd0c-af8fe9267e57",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

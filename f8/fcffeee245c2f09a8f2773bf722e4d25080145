@@ -1,0 +1,25 @@
+frontend/src/pages/StockDashboard/index.js
+  s_5abe22543c11e2::t_e4c1387c3e805e 200
+frontend/src/store/atoms.js
+  s_5abe22543c11e2::t_e2acd355e781aa 257
+  s_5abe22543c11e2::t_b0ae83ccf5fc02 304
+  s_5abe22543c11e2::t_451dcd72fbfd56 435
+  s_5abe22543c11e2::t_302f9909fb1a28 45
+  s_5abe22543c11e2::t_4556db9eadb112 227,236-245
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "f8fcffeee245c2f09a8f2773bf722e4d25080145",
+  "prompts": {},
+  "sessions": {
+    "s_5abe22543c11e2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5bc225c8-e0b2-4c63-bd0c-af8fe9267e57",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

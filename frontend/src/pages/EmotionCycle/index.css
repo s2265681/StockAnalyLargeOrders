@@ -215,3 +215,36 @@
 .ai-refresh-btn:hover:not(:disabled) {
   color: var(--text-primary) !important;
 }
+
+/* 备选标的列表 */
+.recommendations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recommendation-item {
+  background: var(--bg-card-hover);
+  border-radius: 6px;
+  padding: 8px 10px;
+  border-left: 3px solid #1890ff;
+}
+
+.rec-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.rec-stock {
+  font-weight: bold;
+  color: #faad14;
+  font-size: 13px;
+}
+
+.rec-reason {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}

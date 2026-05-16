@@ -282,7 +282,7 @@ function EmotionCycle() {
   const renderAnalysis = () => {
     if (!analysisResult) return null;
 
-    const { stage, analysis, advice } = analysisResult;
+    const { stage, analysis, advice, recommendations } = analysisResult;
     const stageColor = stageColorMap[stage]
       || Object.entries(stageColorMap).find(([k]) => stage?.includes(k))?.[1]
       || '#1890ff';
@@ -304,9 +304,26 @@ function EmotionCycle() {
         )}
 
         {advice && (
-          <div>
+          <div style={{ marginBottom: 12 }}>
             <div className="analysis-section-title">建议</div>
             <div className="advice-text">{advice}</div>
+          </div>
+        )}
+
+        {recommendations && recommendations.length > 0 && (
+          <div>
+            <div className="analysis-section-title">备选标的</div>
+            <div className="recommendations-list">
+              {recommendations.map((rec, idx) => (
+                <div key={idx} className="recommendation-item">
+                  <div className="rec-header">
+                    <span className="rec-stock">{rec.stock}</span>
+                    {rec.position && <Tag color="blue" style={{ fontSize: 11 }}>{rec.position}</Tag>}
+                  </div>
+                  <div className="rec-reason">{rec.reason}</div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

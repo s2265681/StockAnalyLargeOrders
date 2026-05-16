@@ -68,7 +68,7 @@ const MoneyFlowPanel = () => {
 
   return (
     <Card className="stock-card moneyflow-panel" title="资金流向" extra={
-      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>
+      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
         同花顺 {lastTime && `${lastTime.slice(0,2)}:${lastTime.slice(2)}`}
       </span>
     }>

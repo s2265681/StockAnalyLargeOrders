@@ -25,6 +25,17 @@
   --color-accent: #1890ff;
   --color-warning: #ffa940;
 
+  --border-subtle: rgba(255, 255, 255, 0.1);
+  --border-faint: rgba(255, 255, 255, 0.05);
+  --border-light: rgba(255, 255, 255, 0.08);
+  --bg-subtle: rgba(255, 255, 255, 0.02);
+  --bg-hover: rgba(255, 255, 255, 0.05);
+  --bg-highlight: rgba(255, 255, 255, 0.1);
+  --bg-overlay: rgba(255, 255, 255, 0.03);
+  --text-dim: rgba(255, 255, 255, 0.45);
+  --text-soft: rgba(255, 255, 255, 0.65);
+  --text-medium: rgba(255, 255, 255, 0.82);
+
   --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
@@ -54,6 +65,17 @@
   --color-warning: #fa8c16;
 
   --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+  --border-subtle: rgba(0, 0, 0, 0.1);
+  --border-faint: rgba(0, 0, 0, 0.05);
+  --border-light: rgba(0, 0, 0, 0.08);
+  --bg-subtle: rgba(0, 0, 0, 0.02);
+  --bg-hover: rgba(0, 0, 0, 0.04);
+  --bg-highlight: rgba(0, 0, 0, 0.06);
+  --bg-overlay: rgba(0, 0, 0, 0.03);
+  --text-dim: rgba(0, 0, 0, 0.45);
+  --text-soft: rgba(0, 0, 0, 0.65);
+  --text-medium: rgba(0, 0, 0, 0.82);
 }
 
 body {
@@ -196,10 +218,10 @@ code {
 .stock-industry {
   font-size: 12px;
   color: var(--text-primary);
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--border-subtle);
   padding: 2px 6px;
   border-radius: 3px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--border-subtle);
 }
 
 .market-status {
@@ -286,10 +308,10 @@ code {
 }
 
 .theme-rank-item {
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-subtle);
   border-radius: 12px;
   padding: 12px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-overlay);
 }
 
 .theme-rank-header {
@@ -321,11 +343,11 @@ code {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--border-subtle);
   border-radius: 999px;
   padding: 4px 9px;
-  color: rgba(255, 255, 255, 0.82);
-  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-medium);
+  background: var(--bg-overlay);
   font-size: 12px;
 }
 
@@ -342,7 +364,7 @@ code {
 }
 
 .theme-stock-chip small {
-  color: rgba(255, 255, 255, 0.48);
+  color: var(--text-dim);
 }
 
 .simulation-toolbar {
@@ -351,10 +373,10 @@ code {
   gap: 10px;
   margin: 8px 0 10px;
   padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-subtle);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(255, 255, 255, 0.78);
+  background: var(--bg-overlay);
+  color: var(--text-medium);
 }
 
 .market-status {
@@ -407,14 +429,14 @@ code {
 .toolbar-divider {
   width: 1px;
   height: 16px;
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--bg-highlight);
 }
 
 .toolbar-clock {
   margin-left: auto;
   font-size: 14px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--text-medium);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.5px;
 }
@@ -434,9 +456,9 @@ code {
   height: 22px;
   line-height: 20px;
   padding: 0 8px;
-  color: rgba(255, 255, 255, 0.72);
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.16);
+  color: var(--text-medium);
+  background: var(--bg-overlay);
+  border-color: var(--border-subtle);
   font-size: 12px;
 }
 
@@ -457,9 +479,9 @@ code {
 .stat-item {
   text-align: center;
   padding: 10px 8px;
-  background-color: rgba(255, 255, 255, 0.02);
+  background-color: var(--bg-subtle);
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-subtle);
   transition: all 0.3s ease;
   display: flex;
   flex-direction: row;
@@ -468,8 +490,8 @@ code {
 }
 
 .stat-item:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.2);
+  background-color: var(--border-faint);
+  border-color: var(--border-subtle);
   transform: translateY(-1px);
 }
 
@@ -496,10 +518,10 @@ code {
 }
 
 .summary-item {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg-subtle);
   padding: 16px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-subtle);
   text-align: center;
 }
 
@@ -740,9 +762,9 @@ code {
 /* 大单分析样式 */
 .large-orders-analysis {
   padding: 16px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg-subtle);
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-subtle);
 }
 
 .analysis-title {
@@ -751,7 +773,7 @@ code {
   color: var(--text-primary);
   margin-bottom: 16px;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .category-item {
@@ -790,7 +812,7 @@ code {
 
 .category-bar {
   height: 6px;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--border-subtle);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -808,15 +830,15 @@ code {
   gap: 16px;
   margin-top: 20px;
   padding-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .indicator-item {
   text-align: center;
   padding: 12px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg-subtle);
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-faint);
 }
 
 .indicator-label {
@@ -877,9 +899,9 @@ code {
 /* 数据验证样式 */
 .validation-summary {
   padding: 16px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg-subtle);
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-subtle);
 }
 
 .validation-header {
@@ -888,7 +910,7 @@ code {
   align-items: center;
   margin-bottom: 16px;
   padding-bottom: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .validation-title {
@@ -908,10 +930,10 @@ code {
 
 .quality-score {
   text-align: center;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg-subtle);
   padding: 16px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-faint);
   margin-bottom: 16px;
 }
 
@@ -944,9 +966,9 @@ code {
   flex-direction: column;
   gap: 4px;
   padding: 8px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg-subtle);
   border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-faint);
 }
 
 .analysis-label {
@@ -963,7 +985,7 @@ code {
 
 /* 数据源状态 */
 .data-sources {
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--border-subtle);
   padding-top: 16px;
 }
 
@@ -980,9 +1002,9 @@ code {
   align-items: center;
   padding: 8px 12px;
   margin-bottom: 8px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg-subtle);
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-faint);
 }
 
 .source-name {
@@ -1035,9 +1057,9 @@ code {
 /* 验证建议 */
 .validation-recommendations {
   padding: 16px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg-subtle);
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-subtle);
   margin-bottom: 16px;
 }
 
@@ -1097,7 +1119,7 @@ code {
   display: flex;
   align-items: center;
   padding: 6px 0;
-  /* border-bottom: 1px solid rgba(255, 255, 255, 0.05); */
+  /* border-bottom: 1px solid var(--border-faint); */
   font-size: 11px;
   width: 100%;
   justify-content: space-around;
@@ -1181,7 +1203,7 @@ code {
 
 .auction-block-title {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--text-soft);
   margin-bottom: 8px;
   font-weight: 600;
 }
@@ -1189,7 +1211,7 @@ code {
 .auction-block--volume {
   margin-top: 16px;
   padding-top: 14px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--border-light);
 }
 
 .auction-volume-panel .auction-block--volume:first-child {
@@ -1203,24 +1225,24 @@ code {
   justify-content: space-between;
   align-items: center;
   padding: 5px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--border-light);
   font-size: 13px;
 }
 
 .auction-label {
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--text-soft);
 }
 
 .auction-value {
   font-weight: 600;
   font-family: 'Courier New', monospace;
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--text-primary);
 }
 
 .auction-hint {
   margin-top: 10px;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.42);
+  color: var(--text-dim);
   line-height: 1.45;
 }
 
@@ -1248,7 +1270,7 @@ code {
 .handicap-subtitle,
 .handicap-disclaimer {
   margin-top: 8px;
-  color: rgba(255, 255, 255, 0.48);
+  color: var(--text-dim);
   font-size: 12px;
 }
 
@@ -1262,12 +1284,12 @@ code {
 .handicap-section {
   margin-top: 18px;
   padding-top: 14px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--border-light);
 }
 
 .handicap-section-title {
   margin-bottom: 10px;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--text-medium);
   font-size: 13px;
   font-weight: 700;
 }
@@ -1276,7 +1298,7 @@ code {
   position: relative;
   padding-left: 12px;
   margin-bottom: 8px;
-  color: rgba(255, 255, 255, 0.78);
+  color: var(--text-medium);
   font-size: 13px;
   line-height: 1.55;
 }
@@ -1309,9 +1331,9 @@ code {
   flex-direction: column;
   gap: 4px;
   padding: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-light);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-overlay);
 }
 
 .metric_change{
@@ -1321,12 +1343,12 @@ code {
 }
 
 .handicap-metric span {
-  color: rgba(255, 255, 255, 0.46);
+  color: var(--text-dim);
   font-size: 12px;
 }
 
 .handicap-metric strong {
-  color: rgba(255, 255, 255, 0.86);
+  color: var(--text-medium);
   font-size: 14px;
 }
 
@@ -1339,7 +1361,7 @@ code {
 }
 
 .orderbook-spread {
-  color: rgba(255, 255, 255, 0.52);
+  color: var(--text-dim);
 }
 
 .orderbook-levels {
@@ -1358,7 +1380,7 @@ code {
 }
 
 .orderbook-row span {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-dim);
 }
 
 .orderbook-row strong,
@@ -1379,9 +1401,9 @@ code {
 
 .orderbook-empty {
   padding: 10px;
-  border: 1px dashed rgba(255, 255, 255, 0.16);
+  border: 1px dashed var(--border-subtle);
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.52);
+  color: var(--text-dim);
   font-size: 12px;
   line-height: 1.55;
 }
@@ -1696,11 +1718,11 @@ code {
 
 /* 增强筛选控件样式 */
 .trade-filters-enhanced {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg-subtle);
   border-radius: 8px;
   padding: 16px;
   margin-bottom: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-subtle);
 }
 
 .filter-header {
@@ -1709,7 +1731,7 @@ code {
   align-items: center;
   margin-bottom: 16px;
   padding-bottom: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .filter-title {
@@ -1749,8 +1771,8 @@ code {
 }
 
 .filter-level-item {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
   border-radius: 6px;
   padding: 12px;
   cursor: pointer;
@@ -1758,8 +1780,8 @@ code {
 }
 
 .filter-level-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--border-faint);
+  border-color: var(--border-subtle);
   transform: translateY(-1px);
 }
 
@@ -1793,7 +1815,7 @@ code {
 .level-desc {
   font-size: 11px;
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--border-subtle);
   padding: 1px 6px;
   border-radius: 10px;
   margin-left: 6px;
@@ -1905,13 +1927,13 @@ code {
   grid-template-columns: 100px 80px 80px 100px 120px;
   gap: 16px;
   padding: 10px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border-faint);
   font-size: 13px;
   transition: background-color 0.2s ease;
 }
 
 .trade-item:hover {
-  background-color: rgba(255, 255, 255, 0.02);
+  background-color: var(--bg-subtle);
 }
 
 .trade-time,
@@ -1972,7 +1994,7 @@ code {
 /* 300万级别 - 最高优先级（深红/深绿） */
 .level-300 {
   font-weight: 700;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg-subtle);
 }
 
 .level-300.trade-buy {
@@ -2158,7 +2180,7 @@ code {
 
 /* 所有级别的hover效果 */
 .trade-item:hover {
-  background-color: rgba(255, 255, 255, 0.05) !important;
+  background-color: var(--border-faint) !important;
   transform: translateX(2px);
   transition: all 0.2s ease;
 }
@@ -2185,20 +2207,20 @@ code {
   gap: 16px;
   margin-bottom: 20px;
   padding-bottom: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .overview-item {
   text-align: center;
   padding: 12px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg-subtle);
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-subtle);
   transition: all 0.3s ease;
 }
 
 .overview-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--border-faint);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
@@ -2234,16 +2256,16 @@ code {
 }
 
 .distribution-item {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
   border-radius: 6px;
   padding: 12px;
   transition: all 0.3s ease;
 }
 
 .distribution-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--border-faint);
+  border-color: var(--border-subtle);
 }
 
 .distribution-header {
@@ -2269,7 +2291,7 @@ code {
   border-radius: 3px;
   overflow: hidden;
   display: flex;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--border-subtle);
   margin-bottom: 8px;
 }
 
@@ -2307,8 +2329,8 @@ code {
 }
 
 .analysis-metric {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.015));
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, var(--border-light), var(--bg-subtle));
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
   padding: 12px;
 }
@@ -2322,7 +2344,7 @@ code {
 }
 
 .analysis-label {
-  color: rgba(255, 255, 255, 0.66);
+  color: var(--text-soft);
   font-size: 12px;
   margin-bottom: 6px;
 }
@@ -2335,7 +2357,7 @@ code {
 }
 
 .analysis-value span {
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--text-soft);
   font-size: 11px;
   margin-left: 4px;
 }
@@ -2359,7 +2381,7 @@ code {
 .five-day-panel,
 .peak-order-panel {
   background: rgba(0, 0, 0, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-light);
   border-radius: 8px;
   padding: 12px;
 }
@@ -2377,11 +2399,11 @@ code {
   grid-template-columns: 1.1fr 0.8fr 0.8fr 0.7fr;
   align-items: center;
   gap: 8px;
-  color: rgba(255, 255, 255, 0.84);
+  color: var(--text-medium);
   font-family: 'Courier New', monospace;
   font-size: 12px;
   padding: 6px 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--border-light);
 }
 
 .peak-minute-row {
@@ -2395,7 +2417,7 @@ code {
 }
 
 .analysis-empty {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-dim);
   font-size: 12px;
   padding: 8px 0;
 }
@@ -2406,7 +2428,7 @@ code {
   border-radius: 8px;
   background: rgba(255, 169, 64, 0.08);
   border: 1px solid rgba(255, 169, 64, 0.16);
-  color: rgba(255, 255, 255, 0.82);
+  color: var(--text-medium);
   font-size: 12px;
 }
 
@@ -2425,12 +2447,12 @@ code {
 .moneyflow-panel .mf-hero {
   text-align: center;
   padding: 8px 0 12px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid var(--border-light);
   margin-bottom: 10px;
 }
 .moneyflow-panel .mf-hero-label {
   font-size: 12px;
-  color: rgba(255,255,255,0.45);
+  color: var(--text-dim);
 }
 .moneyflow-panel .mf-hero-value {
   font-size: 24px;
@@ -2439,13 +2461,13 @@ code {
 }
 .moneyflow-panel .mf-hero-sub {
   font-size: 11px;
-  color: rgba(255,255,255,0.35);
+  color: var(--text-dim);
 }
 .moneyflow-panel .mf-header {
   display: grid;
   grid-template-columns: 50px 1fr 1fr 1fr;
   font-size: 11px;
-  color: rgba(255,255,255,0.35);
+  color: var(--text-dim);
   padding: 0 0 4px;
   text-align: right;
 }
@@ -2461,7 +2483,7 @@ code {
 }
 .moneyflow-panel .mf-label {
   font-size: 12px;
-  color: rgba(255,255,255,0.65);
+  color: var(--text-soft);
 }
 .moneyflow-panel .mf-bar-wrap {
   display: flex;
@@ -2487,16 +2509,16 @@ code {
   padding-left: 50px;
 }
 .moneyflow-panel .mf-empty {
-  color: rgba(255,255,255,0.35);
+  color: var(--text-dim);
   text-align: center;
   padding: 20px 0;
   font-size: 13px;
 }
 .moneyflow-panel .mf-footer {
   font-size: 10px;
-  color: rgba(255,255,255,0.2);
+  color: var(--border-faint);
   text-align: center;
   margin-top: 12px;
   padding-top: 8px;
-  border-top: 1px solid rgba(255,255,255,0.04);
+  border-top: 1px solid var(--border-faint);
 }

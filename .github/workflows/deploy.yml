@@ -1,177 +1,56 @@
-name: 🚀 Deploy to Production
+name: Deploy to Aliyun
 
 on:
   push:
-    branches: [ master ]
-  workflow_dispatch: # 允许手动触发
-
-env:
-  SERVER_IP: "18.141.179.222"
-  APP_DIR: "/var/www/app/StockAnalyLargeOrders"
-  NODE_VERSION: "18"
+    branches: [main, master]
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
     steps:
-    - name: 📥 Checkout Code
-      uses: actions/checkout@v4
-      
-    - name: 🟢 Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        
-    - name: 🔑 Setup SSH Agent
-      uses: webfactory/ssh-agent@v0.9.0
-      with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-        
-    - name: 🔨 Build Frontend
-      working-directory: frontend
-      run: |
-        # 显示当前目录和文件
-        pwd
-        ls -la
-        
-        # 安装依赖
-        npm install
-        
-        # 创建生产环境配置
-        cat > .env.production << EOF
-        REACT_APP_API_BASE_URL=http://${{ env.SERVER_IP }}:9001
-        REACT_APP_ENV=production
-        REACT_APP_API_TIMEOUT=300000
-        REACT_APP_DEBUG=false
-        EOF
-        
-        # 构建项目
-        npm run build:prod
-        
-    - name: 🗂️ Prepare Deployment Files
-      run: |
-        # 创建部署目录
-        mkdir -p deployment
-        
-        # 复制后端Python代码
-        cp -r backend/ deployment/
-        
-        # 复制根目录的Python分析脚本
-        cp data_formatter.py deployment/ 2>/dev/null || true
-        cp data_analysis.py deployment/ 2>/dev/null || true
-        
-        # 复制启动脚本
-        cp start.sh deployment/ 2>/dev/null || true
-        cp stop.sh deployment/ 2>/dev/null || true
-        
-        # 复制前端构建文件
-        mkdir -p deployment/frontend-dist
-        cp -r frontend/build/* deployment/frontend-dist/ 2>/dev/null || true
-        
-        # 显示部署文件结构
-        echo "📁 部署文件结构："
-        ls -la deployment/
-        
-    - name: 📤 Deploy to Server
-      run: |
-        # 添加服务器到known_hosts
-        ssh-keyscan -H ${{ env.SERVER_IP }} >> ~/.ssh/known_hosts
-        
-        # 创建应用目录
-        ssh ubuntu@${{ env.SERVER_IP }} "sudo mkdir -p /var/www/app && sudo chown \$USER:\$USER /var/www/app"
-        
-        # 清理旧文件
-        ssh ubuntu@${{ env.SERVER_IP }} "rm -rf ${{ env.APP_DIR }} && mkdir -p ${{ env.APP_DIR }}"
-        
-    - name: 📁 Upload Files
-      run: |
-        # 使用scp上传文件
-        scp -r deployment/* ubuntu@${{ env.SERVER_IP }}:${{ env.APP_DIR }}/
-        
-    - name: 🚀 Execute Deployment
-      run: |
-        ssh ubuntu@${{ env.SERVER_IP }} << 'EOF'
-          cd ${{ env.APP_DIR }}
-          
-          echo "🐍 设置Python环境..."
-          python3 -m venv venv 2>/dev/null || echo 'venv已存在'
-          source venv/bin/activate
-          
-          echo "⬆️ 升级pip..."
-          # pip install --upgrade pip
-          
-          echo "📦 安装Python依赖..."
-          # 使用backend目录下的requirements.txt
-          pip install --no-cache-dir -r backend/requirements.txt
-          # 验证依赖安装情况
-          pip list  
-          python -c "import pandas; print(pandas.__version__)"
-          python -c "import numpy; print(numpy.__version__)"
-          python -c "import scipy; print(scipy.__version__)"
-          python -c "import matplotlib; print(matplotlib.__version__)"
-          python -c "import seaborn; print(seaborn.__version__)"
-          python -c "import sklearn; print(sklearn.__version__)"
-          python -c "import xgboost; print(xgboost.__version__)"
-          python -c "import lightgbm; print(lightgbm.__version__)"
-          
-          echo "🔄 重启后端服务..."
-          pm2 delete StockAnalysisLargeOrders 2>/dev/null || echo '服务不存在，新建中...'
-          
-          echo "🧹 清理端口占用..."
-          lsof -ti:9001 | xargs kill -9 2>/dev/null; echo "清理完成"
-          
-          echo "📍 确认Python解释器路径..."
-          PYTHON_PATH=$(pwd)/venv/bin/python
-          echo "Python path: $PYTHON_PATH"
-          $PYTHON_PATH --version
-          
-          echo "🚀 启动PM2服务..."
-          # 使用backend目录下的app.py启动
-          if [ -f backend/app.py ]; then
-            pm2 start backend/app.py --name StockAnalysisLargeOrders --interpreter $PYTHON_PATH
-          else
-            echo "❌ 未找到backend/app.py文件"
-            exit 1
-          fi
-          pm2 save
-          
-          echo "📊 检查PM2状态..."
-          pm2 status
-          
-          echo "✅ 部署完成！"
-        EOF
-          
-    - name: 🔍 Health Check
-      run: |
-        echo "⏳ 等待服务启动..."
-        sleep 30
-        
-        echo "🔍 检查服务健康状态..."
-        for i in {1..5}; do
-          if curl -f http://${{ env.SERVER_IP }}:9001/health 2>/dev/null; then
-            echo "✅ 服务运行正常！"
-            break
-          elif curl -f http://${{ env.SERVER_IP }}:9001/ 2>/dev/null; then
-            echo "✅ 服务运行正常！"
-            break
-          else
-            echo "⏳ 服务还未就绪，等待中... ($i/5)"
-            sleep 15
-          fi
-        done
-        
-    - name: 📊 Deployment Summary
-      run: |
-        echo "🎉 部署完成！"
-        echo ""
-        echo "🌐 访问地址："
-        echo "  - 前端应用: http://${{ env.SERVER_IP }}:9000/"
-        echo "  - API服务: http://${{ env.SERVER_IP }}:9001/"
-        echo "  - 健康检查: http://${{ env.SERVER_IP }}:9001/health"
-        echo ""
-        echo "📊 服务架构："
-        echo "  - 前端: Nginx代理 + React静态文件 (端口9000)"
-        echo "  - 后端: Flask应用 (端口9001)"
-        echo "  - 进程管理: PM2守护进程"
-        echo "  - 反向代理: Nginx处理静态文件和API代理" 
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+            cd /www/StockAnalyLargeOrders
+
+            echo "===> Pull latest code"
+            git fetch --all
+            git reset --hard origin/${GITHUB_REF_NAME:-main}
+
+            echo "===> Backend: install deps if requirements.txt changed"
+            cd backend
+            source venv/bin/activate
+            if ! diff -q requirements.txt venv/.last_requirements.txt > /dev/null 2>&1; then
+              echo "requirements.txt changed, reinstalling..."
+              pip install -r requirements.txt
+              cp requirements.txt venv/.last_requirements.txt
+            else
+              echo "requirements.txt unchanged, skipping pip install"
+            fi
+            deactivate
+            cd ..
+
+            echo "===> Frontend: install + build"
+            cd frontend
+            if ! diff -q package.json node_modules/.last_pkg.json > /dev/null 2>&1; then
+              echo "package.json changed, reinstalling..."
+              pnpm install
+              cp package.json node_modules/.last_pkg.json
+            fi
+            pnpm run build:prod
+            cd ..
+
+            echo "===> Restart backend via PM2"
+            pm2 restart StockAnalysisLargeOrders || pm2 start ecosystem.config.js
+
+            echo "===> Reload Nginx (frontend is static, no need to restart)"
+            nginx -t && systemctl reload nginx
+
+            echo "===> Deploy success ✅"

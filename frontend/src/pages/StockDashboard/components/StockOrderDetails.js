@@ -397,10 +397,10 @@ const StockOrderDetails = () => {
               onChange={(e) => setSearchText(e.target.value)}
               prefix={<SearchOutlined />}
               allowClear
-              style={{ 
-                backgroundColor: '#2a2a2a', 
-                borderColor: '#444', 
-                color: '#fff',
+              style={{
+                backgroundColor: 'var(--bg-input)',
+                borderColor: 'var(--border-input)',
+                color: 'var(--text-primary)',
                 marginBottom: '12px'
               }}
             />

@@ -57,6 +57,15 @@ const StockChart = () => {
   // 添加筛选阈值状态，默认300
   const [filterThreshold, setFilterThreshold] = React.useState(300);
 
+  // 获取当前主题的CSS变量颜色（ECharts canvas不支持var()）
+  const getThemeColor = (varName, fallback) => {
+    return getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || fallback;
+  };
+  const textColor = getThemeColor('--text-primary', '#fff');
+  const textMuted = getThemeColor('--text-muted', '#999');
+  const borderColor = getThemeColor('--border-primary', '#333');
+  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+
   // 数据验证
   if (timeshareData) {
     // 数据验证逻辑保留，但去掉console.log
@@ -111,7 +120,7 @@ const StockChart = () => {
           symbolSize: Math.min(Math.max((order.amount / filterAmount) * 6, 6), 20),
           itemStyle: {
             color: order.type === 'buy' ? '#ff4d4f' : '#52c41a',
-            borderColor: '#fff',
+            borderColor: isDark ? '#fff' : '#1a1a1a',
             borderWidth: 2
           },
           label: {
@@ -548,7 +557,7 @@ const StockChart = () => {
           boundaryGap: false,
           axisLine: { 
             onZero: false,
-            lineStyle: { color: '#444' }
+            lineStyle: { color: borderColor }
           },
           axisTick: {
             show: false
@@ -557,7 +566,7 @@ const StockChart = () => {
             show: false
           },
           axisLabel: {
-            color: '#fff',
+            color: textColor,
             formatter: function(value, index) {
               if (!value || typeof value !== 'string') {
                 return '';
@@ -584,7 +593,7 @@ const StockChart = () => {
           boundaryGap: false,
           axisLine: { 
             onZero: false,
-            lineStyle: { color: '#444' }
+            lineStyle: { color: borderColor }
           },
           axisTick: { 
             show: false
@@ -618,7 +627,7 @@ const StockChart = () => {
             show: false
           },
           axisLabel: {
-            color: '#fff',
+            color: textColor,
             formatter: function(value) {
               // 取整到小数点后2位
               const roundedValue = Math.round(value * 100) / 100;
@@ -747,10 +756,10 @@ const StockChart = () => {
           connectNulls: false,
           lineStyle: {
             width: 2,
-            color: '#ffffff'
+            color: isDark ? '#ffffff' : '#1a1a1a'
           },
           itemStyle: {
-            color: '#ffffff'
+            color: isDark ? '#ffffff' : '#1a1a1a'
           },
           markLine: {
             silent: true,

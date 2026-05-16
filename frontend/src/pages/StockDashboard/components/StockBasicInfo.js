@@ -138,14 +138,14 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
                   onPressEnter={(e) => {
                     setInnerCode(e.target.value)
                   }}
-                  style={{ 
-                    backgroundColor: '#2a2a2a', 
-                    borderColor: '#444', 
-                    color: '#fff' 
+                  style={{
+                    backgroundColor: 'var(--bg-input)',
+                    borderColor: 'var(--border-input)',
+                    color: 'var(--text-primary)'
                   }}
                   suffix={
-                    <SearchOutlined 
-                      style={{ color: '#fff', cursor: 'pointer' }} 
+                    <SearchOutlined
+                      style={{ color: 'var(--text-primary)', cursor: 'pointer' }} 
                       onClick={()=>{
                         onStockCodeChange(_innerCode)
                       }}

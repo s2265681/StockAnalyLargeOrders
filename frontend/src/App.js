@@ -1,6 +1,7 @@
+// frontend/src/App.js
 import React from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
-import { Layout, Alert, Menu } from 'antd';
+import { Layout, Alert, Menu, Button } from 'antd';
 import { useAtom } from 'jotai';
 import Home from './pages/Home';
 import StockDashboard from './pages/StockDashboard';
@@ -8,43 +9,99 @@ import EmotionCycle from './pages/EmotionCycle';
 import LimitUpEchelon from './pages/LimitUpEchelon';
 import AuctionGrab from './pages/AuctionGrab';
 import DragonTiger from './pages/DragonTiger';
+import Login from './pages/Login';
+import UserCenter from './pages/UserCenter';
+import PermissionCenter from './pages/PermissionCenter';
+import PermissionGuard from './components/PermissionGuard';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { errorAtom } from './store/atoms';
 
 const { Content, Header } = Layout;
 
-const navItems = [
+const NAV_ITEMS = [
   { key: '/stock-dashboard', label: '个股分析' },
   { key: '/limit-up-echelon', label: '涨停梯队' },
   { key: '/dragon-tiger', label: '核心游资' },
   { key: '/emotion-cycle', label: '情绪周期' },
   { key: '/auction-grab', label: '竞价抢筹' },
+  { key: '/permission-center', label: '权限中心' },
 ];
 
-function App() {
+function RequireAuth({ children }) {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+  if (loading) return null;
+  if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
+  return children;
+}
+
+function AppInner() {
   const [error, setError] = useAtom(errorAtom);
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, logout } = useAuth();
 
-  const handleMenuClick = ({ key }) => {
-    navigate(key);
-  };
+  const handleMenuClick = ({ key }) => navigate(key);
+  const isLoginPage = location.pathname === '/login';
 
   return (
     <Layout className="layout" style={{ minHeight: '100vh' }}>
-      <Header style={{ padding: 0, background: '#141213', borderBottom: '1px solid #2a2a2a' }}>
-        <Menu
-          mode="horizontal"
-          selectedKeys={[location.pathname]}
-          items={navItems}
-          onClick={handleMenuClick}
+      {!isLoginPage && (
+        <Header
           style={{
+            padding: 0,
             background: '#141213',
-            borderBottom: 'none',
-            color: '#fff',
+            borderBottom: '1px solid #2a2a2a',
+            display: 'flex',
+            alignItems: 'center',
           }}
-          theme="dark"
-        />
-      </Header>
+        >
+          <Menu
+            mode="horizontal"
+            selectedKeys={[location.pathname]}
+            items={NAV_ITEMS}
+            onClick={handleMenuClick}
+            style={{
+              background: '#141213',
+              borderBottom: 'none',
+              color: '#fff',
+              flex: 1,
+              minWidth: 0,
+            }}
+            theme="dark"
+          />
+          {user && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                paddingRight: 16,
+                gap: 8,
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+              }}
+            >
+              <span
+                style={{ color: '#1677ff', cursor: 'pointer', fontSize: 14 }}
+                onClick={() => navigate('/user-center')}
+              >
+                {user.username}
+              </span>
+              <Button
+                type="text"
+                size="small"
+                style={{ color: '#aaa' }}
+                onClick={async () => {
+                  await logout();
+                  navigate('/login');
+                }}
+              >
+                退出
+              </Button>
+            </div>
+          )}
+        </Header>
+      )}
       <Content>
         {error && (
           <Alert
@@ -59,34 +116,54 @@ function App() {
               left: '50%',
               transform: 'translateX(-50%)',
               zIndex: 9999,
-              maxWidth: '600px'
+              maxWidth: '600px',
             }}
           />
         )}
-
         <Routes>
-          {/* 默认路由重定向到股票分析页面 */}
+          <Route path="/login" element={<Login />} />
           <Route path="/" element={<Navigate to="/stock-dashboard" replace />} />
-
-          {/* 首页路由 */}
-          <Route path="/home" element={<Home />} />
-
-          {/* 股票分析页面路由 */}
-          <Route path="/stock-dashboard" element={<StockDashboard />} />
-
-          {/* 涨停梯队页面路由 */}
-          <Route path="/limit-up-echelon" element={<LimitUpEchelon />} />
-
-          {/* 核心游资页面路由 */}
-          <Route path="/dragon-tiger" element={<DragonTiger />} />
-
-          {/* 情绪周期页面路由 */}
-          <Route path="/emotion-cycle" element={<EmotionCycle />} />
-
-          {/* 竞价抢筹页面路由 */}
-          <Route path="/auction-grab" element={<AuctionGrab />} />
-
-          {/* 404页面 - 重定向到股票分析页面 */}
+          <Route path="/home" element={<RequireAuth><Home /></RequireAuth>} />
+          <Route
+            path="/stock-dashboard"
+            element={<RequireAuth><StockDashboard /></RequireAuth>}
+          />
+          <Route
+            path="/limit-up-echelon"
+            element={<RequireAuth><LimitUpEchelon /></RequireAuth>}
+          />
+          <Route
+            path="/dragon-tiger"
+            element={<RequireAuth><DragonTiger /></RequireAuth>}
+          />
+          <Route
+            path="/emotion-cycle"
+            element={
+              <RequireAuth>
+                <PermissionGuard>
+                  <EmotionCycle />
+                </PermissionGuard>
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/auction-grab"
+            element={
+              <RequireAuth>
+                <PermissionGuard>
+                  <AuctionGrab />
+                </PermissionGuard>
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/permission-center"
+            element={<RequireAuth><PermissionCenter /></RequireAuth>}
+          />
+          <Route
+            path="/user-center"
+            element={<RequireAuth><UserCenter /></RequireAuth>}
+          />
           <Route path="*" element={<Navigate to="/stock-dashboard" replace />} />
         </Routes>
       </Content>
@@ -94,4 +171,12 @@ function App() {
   );
 }
 
-export default App; 
+function App() {
+  return (
+    <AuthProvider>
+      <AppInner />
+    </AuthProvider>
+  );
+}
+
+export default App;

@@ -1,0 +1,48 @@
+backend/routes/auction_grab.py
+  s_30ad7005a0b8eb::t_17e7534d4238e9 45,48,60-65,67-74
+  s_30ad7005a0b8eb::t_305615f87db5a9 20-28
+  s_30ad7005a0b8eb::t_0dbee19abd1e85 15,17,19,33,43-44,54,56,75,86,91-145,150-155,160-164,166,174-175,177,180,182-184,190-191,197,203-208,210,217,219-220,222-223,258,267,281,284,288-291
+  s_30ad7005a0b8eb::t_240791efcb3183 18,165
+backend/routes/emotion_cycle.py
+  s_fb7678489d4804::t_4205a37fd5a1d1 411-449,454-455,465-468,470-477,479-484,486,492,494,502,508,518,520,526,529,535,537,540,544-563
+backend/routes/dragon_tiger.py
+  s_4ce1d966e9c063::t_bbd8cab4146d00 157,169-173
+frontend/src/pages/EmotionCycle/index.js
+  s_fb7678489d4804::t_03d7ee4adbf521 2
+  s_fb7678489d4804::t_5a66bbf519d1e0 347,357,359
+  s_fb7678489d4804::t_f24b8a5b87e0c3 134-135,139,141-144,146-147,150-156,159
+  s_fb7678489d4804::t_9758141c9f7801 285,291,294,296,300-301,308-309,312
+  s_fb7678489d4804::t_6dee267dc28259 367-383,385-401
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "1e8b1272ad5666b9569e5c878785076964b78690",
+  "prompts": {},
+  "sessions": {
+    "s_30ad7005a0b8eb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f183b359-00f9-41ec-8871-a2e232aa23ed",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_4ce1d966e9c063": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "16155e14-2c07-4deb-9bbb-9df938c7df29",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_fb7678489d4804": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3f3ff6c2-7664-49cf-abb8-f611780af96a",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

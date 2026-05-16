@@ -197,7 +197,7 @@ const StockDashboard = () => {
           moneyFlow: fullMoneyFlowRef.current,
         });
       })
-      .catch(err => console.error('模拟回放数据加载失败:', err));
+      .catch(() => {});
 
     simulationTimerRef.current = setInterval(() => {
       setSimulationIndex(prevIndex => {

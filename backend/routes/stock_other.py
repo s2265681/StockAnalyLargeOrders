@@ -8,7 +8,6 @@ from flask import Blueprint, request
 from utils.response import success_response, error_response
 from utils.date_utils import get_next_trading_date, get_valid_trading_date, validate_and_get_trading_date
 from utils.cache import clear_cache
-from utils.stock_utils import get_stock_name_by_code
 
 logger = logging.getLogger(__name__)
 

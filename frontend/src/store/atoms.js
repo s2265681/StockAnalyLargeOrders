@@ -1,9 +1,6 @@
 import { atom } from 'jotai';
 import { apiRequest, getEnvironmentInfo } from '../config/api.js';
 import { alignTimeshareToTradingAxis, buildTradingTimeAxis, sliceL2DataByTime } from '../pages/StockDashboard/utils/l2Analysis.js';
-// import quote from '../mock/quote.json'
-
-
 // 股票代码原子
 const initCode =  new URLSearchParams(window.location.search).get('code') || '000001';
 export const stockCodeAtom = atom(initCode);
@@ -45,7 +42,7 @@ export const selectedDateAtom = atom(getLastTradingDay());
 // 股票基础数据原子
 export const stockBasicDataAtom = atom(null);
 
-// 大单数据原子`
+// 大单数据原子
 export const largeOrdersDataAtom = atom(null);
 
 // 分时图数据原子
@@ -68,9 +65,6 @@ export const loadingAtom = atom(false);
 
 // 错误状态原子
 export const errorAtom = atom(null);
-
-// 数据验证相关原子
-export const dataValidationAtom = atom(null);
 
 // WebSocket 连接状态
 export const wsConnectedAtom = atom(false);
@@ -230,7 +224,7 @@ export const fetchLargeOrdersAtom = atom(
   }
 );
 
-// 帮助函数：根据金额确定类别
+// 帮助函数：根据金额（元）确定类别
 const determineCategory = (amount) => {
   if (amount >= 3000000) return 'D300';
   if (amount >= 1000000) return 'D100';
@@ -239,69 +233,33 @@ const determineCategory = (amount) => {
   return 'under_D30';
 };
 
+// 帮助函数：根据万元金额确定类别
+const determineCategoryFromWan = (amountWan) => {
+  return determineCategory(amountWan * 10000);
+};
+
+// 帮助函数：根据金额确定订单大小标签
+const determineOrderSize = (amount) => {
+  if (amount >= 3000000) return 'large';
+  if (amount >= 1000000) return 'medium';
+  return 'small';
+};
+
 // 获取分时图数据的异步原子（使用竞品接口）
 export const fetchTimeshareDataAtom = atom(
   null,
   async (get, set, code) => {
-    console.log('🔄 fetchTimeshareDataAtom 被调用，股票代码:', code);
     set(loadingAtom, true);
     set(errorAtom, null);
-    
+
     try {
       const today = new Date().toISOString().split('T')[0];
-      console.log('📅 请求日期:', today);
-      
-      // 注释掉实际的 API 调用，直接使用 mock 数据
-     const quote = await apiRequest(`/api/v1/quote?code=${code}&dt=${today}`)
-     console.log(quote,'quote;;;;;')
-      
-      console.log('📊 Mock 数据结构:', Object.keys(quote.data || {}));
-      console.log('📊 Mock 数据样本:', {
-        fenshi: quote.data?.fenshi?.slice(0, 3),
-        zhuli: quote.data?.zhuli?.slice(0, 3),
-        sanhu: quote.data?.sanhu?.slice(0, 3),
-        volume: quote.data?.volume?.slice(0, 3)
-      });
-      
-      // 通过mock 数据展示 
+      const quote = await apiRequest(`/api/v1/quote?code=${code}&dt=${today}`);
       set(timeshareDataAtom, quote.data);
-      console.log('✅ Mock 数据已设置到 timeshareDataAtom');
-      
-      // if (data.success === true && data.data) {
-      //   // 转换为前端期望的格式
-      //   const quoteData = data.data;
-        
-      //   // 处理分时数据
-      //   const timeshareArray = Array.isArray(quoteData.timeshare) ? quoteData.timeshare : [];
-        
-      //   const timeshareData = {
-      //     timeshare: timeshareArray.map(item => ({
-      //       time: item.time,
-      //       price: parseFloat(item.price),
-      //       volume: parseInt(item.volume || 0)
-      //     })),
-      //     statistics: {
-      //       current_price: parseFloat(quoteData.current_price || 0),
-      //       yesterdayClose: parseFloat(quoteData.yesterday_close || 0),
-      //       change_percent: parseFloat(quoteData.change_percent || 0),
-      //       change_amount: parseFloat(quoteData.change_amount || 0),
-      //       high: parseFloat(quoteData.high || 0),
-      //       low: parseFloat(quoteData.low || 0),
-      //       volume: parseInt(quoteData.volume || 0),
-      //       turnover: parseFloat(quoteData.turnover || 0)
-      //     }
-      //   };
-        
-      //   set(timeshareDataAtom, timeshareData);
-      // } else {
-      //   set(errorAtom, data.message || '获取分时数据失败');
-      // }
     } catch (error) {
-      console.error('❌ fetchTimeshareDataAtom 错误:', error);
       set(errorAtom, `获取分时图数据失败: ${error.message}`);
     } finally {
       set(loadingAtom, false);
-      console.log('🏁 fetchTimeshareDataAtom 执行完成');
     }
   }
 );
@@ -343,23 +301,7 @@ export const fetchRealtimeDataAtom = atom(
       set(loadingAtom, false);
     }
   }
-); 
-
-// 帮助函数：根据金额确定订单大小
-const determineOrderSize = (amount) => {
-  if (amount >= 3000000) return 'large';
-  if (amount >= 1000000) return 'medium';
-  return 'small';
-};
-
-// 帮助函数：根据万元金额确定类别
-const determineCategoryFromWan = (amountWan) => {
-  if (amountWan >= 300) return 'D300';
-  if (amountWan >= 100) return 'D100';
-  if (amountWan >= 50) return 'D50';
-  if (amountWan >= 30) return 'D30';
-  return 'under_D30';
-};
+);
 
 /**
  * 解析 L2 Dashboard 返回数据并更新 atoms
@@ -490,9 +432,7 @@ export const fetchL2DashboardAtom = atom(
     // 轻量模式：只请求分时数据（含东方财富资金流），跳过耗时的 l2_orders 大单接口
     const query = new URLSearchParams({ code, dt });
     try {
-      const timeshareResp = await apiRequest(`/api/v1/l2_timeshare?${query}`, { timeout: 45000 }).catch(e => {
-        console.warn('分时接口失败:', e.message); return null;
-      });
+      const timeshareResp = await apiRequest(`/api/v1/l2_timeshare?${query}`, { timeout: 45000 }).catch(() => null);
 
       const timeshareOk = timeshareResp?.success && timeshareResp?.data;
 

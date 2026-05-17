@@ -2653,3 +2653,43 @@ code {
   padding-top: 8px;
   border-top: 1px solid var(--border-faint);
 }
+
+/* ── 移动端导航适配 ── */
+.mobile-menu-btn {
+  display: none !important;
+}
+
+.desktop-nav-menu {
+  display: flex !important;
+}
+
+.desktop-user-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 768px) {
+  .mobile-menu-btn {
+    display: inline-flex !important;
+  }
+
+  .desktop-nav-menu {
+    display: none !important;
+  }
+
+  .desktop-user-actions {
+    display: none !important;
+  }
+
+  .ant-layout-header {
+    padding: 0 !important;
+  }
+}
+
+/* 登录/注册页面白色背景（亮色模式） */
+[data-theme="light"] .login-container,
+[data-theme="light"] .register-container {
+  background: #ffffff;
+  min-height: 100vh;
+}

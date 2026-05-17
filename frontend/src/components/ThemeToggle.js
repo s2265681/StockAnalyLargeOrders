@@ -4,7 +4,7 @@ const THEME_KEY = 'niuniu_theme';
 
 export function useTheme() {
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem(THEME_KEY) || 'dark';
+    return localStorage.getItem(THEME_KEY) || 'light';
   });
 
   useEffect(() => {

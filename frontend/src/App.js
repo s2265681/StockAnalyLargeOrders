@@ -1,7 +1,7 @@
-// frontend/src/App.js
-import React from 'react';
+import React, { useState } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
-import { Layout, Alert, Menu, Button } from 'antd';
+import { Layout, Alert, Menu, Button, Drawer } from 'antd';
+import { MenuOutlined, UserOutlined, LogoutOutlined } from '@ant-design/icons';
 import { useAtom } from 'jotai';
 import Home from './pages/Home';
 import StockDashboard from './pages/StockDashboard';
@@ -41,13 +41,24 @@ function RequireAuth({ children }) {
 
 function AppInner() {
   const [error, setError] = useAtom(errorAtom);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
-  const handleMenuClick = ({ key }) => navigate(key);
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+
+  const handleMenuClick = ({ key }) => {
+    navigate(key);
+    setDrawerOpen(false);
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+    setDrawerOpen(false);
+  };
 
   return (
     <Layout className="layout" style={{ minHeight: '100vh' }}>
@@ -61,7 +72,18 @@ function AppInner() {
             alignItems: 'center',
           }}
         >
+          {/* 移动端汉堡按钮 */}
+          <Button
+            className="mobile-menu-btn"
+            type="text"
+            icon={<MenuOutlined style={{ fontSize: 18, color: 'var(--text-primary)' }} />}
+            onClick={() => setDrawerOpen(true)}
+            style={{ marginLeft: 8, flexShrink: 0 }}
+          />
+
+          {/* 桌面端水平菜单 */}
           <Menu
+            className="desktop-nav-menu"
             mode="horizontal"
             selectedKeys={[location.pathname]}
             items={NAV_ITEMS}
@@ -74,45 +96,127 @@ function AppInner() {
             }}
             theme={theme === 'dark' ? 'dark' : 'light'}
           />
+
+          {/* 右侧操作区 */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
               paddingRight: 16,
-              gap: 8,
+              gap: 4,
               whiteSpace: 'nowrap',
               flexShrink: 0,
             }}
           >
             <ThemeToggle theme={theme} onToggle={toggleTheme} />
-            {user ? (
-              <>
-                <span
-                  style={{ color: 'var(--color-accent)', cursor: 'pointer', fontSize: 14 }}
-                  onClick={() => navigate('/user-center')}
-                >
-                  {user.username}
-                </span>
-                <Button
-                  type="text"
-                  size="small"
-                  style={{ color: 'var(--text-muted)' }}
-                  onClick={async () => {
-                    await logout();
-                    navigate('/login');
-                  }}
-                >
-                  退出
+            {/* 桌面端用户操作 */}
+            <div className="desktop-user-actions">
+              {user ? (
+                <>
+                  <span
+                    style={{ color: 'var(--color-accent)', cursor: 'pointer', fontSize: 14 }}
+                    onClick={() => navigate('/user-center')}
+                  >
+                    {user.username}
+                  </span>
+                  <Button
+                    type="text"
+                    size="small"
+                    style={{ color: 'var(--text-muted)' }}
+                    onClick={handleLogout}
+                  >
+                    退出登录
+                  </Button>
+                </>
+              ) : (
+                <Button size="small" type="primary" onClick={() => navigate('/login')}>
+                  登录
                 </Button>
-              </>
-            ) : (
-              <Button size="small" type="primary" onClick={() => navigate('/login')}>
-                登录
-              </Button>
-            )}
+              )}
+            </div>
           </div>
         </Header>
       )}
+
+      {/* 移动端抽屉菜单 */}
+      <Drawer
+        title={<span style={{ fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>AI炒股指南</span>}
+        placement="left"
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        width={260}
+        styles={{
+          header: { background: 'var(--bg-header)', borderBottom: '1px solid var(--border-secondary)' },
+          body: { padding: 0, background: 'var(--bg-primary)' },
+        }}
+      >
+        <Menu
+          mode="inline"
+          selectedKeys={[location.pathname]}
+          items={NAV_ITEMS}
+          onClick={handleMenuClick}
+          theme={theme === 'dark' ? 'dark' : 'light'}
+          style={{ border: 'none', background: 'transparent' }}
+        />
+        <div
+          style={{
+            padding: '12px 0',
+            borderTop: '1px solid var(--border-secondary)',
+            marginTop: 8,
+          }}
+        >
+          {user ? (
+            <>
+              <div
+                style={{
+                  padding: '10px 24px',
+                  cursor: 'pointer',
+                  color: 'var(--color-accent)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  fontSize: 14,
+                }}
+                onClick={() => { navigate('/user-center'); setDrawerOpen(false); }}
+              >
+                <UserOutlined />
+                个人中心（{user.username}）
+              </div>
+              <Button
+                block
+                type="text"
+                danger
+                icon={<LogoutOutlined />}
+                style={{ textAlign: 'left', justifyContent: 'flex-start', paddingLeft: 24, height: 40 }}
+                onClick={handleLogout}
+              >
+                退出登录
+              </Button>
+            </>
+          ) : (
+            <div style={{ padding: '0 16px' }}>
+              <Button block type="primary" onClick={() => { navigate('/login'); setDrawerOpen(false); }}>
+                登录
+              </Button>
+            </div>
+          )}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '8px 24px',
+              marginTop: 4,
+              color: 'var(--text-muted)',
+              fontSize: 13,
+            }}
+          >
+            <ThemeToggle theme={theme} onToggle={toggleTheme} />
+            {theme === 'dark' ? '切换白天模式' : '切换夜间模式'}
+          </div>
+        </div>
+      </Drawer>
+
       <Content>
         {error && (
           <Alert

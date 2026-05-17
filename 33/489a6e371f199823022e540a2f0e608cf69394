@@ -1,0 +1,181 @@
+backend/jobs/emotion_cycle_recent.py
+  s_ff5edfa5f67a4b::t_cb2a23238f3199 1-43
+backend/tests/test_dragon_tiger_ai.py
+  s_71100b5360f55c::t_ad48adebecccf8 1-54
+backend/jobs/echelon_daily.py
+  s_efab3a253ee02f::t_1d5615d8416913 3,5-13,22-23,32-38,41-45,47-49,51-54,58
+backend/jobs/backfill_emotion_cycle.py
+  s_ff5edfa5f67a4b::t_0ec652bd663125 1-68
+backend/tests/test_emotion_cycle.py
+  s_842524b43b6d68::t_ca81bf8ca1f2b4 234-276
+  s_842524b43b6d68::t_2ef3539506da76 80-83,85,87-92,98,100
+backend/jobs/run_echelon.sh
+  s_efab3a253ee02f::t_949ab6a8333de8 3-5
+  s_efab3a253ee02f::t_10fba70003edec 2,6-44
+backend/jobs/backfill_emotion_daily_analysis.py
+  s_842524b43b6d68::t_2145f25b9a6a34 1-96
+start.sh
+  s_956991c8039222::t_d117bedf733fd0 43-49
+backend/utils/db.py
+  s_efab3a253ee02f::t_41567887304291 8-11
+backend/jobs/run_emotion_cycle.sh
+  s_ff5edfa5f67a4b::t_f4b47a7dd1531a 1-4,9-26,33-39,41-43
+  s_842524b43b6d68::t_6b4b82ea2b481a 40
+  s_842524b43b6d68::t_be937c2b457b45 6-8
+  s_842524b43b6d68::t_72383d13de9f40 27-29
+  s_842524b43b6d68::t_a46575e94f4192 30-32
+  s_842524b43b6d68::t_4760a3675ceedc 5
+frontend/pnpm-lock.yaml
+  ai_agent 52-54,2488-2491,5042-5060,10691-10714,12135-12137
+backend/routes/emotion_cycle.py
+  s_842524b43b6d68::t_543db480226103 838,840-843,849-874,876-877,880-885,888,893-894
+  s_842524b43b6d68::t_db64895cb6cb9e 559
+  s_842524b43b6d68::t_fcde783ad617fb 45
+  s_ff5edfa5f67a4b::t_c65dfed9e966bf 1290-1295,1300-1301,1303-1304
+  s_842524b43b6d68::t_44aa465f13f7f8 364-376,387,397
+  s_842524b43b6d68::t_1184ea61bb32f1 328
+  s_842524b43b6d68::t_02296fcf59e1b5 565-574,583-588,590-604
+  s_842524b43b6d68::t_25bc59248cfc06 741-758
+  s_842524b43b6d68::t_ea1592f7c46655 660-661
+  s_842524b43b6d68::t_eba4b9f5fee3fd 589
+  s_842524b43b6d68::t_a426f97d55ee03 824
+  s_842524b43b6d68::t_311bac5b433bd4 308
+  s_842524b43b6d68::t_67df1d035aeb19 360,377-386,388-396,398-401
+  s_842524b43b6d68::t_b1994e102080bf 345
+  s_ff5edfa5f67a4b::t_b85b8f1f706e82 1190-1276
+  s_842524b43b6d68::t_2aa374c1aa1255 517-535,540-542,544-556,561-562,564,575-582,605-610,614-616,618,626-638,649,651-655,659,664,669-740,759-798,801-818
+  s_842524b43b6d68::t_ccc2724836a0c5 5
+  s_842524b43b6d68::t_9853618104d341 799-800
+backend/app.py
+  s_efab3a253ee02f::t_a7961fac7ef3fe 4-7
+backend/jobs/emotion_daily_analysis_recent.py
+  s_842524b43b6d68::t_199a2dfbf088f3 1-44
+backend/routes/dragon_tiger.py
+  s_71100b5360f55c::t_161b79727f0246 4-6
+  s_71100b5360f55c::t_0102f5a0d9eeb3 304-312,314-321,323,326-329,334,340,343-346,349-413
+backend/tests/test_emotion_cycle_jobs.py
+  s_842524b43b6d68::t_82254cdec124cc 150-174
+  s_ff5edfa5f67a4b::t_1869ed0c918ce3 127-128,130-133
+  s_8b1898977013c2::t_383480abc8404a 122-126,129,134-149
+backend/jobs/dragon_tiger_ai_daily.py
+  s_71100b5360f55c::t_a85a88b845df4c 1-58
+backend/tests/test_env.py
+  s_efab3a253ee02f::t_a4303553f10f13 1-28
+backend/routes/limit_up_echelon.py
+  s_efab3a253ee02f::t_6f26da760456a7 659
+  s_efab3a253ee02f::t_894f0ff231060a 920-925,928-938
+  s_efab3a253ee02f::t_fa423bd0aae9c1 429-431,434
+  s_efab3a253ee02f::t_a3cb6838ea6d6d 616
+  s_efab3a253ee02f::t_21048bc3898405 59,63,65-66,68-73,76-77,82,84-85,90,98-99,102,105
+  s_efab3a253ee02f::t_375a8972251461 79
+  s_efab3a253ee02f::t_2912e56d3fb01c 739-746,754,763,766-772
+  s_efab3a253ee02f::t_66f7340b0f9949 125,128-134
+  s_efab3a253ee02f::t_eac93ee3ad7d2d 333-337,396-428,432-433,435-461
+  s_efab3a253ee02f::t_3163825aeef363 92-93,96-97,100-101,103-104
+  s_efab3a253ee02f::t_42ace9a12a87b1 853-856,867
+  s_efab3a253ee02f::t_cc2f9c1ed8b54f 28
+  s_efab3a253ee02f::t_3f519abe3e7f59 57-58,60-61
+  s_efab3a253ee02f::t_2999fa1d88e3e9 16
+  s_efab3a253ee02f::t_426eaa7e9b95dc 816-840,870
+  s_efab3a253ee02f::t_cfe471b1a9f5bb 110-114
+  s_efab3a253ee02f::t_093ffec78f09e1 377
+  s_efab3a253ee02f::t_b7be6a7e2ce2b4 944-948
+  s_efab3a253ee02f::t_81acc032c0ba09 370
+  s_efab3a253ee02f::t_74e2c90325f05f 338-369,371-376,378-395
+  s_efab3a253ee02f::t_ea4cb729c08352 782-815,843-844,846-852,857-858,860-861,864-865,869,871,873-875,877-884
+  s_efab3a253ee02f::t_36aa35d287ed23 876
+  s_efab3a253ee02f::t_75feda5fe7ff78 3-4
+  s_efab3a253ee02f::t_3438a424e55f91 62,64,67,74-75,78,80-81,83
+  s_efab3a253ee02f::t_1f048605323576 27
+  s_efab3a253ee02f::t_ff00f36240ee6e 660
+  s_efab3a253ee02f::t_0482087b4d6cb5 617-618
+  s_efab3a253ee02f::t_b1623d94a81dc3 653,658
+  s_efab3a253ee02f::t_785cd9e3a8c017 622-624
+backend/jobs/run_dragon_tiger.sh
+  s_71100b5360f55c::t_f378237f1b5207 1-46
+frontend/src/pages/EmotionCycle/index.js
+  s_8b1898977013c2::t_23a19080f42c7c 405
+  s_ff5edfa5f67a4b::t_ae1fc1d7282210 3
+backend/jobs/backfill_emotion_cycle_batch.py
+  s_ff5edfa5f67a4b::t_775391ddc0a0af 1-46
+backend/services/theme_service.py
+  s_efab3a253ee02f::t_908fc0adc77b9c 105-111
+  s_efab3a253ee02f::t_c8876b21d8e23b 202,207,210-226
+  s_efab3a253ee02f::t_a03f0215d29ef3 177,179-195
+  s_efab3a253ee02f::t_af42e45deaf351 71-74,76-86
+backend/utils/env.py
+  s_efab3a253ee02f::t_80df919257344e 1-52
+frontend/src/pages/LimitUpEchelon/index.js
+  s_efab3a253ee02f::t_652dd6916e8b0a 217
+  s_efab3a253ee02f::t_15e70ee73b7539 2-3,34,49-50,56-58,84,109,245,247,253,255-256,262,264,355-357,373,409,411
+backend/tests/test_limit_up_echelon.py
+  s_efab3a253ee02f::t_ae1b340896a36c 154,156
+  s_efab3a253ee02f::t_6f7d92718198e2 91
+  s_efab3a253ee02f::t_127e752830e4c7 94-110
+  s_efab3a253ee02f::t_3d55cc888b9596 3,5
+  s_efab3a253ee02f::t_02a6afa489b3fd 61-62,67-69
+  s_efab3a253ee02f::t_6521d8efc5a418 75-90,92-93
+  s_efab3a253ee02f::t_e07b522a865e6e 111-132
+  s_efab3a253ee02f::t_d33a7a03362ea7 72-74,133,135-138,140-153,155,157-158
+  s_efab3a253ee02f::t_64f3658ce1132a 58-60,63-66,70-71,159-160
+  s_efab3a253ee02f::t_fcfc6ad1740b36 134,139
+backend/tests/test_echelon_jobs.py
+  s_efab3a253ee02f::t_b7fbdcbcac9f70 1-15,17-36
+  s_efab3a253ee02f::t_803554f11912fd 16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "33489a6e371f199823022e540a2f0e608cf69394",
+  "prompts": {},
+  "sessions": {
+    "s_71100b5360f55c": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "a1c112d9-6e6e-4bc0-98d1-8781773bcf37",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_842524b43b6d68": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "bdc3a7bd-048b-4375-bb37-0318b588e186",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_8b1898977013c2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "093e2884-cc61-465e-8ff1-b3a538af93f5",
+        "model": "claude-haiku-4-5-20251001"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_956991c8039222": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "06fa73a2-6774-48c6-9edd-302692b815b0",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_efab3a253ee02f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "96868105-0689-4499-8b0b-ca67c4c4c0eb",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_ff5edfa5f67a4b": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "03ae248a-2493-4cae-ae5a-09e45d544ff0",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

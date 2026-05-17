@@ -1,0 +1,195 @@
+<h2>项目名称 · 第四批</h2>
+<p class="subtitle">面向短线打板党 · 接地气 · 搜索友好</p>
+
+<div class="cards">
+
+  <!-- A：猎涨 -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#0a0e1a;padding:24px;border-radius:8px;display:flex;flex-direction:column;align-items:center;gap:12px;">
+        <div style="width:72px;height:72px;">
+          <svg viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="gLZ" x1="0%" y1="100%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#e8891a"/>
+                <stop offset="100%" stop-color="#f5d060"/>
+              </linearGradient>
+            </defs>
+            <circle cx="36" cy="36" r="32" fill="url(#gLZ)" opacity="0.1" stroke="#f5a623" stroke-width="1" opacity="0.3"/>
+            <!-- 上升箭头 + 准星 -->
+            <circle cx="36" cy="24" r="14" fill="none" stroke="#f5a623" stroke-width="1.5" opacity="0.6"/>
+            <line x1="36" y1="10" x2="36" y2="16" stroke="#f5a623" stroke-width="2" opacity="0.6"/>
+            <line x1="36" y1="32" x2="36" y2="38" stroke="#f5a623" stroke-width="2" opacity="0.6"/>
+            <line x1="22" y1="24" x2="28" y2="24" stroke="#f5a623" stroke-width="2" opacity="0.6"/>
+            <line x1="44" y1="24" x2="50" y2="24" stroke="#f5a623" stroke-width="2" opacity="0.6"/>
+            <!-- 中心箭头 -->
+            <polygon points="36,14 32,22 40,22" fill="#f5c842"/>
+            <!-- 底部趋势线 -->
+            <polyline points="10,62 20,56 30,58 40,46 52,50 62,40" fill="none" stroke="#f5a623" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="62" cy="40" r="3" fill="#f5c842"/>
+          </svg>
+        </div>
+        <div>
+          <div style="color:#f5a623;font-size:24px;font-weight:900;letter-spacing:4px;text-align:center;">猎涨</div>
+          <div style="color:#556677;font-size:10px;text-align:center;margin-top:4px;letter-spacing:2px;">AI 涨停猎手</div>
+        </div>
+        <div style="color:#7788aa;font-size:11px;text-align:center;line-height:1.7;max-width:180px;">
+          打板不靠运气靠系统<br/>AI 猎手，专盯涨停
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">
+          <span style="background:#f5a62322;border:1px solid #f5a62355;color:#f5a623;padding:2px 8px;border-radius:4px;font-size:10px;">AI炒股</span>
+          <span style="background:#f5a62322;border:1px solid #f5a62355;color:#f5a623;padding:2px 8px;border-radius:4px;font-size:10px;">打板神器</span>
+          <span style="background:#f5a62322;border:1px solid #f5a62355;color:#f5a623;padding:2px 8px;border-radius:4px;font-size:10px;">涨停选股</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A · 猎涨</h3>
+      <p>猎 = 狩猎（主动出击），涨 = 涨停板。「猎涨」= 专猎涨停股的 AI 工具。霸气、记忆点强，打板党秒懂。</p>
+    </div>
+  </div>
+
+  <!-- B：涨雷 -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#0a0e1a;padding:24px;border-radius:8px;display:flex;flex-direction:column;align-items:center;gap:12px;">
+        <div style="width:72px;height:72px;">
+          <svg viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="gZL" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#f5d060"/>
+                <stop offset="100%" stop-color="#e8891a"/>
+              </linearGradient>
+            </defs>
+            <!-- 闪电 -->
+            <polygon points="42,6 28,38 40,38 30,66 52,30 40,30" fill="url(#gZL)"/>
+            <!-- 电弧 -->
+            <path d="M24,18 Q18,24 22,32" fill="none" stroke="#f5c842" stroke-width="1.5" stroke-dasharray="2 2" opacity="0.6"/>
+            <path d="M48,18 Q54,24 50,32" fill="none" stroke="#f5c842" stroke-width="1.5" stroke-dasharray="2 2" opacity="0.6"/>
+            <!-- 光晕圈 -->
+            <circle cx="36" cy="36" r="30" fill="none" stroke="#f5a623" stroke-width="1" opacity="0.15"/>
+            <!-- 小电花 -->
+            <circle cx="20" cy="52" r="2" fill="#f5a623" opacity="0.4"/>
+            <circle cx="52" cy="52" r="2" fill="#f5a623" opacity="0.4"/>
+            <circle cx="14" cy="36" r="1.5" fill="#f5c842" opacity="0.3"/>
+            <circle cx="58" cy="36" r="1.5" fill="#f5c842" opacity="0.3"/>
+          </svg>
+        </div>
+        <div>
+          <div style="color:#f5a623;font-size:24px;font-weight:900;letter-spacing:4px;text-align:center;">涨雷</div>
+          <div style="color:#556677;font-size:10px;text-align:center;margin-top:4px;letter-spacing:2px;">AI 短线爆涨雷达</div>
+        </div>
+        <div style="color:#7788aa;font-size:11px;text-align:center;line-height:1.7;max-width:180px;">
+          暴涨如雷，提前感知<br/>AI 预警，快人一步
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">
+          <span style="background:#f5a62322;border:1px solid #f5a62355;color:#f5a623;padding:2px 8px;border-radius:4px;font-size:10px;">短线暴涨</span>
+          <span style="background:#f5a62322;border:1px solid #f5a62355;color:#f5a623;padding:2px 8px;border-radius:4px;font-size:10px;">AI炒股</span>
+          <span style="background:#f5a62322;border:1px solid #f5a62355;color:#f5a623;padding:2px 8px;border-radius:4px;font-size:10px;">打板选股</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B · 涨雷</h3>
+      <p>涨 + 雷 = 暴涨如雷，爆发感极强。「打雷」在A股语境也暗指突然炸板，反向用则为暴涨。短促有力，冲击感强。</p>
+    </div>
+  </div>
+
+  <!-- C：AI财道 -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#0a0e1a;padding:24px;border-radius:8px;display:flex;flex-direction:column;align-items:center;gap:12px;">
+        <div style="width:72px;height:72px;">
+          <svg viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="gCD" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#f5a623"/>
+                <stop offset="100%" stop-color="#f5d060"/>
+              </linearGradient>
+            </defs>
+            <!-- 铜钱外圆 -->
+            <circle cx="36" cy="36" r="30" fill="none" stroke="#f5a623" stroke-width="2.5"/>
+            <!-- 铜钱内方 -->
+            <rect x="28" y="28" width="16" height="16" rx="1" fill="none" stroke="#f5a623" stroke-width="2"/>
+            <!-- AI 神经网络叠加 -->
+            <circle cx="36" cy="20" r="3" fill="#f5c842"/>
+            <circle cx="20" cy="44" r="3" fill="#f5c842" opacity="0.8"/>
+            <circle cx="52" cy="44" r="3" fill="#f5c842" opacity="0.8"/>
+            <line x1="36" y1="20" x2="20" y2="44" stroke="#f5a623" stroke-width="1" opacity="0.5"/>
+            <line x1="36" y1="20" x2="52" y2="44" stroke="#f5a623" stroke-width="1" opacity="0.5"/>
+            <line x1="20" y1="44" x2="52" y2="44" stroke="#f5a623" stroke-width="1" opacity="0.5"/>
+            <!-- 中心AI字样 -->
+            <text x="36" y="40" text-anchor="middle" fill="#f5d060" font-size="10" font-weight="bold" font-family="monospace">AI</text>
+          </svg>
+        </div>
+        <div>
+          <div style="color:#f5a623;font-size:24px;font-weight:900;letter-spacing:3px;text-align:center;">AI财道</div>
+          <div style="color:#556677;font-size:10px;text-align:center;margin-top:4px;letter-spacing:2px;">AI STOCK WEALTH GUIDE</div>
+        </div>
+        <div style="color:#7788aa;font-size:11px;text-align:center;line-height:1.7;max-width:180px;">
+          AI 带你走上财富之道<br/>短线炒股，科学暴富
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">
+          <span style="background:#f5a62322;border:1px solid #f5a62355;color:#f5a623;padding:2px 8px;border-radius:4px;font-size:10px;">AI炒股</span>
+          <span style="background:#f5a62322;border:1px solid #f5a62355;color:#f5a623;padding:2px 8px;border-radius:4px;font-size:10px;">暴富捷径</span>
+          <span style="background:#f5a62322;border:1px solid #f5a62355;color:#f5a623;padding:2px 8px;border-radius:4px;font-size:10px;">短线必备</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C · AI财道</h3>
+      <p>财 + 道 = 通往财富之道。直接击中"暴富"心理，名字自带搜索关键词"AI"，接地气又有格局感。</p>
+    </div>
+  </div>
+
+  <!-- D：炒神 -->
+  <div class="card" data-choice="d" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#0a0e1a;padding:24px;border-radius:8px;display:flex;flex-direction:column;align-items:center;gap:12px;">
+        <div style="width:72px;height:72px;">
+          <svg viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <radialGradient id="gCS" cx="50%" cy="40%" r="55%">
+                <stop offset="0%" stop-color="#f5d060"/>
+                <stop offset="60%" stop-color="#f5a623"/>
+                <stop offset="100%" stop-color="#cc5500" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <!-- 神光光晕 -->
+            <circle cx="36" cy="30" r="20" fill="url(#gCS)" opacity="0.2"/>
+            <!-- 皇冠 -->
+            <path d="M16,48 L20,28 L30,38 L36,20 L42,38 L52,28 L56,48 Z" fill="#f5a623" opacity="0.85"/>
+            <rect x="14" y="48" width="44" height="6" rx="2" fill="#f5a623"/>
+            <!-- 皇冠宝石 -->
+            <circle cx="36" cy="24" r="4" fill="#f5d060"/>
+            <circle cx="22" cy="32" r="2.5" fill="#f5c842" opacity="0.8"/>
+            <circle cx="50" cy="32" r="2.5" fill="#f5c842" opacity="0.8"/>
+            <!-- AI光芒 -->
+            <line x1="36" y1="8" x2="36" y2="14" stroke="#f5d060" stroke-width="2" opacity="0.7"/>
+            <line x1="22" y1="12" x2="25" y2="17" stroke="#f5d060" stroke-width="1.5" opacity="0.5"/>
+            <line x1="50" y1="12" x2="47" y2="17" stroke="#f5d060" stroke-width="1.5" opacity="0.5"/>
+          </svg>
+        </div>
+        <div>
+          <div style="color:#f5a623;font-size:24px;font-weight:900;letter-spacing:4px;text-align:center;">炒神</div>
+          <div style="color:#556677;font-size:10px;text-align:center;margin-top:4px;letter-spacing:2px;">AI 炒股之神</div>
+        </div>
+        <div style="color:#7788aa;font-size:11px;text-align:center;line-height:1.7;max-width:180px;">
+          炒股如神，AI 加持<br/>短线打板，所向披靡
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">
+          <span style="background:#f5a62322;border:1px solid #f5a62355;color:#f5a623;padding:2px 8px;border-radius:4px;font-size:10px;">AI炒股神器</span>
+          <span style="background:#f5a62322;border:1px solid #f5a62355;color:#f5a623;padding:2px 8px;border-radius:4px;font-size:10px;">打板</span>
+          <span style="background:#f5a62322;border:1px solid #f5a62355;color:#f5a623;padding:2px 8px;border-radius:4px;font-size:10px;">短线暴富</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>D · 炒神</h3>
+      <p>炒股 + 神 = 股市战神。「炒神」搜索直接命中"炒股"关键词，两字极简，江湖气十足，目标用户一秒共鸣。</p>
+    </div>
+  </div>
+
+</div>
+
+<p style="text-align:center;margin-top:16px;" class="subtitle">每个名字的搜索关键词标签已标注 · 点击选择或告诉我更多想法</p>

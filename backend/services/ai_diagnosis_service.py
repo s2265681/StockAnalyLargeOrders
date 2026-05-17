@@ -19,14 +19,7 @@ logger = logging.getLogger(__name__)
 
 _adapter = DataSourceAdapter(use_l2=False)
 
-CLAUDE_API_URL = os.environ.get(
-    "CLAUDE_API_URL", "https://token.kalowave.com/v1/chat/completions"
-)
-CLAUDE_API_KEY = os.environ.get(
-    "CLAUDE_API_KEY",
-    "sk-9bs6AtWPA7p0vs6Rnz0lxP6VOpufoWSQGV8MAS0i3ncqMGB7",
-)
-CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-6")
+from utils.claude_client import CLAUDE_API_KEY, call_claude
 
 _STOCKAPI_TOKEN = "c6b042b0bc7178103985337e72c31b976264e6f85ce93b0e"
 _STOCKAPI_JJQC = "http://user.stockapi.com.cn/v1/base/jjqcUser"
@@ -330,87 +323,11 @@ def save_cache(trade_date: str, code: str, snapshot: dict, report: dict) -> bool
         return False
 
 
-def _extract_claude_text(body: dict) -> str:
-    """兼容 OpenAI chat/completions 与部分代理返回格式"""
-    if not isinstance(body, dict):
-        return ""
-
-    if "error" in body:
-        logger.error(f"Claude API 错误: {body['error']}")
-        return ""
-
-    # Anthropic 原生 messages API
-    content_blocks = body.get("content")
-    if isinstance(content_blocks, list):
-        parts = []
-        for block in content_blocks:
-            if isinstance(block, dict):
-                parts.append(block.get("text") or block.get("content") or "")
-            elif isinstance(block, str):
-                parts.append(block)
-        joined = "".join(parts).strip()
-        if joined:
-            return joined
-
-    message = (body.get("choices") or [{}])[0].get("message") or {}
-    content = message.get("content", "")
-    if isinstance(content, str):
-        return content.strip()
-    if isinstance(content, list):
-        parts = []
-        for block in content:
-            if isinstance(block, dict):
-                parts.append(block.get("text") or block.get("content") or "")
-            elif isinstance(block, str):
-                parts.append(block)
-        return "".join(parts).strip()
-    return ""
-
-
 def _call_claude(prompt: str, max_tokens: int = 4096) -> str:
-    if not CLAUDE_API_KEY:
-        logger.error("CLAUDE_API_KEY 未配置")
-        return ""
-
-    payload = json.dumps({
-        "model": CLAUDE_MODEL,
-        "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": max_tokens,
-    })
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-        f.write(payload)
-        payload_file = f.name
-    try:
-        proc = subprocess.run(
-            ["curl", "-s", "--max-time", "90", CLAUDE_API_URL,
-             "-H", f"Authorization: Bearer {CLAUDE_API_KEY}",
-             "-H", "Content-Type: application/json",
-             "-d", f"@{payload_file}"],
-            capture_output=True, text=True, timeout=95,
-        )
-        if proc.returncode != 0:
-            logger.error(f"Claude curl 失败: {proc.stderr[:200]}")
-            return ""
-        if not (proc.stdout or "").strip():
-            logger.error("Claude API 返回空响应")
-            return ""
-        try:
-            body = json.loads(proc.stdout)
-        except json.JSONDecodeError:
-            logger.error(f"Claude 响应非 JSON: {proc.stdout[:300]}")
-            return ""
-        text = _extract_claude_text(body)
-        if text:
-            logger.info(f"Claude 返回长度: {len(text)}")
-        return text
-    except Exception as e:
-        logger.error(f"Claude 调用失败: {e}")
-        return ""
-    finally:
-        try:
-            os.unlink(payload_file)
-        except OSError:
-            pass
+    text = call_claude(prompt, max_tokens=max_tokens)
+    if text:
+        logger.info(f"Claude 返回长度: {len(text)}")
+    return text
 
 
 def _strip_json_fence(text: str) -> str:

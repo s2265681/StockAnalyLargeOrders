@@ -1,0 +1,158 @@
+<h2>品牌方案确认</h2>
+<p class="subtitle">AI炒股指南 × 灯塔图标 · 3种 icon 变体供选择</p>
+
+<div class="cards">
+
+  <!-- 变体 1：简洁竖版 -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#0a0e1a;padding:32px 24px;border-radius:8px;display:flex;flex-direction:column;align-items:center;gap:16px;">
+        <!-- Icon 变体1：简洁灯塔 -->
+        <div style="width:80px;height:80px;background:linear-gradient(135deg,#1a2035,#0d1525);border-radius:16px;display:flex;align-items:center;justify-content:center;border:1px solid #f5a62333;">
+          <svg viewBox="0 0 56 56" width="52" height="52" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <radialGradient id="gl1" cx="50%" cy="20%" r="70%">
+                <stop offset="0%" stop-color="#f5d060" stop-opacity="0.6"/>
+                <stop offset="100%" stop-color="#f5a623" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <!-- 光束 -->
+            <path d="M28,18 L6,44 Q28,38 50,44 Z" fill="url(#gl1)"/>
+            <!-- 塔身 -->
+            <rect x="23" y="22" width="10" height="22" rx="2" fill="#f5a623"/>
+            <!-- 塔顶 -->
+            <polygon points="20,22 36,22 33,12 23,12" fill="#f5c842"/>
+            <!-- 灯光 -->
+            <circle cx="28" cy="17" r="4" fill="#fff" opacity="0.95"/>
+            <circle cx="28" cy="17" r="2.5" fill="#f5d060"/>
+            <!-- 窗 -->
+            <rect x="26" y="30" width="4" height="6" rx="1" fill="#0a0e1a" opacity="0.7"/>
+            <!-- 底座 -->
+            <rect x="20" y="44" width="16" height="4" rx="1" fill="#f5a623" opacity="0.8"/>
+          </svg>
+        </div>
+        <!-- 文字 -->
+        <div style="text-align:center;">
+          <div style="color:#f5a623;font-size:18px;font-weight:900;letter-spacing:2px;">AI炒股指南</div>
+          <div style="color:#445566;font-size:9px;letter-spacing:3px;margin-top:4px;">AI STOCK TRADING GUIDE</div>
+        </div>
+        <!-- slogan -->
+        <div style="background:#111827;border:1px solid #f5a62322;border-radius:8px;padding:12px 16px;width:100%;">
+          <div style="color:#8899bb;font-size:11px;text-align:center;line-height:1.8;">
+            短线打板 · 涨停预判 · AI驱动<br/>
+            <span style="color:#f5a623;font-weight:600;">让 AI 为你照亮财富之路</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A · 简洁方形 icon</h3>
+      <p>圆角方块背景，现代 App 图标风格。适合放 App Store / 网站 favicon，任何尺寸下都清晰。</p>
+    </div>
+  </div>
+
+  <!-- 变体 2：圆形徽章 -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#0a0e1a;padding:32px 24px;border-radius:8px;display:flex;flex-direction:column;align-items:center;gap:16px;">
+        <!-- Icon 变体2：圆形徽章 -->
+        <div style="width:80px;height:80px;position:relative;">
+          <svg viewBox="0 0 80 80" width="80" height="80" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <radialGradient id="badge" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#1a2540"/>
+                <stop offset="100%" stop-color="#0a0e1a"/>
+              </radialGradient>
+              <radialGradient id="gl2" cx="50%" cy="25%" r="60%">
+                <stop offset="0%" stop-color="#f5d060" stop-opacity="0.5"/>
+                <stop offset="100%" stop-color="#f5a623" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <!-- 外圆背景 -->
+            <circle cx="40" cy="40" r="38" fill="url(#badge)" stroke="#f5a623" stroke-width="1.5"/>
+            <!-- 刻度装饰 -->
+            <circle cx="40" cy="40" r="34" fill="none" stroke="#f5a62322" stroke-width="1"/>
+            <!-- 光束 -->
+            <path d="M40,24 L16,56 Q40,48 64,56 Z" fill="url(#gl2)"/>
+            <!-- 塔身 -->
+            <rect x="34" y="28" width="12" height="24" rx="2" fill="#f5a623"/>
+            <!-- 塔顶 -->
+            <polygon points="30,28 50,28 47,18 33,18" fill="#f5c842"/>
+            <!-- 灯 -->
+            <circle cx="40" cy="23" r="5" fill="#fff" opacity="0.9"/>
+            <circle cx="40" cy="23" r="3" fill="#f5d060"/>
+            <!-- 窗 -->
+            <rect x="37" y="38" width="5" height="7" rx="1" fill="#0a0e1a" opacity="0.6"/>
+            <!-- 底座 -->
+            <rect x="28" y="52" width="24" height="4" rx="1" fill="#f5a623" opacity="0.7"/>
+            <!-- 底部文字弧 -->
+            <path id="arc" d="M 16,54 A 28,28 0 0,0 64,54" fill="none"/>
+            <text font-size="6.5" fill="#f5a623" opacity="0.6" letter-spacing="2">
+              <textPath href="#arc" startOffset="8%">AI · STOCK · GUIDE</textPath>
+            </text>
+          </svg>
+        </div>
+        <!-- 文字 -->
+        <div style="text-align:center;">
+          <div style="color:#f5a623;font-size:18px;font-weight:900;letter-spacing:2px;">AI炒股指南</div>
+          <div style="color:#445566;font-size:9px;letter-spacing:3px;margin-top:4px;">AI STOCK TRADING GUIDE</div>
+        </div>
+        <!-- slogan -->
+        <div style="background:#111827;border:1px solid #f5a62322;border-radius:8px;padding:12px 16px;width:100%;">
+          <div style="color:#8899bb;font-size:11px;text-align:center;line-height:1.8;">
+            短线打板 · 涨停预判 · AI驱动<br/>
+            <span style="color:#f5a623;font-weight:600;">让 AI 为你照亮财富之路</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B · 圆形徽章 icon</h3>
+      <p>圆形徽章感强，底部弧形英文有质感。适合官网 Hero 区和对外展示，专业感更强。</p>
+    </div>
+  </div>
+
+  <!-- 变体 3：极简线条 -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#0a0e1a;padding:32px 24px;border-radius:8px;display:flex;flex-direction:column;align-items:center;gap:16px;">
+        <!-- Icon 变体3：极简线条 + 光束扇形 -->
+        <div style="width:80px;height:80px;background:linear-gradient(135deg,#f5a623,#e8891a);border-radius:20px;display:flex;align-items:center;justify-content:center;">
+          <svg viewBox="0 0 48 48" width="44" height="44" xmlns="http://www.w3.org/2000/svg">
+            <!-- 光束（白色半透明扇形） -->
+            <path d="M24,14 L6,42 Q24,36 42,42 Z" fill="#fff" opacity="0.2"/>
+            <!-- 塔身（纯白线条） -->
+            <rect x="20" y="18" width="8" height="18" rx="1.5" fill="#fff"/>
+            <!-- 塔顶 -->
+            <polygon points="16,18 32,18 29,10 19,10" fill="#fff" opacity="0.9"/>
+            <!-- 灯 -->
+            <circle cx="24" cy="14" r="3.5" fill="#fff"/>
+            <!-- 窗 -->
+            <rect x="22" y="26" width="4" height="5" rx="0.5" fill="#e8891a" opacity="0.8"/>
+            <!-- 底座 -->
+            <rect x="16" y="36" width="16" height="3" rx="1" fill="#fff" opacity="0.8"/>
+          </svg>
+        </div>
+        <!-- 文字 -->
+        <div style="text-align:center;">
+          <div style="color:#f5a623;font-size:18px;font-weight:900;letter-spacing:2px;">AI炒股指南</div>
+          <div style="color:#445566;font-size:9px;letter-spacing:3px;margin-top:4px;">AI STOCK TRADING GUIDE</div>
+        </div>
+        <!-- slogan -->
+        <div style="background:#111827;border:1px solid #f5a62322;border-radius:8px;padding:12px 16px;width:100%;">
+          <div style="color:#8899bb;font-size:11px;text-align:center;line-height:1.8;">
+            短线打板 · 涨停预判 · AI驱动<br/>
+            <span style="color:#f5a623;font-weight:600;">让 AI 为你照亮财富之路</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C · 金色实心 icon</h3>
+      <p>金色渐变背景 + 白色灯塔，高对比度，App 图标最佳方案。小尺寸（16px favicon）依然辨识度极高。</p>
+    </div>
+  </div>
+
+</div>
+
+<p style="text-align:center;margin-top:16px;" class="subtitle">三种 icon 风格，文字和 slogan 相同 · 选你最喜欢的那个</p>

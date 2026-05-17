@@ -7,8 +7,6 @@
 import json
 import logging
 import os
-import subprocess
-import tempfile
 from datetime import datetime
 
 from flask import Blueprint, request
@@ -29,14 +27,7 @@ logger = logging.getLogger(__name__)
 
 dragon_tiger_bp = Blueprint("dragon_tiger", __name__)
 
-CLAUDE_API_URL = os.environ.get(
-    "CLAUDE_API_URL", "https://token.kalowave.com/v1/chat/completions"
-)
-CLAUDE_API_KEY = os.environ.get(
-    "CLAUDE_API_KEY",
-    "sk-9bs6AtWPA7p0vs6Rnz0lxP6VOpufoWSQGV8MAS0i3ncqMGB7",
-)
-CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-6")
+from utils.claude_client import call_claude as _call_claude
 
 # 游资席位名称关键词
 HOT_MONEY_KEYWORDS = [
@@ -170,44 +161,6 @@ def _fetch_from_akshare(date: str):
         stock["sell_seats"] = seat_map.get((code, "sell"), [])
 
     return stocks, all_seats
-
-
-def _call_claude(prompt: str) -> str:
-    """调用 Claude API（复用项目现有模式）"""
-    payload = json.dumps({
-        "model": CLAUDE_MODEL,
-        "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": 2048,
-    })
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-        f.write(payload)
-        payload_file = f.name
-    try:
-        proc = subprocess.run(
-            ["curl", "-s", "--max-time", "90", CLAUDE_API_URL,
-             "-H", f"Authorization: Bearer {CLAUDE_API_KEY}",
-             "-H", "Content-Type: application/json",
-             "-d", f"@{payload_file}"],
-            capture_output=True, text=True, timeout=95,
-        )
-        if proc.returncode != 0:
-            logger.error(f"Claude API curl失败(code={proc.returncode}): {proc.stderr[:200]}")
-            return ""
-        body = json.loads(proc.stdout)
-        if "error" in body:
-            logger.error(f"Claude API 错误: {body['error']}")
-            return ""
-        return (body.get("choices", [{}])[0]
-                    .get("message", {})
-                    .get("content", ""))
-    except Exception as e:
-        logger.error(f"Claude API调用失败: {e}")
-        return ""
-    finally:
-        try:
-            os.unlink(payload_file)
-        except OSError:
-            pass
 
 
 def _build_theme_profile(date: str, code: str) -> dict:

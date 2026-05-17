@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI炒股指南 · 官网 Mockup</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #060b18; color: #e0e6f0; font-family: 'PingFang SC', 'Helvetica Neue', sans-serif; font-size: 14px; }
+
+  /* ── Navbar ── */
+  .nav {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 40px; height: 60px;
+    background: rgba(6,11,24,0.92); backdrop-filter: blur(12px);
+    border-bottom: 1px solid #f5a62318;
+  }
+  .nav-logo { display: flex; align-items: center; gap: 10px; }
+  .nav-icon { width: 34px; height: 34px; }
+  .nav-name { color: #f5a623; font-size: 16px; font-weight: 800; letter-spacing: 1px; }
+  .nav-links { display: flex; gap: 28px; }
+  .nav-links a { color: #8899aa; font-size: 13px; text-decoration: none; cursor: pointer; }
+  .nav-links a:hover { color: #f5a623; }
+  .nav-cta { background: #f5a623; color: #000; padding: 7px 18px; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; }
+
+  /* ── Hero ── */
+  .hero {
+    min-height: 88vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center;
+    padding: 80px 24px 60px;
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, #f5a62312 0%, transparent 70%),
+                linear-gradient(180deg, #060b18 0%, #090f1e 100%);
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: ''; position: absolute; inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23f5a62308' stroke-width='1'%3E%3Cpath d='M0 0h60v60H0z'/%3E%3C/g%3E%3C/svg%3E");
+    opacity: 0.4;
+  }
+  .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: #f5a62315; border: 1px solid #f5a62340; border-radius: 20px; padding: 5px 14px; font-size: 12px; color: #f5c842; margin-bottom: 24px; position: relative; }
+  .badge-dot { width: 6px; height: 6px; background: #f5c842; border-radius: 50%; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
+  .hero-title { font-size: clamp(28px, 5vw, 52px); font-weight: 900; line-height: 1.2; margin-bottom: 16px; position: relative; }
+  .hero-title .highlight { color: #f5a623; }
+  .hero-sub { font-size: 16px; color: #7788aa; margin-bottom: 40px; line-height: 1.7; max-width: 560px; position: relative; }
+  .hero-sub strong { color: #aabbd0; }
+  .invite-box { display: flex; gap: 0; margin-bottom: 20px; position: relative; }
+  .invite-input { background: #111827; border: 1px solid #f5a62340; border-right: none; border-radius: 8px 0 0 8px; padding: 12px 20px; font-size: 15px; color: #e0e6f0; width: 260px; outline: none; }
+  .invite-input::placeholder { color: #445566; }
+  .invite-btn { background: linear-gradient(90deg, #f5a623, #f5c842); color: #000; padding: 12px 24px; border-radius: 0 8px 8px 0; font-size: 15px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+  .hero-alt { font-size: 12px; color: #445566; position: relative; }
+  .hero-alt a { color: #f5a623; cursor: pointer; }
+  .hero-stats { display: flex; gap: 40px; margin-top: 56px; position: relative; }
+  .stat { text-align: center; }
+  .stat-num { font-size: 28px; font-weight: 900; color: #f5a623; }
+  .stat-num span { font-size: 14px; color: #f5c842; }
+  .stat-label { font-size: 11px; color: #556677; margin-top: 4px; }
+  .stat-divider { width: 1px; background: #1a2535; }
+
+  /* ── Section base ── */
+  section { padding: 80px 40px; max-width: 1100px; margin: 0 auto; }
+  .section-label { font-size: 11px; color: #f5a623; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px; }
+  .section-title { font-size: clamp(22px, 3vw, 34px); font-weight: 800; margin-bottom: 12px; }
+  .section-sub { color: #667788; font-size: 15px; line-height: 1.7; max-width: 560px; }
+
+  /* ── Stats Bar ── */
+  .stats-bar { background: #080d1c; border-top: 1px solid #f5a62318; border-bottom: 1px solid #f5a62318; padding: 32px 40px; }
+  .stats-bar-inner { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+  .sb-item { text-align: center; padding: 0 20px; border-right: 1px solid #1a2535; }
+  .sb-item:last-child { border-right: none; }
+  .sb-num { font-size: 32px; font-weight: 900; color: #f5a623; }
+  .sb-unit { font-size: 14px; color: #f5c842; }
+  .sb-label { font-size: 12px; color: #556677; margin-top: 4px; }
+  .sb-trend { font-size: 11px; color: #22cc88; margin-top: 2px; }
+
+  /* ── Features ── */
+  .features-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 48px; }
+  .feature-card { background: #0d1525; border: 1px solid #1e2d45; border-radius: 12px; padding: 28px; transition: border-color 0.2s; cursor: default; }
+  .feature-card:hover { border-color: #f5a62355; }
+  .feature-icon { width: 44px; height: 44px; background: #f5a62315; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 16px; }
+  .feature-title { font-size: 17px; font-weight: 700; margin-bottom: 8px; color: #e0e6f0; }
+  .feature-desc { font-size: 13px; color: #667788; line-height: 1.7; }
+  .feature-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+  .tag { background: #f5a62312; border: 1px solid #f5a62330; color: #f5a623; padding: 3px 10px; border-radius: 4px; font-size: 11px; }
+
+  /* ── Screenshots ── */
+  .screenshots { background: #07101f; border-top: 1px solid #f5a62312; border-bottom: 1px solid #f5a62312; padding: 80px 40px; }
+  .screenshots-inner { max-width: 1100px; margin: 0 auto; }
+  .screen-tabs { display: flex; gap: 8px; margin-bottom: 32px; flex-wrap: wrap; }
+  .screen-tab { padding: 8px 18px; border-radius: 6px; font-size: 13px; cursor: pointer; border: 1px solid #1e2d45; color: #667788; }
+  .screen-tab.active { background: #f5a62320; border-color: #f5a623; color: #f5a623; }
+  .screen-preview { background: #0d1525; border: 1px solid #1e2d45; border-radius: 12px; height: 320px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+  .screen-placeholder { text-align: center; }
+  .screen-placeholder .icon { font-size: 48px; margin-bottom: 12px; }
+  .screen-placeholder p { color: #445566; font-size: 13px; }
+  /* 模拟界面 */
+  .mock-ui { width: 100%; height: 100%; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .mock-header { display: flex; align-items: center; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid #1e2d45; }
+  .mock-stock-name { color: #e0e6f0; font-size: 15px; font-weight: 700; }
+  .mock-price { color: #ff4d4d; font-size: 18px; font-weight: 900; }
+  .mock-change { color: #ff4d4d; font-size: 12px; background: #ff4d4d18; padding: 2px 8px; border-radius: 4px; }
+  .mock-chart { flex: 1; background: #080f1e; border-radius: 8px; display: flex; align-items: flex-end; padding: 12px; gap: 2px; position: relative; }
+  .mock-bar { flex: 1; background: linear-gradient(180deg, #f5a623, #e8891a); border-radius: 2px 2px 0 0; min-height: 4px; }
+  .mock-line { position: absolute; top: 30%; left: 12px; right: 12px; height: 2px; border-top: 2px solid #f5c842; opacity: 0.6; }
+  .mock-labels { display: flex; gap: 8px; }
+  .mock-label-item { background: #0d1525; border: 1px solid #f5a62330; border-radius: 6px; padding: 8px 12px; flex: 1; }
+  .mock-label-val { color: #f5a623; font-size: 16px; font-weight: 700; }
+  .mock-label-name { color: #445566; font-size: 10px; margin-top: 2px; }
+
+  /* ── Who is it for ── */
+  .audience-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 48px; }
+  .audience-card { background: linear-gradient(135deg, #0d1525, #111e35); border: 1px solid #1e2d45; border-radius: 12px; padding: 28px; text-align: center; }
+  .audience-emoji { font-size: 36px; margin-bottom: 14px; }
+  .audience-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; color: #e0e6f0; }
+  .audience-desc { font-size: 12px; color: #667788; line-height: 1.7; }
+
+  /* ── Pricing ── */
+  .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 48px; }
+  .price-card { background: #0d1525; border: 1px solid #1e2d45; border-radius: 14px; padding: 28px; text-align: center; position: relative; }
+  .price-card.featured { border-color: #f5a623; background: linear-gradient(135deg, #0d1525, #1a2540); }
+  .price-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #f5a623; color: #000; padding: 3px 16px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+  .price-tier { font-size: 13px; color: #667788; margin-bottom: 8px; letter-spacing: 1px; }
+  .price-amount { font-size: 36px; font-weight: 900; color: #f5a623; margin-bottom: 4px; }
+  .price-amount small { font-size: 14px; color: #667788; }
+  .price-period { font-size: 12px; color: #445566; margin-bottom: 20px; }
+  .price-features { list-style: none; margin-bottom: 24px; }
+  .price-features li { font-size: 12px; color: #8899aa; padding: 6px 0; border-bottom: 1px solid #1e2d45; display: flex; align-items: center; gap: 8px; }
+  .price-features li::before { content: '✓'; color: #f5a623; font-weight: 700; }
+  .price-btn { display: block; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .price-btn.primary { background: linear-gradient(90deg, #f5a623, #f5c842); color: #000; }
+  .price-btn.secondary { border: 1px solid #f5a62350; color: #f5a623; }
+
+  /* ── Invite ── */
+  .invite-section { background: radial-gradient(ellipse 80% 80% at 50% 50%, #f5a62310, transparent); border-top: 1px solid #f5a62318; padding: 80px 40px; text-align: center; }
+  .invite-inner { max-width: 560px; margin: 0 auto; }
+  .invite-title { font-size: 28px; font-weight: 900; margin-bottom: 12px; }
+  .invite-sub { color: #667788; margin-bottom: 32px; font-size: 14px; line-height: 1.7; }
+  .invite-form { display: flex; gap: 0; justify-content: center; }
+  .invite-form input { flex: 1; max-width: 280px; background: #111827; border: 1px solid #f5a62340; border-right: none; border-radius: 8px 0 0 8px; padding: 14px 20px; font-size: 15px; color: #e0e6f0; outline: none; }
+  .invite-form button { background: linear-gradient(90deg, #f5a623, #f5c842); color: #000; padding: 14px 28px; border-radius: 0 8px 8px 0; font-size: 15px; font-weight: 800; cursor: pointer; }
+  .invite-note { font-size: 11px; color: #334455; margin-top: 16px; }
+
+  /* ── FAQ ── */
+  .faq-list { margin-top: 40px; display: flex; flex-direction: column; gap: 12px; }
+  .faq-item { background: #0d1525; border: 1px solid #1e2d45; border-radius: 10px; padding: 18px 22px; }
+  .faq-q { font-size: 14px; font-weight: 600; color: #c0d0e0; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .faq-q::before { content: 'Q'; color: #f5a623; font-weight: 900; font-size: 12px; background: #f5a62218; padding: 1px 7px; border-radius: 4px; }
+  .faq-a { font-size: 13px; color: #667788; line-height: 1.7; }
+
+  /* ── Footer ── */
+  .footer { background: #040810; border-top: 1px solid #1a2535; padding: 40px; display: flex; align-items: center; justify-content: space-between; }
+  .footer-logo { display: flex; align-items: center; gap: 10px; }
+  .footer-name { color: #f5a623; font-weight: 800; font-size: 15px; }
+  .footer-copy { font-size: 11px; color: #334455; }
+  .footer-links { display: flex; gap: 20px; }
+  .footer-links a { font-size: 12px; color: #445566; text-decoration: none; }
+
+  /* ── Notice bar ── */
+  .notice { background: #f5a62315; border-top: 3px solid #f5a623; padding: 12px 24px; text-align: center; font-size: 13px; color: #f5c842; border-radius: 8px; margin-bottom: 32px; }
+</style>
+</head>
+<body>
+
+<!-- ── Notice ── -->
+<div style="background:#f5a623;color:#000;text-align:center;padding:8px;font-size:12px;font-weight:700;">
+  🎯 官网 Mockup · 点击底部按钮确认此方案，我将开始编写设计文档
+</div>
+
+<!-- ── Navbar ── -->
+<nav class="nav">
+  <div class="nav-logo">
+    <svg class="nav-icon" viewBox="0 0 34 34" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="17" cy="17" r="16" fill="#0d1525" stroke="#f5a623" stroke-width="1.2"/>
+      <path d="M17,11 L4,26 Q17,22 30,26 Z" fill="#f5a623" opacity="0.3"/>
+      <rect x="13" y="13" width="8" height="14" rx="1.5" fill="#f5a623"/>
+      <polygon points="11,13 23,13 21,7 13,7" fill="#f5c842"/>
+      <circle cx="17" cy="10" r="3" fill="#fff" opacity="0.9"/>
+      <circle cx="17" cy="10" r="1.8" fill="#f5d060"/>
+    </svg>
+    <span class="nav-name">AI炒股指南</span>
+  </div>
+  <div class="nav-links">
+    <a>功能</a><a>截图</a><a>定价</a><a>FAQ</a>
+  </div>
+  <div class="nav-cta">输入邀请码</div>
+</nav>
+
+<!-- ── Hero ── -->
+<div class="hero">
+  <div class="hero-badge">
+    <div class="badge-dot"></div>
+    内测进行中 · 限量开放 200 席
+  </div>
+  <h1 class="hero-title">
+    散户被割的钱<br>
+    都被<span class="highlight"> AI </span>看见了
+  </h1>
+  <p class="hero-sub">
+    <strong>AI炒股指南</strong>实时追踪大单资金、预判涨停梯队、感知市场情绪周期——<br>
+    让你在打板、短线中抢占先机，而不是接最后一棒。
+  </p>
+  <div class="invite-box">
+    <input class="invite-input" placeholder="输入邀请码开始使用">
+    <div class="invite-btn">立即解锁 →</div>
+  </div>
+  <div class="hero-alt">没有邀请码？<a>查看付费方案</a> 或 <a>申请内测资格</a></div>
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-num">98.6<span>%</span></div><div class="stat-label">涨停预判准确率</div></div>
+    <div class="stat-divider"></div>
+    <div class="stat"><div class="stat-num">50<span>ms</span></div><div class="stat-label">大单实时延迟</div></div>
+    <div class="stat-divider"></div>
+    <div class="stat"><div class="stat-num">6<span>大</span></div><div class="stat-label">核心分析模块</div></div>
+    <div class="stat-divider"></div>
+    <div class="stat"><div class="stat-num">1200<span>+</span></div><div class="stat-label">内测用户</div></div>
+  </div>
+</div>
+
+<!-- ── Stats Bar ── -->
+<div class="stats-bar">
+  <div class="stats-bar-inner">
+    <div class="sb-item">
+      <div class="sb-num">23<span class="sb-unit"> 板</span></div>
+      <div class="sb-label">今日涨停命中</div>
+      <div class="sb-trend">↑ vs 昨日 +5</div>
+    </div>
+    <div class="sb-item">
+      <div class="sb-num">847<span class="sb-unit"> 次</span></div>
+      <div class="sb-label">大单异动预警</div>
+      <div class="sb-trend">↑ 实时更新</div>
+    </div>
+    <div class="sb-item">
+      <div class="sb-num">情绪<span class="sb-unit"> 高热</span></div>
+      <div class="sb-label">当前市场情绪</div>
+      <div class="sb-trend">↑ 连板溢价率 +8%</div>
+    </div>
+    <div class="sb-item">
+      <div class="sb-num">4<span class="sb-unit"> 连板</span></div>
+      <div class="sb-label">最高梯队高度</div>
+      <div class="sb-trend">↑ 龙头效应明显</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Features ── -->
+<section>
+  <div class="section-label">核心功能</div>
+  <h2 class="section-title">打板前，你需要知道的一切</h2>
+  <p class="section-sub">6 大 AI 分析模块，覆盖从选股到卖出的完整短线决策链路</p>
+  <div class="features-grid">
+
+    <div class="feature-card">
+      <div class="feature-icon">📈</div>
+      <div class="feature-title">涨停梯队分析</div>
+      <div class="feature-desc">实时追踪今日连板高度，识别龙头、跟风、断板分布，快速判断市场情绪结构和打板安全边际。</div>
+      <div class="feature-tags"><span class="tag">连板高度</span><span class="tag">龙头识别</span><span class="tag">打板评分</span></div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">💰</div>
+      <div class="feature-title">大单资金追踪</div>
+      <div class="feature-desc">50万起大单实时标注，D50/D100/D300 分级显示，净流入趋势一目了然，主力踪迹无处遁形。</div>
+      <div class="feature-tags"><span class="tag">50ms延迟</span><span class="tag">资金分级</span><span class="tag">净流入</span></div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">🌊</div>
+      <div class="feature-title">市场情绪周期</div>
+      <div class="feature-desc">量化涨跌停比、连板溢价率、情绪温度计，判断当前处于亢奋/降温/冰点哪个阶段，决定仓位轻重。</div>
+      <div class="feature-tags"><span class="tag">情绪温度</span><span class="tag">溢价率</span><span class="tag">周期判断</span></div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">🤖</div>
+      <div class="feature-title">AI 个股诊断</div>
+      <div class="feature-desc">输入股票代码，AI 综合走势、大单、板块热度、情绪周期，给出买入/观望/回避的操作建议。</div>
+      <div class="feature-tags"><span class="tag">AI分析</span><span class="tag">操作建议</span><span class="tag">风险评级</span></div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">🐉</div>
+      <div class="feature-title">龙虎榜解读</div>
+      <div class="feature-desc">自动解析龙虎榜席位，识别游资动向、机构意图，辅助判断次日走势方向和主力意图。</div>
+      <div class="feature-tags"><span class="tag">席位识别</span><span class="tag">游资追踪</span><span class="tag">次日预判</span></div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">⏰</div>
+      <div class="feature-title">集合竞价监控</div>
+      <div class="feature-desc">开盘前实时监控竞价量比、封单变化、高开低开信号，帮你在 9:25 前做好打板决策。</div>
+      <div class="feature-tags"><span class="tag">竞价监控</span><span class="tag">封单变化</span><span class="tag">开盘预判</span></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── Screenshots ── -->
+<div class="screenshots">
+  <div class="screenshots-inner">
+    <div class="section-label">产品截图</div>
+    <h2 class="section-title" style="margin-bottom:8px;">真实界面，所见即所得</h2>
+    <p style="color:#667788;font-size:14px;margin-bottom:28px;">深色专业界面，仿机构终端设计，数据密度高且清晰易读</p>
+    <div class="screen-tabs">
+      <div class="screen-tab active">涨停梯队</div>
+      <div class="screen-tab">大单分析</div>
+      <div class="screen-tab">情绪周期</div>
+      <div class="screen-tab">AI诊断</div>
+      <div class="screen-tab">龙虎榜</div>
+    </div>
+    <div class="screen-preview">
+      <div class="mock-ui">
+        <div class="mock-header">
+          <div class="mock-stock-name">涨停梯队实时看板</div>
+          <div style="flex:1"></div>
+          <div style="color:#22cc88;font-size:11px;background:#22cc8818;padding:3px 10px;border-radius:4px;">● 实时更新</div>
+        </div>
+        <!-- 模拟梯队 -->
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;flex:1;">
+          <div style="background:#ff4d4d18;border:1px solid #ff4d4d44;border-radius:8px;padding:10px;text-align:center;">
+            <div style="color:#ff4d4d;font-size:18px;font-weight:900;">4板</div>
+            <div style="color:#667788;font-size:10px;margin-top:4px;">龙头</div>
+            <div style="color:#e0e6f0;font-size:11px;margin-top:6px;">×2</div>
+          </div>
+          <div style="background:#f5a62318;border:1px solid #f5a62344;border-radius:8px;padding:10px;text-align:center;">
+            <div style="color:#f5a623;font-size:18px;font-weight:900;">3板</div>
+            <div style="color:#667788;font-size:10px;margin-top:4px;">跟风</div>
+            <div style="color:#e0e6f0;font-size:11px;margin-top:6px;">×5</div>
+          </div>
+          <div style="background:#f5c84218;border:1px solid #f5c84244;border-radius:8px;padding:10px;text-align:center;">
+            <div style="color:#f5c842;font-size:18px;font-weight:900;">2板</div>
+            <div style="color:#667788;font-size:10px;margin-top:4px;">二波</div>
+            <div style="color:#e0e6f0;font-size:11px;margin-top:6px;">×18</div>
+          </div>
+          <div style="background:#22cc8818;border:1px solid #22cc8844;border-radius:8px;padding:10px;text-align:center;">
+            <div style="color:#22cc88;font-size:18px;font-weight:900;">1板</div>
+            <div style="color:#667788;font-size:10px;margin-top:4px;">首板</div>
+            <div style="color:#e0e6f0;font-size:11px;margin-top:6px;">×47</div>
+          </div>
+          <div style="background:#2244aa18;border:1px solid #2244aa44;border-radius:8px;padding:10px;text-align:center;">
+            <div style="color:#4466cc;font-size:18px;font-weight:900;">断板</div>
+            <div style="color:#667788;font-size:10px;margin-top:4px;">昨板</div>
+            <div style="color:#e0e6f0;font-size:11px;margin-top:6px;">×12</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+          <div class="mock-label-item"><div class="mock-label-val" style="color:#22cc88;">72%</div><div class="mock-label-name">首板封板率</div></div>
+          <div class="mock-label-item"><div class="mock-label-val">+8.3%</div><div class="mock-label-name">连板溢价率</div></div>
+          <div class="mock-label-item"><div class="mock-label-val" style="color:#f5c842;">高热</div><div class="mock-label-name">当前情绪</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Who is it for ── -->
+<section>
+  <div class="section-label">适合谁用</div>
+  <h2 class="section-title">为中国短线交易者而生</h2>
+  <p class="section-sub">不是所有炒股工具都懂 A 股，这个工具专为 A 股打板文化设计</p>
+  <div class="audience-grid">
+    <div class="audience-card">
+      <div class="audience-emoji">🎯</div>
+      <div class="audience-title">打板党</div>
+      <div class="audience-desc">每天盯涨停板、做集合竞价打板的短线玩家，需要快速判断封板质量和次日溢价。</div>
+    </div>
+    <div class="audience-card">
+      <div class="audience-emoji">⚡</div>
+      <div class="audience-title">短线派</div>
+      <div class="audience-desc">做 3-5 天短线波段，需要大单资金确认和情绪周期判断来把握进出时机。</div>
+    </div>
+    <div class="audience-card">
+      <div class="audience-emoji">📊</div>
+      <div class="audience-title">量化爱好者</div>
+      <div class="audience-desc">喜欢用数据说话，需要量化指标辅助决策，而非靠感觉和消息面炒股。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Pricing ── -->
+<section>
+  <div class="section-label">定价方案</div>
+  <h2 class="section-title">选择适合你的方案</h2>
+  <p class="section-sub">邀请码可解锁内测资格，付费方案享受完整功能</p>
+  <div class="pricing-grid">
+    <div class="price-card">
+      <div class="price-tier">免费体验</div>
+      <div class="price-amount">¥0</div>
+      <div class="price-period">需邀请码</div>
+      <ul class="price-features">
+        <li>涨停梯队（只读）</li>
+        <li>大单数据（延迟15分钟）</li>
+        <li>情绪指标基础版</li>
+      </ul>
+      <div class="price-btn secondary">输入邀请码</div>
+    </div>
+    <div class="price-card featured">
+      <div class="price-badge">最受欢迎</div>
+      <div class="price-tier">专业版</div>
+      <div class="price-amount">¥99 <small>/月</small></div>
+      <div class="price-period">年付 ¥799，省389元</div>
+      <ul class="price-features">
+        <li>全部功能实时数据</li>
+        <li>AI 个股诊断无限次</li>
+        <li>龙虎榜 + 竞价监控</li>
+        <li>微信群实时提醒</li>
+      </ul>
+      <div class="price-btn primary">立即开通</div>
+    </div>
+    <div class="price-card">
+      <div class="price-tier">旗舰版</div>
+      <div class="price-amount">¥299 <small>/月</small></div>
+      <div class="price-period">含私人答疑 + 复盘</div>
+      <ul class="price-features">
+        <li>专业版全部功能</li>
+        <li>每日操盘复盘分享</li>
+        <li>专属打板社群</li>
+        <li>一对一策略咨询</li>
+      </ul>
+      <div class="price-btn secondary">联系开通</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Invite CTA ── -->
+<div class="invite-section">
+  <div class="invite-inner">
+    <h2 class="invite-title">有邀请码？立刻开始</h2>
+    <p class="invite-sub">内测名额有限，现有用户邀请优先。输入邀请码，3 秒完成注册，马上进入你的专属看板。</p>
+    <div class="invite-form">
+      <input placeholder="粘贴邀请码">
+      <button>解锁 →</button>
+    </div>
+    <div class="invite-note">没有邀请码？加微信公众号「AI炒股指南」申请内测资格</div>
+  </div>
+</div>
+
+<!-- ── FAQ ── -->
+<section>
+  <div class="section-label">常见问题</div>
+  <h2 class="section-title">你可能想知道</h2>
+  <div class="faq-list">
+    <div class="faq-item">
+      <div class="faq-q">数据是实时的吗，延迟多久？</div>
+      <div class="faq-a">付费用户大单数据延迟 50ms 以内，涨停梯队每 30 秒刷新一次。免费用户延迟 15 分钟。</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">AI 诊断的准确率怎么样？</div>
+      <div class="faq-a">我们对近 6 个月的涨停预判进行了回测，命中率约 72%（以当日封板为口径）。AI 仅供参考，不构成投资建议。</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">支持哪些设备？</div>
+      <div class="faq-a">目前为网页版，PC端体验最佳；手机浏览器可用，移动 App 正在开发中。</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">邀请码从哪里获取？</div>
+      <div class="faq-a">现有用户可生成邀请链接分享；也可关注「AI炒股指南」微信公众号参与内测抽签。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ── -->
+<div class="footer">
+  <div class="footer-logo">
+    <svg width="28" height="28" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="14" cy="14" r="13" fill="#0d1525" stroke="#f5a623" stroke-width="1"/>
+      <rect x="10" y="10" width="7" height="12" rx="1.5" fill="#f5a623"/>
+      <polygon points="8,10 20,10 18,5 10,5" fill="#f5c842"/>
+      <circle cx="14" cy="8" r="2.5" fill="#fff" opacity="0.85"/>
+    </svg>
+    <span class="footer-name">AI炒股指南</span>
+  </div>
+  <div class="footer-copy">© 2025 AI炒股指南 · 数据仅供参考，不构成投资建议</div>
+  <div class="footer-links">
+    <a>使用条款</a><a>隐私政策</a><a>联系我们</a>
+  </div>
+</div>
+
+<!-- ── Confirm ── -->
+<div style="position:fixed;bottom:20px;right:20px;display:flex;gap:10px;z-index:999;">
+  <button onclick="window.parent.postMessage({type:'choice',choice:'approve'},'*')" style="background:linear-gradient(90deg,#f5a623,#f5c842);color:#000;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;border:none;box-shadow:0 4px 20px #f5a62340;">✓ 确认这个方案</button>
+  <button onclick="window.parent.postMessage({type:'choice',choice:'revise'},'*')" style="background:#1a2535;color:#8899aa;padding:12px 24px;border-radius:8px;font-size:14px;cursor:pointer;border:1px solid #2a3545;">需要修改</button>
+</div>
+
+</body>
+</html>

@@ -78,9 +78,7 @@ STOCKAPI_GN_TOKEN = (
     "eyJleHAiOjE3ODEyNTM0NTksInVzZXJJZCI6IjIwNTQ0ODExMTk0OTk2MTIxNjIifQ."
     "-y6iLryNy1BDMHwKoQA0oPBhX1Bps523VZvyk9TDZCg"
 )
-CLAUDE_API_URL = "https://token.kalowave.com/v1/chat/completions"
-CLAUDE_API_KEY = "sk-9bs6AtWPA7p0vs6Rnz0lxP6VOpufoWSQGV8MAS0i3ncqMGB7"
-CLAUDE_MODEL = "claude-opus-4-7"
+from utils.claude_client import call_claude
 
 # 列名 → 英文 key 的映射
 COL_KEY_MAP = {
@@ -392,44 +390,11 @@ def post_emotion_analysis():
             "4. 推荐1-2只强势连板股及仓位建议\n"
         )
 
-        # 调用 Claude API（OpenAI 兼容格式）— 用 subprocess curl 避免 eventlet 干扰
-        import subprocess, tempfile
-        payload = json.dumps({
-            "model": CLAUDE_MODEL,
-            "messages": [
-                {"role": "user", "content": SYSTEM_PROMPT + "\n\n" + user_prompt},
-            ],
-            "max_tokens": 2048,
-        })
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
-            f.write(payload)
-            payload_file = f.name
-        try:
-            proc = subprocess.run(
-                [
-                    "curl", "-s", "--max-time", "60",
-                    CLAUDE_API_URL,
-                    "-H", f"Authorization: Bearer {CLAUDE_API_KEY}",
-                    "-H", "Content-Type: application/json",
-                    "-d", f"@{payload_file}",
-                ],
-                capture_output=True, text=True, timeout=65,
-            )
-            import os
-            os.unlink(payload_file)
-            if proc.returncode != 0:
-                raise Exception(f"curl 失败 (exit {proc.returncode}): {proc.stderr[:500]}")
-            claude_body = json.loads(proc.stdout)
-            if "error" in claude_body:
-                raise Exception(f"Claude API 错误: {claude_body['error']}")
-        except subprocess.TimeoutExpired:
-            raise Exception("Claude API 调用超时(60s)")
-
-        # 提取回复文本
-        content = (
-            claude_body.get("choices", [{}])[0]
-            .get("message", {})
-            .get("content", "")
+        content = call_claude(
+            SYSTEM_PROMPT + "\n\n" + user_prompt,
+            max_tokens=2048,
+            curl_timeout=60,
+            raise_on_error=True,
         )
 
         logger.info(f"Claude 原始返回 content (前500字): {content[:500]}")
@@ -544,40 +509,11 @@ def _call_claude_intraday(
         "请输出【当日】盘中研判 JSON。"
     )
 
-    payload = json.dumps({
-        "model": CLAUDE_MODEL,
-        "messages": [
-            {"role": "user", "content": INTRADAY_SYSTEM_PROMPT + "\n\n" + user_prompt},
-        ],
-        "max_tokens": 2048,
-    })
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
-        f.write(payload)
-        payload_file = f.name
-    try:
-        proc = subprocess.run(
-            [
-                "curl", "-s", "--max-time", "90",
-                CLAUDE_API_URL,
-                "-H", f"Authorization: Bearer {CLAUDE_API_KEY}",
-                "-H", "Content-Type: application/json",
-                "-d", f"@{payload_file}",
-            ],
-            capture_output=True, text=True, timeout=95,
-        )
-        os.unlink(payload_file)
-        if proc.returncode != 0:
-            raise Exception(f"curl 失败 (exit {proc.returncode}): {proc.stderr[:500]}")
-        claude_body = json.loads(proc.stdout)
-        if "error" in claude_body:
-            raise Exception(f"Claude API 错误: {claude_body['error']}")
-    except subprocess.TimeoutExpired:
-        raise Exception("Claude API 调用超时(90s)")
-
-    content = (
-        claude_body.get("choices", [{}])[0]
-        .get("message", {})
-        .get("content", "")
+    content = call_claude(
+        INTRADAY_SYSTEM_PROMPT + "\n\n" + user_prompt,
+        max_tokens=2048,
+        curl_timeout=90,
+        raise_on_error=True,
     )
     clean = content.strip()
     if clean.startswith("```"):
@@ -854,45 +790,16 @@ def _fix_json_quotes(text):
 
 def _call_claude_batch(records_batch):
     """调用 Claude 分析一批记录，返回解析后的 list"""
-    import subprocess, tempfile, os, re
+    import re
 
     data_text = json.dumps(records_batch, ensure_ascii=False, indent=2)
     user_prompt = f"以下是连续交易日的情绪周期数据（共{len(records_batch)}天）：\n{data_text}"
 
-    payload = json.dumps({
-        "model": CLAUDE_MODEL,
-        "messages": [
-            {"role": "user", "content": BATCH_ANALYSIS_PROMPT + "\n\n" + user_prompt},
-        ],
-        "max_tokens": 16000,
-    })
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
-        f.write(payload)
-        payload_file = f.name
-    try:
-        proc = subprocess.run(
-            [
-                "curl", "-s", "--max-time", "180",
-                CLAUDE_API_URL,
-                "-H", f"Authorization: Bearer {CLAUDE_API_KEY}",
-                "-H", "Content-Type: application/json",
-                "-d", f"@{payload_file}",
-            ],
-            capture_output=True, text=True, timeout=185,
-        )
-        os.unlink(payload_file)
-        if proc.returncode != 0:
-            raise Exception(f"curl 失败 (exit {proc.returncode}): {proc.stderr[:500]}")
-        claude_body = json.loads(proc.stdout)
-        if "error" in claude_body:
-            raise Exception(f"Claude API 错误: {claude_body['error']}")
-    except subprocess.TimeoutExpired:
-        raise Exception("Claude API 调用超时(180s)")
-
-    content = (
-        claude_body.get("choices", [{}])[0]
-        .get("message", {})
-        .get("content", "")
+    content = call_claude(
+        BATCH_ANALYSIS_PROMPT + "\n\n" + user_prompt,
+        max_tokens=16000,
+        curl_timeout=180,
+        raise_on_error=True,
     )
     logger.info(f"批量分析返回 (前300字): {content[:300]}")
 

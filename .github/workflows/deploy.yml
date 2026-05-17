@@ -184,6 +184,11 @@ jobs:
                     proxy_set_header Host $host;
                 }
 
+                location = / {
+                    root /www/StockAnalyLargeOrders/frontend/build;
+                    try_files /landing.html =404;
+                }
+
                 location / {
                     try_files $uri $uri/ /index.html;
                 }
@@ -194,7 +199,7 @@ jobs:
             server {
                 listen 80 default_server;
                 listen [::]:80 default_server;
-                server_name stockai.xin www.stockai.xin;
+                server_name _ stockai.xin www.stockai.xin;
 
                 root /www/StockAnalyLargeOrders/frontend/build;
                 index index.html;
@@ -227,6 +232,11 @@ jobs:
                     proxy_set_header Upgrade $http_upgrade;
                     proxy_set_header Connection "upgrade";
                     proxy_set_header Host $host;
+                }
+
+                location = / {
+                    root /www/StockAnalyLargeOrders/frontend/build;
+                    try_files /landing.html =404;
                 }
 
                 location / {

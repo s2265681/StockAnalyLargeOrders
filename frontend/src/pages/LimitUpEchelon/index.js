@@ -124,8 +124,7 @@ function LimitUpEchelon() {
 
     try {
       // 初始加载：读取股票数据 + 自动加载 DB 已有标签（不触发 AI）
-      const dtParam = targetDate !== getLastTradingDayStr() ? `dt=${targetDate}` : '';
-      const res = await apiRequest(`/api/v1/limit-up-echelon${dtParam ? `?${dtParam}` : ''}`);
+      const res = await apiRequest(`/api/v1/limit-up-echelon?${toDtQuery(targetDate)}`);
       if (res?.data && requestSeq.current === requestId) {
         dataCache.current[targetDate] = res.data;
         setData(res.data);
@@ -147,8 +146,7 @@ function LimitUpEchelon() {
   const refreshThemes = useCallback(async () => {
     setRefreshingThemes(true);
     try {
-      const dtParam = currentDate !== getLastTradingDayStr() ? `&dt=${currentDate}` : '';
-      const res = await apiRequest(`/api/v1/limit-up-echelon?force=1${dtParam}`);
+      const res = await apiRequest(`/api/v1/limit-up-echelon?force=1&${toDtQuery(currentDate)}`);
       if (res?.data) {
         const status = res.data.ai?.status || 'none';
         if (status === 'done') {
@@ -173,15 +171,13 @@ function LimitUpEchelon() {
     if (aiStatus !== 'pending') return;
     const timer = setInterval(async () => {
       try {
-        const dtParam = currentDate !== getLastTradingDayStr() ? `?dt=${currentDate}` : '';
-        const res = await apiRequest(`/api/v1/limit-up-echelon/ai-status${dtParam}`);
+        const res = await apiRequest(`/api/v1/limit-up-echelon/ai-status?${toDtQuery(currentDate)}`);
         if (res?.data?.status === 'done') {
           setAiStatus('done');
           setRefreshingThemes(false);
           // 重新拉取完整数据，一次性刷新所有标签和分类
           try {
-            const dtParam = currentDate !== getLastTradingDayStr() ? `?dt=${currentDate}` : '';
-            const fullRes = await apiRequest(`/api/v1/limit-up-echelon${dtParam}`);
+            const fullRes = await apiRequest(`/api/v1/limit-up-echelon?${toDtQuery(currentDate)}`);
             if (fullRes?.data) {
               dataCache.current[currentDate] = fullRes.data;
               setData(fullRes.data);

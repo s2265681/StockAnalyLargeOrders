@@ -1,6 +1,16 @@
 import unittest
+from datetime import datetime
+from unittest.mock import patch
 
-from routes.limit_up_echelon import _parse_grouping_json
+from routes.limit_up_echelon import _default_echelon_dt, _parse_grouping_json
+
+
+class DefaultEchelonDtTest(unittest.TestCase):
+    def test_sunday_defaults_to_friday(self):
+        with patch('routes.limit_up_echelon.datetime') as mock_dt:
+            mock_dt.now.return_value = datetime(2026, 5, 17, 12, 0, 0)
+            mock_dt.side_effect = lambda *a, **k: datetime(*a, **k)
+            self.assertEqual(_default_echelon_dt(), '20260515')
 
 
 class LimitUpEchelonGroupingTest(unittest.TestCase):

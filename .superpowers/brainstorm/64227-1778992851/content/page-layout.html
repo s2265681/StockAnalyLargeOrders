@@ -1,0 +1,117 @@
+<h2>官网页面结构方案</h2>
+<p class="subtitle">落地页 + 邀请码/付费 · 选择最适合的区块排列方式</p>
+
+<div class="options">
+
+  <!-- 方案 A：线性叙事 -->
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>线性叙事型 <span style="font-size:12px;color:#888;font-weight:400;">（推荐）</span></h3>
+      <p>从痛点切入 → 展示解决方案 → 功能亮点 → 截图演示 → 锁定付费</p>
+      <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:10px;height:10px;background:#f5a623;border-radius:50%;flex-shrink:0;"></div>
+          <span style="font-size:12px;color:#aaa;">🔥 Hero — 「散户被割？AI帮你抢先看穿」+ 邀请码入口</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:10px;height:10px;background:#f5a623;border-radius:50%;flex-shrink:0;opacity:0.8;"></div>
+          <span style="font-size:12px;color:#aaa;">📊 数据战绩 — 今日涨停命中率、大单预警次数等</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:10px;height:10px;background:#f5a623;border-radius:50%;flex-shrink:0;opacity:0.7;"></div>
+          <span style="font-size:12px;color:#aaa;">⚡ 核心功能 — 涨停梯队、大单追踪、情绪周期、AI诊断</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:10px;height:10px;background:#f5a623;border-radius:50%;flex-shrink:0;opacity:0.6;"></div>
+          <span style="font-size:12px;color:#aaa;">📱 产品截图 — 真实界面 + 功能说明</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:10px;height:10px;background:#f5a623;border-radius:50%;flex-shrink:0;opacity:0.5;"></div>
+          <span style="font-size:12px;color:#aaa;">👥 适合谁 — 打板党、短线派、量化爱好者</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:10px;height:10px;background:#f5c842;border-radius:50%;flex-shrink:0;"></div>
+          <span style="font-size:12px;color:#f5c842;font-weight:600;">💎 价格/邀请码 — 限量名额 + 付费套餐</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:10px;height:10px;background:#666;border-radius:50%;flex-shrink:0;"></div>
+          <span style="font-size:12px;color:#aaa;">❓ FAQ + Footer</span>
+        </div>
+      </div>
+      <div class="pros-cons" style="margin-top:12px;">
+        <div class="pros"><h4>优势</h4><ul><li>用户情绪递进，转化率高</li><li>先建立信任再谈钱</li></ul></div>
+        <div class="cons"><h4>注意</h4><ul><li>页面较长，需要好的视觉节奏</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 方案 B：功能优先 -->
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>功能密集型</h3>
+      <p>直接展示功能截图，面向已有意向的用户，快速转化</p>
+      <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:10px;height:10px;background:#f5a623;border-radius:50%;flex-shrink:0;"></div>
+          <span style="font-size:12px;color:#aaa;">🔥 Hero — 产品名 + 截图直接上 + CTA</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:10px;height:10px;background:#f5a623;border-radius:50%;flex-shrink:0;opacity:0.8;"></div>
+          <span style="font-size:12px;color:#aaa;">⚡ 6大功能 — 图文并排，截图为主</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:10px;height:10px;background:#f5c842;border-radius:50%;flex-shrink:0;"></div>
+          <span style="font-size:12px;color:#f5c842;font-weight:600;">💎 价格/邀请码 — 紧接功能展示</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:10px;height:10px;background:#666;border-radius:50%;flex-shrink:0;"></div>
+          <span style="font-size:12px;color:#aaa;">❓ FAQ + Footer</span>
+        </div>
+      </div>
+      <div class="pros-cons" style="margin-top:12px;">
+        <div class="pros"><h4>优势</h4><ul><li>页面短，直接高效</li><li>适合精准引流（打板社群）</li></ul></div>
+        <div class="cons"><h4>注意</h4><ul><li>缺乏情绪积累，陌生用户转化弱</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 方案 C：社群驱动 -->
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>社群驱动型</h3>
+      <p>强调「限量」「内部圈子」感，制造稀缺 + 社群归属，适合邀请码模式</p>
+      <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:10px;height:10px;background:#f5a623;border-radius:50%;flex-shrink:0;"></div>
+          <span style="font-size:12px;color:#aaa;">🔥 Hero — 「内测中 · 仅限受邀用户」强稀缺感</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:10px;height:10px;background:#f5a623;border-radius:50%;flex-shrink:0;opacity:0.8;"></div>
+          <span style="font-size:12px;color:#aaa;">📊 战绩 + 用户评价 — 社群截图、收益展示</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:10px;height:10px;background:#f5a623;border-radius:50%;flex-shrink:0;opacity:0.7;"></div>
+          <span style="font-size:12px;color:#aaa;">⚡ 核心功能 — 简要介绍</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:10px;height:10px;background:#f5c842;border-radius:50%;flex-shrink:0;"></div>
+          <span style="font-size:12px;color:#f5c842;font-weight:600;">💎 邀请码输入 — 大号表单，制造仪式感</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:10px;height:10px;background:#666;border-radius:50%;flex-shrink:0;"></div>
+          <span style="font-size:12px;color:#aaa;">Footer</span>
+        </div>
+      </div>
+      <div class="pros-cons" style="margin-top:12px;">
+        <div class="pros"><h4>优势</h4><ul><li>稀缺感强，邀请码转化率高</li><li>适合微信社群裂变</li></ul></div>
+        <div class="cons"><h4>注意</h4><ul><li>需要真实用户评价素材</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p style="text-align:center;margin-top:20px;" class="subtitle">也可以组合，比如 A 的结构 + C 的稀缺感，告诉我你的想法</p>

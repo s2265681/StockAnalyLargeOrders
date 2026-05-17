@@ -13,7 +13,7 @@ import tempfile
 import time
 import threading
 from collections import Counter
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import Blueprint, request
 
@@ -30,14 +30,18 @@ logger = logging.getLogger(__name__)
 
 limit_up_echelon_bp = Blueprint('limit_up_echelon', __name__)
 
-CLAUDE_API_URL = os.environ.get(
-    "CLAUDE_API_URL", "https://token.kalowave.com/v1/chat/completions"
-)
-CLAUDE_API_KEY = os.environ.get(
-    "CLAUDE_API_KEY",
-    "sk-9bs6AtWPA7p0vs6Rnz0lxP6VOpufoWSQGV8MAS0i3ncqMGB7",
-)
-CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-6")
+
+def _default_echelon_dt() -> str:
+    """无 dt 参数时默认最近交易日（周末退到周五），与前端 getLastTradingDayStr 一致"""
+    d = datetime.now()
+    dow = d.weekday()
+    if dow == 5:
+        d -= timedelta(days=1)
+    elif dow == 6:
+        d -= timedelta(days=2)
+    return d.strftime('%Y%m%d')
+
+from utils.claude_client import CLAUDE_API_KEY, call_claude as _call_claude
 
 # (date, codes_tuple) -> (unix_ts, {"labels": code -> group_label, "reasons": label -> reason, "leaders": label -> [leader]})
 _echelon_ai_cache = {}
@@ -364,44 +368,6 @@ def _apply_group_labels(stocks: list, group_result: dict) -> tuple:
     ]
 
 
-def _call_claude(prompt: str, max_tokens: int = 4096) -> str:
-    """调用Claude API（通过subprocess curl避免eventlet干扰）"""
-    payload = json.dumps({
-        "model": CLAUDE_MODEL,
-        "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": max_tokens,
-    })
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
-        f.write(payload)
-        payload_file = f.name
-    try:
-        proc = subprocess.run(
-            [
-                "curl", "-s", "--max-time", "90",
-                CLAUDE_API_URL,
-                "-H", f"Authorization: Bearer {CLAUDE_API_KEY}",
-                "-H", "Content-Type: application/json",
-                "-d", f"@{payload_file}",
-            ],
-            capture_output=True, text=True, timeout=95,
-        )
-        os.unlink(payload_file)
-        if proc.returncode != 0:
-            return ""
-        body = json.loads(proc.stdout)
-        if "error" in body:
-            logger.error(f"Claude API 错误: {body['error']}")
-            return ""
-        return (
-            body.get("choices", [{}])[0]
-            .get("message", {})
-            .get("content", "")
-        )
-    except Exception as e:
-        logger.error(f"Claude API调用失败: {e}")
-        return ""
-
-
 def _smart_group_stocks(stocks: list, dt: str) -> dict:
     """智能分组：先用库里已有标签（含手动改动）匹配，剩余的才调 AI
     返回与 _claude_group_labels_for_stocks 相同的 group_result 结构
@@ -635,7 +601,7 @@ def _build_echelon_response(stocks, ths_hot_list, dt, theme_ranking, ai_meta):
 @limit_up_echelon_bp.route('/api/v1/limit-up-echelon', methods=['GET'])
 def get_limit_up_echelon():
     """获取当日涨停板梯队数据"""
-    dt = request.args.get('dt', datetime.now().strftime('%Y%m%d'))
+    dt = request.args.get('dt') or _default_echelon_dt()
     dt_clean = dt.replace('-', '')
 
     try:
@@ -753,7 +719,7 @@ def get_limit_up_echelon():
 @limit_up_echelon_bp.route('/api/v1/limit-up-echelon/ai-status', methods=['GET'])
 def get_ai_status():
     """轮询 AI 分组状态，完成后返回带分组的完整数据"""
-    dt = request.args.get('dt', datetime.now().strftime('%Y%m%d'))
+    dt = request.args.get('dt') or _default_echelon_dt()
     dt_clean = dt.replace('-', '')
 
     # 找到匹配的 cache_key

@@ -7,6 +7,18 @@
   overflow: hidden;
 }
 
+.emotion-cycle-top-panel {
+  flex-shrink: 0;
+  max-height: 180px;
+  margin-bottom: 12px;
+}
+
+.emotion-cycle-top-panel .analysis-panel-block {
+  flex: none;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
 .emotion-main-layout {
   display: flex;
   gap: 16px;
@@ -66,6 +78,11 @@
   font-weight: 400;
   color: var(--text-muted);
   white-space: nowrap;
+}
+
+.analysis-panel-extra {
+  display: flex;
+  align-items: center;
 }
 
 .analysis-empty.compact {
@@ -273,4 +290,57 @@
   font-size: 12px;
   color: var(--text-secondary);
   line-height: 1.5;
+}
+
+/* ── 移动端适配 ── */
+@media (max-width: 768px) {
+  .emotion-cycle-container {
+    height: auto;
+    overflow: visible;
+    padding: 10px;
+  }
+
+  .emotion-cycle-top-panel {
+    max-height: none;
+    margin-bottom: 10px;
+  }
+
+  .emotion-cycle-top-panel .analysis-panel-block {
+    max-height: none;
+    overflow-y: visible;
+  }
+
+  .emotion-date-nav {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 10px;
+    justify-content: center;
+  }
+
+  .date-nav-ai-btns {
+    width: 100%;
+    justify-content: center;
+    margin-left: 0;
+  }
+
+  .emotion-main-layout {
+    flex-direction: column;
+    overflow: visible;
+    min-height: 0;
+  }
+
+  .emotion-chart-card {
+    height: 320px;
+    flex: none;
+  }
+
+  .emotion-right-column {
+    width: 100%;
+    flex-shrink: unset;
+  }
+
+  .analysis-panel-block {
+    overflow-y: visible;
+    min-height: 0;
+  }
 }

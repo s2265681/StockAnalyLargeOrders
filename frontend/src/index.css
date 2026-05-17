@@ -2883,19 +2883,7 @@ code {
     overflow-x: hidden !important;
   }
 
-  .emotion-main-layout {
-    flex-direction: column !important;
-    overflow: visible !important;
-  }
-
-  .emotion-chart-card {
-    min-height: 300px;
-  }
-
-  .emotion-right-column {
-    width: 100% !important;
-    overflow: visible !important;
-  }
+  /* 情绪周期移动端样式已移至 EmotionCycle/index.css */
 
   .analysis-panel-block {
     overflow: visible !important;

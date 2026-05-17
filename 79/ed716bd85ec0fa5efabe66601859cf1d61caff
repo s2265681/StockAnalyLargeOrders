@@ -1,0 +1,190 @@
+.superpowers/brainstorm/20892-1778988672/content/ai-diagnosis-layout.html
+  s_e304c4bceceb65::t_52384daca6de20 1-72
+backend/app.py
+  s_e304c4bceceb65::t_d2cc93c9da029f 51
+  s_e304c4bceceb65::t_802a015ce29a8a 26
+backend/tests/test_ai_diagnosis.py
+  s_e304c4bceceb65::t_e2074740c432ba 87-104
+  s_e304c4bceceb65::t_60e2f3590bc34e 1-86,105-108
+.superpowers/brainstorm/20892-1778988672/content/waiting-design.html
+  s_e304c4bceceb65::t_ed093897bac195 1-3
+.superpowers/brainstorm/20892-1778988672/state/server-stopped
+  s_ee26434095808a::t_d557ff866d4d8e 1
+frontend/src/pages/AiDiagnosis/index.js
+  s_e304c4bceceb65::t_3d1d199c10e5e1 75
+  s_e304c4bceceb65::t_16b347df0a12c6 132
+  s_e304c4bceceb65::t_5c4affc0da430b 316
+  s_e304c4bceceb65::t_eda32ec8c15882 46
+  s_e304c4bceceb65::t_3d0974b8e487c9 47
+  s_e304c4bceceb65::t_d14a23cbe4228b 70,81,112,147,282
+  s_e304c4bceceb65::t_5b83ca60f78afa 269
+  s_e304c4bceceb65::t_944b000017fce7 1-45,48-51,53-63,66-69,72-73,76-79,82-87,90-94,97,99-105,107-109,111,113-115,118-124,126-131,134-146,148-237,239-240,242-268,270-276,278-281,283-286,288,290-315,317-320
+  s_e304c4bceceb65::t_bd21cf6bf675a8 52,64-65,71,74,80,88-89,95-96,98,106,110,116,125,133,238,241,287,289
+  s_e304c4bceceb65::t_07a4a4fb216b0e 117,277
+backend/routes/__init__.py
+  s_e304c4bceceb65::t_69a5d2bcee702c 15
+  s_e304c4bceceb65::t_5183970777b318 31
+frontend/src/pages/EmotionCycle/index.js
+  s_ee26434095808a::t_bcd974a65b726c 98
+  s_ee26434095808a::t_62890a6e97c726 1,17,60-61,67-69,95-97,99-109,111-138,141-146,148-171,173-176,179-182,184,186-187,208-209,212-213,215,218-228,230-232,236,241-242,246,250-253,255,259-260,262,264,277,287,290,334,338,359,380,387,393-404,406,408-410,413,429-430,436-454
+  s_ee26434095808a::t_70016d800fb347 139-140
+  s_ee26434095808a::t_c80d04e9d616fa 147
+  s_ee26434095808a::t_f58f4e0d955375 110
+frontend/src/pages/StockDashboard/components/StockChart.js
+  s_1aa51b51697a86::t_099ebe4f88de66 48-77,82,93-101,107-111,115-118,120-121
+  s_1aa51b51697a86::t_3c5679c5dd8a80 84-86
+  s_1aa51b51697a86::t_7e027a6d35ca90 88
+  s_cf7debef27e199::t_926700081576c7 813,820-821,845,852-853,1140-1141,1144-1145
+  s_1aa51b51697a86::t_00a085da6e428e 628-660,662-663,673-676,678-682,716,720,741,766,773,791,803
+  s_cf7debef27e199::t_89fee74f88dbd1 664-669,671-672
+  s_1aa51b51697a86::t_1f79ce6504e151 78-81,83,87,89-92,102-106,112-114,119
+  s_cf7debef27e199::t_3ba95f1b9dffdd 522,579-580,592-595,598-599
+  s_cf7debef27e199::t_096dfd1afb6ccf 670
+  s_1aa51b51697a86::t_491ed8eb10cdf1 458,749-750,904
+  s_1aa51b51697a86::t_297026f34091eb 661,677,842,859,875,909,918
+  s_cf7debef27e199::t_59790aa98b1c8f 523-531,536-537,541-542
+  s_1aa51b51697a86::t_2a331137559bf0 122-132
+  s_cf7debef27e199::t_50d370e3c44cd1 583-584,596-597
+  s_1aa51b51697a86::t_e75d27cc5fc6b6 438,449-453,455-456
+  s_cf7debef27e199::t_6578f605480290 545-546,548-549
+frontend/src/pages/LimitUpEchelon/index.js
+  s_58cd5624a3a18f::t_4c4f89634689a9 77-79
+frontend/src/App.js
+  s_e304c4bceceb65::t_8bb423c132d9d7 146-148
+  s_e304c4bceceb65::t_e6c38624f12d05 26
+  s_e304c4bceceb65::t_3d653658b695b1 12
+  s_cf7debef27e199::t_fcded0869fe1d8 124,132
+docs/superpowers/specs/2026-05-17-ai-diagnosis-design.md
+  s_e304c4bceceb65::t_16b4d8399738fd 1-66
+frontend/src/pages/AiDiagnosis/index.css
+  s_e304c4bceceb65::t_d421a73ca77d68 1-238
+frontend/src/index.css
+  s_cf7debef27e199::t_bf8c9aae673a36 850,852-853,857,861-874
+  s_326c53c18683a3::t_81a309e3fe748e 1650-1655,1657,1659,1664-1678
+backend/migrations/20260517_emotion_intraday_columns.sql
+  s_ee26434095808a::t_5ceb843aac4dc5 1-3
+frontend/src/pages/EmotionCycle/index.css
+  s_ee26434095808a::t_3d22748e8ff34e 26-27,29-37,41,45-79
+  s_326c53c18683a3::t_a5b593e81049a7 217-237
+frontend/src/pages/StockDashboard/components/StockBasicInfo.js
+  s_326c53c18683a3::t_40c14ab267c2e7 103
+backend/services/ai_diagnosis_service.py
+  s_e304c4bceceb65::t_ba13980f01b101 548-550,553-562
+  s_e304c4bceceb65::t_dd48dff1a74def 25-28
+  s_e304c4bceceb65::t_76884201e38d43 1-24,29-292,294-332,370,375-393,396,406-415,425-426,498,503-547,551-552,563-595
+  s_e304c4bceceb65::t_4dda5468e7ed8c 333-369,371-374,394-395,397-405,416-424,427-497,499-502
+  s_e304c4bceceb65::t_d38d43ee4624fa 293
+backend/routes/ai_diagnosis.py
+  s_e304c4bceceb65::t_cae79803b87f14 1-85
+backend/routes/l2_dashboard.py
+  s_cf7debef27e199::t_23c97bad82f160 11,20-30,80,82-85,88,94,96,101,107-116,119-122,215
+  s_cf7debef27e199::t_142addaba0448f 31-79,81,86-87,89-93,95,97-100,102-106,117-118
+frontend/src/pages/StockDashboard/components/StockChart.test.js
+  s_1aa51b51697a86::t_b780b6b340ea58 47-62
+  s_1aa51b51697a86::t_76427e4fcd24a0 25-26,98-106
+  s_1aa51b51697a86::t_41a491b8f2bcdc 22-24,27-46,63-75,89-97,107-108
+  s_1aa51b51697a86::t_c5ab210b2665a8 1-21
+  s_1aa51b51697a86::t_11f951ad2c4d77 76-88
+.superpowers/brainstorm/20455-1778988668/content/emotion-generated-module-layout.html
+  s_ee26434095808a::t_85665a5b2d83d8 1-65
+backend/utils/auth_middleware.py
+  s_ee26434095808a::t_47fd90c3b8bb61 51-60
+backend/tests/test_emotion_cycle.py
+  s_ee26434095808a::t_025768467843dc 9-14,59-117
+backend/tests/test_l2_money_flow.py
+  s_cf7debef27e199::t_6d3b4cc4aecae8 10-12,14,47,59,61,63-66
+  s_cf7debef27e199::t_3c5e774e6b5aee 1-9,13,15-46,48-54,71-74
+  s_cf7debef27e199::t_48a0969231bb8c 60,62,67-70
+  s_cf7debef27e199::t_bb456c116903ea 57-58
+  s_cf7debef27e199::t_c279187ee8a888 55-56
+backend/routes/emotion_cycle.py
+  s_ee26434095808a::t_cdd61b48744276 499-516,518-653
+  s_ee26434095808a::t_9faa1cc49432af 4-5,15
+  s_ee26434095808a::t_ea80ec1919b369 44-64,67
+  s_ee26434095808a::t_d0022995055011 517
+  s_ee26434095808a::t_870309ddbbfeb2 123-139,144,149-150
+  s_ee26434095808a::t_1a3d7c7c231594 11
+  s_ee26434095808a::t_b72ca5d8312da8 932
+  s_ee26434095808a::t_b9a9910a6808ab 296-352
+frontend/src/store/atoms.js
+  s_cf7debef27e199::t_611680d3437031 335-336
+.superpowers/brainstorm/20455-1778988668/state/server-info
+  s_cf7debef27e199::t_9d82b4a662b15d 1
+frontend/src/pages/LimitUpEchelon/index.css
+  s_e49225a8d30d8b::t_68bc8267894461 123-145
+  s_e49225a8d30d8b::t_22d55ab8242f3a 237-254
+.superpowers/brainstorm/20455-1778988668/content/emotion-dual-module-design.html
+  s_ee26434095808a::t_c2f9a98521146e 1-4,20-22,25-27,33-43,45-52,56-57,61-62,68-69
+  s_ee26434095808a::t_58b553e02ed56b 6,8-16,18,23-24,29,31-32,44,53-54,58,60,63-67,70-71
+  s_ee26434095808a::t_0888ae856894ae 17,19,72
+  s_ee26434095808a::t_8dec982e58f254 5,7
+  s_ee26434095808a::t_5a8e866d3a8192 28,55
+  s_ee26434095808a::t_6f21b208d3a273 30
+  s_ee26434095808a::t_5119a0e131bed8 59
+docs/superpowers/specs/2026-05-17-emotion-intraday-design.md
+  s_ee26434095808a::t_72f9c21621bc9e 1-16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "79ed716bd85ec0fa5efabe66601859cf1d61caff",
+  "prompts": {},
+  "sessions": {
+    "s_1aa51b51697a86": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "f4f77a20-3446-4937-8c20-fde5f6113813",
+        "model": "gpt-5.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_326c53c18683a3": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "e0a1df5f-bbac-4ae8-8137-a36a7dc59479",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_58cd5624a3a18f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "78a02300-4a32-483e-8d7c-44a709c4ed69",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_cf7debef27e199": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "5ec90f1f-92f3-4df2-a236-c95f19854c5d",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_e304c4bceceb65": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "1fe7b70b-ebbc-434b-a407-62c6463a523a",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_e49225a8d30d8b": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "a221557f-7043-439e-8761-2a7b4ea1d0ce",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_ee26434095808a": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "c4db448f-3653-4654-834a-b5b98d5ba453",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

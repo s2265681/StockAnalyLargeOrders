@@ -349,10 +349,10 @@ export const applyL2DashboardData = (set, data, cutoffTime, moneyFlow) => {
     session_snapshot: d.session_snapshot ?? null,
     money_flow: slicedMoneyFlow,
     base_info: {
-      prevClosePrice: d.stock_info.yesterday_close,
-      openPrice: d.stock_info.open,
-      highPrice: d.stock_info.high,
-      lowPrice: d.stock_info.low,
+      prevClosePrice: d.stock_info?.yesterday_close ?? d.stock_info?.pre_close,
+      openPrice: d.stock_info?.open,
+      highPrice: d.stock_info?.high,
+      lowPrice: d.stock_info?.low,
     },
   });
 
@@ -462,13 +462,13 @@ export const fetchL2DashboardAtom = atom(
         session_snapshot: timeshareResp.data.session_snapshot || null,
         money_flow: moneyFlow,
         base_info: {
-          prevClosePrice: d.stock_info?.yesterday_close,
+          prevClosePrice: d.stock_info?.yesterday_close ?? d.stock_info?.pre_close,
           openPrice: d.stock_info?.open,
           highPrice: d.stock_info?.high,
           lowPrice: d.stock_info?.low,
         },
       });
-      set(stockBasicDataAtom, d.stock_info);
+      set(stockBasicDataAtom, d.stock_info || null);
 
       if (ordersResp?.success && ordersResp?.data) {
         const od = ordersResp.data;
@@ -493,7 +493,7 @@ export const fetchL2DashboardAtom = atom(
           session_snapshot: timeshareResp.data.session_snapshot || null,
           money_flow: moneyFlow,
           base_info: {
-            prevClosePrice: d.stock_info?.yesterday_close,
+            prevClosePrice: d.stock_info?.yesterday_close ?? d.stock_info?.pre_close,
             openPrice: d.stock_info?.open,
             highPrice: d.stock_info?.high,
             lowPrice: d.stock_info?.low,

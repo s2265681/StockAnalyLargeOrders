@@ -25,9 +25,16 @@ import {
   getPercentAxisInterval,
   getZeroLineLabel,
   getLimitPercentBounds,
+  resolvePrevClosePrice,
 } from './StockChart';
 
 describe('StockChart helpers', () => {
+  test('resolves prev close from base info or stock basic data', () => {
+    expect(resolvePrevClosePrice({}, { yesterday_close: 35.98 })).toBe(35.98);
+    expect(resolvePrevClosePrice({ prevClosePrice: 38.45 }, { yesterday_close: 35.98 })).toBe(38.45);
+    expect(resolvePrevClosePrice({}, {})).toBeNull();
+  });
+
   test('uses stock limit prices as y-axis percent bounds', () => {
     const bounds = getLimitPercentBounds({
       stockBasicData: {

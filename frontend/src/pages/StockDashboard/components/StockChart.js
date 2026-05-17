@@ -55,6 +55,25 @@ export const formatPercentLabel = (value) => {
   return `${roundedValue > 0 ? '+' : '-'}${absText}%`;
 };
 
+export const resolvePrevClosePrice = (baseInfo, stockBasicData) => {
+  const candidates = [
+    baseInfo?.prevClosePrice,
+    baseInfo?.prev_close,
+    stockBasicData?.yesterday_close,
+    stockBasicData?.pre_close,
+    stockBasicData?.preClose,
+  ];
+
+  for (const raw of candidates) {
+    const value = parseFloat(raw);
+    if (Number.isFinite(value) && value > 0) {
+      return value;
+    }
+  }
+
+  return null;
+};
+
 export const formatTradingTimeLabel = (value) => {
   if (!value || typeof value !== 'string') {
     return '';
@@ -72,7 +91,7 @@ export const formatTradingTimeLabel = (value) => {
 };
 
 export const getLimitPercentBounds = ({ stockBasicData, baseInfo, fallbackPercents = [] }) => {
-  const prevClosePrice = parseFloat(baseInfo?.prevClosePrice || stockBasicData?.yesterday_close);
+  const prevClosePrice = resolvePrevClosePrice(baseInfo, stockBasicData);
   const limitUpPrice = parseFloat(stockBasicData?.limit_up || baseInfo?.limit_up);
   const limitDownPrice = parseFloat(stockBasicData?.limit_down || baseInfo?.limit_down);
   const validPercents = fallbackPercents
@@ -235,7 +254,15 @@ const StockChart = () => {
     }
     
     const { base_info, fenshi, sanhu, volume, zhuli, timeAxis } = timeshareData;
-    const prevClosePrice = parseFloat(base_info?.prevClosePrice || 12.59);
+    const prevClosePrice = resolvePrevClosePrice(base_info, stockBasicData);
+    if (!prevClosePrice) {
+      return {};
+    }
+
+    const lastFenshiIndex = (fenshi || []).reduce(
+      (lastIndex, price, index) => (price != null && price !== '' ? index : lastIndex),
+      -1
+    );
     
     // 根据数据长度生成时间轴
     const dataLength = Math.max(
@@ -377,16 +404,19 @@ const StockChart = () => {
       return { institutionalMarkers, retailMarkers: [] };
     };
     
-    // 价格数据（转换为百分比坐标）。部分数据源在封板后会缺分钟点，沿用最近有效价格保持分时线连续。
+    // 价格数据（转换为百分比坐标）。缺分钟点时沿用最近有效价格，但不向未到的交易时段延伸。
     let lastPricePct = null;
     const priceData = fenshi.map((price, index) => {
       const timePoint = fullTimeAxis[index];
+      if (index > lastFenshiIndex) {
+        return [timePoint, null];
+      }
       if (timePoint && price) {
         const percentChange = ((parseFloat(price) - prevClosePrice) / prevClosePrice) * 100;
         lastPricePct = percentChange;
         return [timePoint, percentChange];
       }
-      return [fullTimeAxis[index], lastPricePct];
+      return [timePoint, lastPricePct];
     });
     
     // 成交量数据
@@ -421,6 +451,10 @@ const StockChart = () => {
     
     fenshi.forEach((price, index) => {
       const timePoint = fullTimeAxis[index];
+      if (index > lastFenshiIndex) {
+        avgPriceData.push([timePoint, null]);
+        return;
+      }
       if (timePoint && price && volume[index]) {
         const currentPrice = parseFloat(price);
         const currentVolume = volume[index];

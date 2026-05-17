@@ -321,12 +321,15 @@ const StockDashboard = () => {
             order_book: d.order_book || null,
             session_snapshot: d.session_snapshot || null,
             base_info: {
-              prevClosePrice: d.stock_info?.yesterday_close,
+              prevClosePrice: d.stock_info?.yesterday_close ?? d.stock_info?.pre_close,
               openPrice: d.stock_info?.open,
               highPrice: d.stock_info?.high,
               lowPrice: d.stock_info?.low,
             },
           });
+          if (d.stock_info) {
+            setStockBasicData(d.stock_info);
+          }
         } else {
           // 在已有全天数据基础上，用 WS 新数据覆盖对应时间点
           const axis = prev.timeAxis || buildTradingTimeAxis();
@@ -356,7 +359,7 @@ const StockDashboard = () => {
             order_book: d.order_book || prev.order_book,
             session_snapshot: d.session_snapshot ?? prev.session_snapshot,
             base_info: {
-              prevClosePrice: d.stock_info?.yesterday_close ?? prev.base_info?.prevClosePrice,
+              prevClosePrice: d.stock_info?.yesterday_close ?? d.stock_info?.pre_close ?? prev.base_info?.prevClosePrice,
               openPrice: d.stock_info?.open ?? prev.base_info?.openPrice,
               highPrice: d.stock_info?.high ?? prev.base_info?.highPrice,
               lowPrice: d.stock_info?.low ?? prev.base_info?.lowPrice,

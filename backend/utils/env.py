@@ -45,8 +45,16 @@ def load_env(env_file=None, override=False):
     if env_file is None:
         _loaded = True
 
-    host = os.environ.get("MYSQL_HOST", "127.0.0.1")
-    port = os.environ.get("MYSQL_PORT", "3306")
-    database = os.environ.get("MYSQL_DATABASE", "stock")
+    host = getenv("MYSQL_HOST", "127.0.0.1")
+    port = getenv("MYSQL_PORT", "3306")
+    database = getenv("MYSQL_DATABASE", "stock")
     logger.info("MySQL 配置: %s:%s/%s (from %s)", host, port, database, path)
     return True
+
+
+def getenv(key, default=None):
+    """读取环境变量；未设置或空字符串时返回 default。"""
+    value = os.environ.get(key)
+    if value is None or value == "":
+        return default
+    return value

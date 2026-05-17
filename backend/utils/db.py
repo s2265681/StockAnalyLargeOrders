@@ -5,18 +5,18 @@ import os
 import logging
 import pymysql
 
-from utils.env import load_env
+from utils.env import load_env, getenv
 
 load_env()
 
 logger = logging.getLogger(__name__)
 
 DB_CONFIG = {
-    "host": os.environ.get("MYSQL_HOST", "127.0.0.1"),
-    "port": int(os.environ.get("MYSQL_PORT", 3306)),
-    "user": os.environ.get("MYSQL_USER", "root"),
-    "password": os.environ.get("MYSQL_PASSWORD", "123456"),
-    "database": os.environ.get("MYSQL_DATABASE", "stock"),
+    "host": getenv("MYSQL_HOST", "127.0.0.1"),
+    "port": int(getenv("MYSQL_PORT", "3306")),
+    "user": getenv("MYSQL_USER", "root"),
+    "password": getenv("MYSQL_PASSWORD", "123456"),
+    "database": getenv("MYSQL_DATABASE", "stock"),
     "charset": "utf8mb4",
     "cursorclass": pymysql.cursors.DictCursor,
 }

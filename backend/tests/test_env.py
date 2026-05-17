@@ -26,3 +26,14 @@ def test_load_env_parses_quoted_values(monkeypatch, tmp_path):
     env_module.load_env(env_file=env_file, override=True)
 
     assert os.environ["MYSQL_PASSWORD"] == "secret"
+
+
+def test_getenv_treats_empty_as_missing(monkeypatch):
+    monkeypatch.setenv("MYSQL_PASSWORD", "")
+    assert env_module.getenv("MYSQL_PASSWORD", "123456") == "123456"
+
+    monkeypatch.delenv("MYSQL_PASSWORD", raising=False)
+    assert env_module.getenv("MYSQL_PASSWORD", "123456") == "123456"
+
+    monkeypatch.setenv("MYSQL_PASSWORD", "secret")
+    assert env_module.getenv("MYSQL_PASSWORD", "123456") == "secret"

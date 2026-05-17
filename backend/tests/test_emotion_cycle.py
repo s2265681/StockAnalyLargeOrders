@@ -128,7 +128,12 @@ class AnalyzeOneDateTest(unittest.TestCase):
         from routes.emotion_cycle import analyze_one_date
         with patch(
             "routes.emotion_cycle._get_analysis_from_db",
-            return_value={"stage": "退潮期"},
+            return_value={
+                "stage": "退潮期",
+                "analysis": "盘中情绪走弱",
+                "advice": "控制仓位",
+                "recommendations": [],
+            },
         ):
             with patch("routes.emotion_cycle._call_claude_batch") as call_ai:
                 with patch("routes.emotion_cycle._save_analysis_to_db") as save:
@@ -197,6 +202,33 @@ class AnalyzeOneDateTest(unittest.TestCase):
                     )
         self.assertEqual(status, "saved")
         save.assert_called_once_with("20260515", ai_result)
+
+    def test_re_analyzes_when_db_has_placeholder(self):
+        """DB 有占位符（待生成）时应该重新分析，不跳过"""
+        from routes.emotion_cycle import analyze_one_date
+        ai_result = {
+            "date": "2026-05-15",
+            "stage": "退潮期",
+            "analysis": "real analysis",
+            "advice": "control",
+            "recommendations": [],
+        }
+        with patch(
+            "routes.emotion_cycle._get_analysis_from_db",
+            return_value={"stage": "待生成"},
+        ) as mock_get:
+            with patch(
+                "routes.emotion_cycle._call_claude_batch",
+                return_value=[ai_result],
+            ) as mock_claude:
+                with patch(
+                    "routes.emotion_cycle._save_analysis_to_db",
+                    return_value=True,
+                ) as mock_save:
+                    status = analyze_one_date("20260515", self._records(), force=False)
+        self.assertEqual(status, "saved")
+        mock_claude.assert_called_once()  # 应该被调用，而不是跳过
+        mock_save.assert_called_once_with("20260515", ai_result)
 
 
 if __name__ == "__main__":

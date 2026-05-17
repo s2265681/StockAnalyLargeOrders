@@ -854,9 +854,11 @@ def analyze_one_date(target_dt: str, all_records: list, force: bool = False) -> 
     - 调 _call_claude_batch，从返回中取 target 当日结果并存库
     """
     target_dt = str(target_dt).replace("-", "")
-    if not force and _get_analysis_from_db(target_dt):
-        logger.info(f"{target_dt} 已有周期研判，跳过")
-        return "skipped"
+    if not force:
+        existing = _get_analysis_from_db(target_dt)
+        if existing and not _is_placeholder_analysis(existing):
+            logger.info(f"{target_dt} 已有周期研判，跳过")
+            return "skipped"
 
     valid = [r for r in all_records if isinstance(r, dict) and _record_date_key(r)]
     ordered = sorted(valid, key=_record_date_key)

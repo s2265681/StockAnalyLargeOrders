@@ -1,0 +1,44 @@
+backend/.env.example
+  s_c67054ad2bb85e::t_b3460722d6bb7c 8,10
+backend/utils/job_notify.py
+  s_c67054ad2bb85e::t_960a838a62e63f 36-37,40-42,67,70,74-117
+backend/tests/test_job_notify.py
+  s_c67054ad2bb85e::t_5b71acc104a6e1 24-33
+  s_c67054ad2bb85e::t_59a00418293617 34-46
+docs/local-cron-jobs.md
+  s_c67054ad2bb85e::t_36663f2f619dce 20
+backend/jobs/job_lib.sh
+  s_c67054ad2bb85e::t_734188db630e47 70-79,90
+backend/jobs/job_notify_success.py
+  s_c67054ad2bb85e::t_b012fe88de99a1 1-24
+.github/workflows/deploy.yml
+  s_6cadf63ef64d58::t_fe41612630bc52 275,277-278
+backend/jobs/setup_server_ops.sh
+  s_6cadf63ef64d58::t_b567695678663e 1-93
+backend/app.py
+  s_6cadf63ef64d58::t_d582c70e2a6e87 153-154,156-163
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "9003ac79379e091420ae6fc24903231cbd54f264",
+  "prompts": {},
+  "sessions": {
+    "s_6cadf63ef64d58": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "1aaee569-c8df-420b-92a6-cd926300e48b",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_c67054ad2bb85e": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "5558c5bb-d128-46e7-a8ae-cf05402d174d",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

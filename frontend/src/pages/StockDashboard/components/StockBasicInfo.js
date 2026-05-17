@@ -72,10 +72,6 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
     }
   };
 
-  const tagColors = {
-    theme: { bg: '#1a2f1a', border: '#2a6b4a', text: '#10b981' },
-    industry: { bg: '#1a1f2f', border: '#2a3a6b', text: '#60a5fa' },
-  };
 
   return (
     <div className=''>
@@ -113,20 +109,14 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
                     题材
                   </button>
                 </Tooltip>
-                {themeTags.map((tag) => {
-                  const c = tagColors[tag.type] || tagColors.industry;
-                  return (
-                    <Tooltip key={tag.label} title={tag.reason || ''}>
-                      <span
-                        className="smart-theme-tag"
-                        style={{ background: c.bg, border: `1px solid ${c.border}`, color: c.text }}
-                      >
-                        {tag.label}
-                        <em className="smart-theme-count">{tag.count}</em>
-                      </span>
-                    </Tooltip>
-                  );
-                })}
+                {themeTags.map((tag) => (
+                  <Tooltip key={tag.label} title={tag.reason || ''}>
+                    <span className={`smart-theme-tag smart-theme-tag--${tag.type || 'industry'}`}>
+                      {tag.label}
+                      <em className="smart-theme-count">{tag.count}</em>
+                    </span>
+                  </Tooltip>
+                ))}
               </div>
             </div>
 

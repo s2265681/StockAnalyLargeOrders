@@ -261,7 +261,9 @@ body{background:var(--bg);color:var(--text);font-family:'PingFang SC','Helvetica
   .tick-item:nth-child(2){border-right:none}
   .nav-links{display:none}
   .nav{padding:0 16px;gap:8px}
-  .theme-btn{display:none}
+  .theme-btn-label{display:none}
+  .theme-btn{padding:6px 10px}
+  .nav-right{margin-left:auto}
   .nav-name{font-size:15px}
   .nav-try{padding:7px 14px;font-size:13px;white-space:nowrap}
 }
@@ -294,7 +296,7 @@ body{background:var(--bg);color:var(--text);font-family:'PingFang SC','Helvetica
     <a href="#faq">常见问题</a>
   </div>
   <div class="nav-right">
-    <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙 暗色模式</button>
+    <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙 <span class="theme-btn-label">暗色模式</span></button>
     <a href="/register" class="nav-try">免费试用 →</a>
   </div>
 </nav>

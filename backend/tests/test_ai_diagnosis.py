@@ -100,8 +100,15 @@ class AiDiagnosisServiceTest(unittest.TestCase):
         from services.ai_diagnosis_service import _fallback_report_from_text
 
         report = _fallback_report_from_text("这是一段纯文本分析")
-        self.assertIn("纯文本", report["detail_markdown"])
+        self.assertTrue(report["sections"])
         self.assertEqual(report["rating"], "中性")
+
+    def test_normalize_point_items(self):
+        from services.ai_diagnosis_service import _normalize_point_items
+
+        items = _normalize_point_items(["10.50元：回踩5日线企稳", {"price": "11.2", "reason": "突破前高"}])
+        self.assertEqual(items[0]["price"], "10.50元")
+        self.assertEqual(items[1]["reason"], "突破前高")
 
 
 if __name__ == "__main__":

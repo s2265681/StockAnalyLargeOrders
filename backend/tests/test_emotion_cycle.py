@@ -56,6 +56,34 @@ class EmotionCycleCurrentRefreshTest(unittest.TestCase):
         save.assert_called_once_with("20260515", ai_result)
 
 
+class EmotionIntradayCacheTest(unittest.TestCase):
+    def setUp(self):
+        self.app = Flask(__name__)
+        self.app.register_blueprint(emotion_cycle_bp)
+        self.client = self.app.test_client()
+
+    def test_intraday_cache_readable_without_login(self):
+        cached = {
+            "date": "2026-05-15",
+            "stage": "升温期",
+            "analysis": "盘中情绪回暖",
+            "advice": "轻仓试错",
+            "recommendations": [],
+        }
+        with patch(
+            "routes.emotion_cycle._get_intraday_from_db",
+            return_value=cached,
+        ):
+            response = self.client.get(
+                "/api/v1/emotion-intraday-cache?date=20260515",
+            )
+
+        payload = response.get_json()
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(payload["success"])
+        self.assertEqual(payload["data"], cached)
+
+
 class EmotionIntradayRefreshTest(unittest.TestCase):
     def setUp(self):
         self.app = Flask(__name__)

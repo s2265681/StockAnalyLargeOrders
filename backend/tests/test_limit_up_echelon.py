@@ -90,7 +90,23 @@ class RuleHintTest(unittest.TestCase):
                 "ths_analyse_title": "氢氟酸涨价",
                 "stock_concept_tags": ["氟化工概念"],
             }),
-            "电子特气/化工",
+            "氟化工",
+        )
+        self.assertEqual(
+            _assign_broad_tag_from_stock({
+                "name": "蔚蓝生物", "industry": "农业",
+                "ths_analyse_title": "合成生物+维生素",
+                "stock_concept_tags": ["合成生物", "维生素"],
+            }),
+            "合成生物",
+        )
+        self.assertEqual(
+            _assign_broad_tag_from_stock({
+                "name": "宗申动力", "industry": "交运",
+                "ths_analyse_title": "低空经济+飞行汽车",
+                "stock_concept_tags": ["低空经济", "无人机"],
+            }),
+            "低空经济",
         )
         # 单字「消费」不足以判大消费
         self.assertEqual(

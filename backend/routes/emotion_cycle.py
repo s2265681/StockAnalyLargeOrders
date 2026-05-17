@@ -819,9 +819,8 @@ def run_batch_daily_analysis(records: list, force_mode: str = "missing") -> dict
 
 
 @emotion_cycle_bp.route('/api/v1/emotion-intraday-cache', methods=['GET'])
-@login_required
 def get_emotion_intraday_cache():
-    """查询当天分析缓存"""
+    """查询当天分析缓存（只读，与 emotion-analysis-cache 一致，无需登录）"""
     dt = request.args.get('date')
     if not dt:
         return v1_error_response(message="请提供 date 参数")

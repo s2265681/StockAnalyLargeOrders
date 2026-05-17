@@ -1,0 +1,29 @@
+backend/routes/emotion_cycle.py
+  s_8b1898977013c2::t_e77016fe0cd18e 848-893
+  s_956991c8039222::t_ea5f9432f34fc7 273-285
+  s_956991c8039222::t_1f67f653ffdda5 467,469
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "57666325d38fde17a7f328b2cde8c62c934ada29",
+  "prompts": {},
+  "sessions": {
+    "s_8b1898977013c2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "093e2884-cc61-465e-8ff1-b3a538af93f5",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_956991c8039222": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "06fa73a2-6774-48c6-9edd-302692b815b0",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

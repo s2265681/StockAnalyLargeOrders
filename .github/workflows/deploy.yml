@@ -185,8 +185,7 @@ jobs:
                 }
 
                 location = / {
-                    root /www/StockAnalyLargeOrders/frontend/build;
-                    try_files /landing.html =404;
+                    index landing.html;
                 }
 
                 location / {
@@ -235,8 +234,7 @@ jobs:
                 }
 
                 location = / {
-                    root /www/StockAnalyLargeOrders/frontend/build;
-                    try_files /landing.html =404;
+                    index landing.html;
                 }
 
                 location / {

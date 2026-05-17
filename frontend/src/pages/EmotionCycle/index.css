@@ -7,7 +7,6 @@
   overflow: hidden;
 }
 
-
 .emotion-main-layout {
   display: flex;
   gap: 16px;
@@ -30,18 +29,15 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  min-height: 0;
   overflow-y: auto;
 }
 
 .analysis-panel-block {
-  flex: 1;
-  min-height: 0;
+  flex: none;
   background: var(--bg-tooltip);
   border: 1px solid var(--border-secondary);
   border-radius: 8px;
   padding: 12px 14px;
-  overflow-y: auto;
 }
 
 .analysis-panel-cycle {
@@ -307,6 +303,7 @@
     flex-direction: column;
     overflow: visible;
     min-height: 0;
+    height: auto;
   }
 
   .emotion-chart-card {
@@ -316,11 +313,6 @@
 
   .emotion-right-column {
     width: 100%;
-    flex-shrink: unset;
-  }
-
-  .analysis-panel-block {
     overflow-y: visible;
-    min-height: 0;
   }
 }

@@ -52,16 +52,18 @@ const isTradeTime = () => {
 };
 
 const StockDashboard = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [stockCode, setStockCode] = useAtom(stockCodeAtom);
+  const [timeshareData, setTimeshareData] = useAtom(timeshareDataAtom);
   const [, fetchL2Dashboard] = useAtom(fetchL2DashboardAtom);
   const [, fetchLimitUpThemes] = useAtom(fetchLimitUpThemesAtom);
   const [selectedDate] = useAtom(selectedDateAtom);
 
-  // URL 参数变化时同步 stockCode
+  // URL 参数变化时同步 stockCode，同时清空旧分时数据触发 loading
   useEffect(() => {
     const urlCode = searchParams.get('code');
     if (urlCode && urlCode !== stockCode) {
+      setTimeshareData(null);
       setStockCode(urlCode);
     }
   }, [searchParams]);
@@ -87,7 +89,6 @@ const StockDashboard = () => {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
-  const [timeshareData, setTimeshareData] = useAtom(timeshareDataAtom);
   const [, setLargeOrdersData] = useAtom(largeOrdersDataAtom);
   const [, setStockBasicData] = useAtom(stockBasicDataAtom);
   const [, setLimitUpMonitor] = useAtom(limitUpMonitorAtom);
@@ -102,7 +103,9 @@ const StockDashboard = () => {
   const fullMoneyFlowRef = useRef(null); // 东方财富资金流缓存（模拟用）
 
   const handleStockCodeChange = (newCode) => {
+    setTimeshareData(null);
     setStockCode(newCode);
+    setSearchParams({ code: newCode }, { replace: true });
     simulationIndexRef.current = 1;
     setSimulationIndex(1);
   };

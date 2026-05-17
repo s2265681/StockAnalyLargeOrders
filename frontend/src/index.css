@@ -2670,6 +2670,7 @@ code {
 }
 
 @media (max-width: 768px) {
+  /* ── 导航栏 ── */
   .mobile-menu-btn {
     display: inline-flex !important;
   }
@@ -2684,6 +2685,164 @@ code {
 
   .ant-layout-header {
     padding: 0 !important;
+  }
+
+  /* 主题切换按钮推到右侧 */
+  .nav-right-actions {
+    margin-left: auto;
+  }
+
+  /* ── 个股分析 - 股票信息上下布局 ── */
+  .stock-title-bar {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 10px;
+  }
+
+  .stock-name-code {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+
+  .main-price {
+    flex-wrap: wrap;
+    gap: 6px !important;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .smart-theme-area {
+    flex-wrap: wrap;
+    margin-left: 0 !important;
+  }
+
+  .search-box {
+    width: 100%;
+  }
+
+  .search-box .ant-select {
+    width: 100% !important;
+  }
+
+  .stock-dashboard-container {
+    padding: 0 8px;
+  }
+
+  /* ── 涨停梯队 - 顶部统计卡片 ── */
+  .echelon-top-bar {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 12px;
+    padding: 12px 14px !important;
+  }
+
+  .echelon-summary {
+    flex-wrap: wrap;
+    gap: 12px !important;
+  }
+
+  .summary-item {
+    min-width: 52px !important;
+  }
+
+  .echelon-container {
+    padding: 10px !important;
+  }
+
+  /* ── 龙虎榜 - 左右布局改为上下 ── */
+  .dt-container {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .dt-main {
+    flex-direction: column !important;
+    overflow: visible !important;
+  }
+
+  .dt-stock-list {
+    width: 100% !important;
+    max-height: 360px;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border-secondary);
+  }
+
+  .dt-detail {
+    width: 100% !important;
+    overflow-y: visible !important;
+    min-height: 300px;
+  }
+
+  .dt-seats-row {
+    flex-direction: column !important;
+  }
+
+  .dt-seats-panel {
+    width: 100% !important;
+  }
+
+  /* ── 情绪周期 - 左右布局改为上下 ── */
+  .emotion-cycle-container {
+    height: auto !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+
+  .emotion-main-layout {
+    flex-direction: column !important;
+    overflow: visible !important;
+  }
+
+  .emotion-chart-card {
+    min-height: 300px;
+  }
+
+  .emotion-right-column {
+    width: 100% !important;
+    overflow: visible !important;
+  }
+
+  .analysis-panel-block {
+    overflow: visible !important;
+    min-height: unset !important;
+  }
+
+  .analysis-text,
+  .advice-text {
+    word-break: break-all;
+    overflow-wrap: break-word;
+    white-space: normal !important;
+  }
+
+  /* ── 竞价抢筹 - 工具栏上下布局 ── */
+  .ag-container {
+    padding: 10px !important;
+  }
+
+  .ag-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px;
+    padding: 12px 14px !important;
+  }
+
+  .ag-toolbar-left {
+    flex-wrap: wrap;
+    gap: 10px !important;
+  }
+
+  .ag-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ── 通用：各页面容器 padding 收窄 ── */
+  .echelon-container,
+  .dt-container,
+  .ag-container,
+  .emotion-cycle-container {
+    padding: 10px !important;
   }
 }
 

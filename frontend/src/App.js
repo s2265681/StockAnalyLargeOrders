@@ -99,6 +99,7 @@ function AppInner() {
 
           {/* 右侧操作区 */}
           <div
+            className="nav-right-actions"
             style={{
               display: 'flex',
               alignItems: 'center',

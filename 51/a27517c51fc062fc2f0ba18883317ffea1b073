@@ -1,0 +1,24 @@
+backend/tests/test_ai_diagnosis.py
+  s_017d53cf482698::t_c300180e5da289 113-195
+backend/services/ai_diagnosis_service.py
+  s_017d53cf482698::t_3000acfdbfb05b 11
+  s_017d53cf482698::t_7aebbf04098d0f 17
+  s_017d53cf482698::t_83d035cef43699 52-80,82-96
+  s_017d53cf482698::t_27dc16c872ac91 801,814
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "51a27517c51fc062fc2f0ba18883317ffea1b073",
+  "prompts": {},
+  "sessions": {
+    "s_017d53cf482698": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "58d4dcd9-b9cb-4af4-bac3-79bfa52c7cec",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

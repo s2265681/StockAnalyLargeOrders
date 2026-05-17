@@ -150,5 +150,14 @@ def log_response(response):
 
 
 if __name__ == '__main__':
+    import os
+
     logger.info("启动股票数据API服务")
-    socketio.run(app, debug=True, host='0.0.0.0', port=9001)
+    _debug = os.environ.get('FLASK_DEBUG', '0').strip().lower() in ('1', 'true', 'yes')
+    socketio.run(
+        app,
+        debug=_debug,
+        use_reloader=_debug,
+        host='0.0.0.0',
+        port=int(os.environ.get('PORT', 9001)),
+    )

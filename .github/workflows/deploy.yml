@@ -272,9 +272,9 @@ jobs:
             done
             test -f /www/StockAnalyLargeOrders/frontend/build/index.html
 
-            echo "===> Install server cron + logrotate"
+            echo "===> Server ops: swap + cron + logrotate"
             cd /www/StockAnalyLargeOrders
-            chmod +x backend/jobs/run_*.sh backend/jobs/install_server_crontab.sh
-            bash backend/jobs/install_server_crontab.sh
+            chmod +x backend/jobs/run_*.sh backend/jobs/install_server_crontab.sh backend/jobs/setup_server_ops.sh
+            bash backend/jobs/setup_server_ops.sh
 
             echo "===> Deploy success"

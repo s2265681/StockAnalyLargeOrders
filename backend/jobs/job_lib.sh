@@ -67,6 +67,16 @@ send_job_alert('${JOB_NAME}', exit_code=${rc}, detail='''${detail}''')
   set -e
 }
 
+job_on_success() {
+  local detail="${1:-执行成功}"
+  if [ "${JOB_NOTIFY_ON_SUCCESS:-1}" = "0" ]; then
+    return 0
+  fi
+  set +e
+  "$PYTHON" jobs/job_notify_success.py "$JOB_NAME" "$detail" "$JOB_LOG_FILE"
+  set -e
+}
+
 job_run() {
   set +e
   "$@"
@@ -77,4 +87,5 @@ job_run() {
     job_on_failure "$rc"
     exit "$rc"
   fi
+  job_on_success "执行成功"
 }

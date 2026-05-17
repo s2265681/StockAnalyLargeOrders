@@ -33,30 +33,13 @@ def _smtp_config() -> dict | None:
     }
 
 
-def send_job_alert(
-    job_name: str,
-    *,
-    exit_code: int = 1,
-    detail: str = "",
-    log_tail: str = "",
-) -> bool:
-    """发送任务失败邮件，未配置 SMTP 时仅打日志。成功发送返回 True。"""
+def notify_on_success_enabled() -> bool:
+    return os.getenv("JOB_NOTIFY_ON_SUCCESS", "1").lower() in ("1", "true", "yes")
+
+
+def _send_email(subject: str, body: str, job_name: str, kind: str) -> bool:
     cfg = _smtp_config()
     to_addr = os.getenv("JOB_ALERT_EMAIL", DEFAULT_ALERT_EMAIL).strip()
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    subject = f"[NiuNIuNiu] 定时任务失败: {job_name} (exit={exit_code})"
-    body_parts = [
-        f"任务: {job_name}",
-        f"时间: {now}",
-        f"退出码: {exit_code}",
-    ]
-    if detail:
-        body_parts.append(f"\n详情:\n{detail}")
-    if log_tail:
-        body_parts.append(f"\n日志末尾:\n{log_tail}")
-
-    body = "\n".join(body_parts)
-
     if not cfg:
         logger.warning(
             "未配置 SMTP（SMTP_HOST/SMTP_USER/SMTP_PASS），跳过邮件: %s",
@@ -81,11 +64,57 @@ def send_job_alert(
                 smtp.starttls(context=ssl.create_default_context())
                 smtp.login(cfg["user"], cfg["password"])
                 smtp.sendmail(cfg["sender"], [to_addr], msg.as_string())
-        logger.info("已发送任务失败邮件 -> %s [%s]", to_addr, job_name)
+        logger.info("已发送任务%s邮件 -> %s [%s]", kind, to_addr, job_name)
         return True
     except Exception as e:
-        logger.error("发送任务失败邮件异常: %s", e)
+        logger.error("发送任务邮件异常: %s", e)
         return False
+
+
+def send_job_alert(
+    job_name: str,
+    *,
+    exit_code: int = 1,
+    detail: str = "",
+    log_tail: str = "",
+) -> bool:
+    """发送任务失败邮件，未配置 SMTP 时仅打日志。成功发送返回 True。"""
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    subject = f"[NiuNIuNiu] 定时任务失败: {job_name} (exit={exit_code})"
+    body_parts = [
+        f"任务: {job_name}",
+        f"时间: {now}",
+        f"状态: 失败",
+        f"退出码: {exit_code}",
+    ]
+    if detail:
+        body_parts.append(f"\n详情:\n{detail}")
+    if log_tail:
+        body_parts.append(f"\n日志末尾:\n{log_tail}")
+    return _send_email(subject, "\n".join(body_parts), job_name, "失败")
+
+
+def send_job_success(
+    job_name: str,
+    *,
+    detail: str = "执行成功",
+    log_tail: str = "",
+    log_lines: int = 12,
+) -> bool:
+    """任务成功完成后发送提醒邮件。"""
+    if not notify_on_success_enabled():
+        return False
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    subject = f"[NiuNIuNiu] 定时任务完成: {job_name}"
+    body_parts = [
+        f"任务: {job_name}",
+        f"时间: {now}",
+        f"状态: 成功",
+        f"\n{detail}",
+    ]
+    if log_tail:
+        body_parts.append(f"\n日志摘要（末 {log_lines} 行）:\n{log_tail}")
+    return _send_email(subject, "\n".join(body_parts), job_name, "完成")
 
 
 def tail_log_file(path: str, lines: int = 40) -> str:

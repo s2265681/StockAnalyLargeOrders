@@ -1,0 +1,44 @@
+frontend/src/pages/Login/index.css
+  s_dd1282fd4f0a01::t_f1a6e0ed26392a 2-30,36
+frontend/src/pages/Register/index.js
+  s_dd1282fd4f0a01::t_1e4a83e4e991e6 5
+  s_dd1282fd4f0a01::t_3c82267abf9cfd 16
+  s_dd1282fd4f0a01::t_fea417053fc2ea 43-56
+frontend/src/pages/EmotionCycle/index.css
+  s_acc2e4c6f72930::t_3c8ea62e772034 34
+frontend/src/pages/EmotionCycle/index.js
+  s_dd1282fd4f0a01::t_72767221da09e2 95,99-102,113-116,130-136
+  s_dd1282fd4f0a01::t_8970460b479284 445-458
+  s_dd1282fd4f0a01::t_973b3cf4ba70b3 393-394,405-406
+  s_dd1282fd4f0a01::t_759d1d3229577d 419
+frontend/src/pages/Login/index.js
+  s_dd1282fd4f0a01::t_2217255dcee85a 35-48
+  s_dd1282fd4f0a01::t_27df2b3504ce7b 5
+  s_dd1282fd4f0a01::t_7a7bc9e8f3257c 14
+frontend/src/pages/Register/index.css
+  s_dd1282fd4f0a01::t_2d5f6035f0d541 7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "0084edb4954e3fb7fc23ea85c67073f9ef7fa5c7",
+  "prompts": {},
+  "sessions": {
+    "s_acc2e4c6f72930": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7719717f-7793-4aff-87b8-5b2442ed6232",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_dd1282fd4f0a01": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "85ce98f9-2dda-4285-8585-3a4e7ad28f70",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

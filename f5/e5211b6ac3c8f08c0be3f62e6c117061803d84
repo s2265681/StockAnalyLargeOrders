@@ -1,0 +1,264 @@
+backend/tests/test_limit_up_echelon.py
+  s_3811d822577b29::t_3de378fd157bcb 236-243,246-257,260-273,277-282
+  s_3811d822577b29::t_6def354ff2f848 244
+  s_3811d822577b29::t_e7b5c8c9b1f634 245
+  s_3811d822577b29::t_8b7f4e7b8bf103 274-276
+  s_3811d822577b29::t_4e9817020c17c5 258
+  s_3811d822577b29::t_e68b93c785963d 259
+backend/routes/stock_basic.py
+  s_e65afe6acbb7b2::t_e823bef7e7c188 78,81-94,96-111
+  s_853d3ab7ccdbb9::t_198283d62cc087 9-14
+  s_853d3ab7ccdbb9::t_7a32c4c85662f6 95
+  s_853d3ab7ccdbb9::t_486b42bce9c554 117
+frontend/src/index.css
+  s_70d3f4197f65ab::t_b89cc8394a3ab5 2917-2920
+  s_70d3f4197f65ab::t_4a717209661e0d 2880
+  s_70d3f4197f65ab::t_c2c3b494e8a61e 2873-2874,2878-2879,2881-2882,2885-2909
+frontend/src/pages/AuctionGrab/index.css
+  s_0a9e605acdbcdf::t_8de6df3cf457c0 8-66
+backend/utils/stock_utils.py
+  s_853d3ab7ccdbb9::t_43f3b557f9ea2d 26-28,39,53-107,109-125,128-132,134-141,172,178,184
+frontend/src/pages/StockDashboard/components/StockBasicInfo.js
+  s_e65afe6acbb7b2::t_c520b90f579376 166
+backend/routes/limit_up_echelon.py
+  s_3811d822577b29::t_14ea152e412fc2 1685
+  s_3811d822577b29::t_188a9bff3a80c7 1659,1666
+  s_3811d822577b29::t_ae7e2ff9da8b7e 1437,1440
+  s_3811d822577b29::t_cf69ca41fbd105 1439,1458-1463
+  s_3811d822577b29::t_b1d4e4af77f9b0 1464-1469
+  s_3811d822577b29::t_530c548b0e933d 1535
+  s_3811d822577b29::t_5bfd89e7faf190 1333-1436,1438,1441-1457,1470-1502
+backend/tests/test_stock_utils.py
+  s_853d3ab7ccdbb9::t_78a2afaa16ebe2 28
+  s_853d3ab7ccdbb9::t_561062abb9ee70 1-15,17-24,29-33
+  s_853d3ab7ccdbb9::t_8ed33d381f80d9 16,25-27
+frontend/src/pages/StockDashboard/components/StockChart.test.js
+  s_37e31425ad18c5::t_a017425b82c921 36,38-40,51-65,69
+  s_37e31425ad18c5::t_c2aa2e8f0e7246 37
+  s_e65afe6acbb7b2::t_18f7b1bfe2ee8a 31
+  s_37e31425ad18c5::t_72742cd711ad00 28
+  s_e65afe6acbb7b2::t_2377c18e59701a 41-50
+frontend/src/pages/StockDashboard/utils/l2Analysis.js
+  s_e65afe6acbb7b2::t_aef37503faed5b 13-46,50
+  s_37e31425ad18c5::t_83e2f70b2c4a4a 118-124,127
+  s_e65afe6acbb7b2::t_4702552c390bef 47-49
+  s_e65afe6acbb7b2::t_dc10c6334c98af 7-12,51
+frontend/src/App.js
+  s_70d3f4197f65ab::t_68d3f9725da4e2 203
+  s_95ec8f63415b9c::t_c6ba88c503ef85 55
+  s_70d3f4197f65ab::t_719ab673970804 228
+  s_70d3f4197f65ab::t_914733c71560b5 210
+  s_70d3f4197f65ab::t_1213c41bf4b02e 184
+  s_70d3f4197f65ab::t_9c3ed0d2330214 6
+  s_70d3f4197f65ab::t_6bbf7a262c9ad6 187
+  s_70d3f4197f65ab::t_97b45431a8c09f 115
+  s_70d3f4197f65ab::t_74316056dd39fe 182-183,185-186,188-197
+  s_70d3f4197f65ab::t_f855010bb6685a 246
+  s_70d3f4197f65ab::t_37e870c5626125 253
+  s_70d3f4197f65ab::t_c35e4299d575b3 36-48
+frontend/src/pages/StockDashboard/utils/l2Analysis.test.js
+  s_37e31425ad18c5::t_5f75bf0e2287e2 81-88
+  s_e65afe6acbb7b2::t_9b321435a3fc08 36-42,48-68
+  s_e65afe6acbb7b2::t_8c2763e10622a4 43-47
+  s_e65afe6acbb7b2::t_d9fa7f1f545e8b 5,8
+  s_e65afe6acbb7b2::t_60764388506a5e 7
+frontend/src/pages/StockDashboard/components/StockChart.js
+  s_37e31425ad18c5::t_a2efd7625f8454 65-70,96-97,107,109,114-115
+  s_37e31425ad18c5::t_763bbb7054a556 1238
+  s_e65afe6acbb7b2::t_3524fd1a6931ab 29
+  s_e65afe6acbb7b2::t_a5d7c51e1a5e1e 71
+  s_37e31425ad18c5::t_2a7867235f9784 100
+  s_37e31425ad18c5::t_8bcdd0dfd09579 195
+  s_37e31425ad18c5::t_a57ab12029599b 201,205
+  s_37e31425ad18c5::t_be58931ec877f9 26
+  s_37e31425ad18c5::t_3a111a2bcd19aa 202
+  s_37e31425ad18c5::t_69ff35d4893efd 21
+  s_37e31425ad18c5::t_beb0256b9cfb43 216-218
+  s_37e31425ad18c5::t_b6ef3ede5926dc 1170
+  s_37e31425ad18c5::t_ddf94e7509c147 1119-1122
+  s_37e31425ad18c5::t_ea5d2609d39146 1241
+  s_37e31425ad18c5::t_519c2738d358fb 1
+  s_37e31425ad18c5::t_175c97d5ed0697 108,110-113
+  s_37e31425ad18c5::t_197f592b2ade12 1223,1226-1237,1239,1244
+  s_e65afe6acbb7b2::t_566b6ff58398a6 278
+  s_37e31425ad18c5::t_9030130b9550b7 1242,1252-1256,1259
+  s_e65afe6acbb7b2::t_02e2537f0370e0 59,72-91,93-95,101
+  s_37e31425ad18c5::t_f0cca44cdb78ad 60,62-64,98-99
+  s_37e31425ad18c5::t_21864d11a037d6 135,137-138
+  s_37e31425ad18c5::t_3a1b3cd7c57605 1224
+  s_37e31425ad18c5::t_43b6ed4118d406 1225
+  s_37e31425ad18c5::t_5ec4bea3170f38 2
+frontend/src/pages/AuctionGrab/index.js
+  s_0a9e605acdbcdf::t_f220087846281f 158-165
+  s_0a9e605acdbcdf::t_c333c709a26d5c 176-177
+  s_0a9e605acdbcdf::t_a3427518fc3fef 218
+  s_0a9e605acdbcdf::t_cf09e650bb4d17 156-157
+frontend/src/pages/LimitUpEchelon/index.js
+  s_3811d822577b29::t_54598087d4e100 318-321
+  s_3811d822577b29::t_96b72f36b80fa8 90-97
+  s_3811d822577b29::t_397ee379ec14b0 317
+  s_3811d822577b29::t_69fa2dabbb1373 77-89
+  s_3811d822577b29::t_f6780f57236a86 323-327
+  s_04a7cb6b48d6a0::t_93193d4951edd6 298-301
+  s_3811d822577b29::t_b3276a2a601382 303-316
+  s_3811d822577b29::t_5e36a59d49e6b9 322
+frontend/src/pages/DragonTiger/index.js
+  s_853d3ab7ccdbb9::t_adda6c6474f690 5
+  s_853d3ab7ccdbb9::t_31996f2488c5ea 149
+  s_853d3ab7ccdbb9::t_545553ba044bac 352-358
+  s_853d3ab7ccdbb9::t_cd09b3dfff1f32 361
+frontend/src/pages/DragonTiger/index.css
+  s_853d3ab7ccdbb9::t_30bb068e578b09 177-193
+frontend/src/pages/Register/index.js
+  s_28979ea1495f02::t_095a99d217b993 4,6,41-76
+frontend/src/store/atoms.js
+  s_e65afe6acbb7b2::t_2766342fa26934 3-9
+  s_e65afe6acbb7b2::t_4f46b48a8fec95 548-550,552
+  s_e65afe6acbb7b2::t_79507221461d9a 466-467,471-473,478-480
+  s_37e31425ad18c5::t_5b89c0aa9861eb 484-485,488,495,510-512
+  s_e65afe6acbb7b2::t_066eba455a8846 316,320-323
+  s_37e31425ad18c5::t_29812003dba5aa 428,430-433,450-452
+  s_e65afe6acbb7b2::t_4ef5800cb39a71 361
+  s_e65afe6acbb7b2::t_4e05d73b4b8128 423,425
+  s_e65afe6acbb7b2::t_bf438593b06f89 394-401
+  s_e65afe6acbb7b2::t_7e7c21ff2de7a7 486-487,499,502,508
+  s_37e31425ad18c5::t_f9452cfb03ecfe 69,72-73
+  s_e65afe6acbb7b2::t_9931a249176b53 593,595
+  s_e65afe6acbb7b2::t_343a832bb499ec 503-507
+  s_37e31425ad18c5::t_29c9da62c8e219 553-555
+  s_e65afe6acbb7b2::t_3090ac3e1cd341 440-441,445-447,449
+  s_37e31425ad18c5::t_0b181342b812ca 89,91-92
+frontend/src/components/AuthLayout/index.js
+  s_28979ea1495f02::t_fc723ee14a7f39 40
+  s_28979ea1495f02::t_2c93fee729bbd8 90
+  s_28979ea1495f02::t_5520bc1807173d 15,31,43,100,119
+  s_28979ea1495f02::t_f1c6bc0cefefac 41-42,44-45,47,53-54,86,91-92,95-97,101,115
+  s_28979ea1495f02::t_788f6035221501 87
+  s_28979ea1495f02::t_ded5a123152ee1 16-21,63-64,67,102,106-107,118,120,123
+  s_28979ea1495f02::t_7c25588ccc2875 1-14,22-30,32-39,46,48-52,55-62,65-66,68-85,88-89,93-94,98-99,103-105,108-114,116-117,121-122,124-125
+frontend/src/pages/LimitUpEchelon/index.css
+  s_3811d822577b29::t_cc94475347b953 82
+  s_3811d822577b29::t_70b6b52522ea62 79-81,83-88
+  s_3811d822577b29::t_2a838677cd922a 29,31
+  s_04a7cb6b48d6a0::t_79a08f16a93b1f 583,587-588
+  s_04a7cb6b48d6a0::t_197554d84efdd8 62,65-72
+  s_3811d822577b29::t_99bada975ffde6 630
+frontend/src/components/AuthLayout/index.css
+  s_4d10ee43172bd2::t_ae7a805de829fc 505
+  s_28979ea1495f02::t_508effd5e5edd4 1-131,136,140-143,150,152-156,160,162,166-176,178,180-189,191-237,240-244,246-251,254-256,259-289,291-301,305-309,312-315,318-323,326,328-350,353,356-438,441-444,447-457,476-480,482,491-497,500-501
+  s_47a31822e0ebfe::t_2447cf9ba11b8e 504
+  s_47a31822e0ebfe::t_d6282c801acfbe 458-459,461-464,472-473,481,483-490
+  s_4d10ee43172bd2::t_1d6d2ce5c7e8b3 460,465-466,469-471
+frontend/src/pages/StockDashboard/index.js
+  s_e65afe6acbb7b2::t_8a612dfcd0651e 259,261-262,265
+  s_e65afe6acbb7b2::t_dd337d6a9c6137 335-339
+  s_37e31425ad18c5::t_79e433ae57f044 371
+  s_e65afe6acbb7b2::t_874cbafd6051a5 160,162,164
+  s_37e31425ad18c5::t_f213569441f966 78
+  s_37e31425ad18c5::t_6ed20e6ba55ab7 173-174
+  s_e65afe6acbb7b2::t_17233dcbf683f5 323-328,333-334,341-342,353,390
+  s_e65afe6acbb7b2::t_202fdef3d2c8df 356-360
+  s_37e31425ad18c5::t_0fe7cca77116f2 172
+  s_37e31425ad18c5::t_9c3b813746c87d 33
+  s_e65afe6acbb7b2::t_f8886e0c69c946 13-18
+  s_37e31425ad18c5::t_70d27a8d0239f2 99-100
+  s_37e31425ad18c5::t_1e3fcd6473d04b 98
+frontend/src/pages/Login/index.js
+  s_28979ea1495f02::t_efd08c819914d3 4,6,33-55
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "f5e5211b6ac3c8f08c0be3f62e6c117061803d84",
+  "prompts": {},
+  "sessions": {
+    "s_04a7cb6b48d6a0": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "af454630-3eb6-47a8-b01f-7c5fccdb3183",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_0a9e605acdbcdf": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "7065304d-63b3-44f1-b325-8074ddb9a053",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_28979ea1495f02": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "28a14e1f-27cc-4094-aa40-76d37c6518c8",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_37e31425ad18c5": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "46943188-3ff1-4065-9a5b-95fe430e7f3b",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_3811d822577b29": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "e9b5f825-3289-4aa6-9f93-d4c4d7892514",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_47a31822e0ebfe": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "b37ce58b-4019-4231-b010-770a3b50a47d",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_4d10ee43172bd2": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "85090f8c-e824-4765-a4e9-fd980fd95e12",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_70d3f4197f65ab": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "6328709f-86ae-45e5-96a8-f99ad86b509b",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_853d3ab7ccdbb9": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "d5160472-650c-4a3e-87e7-58fb085b9004",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_95ec8f63415b9c": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "efefac7c-6bae-4919-94ff-3f1757b8d9f0",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_e65afe6acbb7b2": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "38876a87-fc8f-4d3d-8c65-fb31414026d1",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

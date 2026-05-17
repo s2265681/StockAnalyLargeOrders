@@ -1,0 +1,25 @@
+frontend/src/index.css
+  s_acc2e4c6f72930::t_b55b47cb3df725 2,4-42
+  s_acc2e4c6f72930::t_eccb5273ab2840 214,225
+  s_acc2e4c6f72930::t_72f28a364b280f 1334
+frontend/public/index.html
+  s_acc2e4c6f72930::t_f1d74247313418 6-16,18,20-22,39
+frontend/src/pages/DragonTiger/index.css
+  s_acc2e4c6f72930::t_e4d3d7d55fe2a3 409-459
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "0867c3652d4346e87095e3f03523672091c03f04",
+  "prompts": {},
+  "sessions": {
+    "s_acc2e4c6f72930": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7719717f-7793-4aff-87b8-5b2442ed6232",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

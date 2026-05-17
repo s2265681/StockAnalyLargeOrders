@@ -1,0 +1,36 @@
+frontend/src/pages/StockDashboard/index.js
+  s_c25da840afd09e::t_ed8e4cd9d9c4ff 108
+  s_c25da840afd09e::t_b5565c11da9b18 66
+  s_c25da840afd09e::t_861f032b31ad40 57,62
+  s_c25da840afd09e::t_2c23059d79de9f 55
+  s_c25da840afd09e::t_cd90a865b0f5f6 106
+docs/superpowers/specs/2026-05-17-emotion-cycle-offline-design.md
+  s_8b1898977013c2::t_46c983391d8ed5 1-118
+frontend/src/pages/EmotionCycle/index.css
+  s_8b1898977013c2::t_ee53cf1da1562c 306
+  s_8b1898977013c2::t_f38ebcb7a035e9 36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "737c96e65dc0af3eb10c0793f96dc1f41855504d",
+  "prompts": {},
+  "sessions": {
+    "s_8b1898977013c2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "093e2884-cc61-465e-8ff1-b3a538af93f5",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_c25da840afd09e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "67ef3899-00cc-430b-801c-f94dc031c983",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

@@ -17,7 +17,6 @@
 import sys
 import os
 import logging
-from datetime import datetime
 
 # Add backend to path so we can import routes
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + '/..')
@@ -84,9 +83,10 @@ def main(target_date=None, force=False):
         SystemExit(1) 若 StockAPI 拉取失败或单日分析失败
     """
     # 1. 确定目标日期
+    api = StockAPI()
+
     if target_date is None:
         try:
-            api = StockAPI()
             target_date = api.get_latest_trading_day()
             logger.info(f"使用 StockAPI 最新交易日: {target_date}")
         except Exception as e:
@@ -97,7 +97,6 @@ def main(target_date=None, force=False):
 
     # 2. 获取全部历史记录（供 analyze_one_date 做趋势上下文）
     try:
-        api = StockAPI()
         all_records = api.fetch_all_emotion_records()
         logger.info(f"从 StockAPI 获取到 {len(all_records)} 条情绪周期记录")
     except Exception as e:

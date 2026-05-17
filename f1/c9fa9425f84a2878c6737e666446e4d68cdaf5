@@ -1,0 +1,28 @@
+frontend/public/landing.html
+  s_acc2e4c6f72930::t_ce9639703e0e4b 809,824,832
+  s_acc2e4c6f72930::t_beeade555c0772 876-882
+  s_acc2e4c6f72930::t_d7ecff51bf635d 318
+  s_acc2e4c6f72930::t_93977ccaa5e2c7 300
+  s_acc2e4c6f72930::t_2330d9449e7fa1 817
+  s_acc2e4c6f72930::t_4fd90f238be4cb 788
+frontend/src/index.css
+  s_acc2e4c6f72930::t_1bbb8cf33d3ce5 2738-2742
+frontend/src/App.js
+  s_acc2e4c6f72930::t_363222082e322d 84-102
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "f1c9fa9425f84a2878c6737e666446e4d68cdaf5",
+  "prompts": {},
+  "sessions": {
+    "s_acc2e4c6f72930": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7719717f-7793-4aff-87b8-5b2442ed6232",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

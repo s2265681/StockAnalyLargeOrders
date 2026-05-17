@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Input, Button, message } from 'antd';
+import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useAuth } from '../../context/AuthContext';
-import ThemeToggle, { useTheme } from '../../components/ThemeToggle';
-import './index.css';
+import AuthLayout from '../../components/AuthLayout';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -11,7 +11,6 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
-  const { theme, toggleTheme } = useTheme();
 
   const handleLogin = async () => {
     if (!username.trim() || !password) {
@@ -31,50 +30,28 @@ export default function Login() {
   };
 
   return (
-    <div className="login-container">
-      <div className="auth-page-header">
-        <div className="auth-logo" onClick={() => navigate('/')}>
-          <svg width="28" height="28" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="18" cy="18" r="17" fill="var(--gold-bg,#fffbeb)" stroke="var(--color-accent,#d97706)" strokeWidth="1.5"/>
-            <path d="M18,10 L4,28 Q18,24 32,28 Z" fill="var(--color-accent,#d97706)" opacity="0.25"/>
-            <rect x="14" y="13" width="8" height="14" rx="2" fill="var(--color-accent,#d97706)"/>
-            <polygon points="11,13 25,13 23,7 13,7" fill="var(--color-accent2,#f59e0b)"/>
-            <circle cx="18" cy="10" r="3.5" fill="#fff" opacity="0.95"/>
-            <circle cx="18" cy="10" r="2" fill="var(--color-accent2,#f59e0b)"/>
-          </svg>
-          <span className="auth-logo-name">AI炒股指南</span>
-        </div>
-        <ThemeToggle theme={theme} onToggle={toggleTheme} />
-      </div>
-      <div className="login-card">
-        <div className="login-title">登录</div>
-        <div className="login-subtitle">AI炒股指南</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <Input
-            placeholder="用户名"
-            value={username}
-            onChange={e => setUsername(e.target.value)}
-            onPressEnter={handleLogin}
-          />
-          <Input.Password
-            placeholder="密码"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            onPressEnter={handleLogin}
-          />
-          <Button
-            type="primary"
-            className="login-btn"
-            loading={loading}
-            onClick={handleLogin}
-          >
-            登录
-          </Button>
-          <div className="login-footer">
-            没有账号？<Link to="/register">立即注册</Link>
-          </div>
-        </div>
-      </div>
-    </div>
+    <AuthLayout
+      title="欢迎回来"
+      subtitle="登录你的 AI炒股指南 账号"
+      footer={<>没有账号？<Link to="/register">立即注册</Link></>}
+    >
+      <Input
+        prefix={<UserOutlined style={{ color: 'var(--auth-text3)' }} />}
+        placeholder="用户名"
+        value={username}
+        onChange={e => setUsername(e.target.value)}
+        onPressEnter={handleLogin}
+      />
+      <Input.Password
+        prefix={<LockOutlined style={{ color: 'var(--auth-text3)' }} />}
+        placeholder="密码"
+        value={password}
+        onChange={e => setPassword(e.target.value)}
+        onPressEnter={handleLogin}
+      />
+      <Button type="primary" loading={loading} onClick={handleLogin}>
+        登录
+      </Button>
+    </AuthLayout>
   );
 }

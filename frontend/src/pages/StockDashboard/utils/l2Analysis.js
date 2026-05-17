@@ -4,6 +4,51 @@ export const getFlowTone = (value) => {
   return 'neutral';
 };
 
+export const isSameStockCode = (a, b) => {
+  if (a == null || b == null) return false;
+  return String(a) === String(b);
+};
+
+/** 从 stock_info 构建分时 base_info，避免多写入路径字段不一致 */
+export const buildTimeshareBaseInfo = (stockInfo, fallbackCode, prevBaseInfo = null) => {
+  const next = {
+    code: stockInfo?.code ?? fallbackCode,
+    prevClosePrice: stockInfo?.yesterday_close ?? stockInfo?.pre_close,
+    openPrice: stockInfo?.open,
+    highPrice: stockInfo?.high,
+    lowPrice: stockInfo?.low,
+    limit_up: stockInfo?.limit_up,
+    limit_down: stockInfo?.limit_down,
+  };
+  if (!prevBaseInfo || !isSameStockCode(next.code, prevBaseInfo.code)) {
+    return next;
+  }
+  return {
+    ...prevBaseInfo,
+    ...next,
+    prevClosePrice: next.prevClosePrice ?? prevBaseInfo.prevClosePrice,
+    openPrice: next.openPrice ?? prevBaseInfo.openPrice,
+    highPrice: next.highPrice ?? prevBaseInfo.highPrice,
+    lowPrice: next.lowPrice ?? prevBaseInfo.lowPrice,
+    limit_up: next.limit_up ?? prevBaseInfo.limit_up,
+    limit_down: next.limit_down ?? prevBaseInfo.limit_down,
+  };
+};
+
+/** 昨收是否与分时价格序列同量级（防止 header 实时价 + 历史分时错配） */
+export const isPrevCloseConsistentWithFenshi = (prevClose, fenshi) => {
+  const prev = parseFloat(prevClose);
+  if (!Number.isFinite(prev) || prev <= 0) return false;
+  const prices = (fenshi || [])
+    .map((p) => parseFloat(p))
+    .filter((p) => Number.isFinite(p) && p > 0);
+  if (!prices.length) return true;
+  const last = prices[prices.length - 1];
+  const relDiff = Math.abs((last - prev) / prev);
+  const absDiff = Math.abs(last - prev);
+  return relDiff <= 0.05 || absDiff <= 0.15;
+};
+
 const formatNumber = (value, digits = 2) => Number(value || 0).toFixed(digits);
 
 export const buildAnalysisCards = (analysis = {}) => [
@@ -70,9 +115,16 @@ export const alignTimeshareToTradingAxis = (timeshare = []) => {
   const axis = buildTradingTimeAxis();
   const byTime = new Map(timeshare.map(item => [item.time, item]));
 
+  const resolvePointPrice = (item) => {
+    if (!item) return null;
+    const price = item.price ?? item.avg_price;
+    const value = parseFloat(price);
+    return Number.isFinite(value) ? value : null;
+  };
+
   return {
     axis,
-    fenshi: axis.map(time => byTime.get(time)?.price ?? null),
+    fenshi: axis.map((time) => resolvePointPrice(byTime.get(time))),
     volume: axis.map(time => byTime.get(time)?.volume ?? 0),
   };
 };

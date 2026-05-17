@@ -153,15 +153,16 @@ function AuctionGrab() {
 
   return (
     <div className="ag-container">
-      <div className="page-date-nav">
-        <button
-          type="button"
-          className="date-nav-btn"
-          onClick={() => setCurrentDate(offsetDate(currentDate, -1))}
-        >
-          <LeftOutlined /> 前一天
-        </button>
-        <div className="page-date-nav-end">
+      <div className="ag-header-bar">
+        <div className="page-date-nav ag-page-date-nav">
+          <button
+            type="button"
+            className="date-nav-btn"
+            onClick={() => setCurrentDate(offsetDate(currentDate, -1))}
+          >
+            <LeftOutlined /> 前一天
+          </button>
+          <span className="date-nav-label">{formatDateDisplay(currentDate)}</span>
           <button
             type="button"
             className="date-nav-btn"
@@ -170,12 +171,10 @@ function AuctionGrab() {
           >
             后一天 <RightOutlined />
           </button>
-          <span className="date-nav-label">{formatDateDisplay(currentDate)}</span>
         </div>
-      </div>
 
-      <div className="ag-toolbar">
-        <div className="ag-toolbar-left">
+        <div className="ag-toolbar">
+          <div className="ag-toolbar-left">
           <div className="ag-tabs">
             <span
               className={`ag-tab ${activeTab === 'morning' ? 'active' : ''}`}
@@ -215,6 +214,7 @@ function AuctionGrab() {
                 ))}
               </div>
             )}
+          </div>
           </div>
         </div>
       </div>

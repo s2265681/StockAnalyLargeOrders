@@ -2,7 +2,10 @@ import {
   alignTimeshareToTradingAxis,
   buildAnalysisCards,
   buildHandicapLanguage,
+  buildTimeshareBaseInfo,
   getFlowTone,
+  isPrevCloseConsistentWithFenshi,
+  isSameStockCode,
 } from './l2Analysis';
 
 describe('l2Analysis helpers', () => {
@@ -30,6 +33,39 @@ describe('l2Analysis helpers', () => {
     expect(getFlowTone(0)).toBe('neutral');
   });
 
+  test('compares stock codes as strings', () => {
+    expect(isSameStockCode('000001', '000001')).toBe(true);
+    expect(isSameStockCode(1, '000001')).toBe(false);
+    expect(isSameStockCode('000001', '000002')).toBe(false);
+    expect(isSameStockCode(null, '000001')).toBe(false);
+  });
+
+  test('detects prev close mismatch against fenshi prices', () => {
+    expect(isPrevCloseConsistentWithFenshi(11.03, [11.02, 11.01, 10.99])).toBe(true);
+    expect(isPrevCloseConsistentWithFenshi(12.14, [11.02, 11.01, 10.99])).toBe(false);
+  });
+
+  test('builds timeshare base_info from stock_info', () => {
+    expect(buildTimeshareBaseInfo({
+      code: '600519',
+      yesterday_close: 1680,
+      pre_close: 1670,
+      open: 1690,
+      high: 1700,
+      low: 1675,
+      limit_up: 1848,
+      limit_down: 1512,
+    }, '600519')).toEqual({
+      code: '600519',
+      prevClosePrice: 1680,
+      openPrice: 1690,
+      highPrice: 1700,
+      lowPrice: 1675,
+      limit_up: 1848,
+      limit_down: 1512,
+    });
+  });
+
   test('aligns historical timeshare by real minute instead of array index', () => {
     const aligned = alignTimeshareToTradingAxis([
       { time: '09:31', price: 11.56, volume: 100 },
@@ -40,6 +76,14 @@ describe('l2Analysis helpers', () => {
     expect(aligned.fenshi[0]).toBeNull();
     expect(aligned.fenshi[1]).toBe(11.56);
     expect(aligned.volume[1]).toBe(100);
+  });
+
+  test('falls back to avg_price when price field is missing', () => {
+    const aligned = alignTimeshareToTradingAxis([
+      { time: '09:31', avg_price: 12.15, volume: 100 },
+    ]);
+
+    expect(aligned.fenshi[1]).toBe(12.15);
   });
 
   test('returns waiting state before timeshare data is loaded', () => {

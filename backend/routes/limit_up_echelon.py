@@ -1330,6 +1330,176 @@ def _build_stocks_from_df(df, ths_hot_map: dict) -> list:
     return stocks
 
 
+def _prev_trading_date(dt_clean: str) -> Optional[str]:
+    """上一交易日 YYYYMMDD"""
+    d = datetime.strptime(dt_clean, "%Y%m%d")
+    for _ in range(10):
+        d -= timedelta(days=1)
+        if d.weekday() < 5:
+            return d.strftime("%Y%m%d")
+    return None
+
+
+_emotion_records_cache = {"ts": 0.0, "records": []}
+EMOTION_CACHE_TTL_SEC = 300
+
+
+def _get_emotion_record(dt_clean: str) -> Optional[dict]:
+    """按日期取情绪周期记录（带短时缓存）"""
+    global _emotion_records_cache
+    now = time.time()
+    if now - _emotion_records_cache.get("ts", 0) > EMOTION_CACHE_TTL_SEC:
+        try:
+            from routes.emotion_cycle import _fetch_emotion_records
+            _emotion_records_cache = {
+                "ts": now,
+                "records": _fetch_emotion_records(),
+            }
+        except Exception as e:
+            logger.warning("拉取情绪周期数据失败: %s", e)
+            if not _emotion_records_cache.get("records"):
+                return None
+    dt_display = f"{dt_clean[:4]}-{dt_clean[4:6]}-{dt_clean[6:8]}"
+    for record in _emotion_records_cache.get("records") or []:
+        if record.get("date") == dt_display:
+            return record
+    return None
+
+
+def _safe_mean_pct(values) -> Optional[float]:
+    nums = []
+    for v in values:
+        try:
+            if v is None or v != v:  # NaN
+                continue
+            nums.append(float(v))
+        except (TypeError, ValueError):
+            continue
+    if not nums:
+        return None
+    return round(sum(nums) / len(nums), 2)
+
+
+def _compute_premium_rates(dt_clean: str) -> dict:
+    """昨日涨停股在当日的平均涨跌幅（首板/连板分组）"""
+    empty = {
+        "limit_up_premium_pct": None,
+        "first_board_premium_pct": None,
+        "consec_board_premium_pct": None,
+    }
+    try:
+        import akshare as ak
+        df = ak.stock_zt_pool_previous_em(date=dt_clean)
+    except Exception as e:
+        logger.debug("stock_zt_pool_previous_em 不可用 date=%s: %s", dt_clean, e)
+        return empty
+    if df is None or df.empty:
+        return empty
+
+    change_col = next((c for c in df.columns if "涨跌幅" in str(c)), None)
+    boards_col = next(
+        (c for c in df.columns if "昨日连板" in str(c)),
+        None,
+    )
+    if not change_col:
+        return empty
+
+    changes = df[change_col]
+    result = {"limit_up_premium_pct": _safe_mean_pct(changes)}
+    if boards_col:
+        try:
+            boards = df[boards_col].fillna(1).astype(int)
+        except (TypeError, ValueError):
+            boards = None
+        if boards is not None:
+            result["first_board_premium_pct"] = _safe_mean_pct(changes[boards <= 1])
+            result["consec_board_premium_pct"] = _safe_mean_pct(changes[boards > 1])
+    return result
+
+
+def _akshare_sentiment_counts(dt_clean: str) -> dict:
+    """akshare 跌停池/炸板池家数（情绪 API 不可用时的兜底）"""
+    out = {"limit_down_count": None, "broken_board_count": None}
+    try:
+        import akshare as ak
+        if out["limit_down_count"] is None:
+            dt_df = ak.stock_zt_pool_dtgc_em(date=dt_clean)
+            out["limit_down_count"] = len(dt_df) if dt_df is not None else None
+        if out["broken_board_count"] is None:
+            zb_df = ak.stock_zt_pool_zbgc_em(date=dt_clean)
+            out["broken_board_count"] = len(zb_df) if zb_df is not None else None
+    except Exception as e:
+        logger.debug("akshare 涨跌停池兜底失败 date=%s: %s", dt_clean, e)
+    return out
+
+
+def _build_market_stats(dt_clean: str, echelon_total: int = 0) -> dict:
+    """市场情绪指标：上涨比例、打板成功率、跌停、炸板、炸板率、昨日涨停/连板溢价"""
+    stats = {
+        "rise_pct": None,
+        "board_hit_rate": None,
+        "limit_down_count": None,
+        "broken_board_count": None,
+        "broken_board_rate": None,
+        "limit_up_premium_pct": None,
+        "first_board_premium_pct": None,
+        "consec_board_premium_pct": None,
+    }
+    record = _get_emotion_record(dt_clean)
+    limit_up_for_rate = echelon_total
+    if record:
+        for key, src in (
+            ("limit_down_count", "limit_down_count"),
+            ("broken_board_count", "broken_board_count"),
+        ):
+            val = record.get(src)
+            if val is not None:
+                stats[key] = int(val)
+        rise = record.get("rise_pct")
+        if rise is not None:
+            try:
+                stats["rise_pct"] = round(float(rise), 2)
+            except (TypeError, ValueError):
+                pass
+        hit = record.get("board_hit_rate")
+        if hit is not None:
+            try:
+                stats["board_hit_rate"] = round(float(hit), 2)
+            except (TypeError, ValueError):
+                pass
+        lu = record.get("limit_up_count")
+        if lu is not None:
+            limit_up_for_rate = int(lu)
+
+    ak_fallback = _akshare_sentiment_counts(dt_clean)
+    if stats["limit_down_count"] is None and ak_fallback["limit_down_count"] is not None:
+        stats["limit_down_count"] = ak_fallback["limit_down_count"]
+    if stats["broken_board_count"] is None and ak_fallback["broken_board_count"] is not None:
+        stats["broken_board_count"] = ak_fallback["broken_board_count"]
+
+    broken = stats.get("broken_board_count")
+    if broken is not None and limit_up_for_rate is not None:
+        denom = int(limit_up_for_rate) + int(broken)
+        if denom > 0:
+            stats["broken_board_rate"] = round(int(broken) / denom * 100, 1)
+
+    stats.update(_compute_premium_rates(dt_clean))
+    return stats
+
+
+def _build_summary(stocks: list, dt_clean: str) -> dict:
+    total = len(stocks)
+    first_board_count = sum(1 for s in stocks if s.get("boards") == 1)
+    summary = {
+        "total": total,
+        "first_board_count": first_board_count,
+        "consec_count": total - first_board_count,
+        "max_boards": max((s.get("boards") or 0 for s in stocks), default=0),
+    }
+    summary.update(_build_market_stats(dt_clean, echelon_total=total))
+    return summary
+
+
 def _echelon_response_from_db(dt_clean: str, dt: str):
     """从数据库构建涨停梯队响应（akshare 不可用或返回空时的回退）"""
     db_data = load_echelon_from_db(dt_clean)
@@ -1350,8 +1520,6 @@ def _echelon_response_from_db(dt_clean: str, dt: str):
         for boards in sorted(echelon_map.keys(), reverse=True)
         for group in [echelon_map[boards]]
     ]
-    total = len(stocks)
-    first_board_count = sum(1 for s in stocks if s["boards"] == 1)
     return {
         "echelons": echelon_list,
         "ths_hot": [],
@@ -1364,12 +1532,7 @@ def _echelon_response_from_db(dt_clean: str, dt: str):
             "status": "done",
             "source": "database",
         },
-        "summary": {
-            "total": total,
-            "first_board_count": first_board_count,
-            "consec_count": total - first_board_count,
-            "max_boards": max((s["boards"] for s in stocks), default=0),
-        },
+        "summary": _build_summary(stocks, dt_clean),
     }
 
 
@@ -1493,20 +1656,14 @@ def _build_echelon_response(stocks, ths_hot_list, dt, theme_ranking, ai_meta):
         for boards in sorted(echelon_map.keys(), reverse=True)
         for group in [echelon_map[boards]]
     ]
-    total = len(stocks)
-    first_board_count = sum(1 for s in stocks if s["boards"] == 1)
+    dt_clean = dt.replace("-", "") if dt else _default_echelon_dt()
     return {
         "echelons": echelon_list,
         "ths_hot": ths_hot_list[:20],
         "date": dt,
         "theme_ranking": theme_ranking,
         "ai": ai_meta,
-        "summary": {
-            "total": total,
-            "first_board_count": first_board_count,
-            "consec_count": total - first_board_count,
-            "max_boards": max((s["boards"] for s in stocks), default=0),
-        },
+        "summary": _build_summary(stocks, dt_clean),
     }
 
 
@@ -1525,12 +1682,7 @@ def get_limit_up_echelon():
         "date": dt_display,
         "theme_ranking": [],
         "ai": {"enabled": False, "cached": False, "ok": False, "status": "none"},
-        "summary": {
-            "total": 0,
-            "first_board_count": 0,
-            "consec_count": 0,
-            "max_boards": 0,
-        },
+        "summary": _build_summary([], dt_clean),
     })
 
 

@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Spin, message } from 'antd';
 import { LeftOutlined, RightOutlined, RobotOutlined, LoadingOutlined, CloseOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import { apiRequest } from '../../config/api';
 import './index.css';
 
@@ -145,6 +146,7 @@ export function SeatTable({ seats, direction }) {
 }
 
 function DragonTiger() {
+  const navigate = useNavigate();
   const todayStr = useMemo(() => getLastTradingDayStr(), []);
   const [currentDate, setCurrentDate] = useState(() => clampDragonTigerDate(getLastTradingDayStr()));
   const [loading, setLoading] = useState(false);
@@ -347,8 +349,16 @@ function DragonTiger() {
                   <span className={`dt-detail-net ${parseFloat(selectedStock.net_buy) > 0 ? 'positive' : 'negative'}`}>
                     净额：{fmtAmount(selectedStock.net_buy)}
                   </span>
+                  <button
+                    type="button"
+                    className="dt-timeshare-link"
+                    onClick={() => navigate(`/stock-dashboard?code=${selectedStock.code}`)}
+                  >
+                    查看分时
+                  </button>
                 </div>
                 <button
+                  type="button"
                   className="dt-ai-btn"
                   disabled={aiLoading.has(selectedStock.code)}
                   onClick={() => handleAiAnalysis(selectedStock)}

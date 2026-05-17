@@ -25,14 +25,48 @@ import {
   getPercentAxisInterval,
   getZeroLineLabel,
   getLimitPercentBounds,
+  pickMatchedStockBasic,
   resolvePrevClosePrice,
 } from './StockChart';
+import { isPrevCloseConsistentWithFenshi } from '../utils/l2Analysis';
 
 describe('StockChart helpers', () => {
   test('resolves prev close from base info or stock basic data', () => {
     expect(resolvePrevClosePrice({}, { yesterday_close: 35.98 })).toBe(35.98);
-    expect(resolvePrevClosePrice({ prevClosePrice: 38.45 }, { yesterday_close: 35.98 })).toBe(38.45);
-    expect(resolvePrevClosePrice({}, {})).toBeNull();
+    expect(resolvePrevClosePrice({ prevClosePrice: 38.45, code: '000001' }, { yesterday_close: 35.98, code: '000002' })).toBe(38.45);
+    expect(resolvePrevClosePrice({ code: '000001' }, { yesterday_close: 35.98, code: '000002' })).toBeNull();
+    expect(resolvePrevClosePrice({ code: '000001' }, { yesterday_close: 35.98, code: '000001' })).toBe(35.98);
+  });
+
+  test('ignores realtime header prev close when fenshi is historical series', () => {
+    const fenshi = Array(240).fill(11.02);
+    expect(isPrevCloseConsistentWithFenshi(12.14, fenshi)).toBe(false);
+    expect(resolvePrevClosePrice(
+      { prevClosePrice: 11.03, code: '000001' },
+      { yesterday_close: 12.14, code: '000001' },
+      fenshi,
+    )).toBe(11.03);
+  });
+
+  test('ignores stale stockBasic limits when code does not match', () => {
+    const bounds = getLimitPercentBounds({
+      stockBasicData: {
+        code: '300001',
+        limit_up: 15,
+        limit_down: 10,
+        yesterday_close: 12,
+      },
+      baseInfo: {
+        code: '000001',
+        prevClosePrice: 10,
+      },
+      fallbackPercents: [-2, 1.5],
+    });
+
+    expect(bounds.min).toBeGreaterThanOrEqual(-5);
+    expect(bounds.max).toBeLessThanOrEqual(5);
+    expect(Math.abs(bounds.max)).toBe(Math.abs(bounds.min));
+    expect(pickMatchedStockBasic({ code: '000001' }, { code: '000002' })).toBeNull();
   });
 
   test('uses stock limit prices as y-axis percent bounds', () => {

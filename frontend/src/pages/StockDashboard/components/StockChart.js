@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { Button, Spin } from 'antd';
+import React, { useMemo, useRef } from 'react';
+import { Spin } from 'antd';
 import { useAtom } from 'jotai';
 import ReactEChartsCore from 'echarts-for-react/lib/core';
 import * as echarts from 'echarts/core';
@@ -18,14 +18,15 @@ import {
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import {
+  stockCodeAtom,
   stockBasicDataAtom,
   largeOrdersDataAtom,
   timeshareDataAtom,
   filterAmountAtom,
-  loadingAtom,
+  timeshareLoadingAtom,
   errorAtom,
-  fetchTimeshareDataAtom
 } from '../../../store/atoms';
+import { isPrevCloseConsistentWithFenshi } from '../utils/l2Analysis';
 
 // 注册ECharts组件
 echarts.use([
@@ -55,23 +56,63 @@ export const formatPercentLabel = (value) => {
   return `${roundedValue > 0 ? '+' : '-'}${absText}%`;
 };
 
-export const resolvePrevClosePrice = (baseInfo, stockBasicData) => {
-  const candidates = [
-    baseInfo?.prevClosePrice,
-    baseInfo?.prev_close,
-    stockBasicData?.yesterday_close,
-    stockBasicData?.pre_close,
-    stockBasicData?.preClose,
-  ];
-
-  for (const raw of candidates) {
+export const resolvePrevClosePrice = (baseInfo, stockBasicData, fenshi) => {
+  const parsePrice = (raw) => {
     const value = parseFloat(raw);
-    if (Number.isFinite(value) && value > 0) {
-      return value;
+    return Number.isFinite(value) && value > 0 ? value : null;
+  };
+
+  const baseCode = baseInfo?.code;
+  const basicMatches = baseCode && stockBasicData?.code
+    ? String(stockBasicData.code) === String(baseCode)
+    : false;
+
+  const fromTimeshare = parsePrice(baseInfo?.prevClosePrice) ?? parsePrice(baseInfo?.prev_close);
+  const fromBasic = (!baseCode || basicMatches)
+    ? (parsePrice(stockBasicData?.yesterday_close)
+      ?? parsePrice(stockBasicData?.pre_close)
+      ?? parsePrice(stockBasicData?.preClose))
+    : null;
+
+  const hasFenshi = (fenshi || []).some((p) => p != null && p !== '');
+
+  // 有分时序列时，昨收必须与价格同量级，禁止用 header 实时昨收去算历史分时
+  if (hasFenshi) {
+    if (fromTimeshare && isPrevCloseConsistentWithFenshi(fromTimeshare, fenshi)) {
+      return fromTimeshare;
     }
+    if (fromBasic && isPrevCloseConsistentWithFenshi(fromBasic, fenshi)) {
+      return fromBasic;
+    }
+    const prices = (fenshi || [])
+      .map((p) => parseFloat(p))
+      .filter((p) => Number.isFinite(p) && p > 0);
+    if (prices.length) {
+      return prices[0];
+    }
+    return fromTimeshare ?? fromBasic ?? null;
+  }
+
+  if (fromTimeshare) {
+    return fromTimeshare;
+  }
+
+  if (!baseCode || basicMatches) {
+    return fromBasic;
   }
 
   return null;
+};
+
+export const pickMatchedStockBasic = (baseInfo, stockBasicData) => {
+  if (!stockBasicData) {
+    return null;
+  }
+  const baseCode = baseInfo?.code;
+  if (!baseCode || !stockBasicData.code) {
+    return stockBasicData;
+  }
+  return String(stockBasicData.code) === String(baseCode) ? stockBasicData : null;
 };
 
 export const formatTradingTimeLabel = (value) => {
@@ -91,9 +132,10 @@ export const formatTradingTimeLabel = (value) => {
 };
 
 export const getLimitPercentBounds = ({ stockBasicData, baseInfo, fallbackPercents = [] }) => {
+  const matchedBasic = pickMatchedStockBasic(baseInfo, stockBasicData);
   const prevClosePrice = resolvePrevClosePrice(baseInfo, stockBasicData);
-  const limitUpPrice = parseFloat(stockBasicData?.limit_up || baseInfo?.limit_up);
-  const limitDownPrice = parseFloat(stockBasicData?.limit_down || baseInfo?.limit_down);
+  const limitUpPrice = parseFloat(matchedBasic?.limit_up ?? baseInfo?.limit_up);
+  const limitDownPrice = parseFloat(matchedBasic?.limit_down ?? baseInfo?.limit_down);
   const validPercents = fallbackPercents
     .map(Number)
     .filter(Number.isFinite);
@@ -150,16 +192,17 @@ export const getZeroLineLabel = () => ({ show: false });
 
 
 const StockChart = () => {
+  const [stockCode] = useAtom(stockCodeAtom);
   const [stockBasicData] = useAtom(stockBasicDataAtom);
   const [largeOrdersData] = useAtom(largeOrdersDataAtom);
   const [timeshareData] = useAtom(timeshareDataAtom);
   const [filterAmount] = useAtom(filterAmountAtom);
   const [error] = useAtom(errorAtom);
-  const [loading] = useAtom(loadingAtom);
-  const [, fetchTimeshareData] = useAtom(fetchTimeshareDataAtom);
+  const [timeshareLoading] = useAtom(timeshareLoadingAtom);
+  const chartRef = useRef(null);
 
   // 添加筛选阈值状态，默认300
-  const [filterThreshold, setFilterThreshold] = React.useState(300);
+  const [filterThreshold] = React.useState(300);
 
   // 获取当前主题的CSS变量颜色（ECharts canvas不支持var()）
   const getThemeColor = (varName, fallback) => {
@@ -170,31 +213,9 @@ const StockChart = () => {
   const borderColor = getThemeColor('--border-primary', '#333');
   const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
 
-  // 数据验证
-  if (timeshareData) {
-    // 数据验证逻辑保留，但去掉console.log
-  } else {
-    // timeshareData 为空或格式不正确
-  }
-
-  // 测试数据加载
-  useEffect(() => {
-    if (timeshareData) {
-      // 分时图数据加载成功
-    } else {
-      // 分时图数据未加载
-    }
-  }, [timeshareData]);
-
-  // 手动触发数据加载
-  const handleLoadData = () => {
-    fetchTimeshareData('603001');
-  };
-
-  // 处理筛选阈值切换
-  const handleFilterChange = (threshold) => {
-    setFilterThreshold(threshold);
-  };
+  const hasTimesharePoints = useMemo(() => (
+    (timeshareData?.fenshi || []).some((price) => price != null && price !== '')
+  ), [timeshareData]);
 
   // 生成筛选金额标注点（使用百分比坐标）
   const generateFilteredAmountMarkers = (fenshiData, largeOrders, filterAmount, yesterdayClose) => {
@@ -254,7 +275,7 @@ const StockChart = () => {
     }
     
     const { base_info, fenshi, sanhu, volume, zhuli, timeAxis } = timeshareData;
-    const prevClosePrice = resolvePrevClosePrice(base_info, stockBasicData);
+    const prevClosePrice = resolvePrevClosePrice(base_info, stockBasicData, fenshi);
     if (!prevClosePrice) {
       return {};
     }
@@ -826,9 +847,6 @@ const StockChart = () => {
         }
       ],
       animation: false,
-      brush: {
-        show: false
-      },
       toolbox: {
         show: false
       },
@@ -1098,6 +1116,10 @@ const StockChart = () => {
   };
 
   const dataValidation = validateData();
+  const chartOption = useMemo(
+    () => getTimeshareChartOption(),
+    [timeshareData, stockBasicData, largeOrdersData, filterAmount, filterThreshold, isDark, textColor, textMuted, borderColor]
+  );
 
   return (
     <div>
@@ -1145,7 +1167,7 @@ const StockChart = () => {
       {/* 分时图 */}
       <div className="stock-card chart-container" style={{ position: 'relative' }}>
         {/* 加载指示器 */}
-        {(loading || !timeshareData) && (
+        {(timeshareLoading || !timeshareData) && (
           <div style={{
             position: 'absolute',
             top: 0,
@@ -1198,9 +1220,28 @@ const StockChart = () => {
               图表配置: {Object.keys(getTimeshareChartOption()).length > 0 ? '已生成' : '未生成'}
             </div>
           </div> */}
+        {!timeshareLoading && timeshareData && !hasTimesharePoints && (
+          <div
+            className="chart-empty-hint"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--text-muted)',
+              fontSize: 14,
+              zIndex: 5,
+            }}
+          >
+            暂无分时数据
+          </div>
+        )}
         <ReactEChartsCore
+          key={stockCode || 'stock-chart'}
+          ref={chartRef}
           echarts={echarts}
-          option={getTimeshareChartOption()}
+          option={chartOption}
           style={{ width: '100%', height: 480, minHeight: 420 }}
           opts={{ 
             renderer: 'canvas',
@@ -1208,13 +1249,14 @@ const StockChart = () => {
           }}
           notMerge={true}
           lazyUpdate={false}
-          onChartReady={(chart) => {
-            // console.log('✅ ECharts 图表已准备就绪:', chart);
+          onChartReady={() => {
+            const chart = chartRef.current?.getEchartsInstance?.();
+            if (chart && chartOption?.series?.length) {
+              chart.setOption(chartOption, { notMerge: true, lazyUpdate: false });
+            }
           }}
           onEvents={{
-            click: (params) => {
-              // console.log('图表点击事件:', params);
-            }
+            click: () => {},
           }}
         />
       </div>

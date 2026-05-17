@@ -26,8 +26,9 @@
 
 .echelon-summary {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 24px;
+  gap: 20px 24px;
 }
 
 .ai-group-btn {
@@ -58,15 +59,33 @@
   margin-bottom: 2px;
 }
 
-.summary-value {
+.echelon-summary .summary-value {
   font-size: 22px;
   font-weight: bold;
+  font-family: inherit;
+  line-height: 1.2;
+}
+
+.echelon-summary .summary-unit {
+  font-size: 14px;
+  font-weight: bold;
+  margin-left: 1px;
 }
 
 .summary-value.red { color: #ff4d4f; }
 .summary-value.blue { color: #3b82f6; }
 .summary-value.orange { color: #f97316; }
 .summary-value.purple { color: #a855f7; }
+.summary-value.teal { color: #14b8a6; }
+.summary-value.amber { color: #d97706; }
+.summary-value.green { color: #16a34a; }
+.summary-value.down { color: #ef4444; }
+
+.summary-unit {
+  font-size: 14px;
+  font-weight: 600;
+  margin-left: 2px;
+}
 
 .theme-analyze-btn {
   height: 36px;
@@ -561,8 +580,12 @@
     align-items: center;
   }
 
-  .summary-value {
+  .echelon-summary .summary-value {
     font-size: 18px;
+  }
+
+  .echelon-summary .summary-unit {
+    font-size: 12px;
   }
 
   .theme-ranking-bar {
@@ -604,7 +627,7 @@
 @media (max-width: 480px) {
   .echelon-summary {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 10px;
   }
 

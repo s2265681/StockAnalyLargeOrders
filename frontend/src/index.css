@@ -2870,14 +2870,43 @@ code {
     margin-left: auto;
   }
 
-  /* 移动端隐藏 logo 文字，只保留图标 */
-  .nav-logo-name {
+  /* 移动端头部隐藏 logo（图标移至抽屉标题栏） */
+  .nav-logo-brand {
     display: none !important;
   }
 
-  /* 移动端抽屉菜单：收紧左侧留白 */
+  /* 移动端抽屉：左侧 logo + 标题，右上角关闭 */
+  .mobile-nav-drawer .ant-drawer-header {
+    padding: 10px 8px !important;
+  }
+
   .mobile-nav-drawer .ant-drawer-header-title {
     flex: 1;
+    min-width: 0;
+  }
+
+  .mobile-drawer-header-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .mobile-drawer-header-title span {
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-drawer-close {
+    flex-shrink: 0;
+    margin: 0 !important;
+    padding: 4px !important;
+    width: 32px;
+    height: 32px;
   }
 
   .mobile-drawer-menu.ant-menu {
@@ -2885,10 +2914,10 @@ code {
   }
 
   .mobile-drawer-menu.ant-menu-inline > .ant-menu-item {
-    padding-inline-start: 12px !important;
-    padding-inline-end: 12px !important;
-    margin-inline: 8px;
-    width: calc(100% - 16px);
+    padding-inline-start: 8px !important;
+    padding-inline-end: 8px !important;
+    margin-inline: 4px;
+    width: calc(100% - 8px);
     border-radius: 8px;
   }
 

@@ -233,5 +233,52 @@ class BuildEchelonOneDateTest(unittest.TestCase):
         self.assertEqual(build_echelon_one_date("20260515", force=False), "skipped")
 
 
+class MarketStatsTest(unittest.TestCase):
+    @patch("routes.limit_up_echelon._compute_premium_rates")
+    @patch("routes.limit_up_echelon._akshare_sentiment_counts")
+    @patch("routes.limit_up_echelon._get_emotion_record")
+    def test_build_market_stats_from_emotion(self, mock_emotion, mock_ak, mock_premium):
+        from routes.limit_up_echelon import _build_market_stats
+
+        mock_emotion.return_value = {
+            "rise_pct": 62.35,
+            "board_hit_rate": 58.6,
+            "limit_down_count": 12,
+            "broken_board_count": 8,
+            "limit_up_count": 54,
+        }
+        mock_ak.return_value = {"limit_down_count": None, "broken_board_count": None}
+        mock_premium.return_value = {
+            "limit_up_premium_pct": 1.5,
+            "first_board_premium_pct": 0.8,
+            "consec_board_premium_pct": 3.2,
+        }
+
+        stats = _build_market_stats("20260515", echelon_total=54)
+        self.assertEqual(stats["rise_pct"], 62.35)
+        self.assertEqual(stats["board_hit_rate"], 58.6)
+        self.assertEqual(stats["limit_down_count"], 12)
+        self.assertEqual(stats["broken_board_count"], 8)
+        self.assertEqual(stats["broken_board_rate"], 12.9)
+        self.assertEqual(stats["limit_up_premium_pct"], 1.5)
+        self.assertEqual(stats["consec_board_premium_pct"], 3.2)
+
+    def test_compute_premium_rates_from_dataframe(self):
+        import pandas as pd
+        from routes.limit_up_echelon import _compute_premium_rates
+
+        df = pd.DataFrame({
+            "涨跌幅": [2.0, -1.0, 4.0],
+            "昨日连板数": [1, 1, 3],
+        })
+        mock_ak = MagicMock()
+        mock_ak.stock_zt_pool_previous_em.return_value = df
+        with patch.dict("sys.modules", {"akshare": mock_ak}):
+            result = _compute_premium_rates("20260515")
+        self.assertAlmostEqual(result["limit_up_premium_pct"], 1.67, places=1)
+        self.assertAlmostEqual(result["first_board_premium_pct"], 0.5, places=1)
+        self.assertEqual(result["consec_board_premium_pct"], 4.0)
+
+
 if __name__ == "__main__":
     unittest.main()

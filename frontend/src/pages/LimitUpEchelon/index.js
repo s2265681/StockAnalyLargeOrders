@@ -74,6 +74,27 @@ const formatDateDisplay = (dateStr) => {
 
 const toDtQuery = (dateStr) => `dt=${formatDateDisplay(dateStr)}`;
 
+const formatRatePct = (value) => {
+  if (value == null || value === '' || Number.isNaN(Number(value))) return '--';
+  return `${Number(value).toFixed(2)}%`;
+};
+
+const getRisePctClass = (value) => {
+  if (value == null || Number.isNaN(Number(value))) return '';
+  const n = Number(value);
+  if (n >= 50) return 'green';
+  if (n < 50) return 'down';
+  return '';
+};
+
+const getBoardHitRateClass = (value) => {
+  if (value == null || Number.isNaN(Number(value))) return '';
+  const n = Number(value);
+  if (n >= 65) return 'green';
+  if (n < 40) return 'down';
+  return 'orange';
+};
+
 const MIN_LOADING_MS = 300;
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -274,7 +295,36 @@ function LimitUpEchelon() {
           </div>
           <div className="summary-item">
             <span className="summary-label">最高</span>
-            <span className="summary-value purple">{summary?.max_boards || 0}板</span>
+            <span className="summary-value purple">
+              {summary?.max_boards || 0}
+              <span className="summary-unit">板</span>
+            </span>
+          </div>
+          <div className="summary-item">
+            <span className="summary-label">跌停</span>
+            <span className="summary-value teal">{summary?.limit_down_count ?? '--'}</span>
+          </div>
+          <div className="summary-item">
+            <span className="summary-label">炸板</span>
+            <span className="summary-value amber">{summary?.broken_board_count ?? '--'}</span>
+          </div>
+          <div className="summary-item">
+            <span className="summary-label">炸板率</span>
+            <span className="summary-value amber">
+              {summary?.broken_board_rate != null ? `${summary.broken_board_rate}%` : '--'}
+            </span>
+          </div>
+          <div className="summary-item">
+            <span className="summary-label">上涨比例</span>
+            <span className={`summary-value ${getRisePctClass(summary?.rise_pct)}`}>
+              {formatRatePct(summary?.rise_pct)}
+            </span>
+          </div>
+          <div className="summary-item">
+            <span className="summary-label">打板成功率</span>
+            <span className={`summary-value ${getBoardHitRateClass(summary?.board_hit_rate)}`}>
+              {formatRatePct(summary?.board_hit_rate)}
+            </span>
           </div>
         </div>
       </div>

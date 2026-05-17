@@ -6,7 +6,12 @@ from datetime import datetime
 from flask import Blueprint, request
 from utils.cache import cache_with_timeout
 from utils.response import success_response, error_response, v1_success_response, v1_error_response
-from utils.stock_utils import normalize_stock_code, validate_stock_code, generate_realistic_mock_data
+from utils.stock_utils import (
+    normalize_stock_code,
+    validate_stock_code,
+    generate_realistic_mock_data,
+    get_stock_name_by_code,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -70,14 +75,46 @@ def get_base_info():
     """竞品格式 - 基本信息接口"""
     code = request.args.get('code', '000001')
     dt = request.args.get('dt', datetime.now().strftime('%Y-%m-%d'))
+    today = datetime.now().strftime('%Y-%m-%d')
 
     try:
+        if dt != today:
+            from services.data_source_adapter import DataSourceAdapter
+            ts_resp = DataSourceAdapter().get_timeshare_data(code, dt)
+            if ts_resp.get('success') and ts_resp.get('data', {}).get('stock_info'):
+                info = ts_resp['data']['stock_info']
+                yesterday_close = info.get('yesterday_close') or info.get('pre_close') or 0
+                current_price = info.get('price') or info.get('current_price') or 0
+                change_percent = info.get('change_percent')
+                if change_percent is None and yesterday_close:
+                    change_percent = round((current_price - yesterday_close) / yesterday_close * 100, 2)
+                volume = info.get('volume') or 0
+                turnover = info.get('turnover') or 0
+                result = {
+                    'code': info.get('code') or code,
+                    'name': info.get('name') or get_stock_name_by_code(code),
+                    'current_price': current_price,
+                    'change_amount': round(current_price - yesterday_close, 2) if yesterday_close else 0,
+                    'change_percent': change_percent or 0,
+                    'open': info.get('open', 0),
+                    'high': info.get('high', 0),
+                    'low': info.get('low', 0),
+                    'yesterday_close': yesterday_close,
+                    'volume': round(volume / 10000, 2) if volume > 100000 else round(volume, 2),
+                    'turnover': round(turnover / 1e8, 2) if turnover > 1e6 else round(turnover, 2),
+                    'limit_up': info.get('limit_up') or (round(yesterday_close * 1.1, 2) if yesterday_close else 0),
+                    'limit_down': info.get('limit_down') or (round(yesterday_close * 0.9, 2) if yesterday_close else 0),
+                    'date': dt,
+                    'update_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                }
+                return v1_success_response(data=result)
+
         stock_data = get_stock_basic_data(code)
         yesterday_close = stock_data.get('yesterday_close', 0)
 
         result = {
             'code': code,
-            'name': stock_data.get('name', f'股票{code}'),
+            'name': stock_data.get('name') or get_stock_name_by_code(code),
             'current_price': stock_data.get('current_price', 0),
             'change_amount': stock_data.get('change_amount', 0),
             'change_percent': stock_data.get('change_percent', 0),

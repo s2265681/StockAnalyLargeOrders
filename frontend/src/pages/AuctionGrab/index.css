@@ -5,6 +5,65 @@
   box-sizing: border-box;
 }
 
+/* 顶部：日期 + Tab/筛选 */
+.ag-header-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.ag-header-bar .page-date-nav,
+.ag-header-bar .ag-toolbar {
+  margin-bottom: 0;
+}
+
+/* PC：单行，左日期右筛选 */
+@media (min-width: 769px) {
+  .ag-header-bar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 14px 20px;
+    background: var(--bg-tooltip);
+    border: 1px solid var(--border-secondary);
+    border-radius: 8px;
+  }
+
+  .ag-header-bar .page-date-nav,
+  .ag-header-bar .ag-toolbar {
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+  }
+
+  .ag-header-bar .page-date-nav {
+    flex-shrink: 0;
+  }
+
+  .ag-header-bar .ag-toolbar {
+    flex: 0 1 auto;
+    margin-bottom: 0;
+  }
+
+  .ag-header-bar .ag-toolbar-left {
+    justify-content: flex-end;
+    margin-left: auto;
+  }
+
+  .ag-page-date-nav {
+    gap: 12px;
+  }
+
+  .ag-page-date-nav .date-nav-label {
+    min-width: auto;
+    text-align: center;
+    align-items: center;
+  }
+}
+
 /* 工具栏 */
 .ag-toolbar {
   display: flex;

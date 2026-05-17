@@ -10,7 +10,12 @@ import AuctionVolumePanel from './components/AuctionVolumePanel';
 import MoneyFlowPanel from './components/MoneyFlowPanel';
 import ThemeLimitUpPanel from './components/ThemeLimitUpPanel';
 import StockOrderDetails from './components/StockOrderDetails';
-import { buildTradingTimeAxis, alignTimeshareToTradingAxis } from './utils/l2Analysis';
+import {
+  buildTradingTimeAxis,
+  alignTimeshareToTradingAxis,
+  buildTimeshareBaseInfo,
+  isSameStockCode,
+} from './utils/l2Analysis';
 import { stockWS } from '../../services/websocket';
 import { apiRequest } from '../../config/api';
 import {
@@ -25,6 +30,7 @@ import {
   applySimulatedDataAtom,
   selectedDateAtom,
   loadingAtom,
+  timeshareLoadingAtom,
   errorAtom,
 } from '../../store/atoms';
 
@@ -69,6 +75,7 @@ const StockDashboard = () => {
   const [, fetchLimitUpThemes] = useAtom(fetchLimitUpThemesAtom);
   const [selectedDate] = useAtom(selectedDateAtom);
   const [loading] = useAtom(loadingAtom);
+  const [, setTimeshareLoading] = useAtom(timeshareLoadingAtom);
   const [error] = useAtom(errorAtom);
 
   const [pageLoading, setPageLoading] = useState(true);
@@ -88,6 +95,9 @@ const StockDashboard = () => {
     const urlCode = searchParams.get('code');
     if (urlCode && urlCode !== stockCode) {
       setTimeshareData(null);
+      setTimeshareLoading(true);
+      setStockBasicData(null);
+      setLargeOrdersData(null);
       setStockCode(urlCode);
       triggerPageLoad();
     }
@@ -147,9 +157,11 @@ const StockDashboard = () => {
   const [, setLimitUpMonitor] = useAtom(limitUpMonitorAtom);
   const [, applySimulatedData] = useAtom(applySimulatedDataAtom);
 
-  // 用 ref 持有最新 timeshareData，WS 回调中读取避免闭包陈旧
+  // 用 ref 持有最新 timeshareData / stockCode，WS 回调中读取避免闭包陈旧
   const timeshareRef = useRef(timeshareData);
+  const stockCodeRef = useRef(stockCode);
   useEffect(() => { timeshareRef.current = timeshareData; }, [timeshareData]);
+  useEffect(() => { stockCodeRef.current = stockCode; }, [stockCode]);
 
   // 完整看板数据缓存（模拟回放用，只取一次）
   const fullSimDataRef = useRef(null);
@@ -157,6 +169,9 @@ const StockDashboard = () => {
 
   const handleStockCodeChange = (newCode) => {
     setTimeshareData(null);
+    setTimeshareLoading(true);
+    setStockBasicData(null);
+    setLargeOrdersData(null);
     setStockCode(newCode);
     setSearchParams({ code: newCode }, { replace: true });
     simulationIndexRef.current = 1;
@@ -241,11 +256,13 @@ const StockDashboard = () => {
     setSimulationIndex(1);
 
     // 取一次完整数据 + 东方财富资金流，后续全部在前端切片
+    const simCode = stockCode;
     Promise.all([
-      apiRequest(`/api/v1/l2_dashboard?code=${stockCode}&dt=${selectedDate}`, { timeout: 45000 }),
-      apiRequest(`/api/v1/l2_timeshare?code=${stockCode}&dt=${selectedDate}`, { timeout: 45000 }),
+      apiRequest(`/api/v1/l2_dashboard?code=${simCode}&dt=${selectedDate}`, { timeout: 45000 }),
+      apiRequest(`/api/v1/l2_timeshare?code=${simCode}&dt=${selectedDate}`, { timeout: 45000 }),
     ])
       .then(([dashData, tsData]) => {
+        if (!isSameStockCode(stockCodeRef.current, simCode)) return;
         fullSimDataRef.current = dashData;
         fullMoneyFlowRef.current = tsData?.data?.money_flow || null;
         applySimulatedData({
@@ -303,13 +320,26 @@ const StockDashboard = () => {
     const removeUpdate = stockWS.onL2Update((data) => {
       if (data?.success && data?.data) {
         const d = data.data;
+        const activeCode = stockCodeRef.current;
+        const incomingCode = d.stock_info?.code ?? activeCode;
+        if (incomingCode && activeCode && !isSameStockCode(incomingCode, activeCode)) {
+          return;
+        }
+
         const wsTimeshare = d.timeshare || [];
 
         // 增量合并：将 WS 新数据合并到已有的全天数据（HTTP 加载）上
         const prev = timeshareRef.current;
+        const prevMatchesActive = !prev?.base_info?.code
+          || isSameStockCode(prev.base_info.code, activeCode);
+        const nextBaseInfo = buildTimeshareBaseInfo(
+          d.stock_info,
+          activeCode,
+          prevMatchesActive ? prev?.base_info : null,
+        );
 
-        if (!prev || !prev.fenshi) {
-          // 还没有 HTTP 基础数据，用 WS 数据初始化
+        if (!prev || !prev.fenshi || !prevMatchesActive) {
+          // 还没有 HTTP 基础数据，或 prev 仍是上一只股票，用 WS 数据初始化
           const aligned = alignTimeshareToTradingAxis(wsTimeshare);
           setTimeshareData({
             timeAxis: aligned.axis,
@@ -320,15 +350,14 @@ const StockDashboard = () => {
             big_map: d.big_map || {},
             order_book: d.order_book || null,
             session_snapshot: d.session_snapshot || null,
-            base_info: {
-              prevClosePrice: d.stock_info?.yesterday_close ?? d.stock_info?.pre_close,
-              openPrice: d.stock_info?.open,
-              highPrice: d.stock_info?.high,
-              lowPrice: d.stock_info?.low,
-            },
+            base_info: nextBaseInfo,
           });
           if (d.stock_info) {
-            setStockBasicData(d.stock_info);
+            setStockBasicData({
+              ...d.stock_info,
+              current_price: d.stock_info.current_price ?? d.stock_info.price,
+              yesterday_close: d.stock_info.yesterday_close ?? d.stock_info.pre_close,
+            });
           }
         } else {
           // 在已有全天数据基础上，用 WS 新数据覆盖对应时间点
@@ -339,7 +368,7 @@ const StockDashboard = () => {
           wsTimeshare.forEach(item => {
             const idx = axis.indexOf(item.time);
             if (idx !== -1) {
-              newFenshi[idx] = item.price;
+              newFenshi[idx] = item.price ?? item.avg_price;
               newVolume[idx] = item.volume;
             }
           });
@@ -358,12 +387,7 @@ const StockDashboard = () => {
             big_map: mergedBigMap,
             order_book: d.order_book || prev.order_book,
             session_snapshot: d.session_snapshot ?? prev.session_snapshot,
-            base_info: {
-              prevClosePrice: d.stock_info?.yesterday_close ?? d.stock_info?.pre_close ?? prev.base_info?.prevClosePrice,
-              openPrice: d.stock_info?.open ?? prev.base_info?.openPrice,
-              highPrice: d.stock_info?.high ?? prev.base_info?.highPrice,
-              lowPrice: d.stock_info?.low ?? prev.base_info?.lowPrice,
-            },
+            base_info: nextBaseInfo,
           });
         }
 

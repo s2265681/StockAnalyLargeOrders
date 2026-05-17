@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Input, Button, message } from 'antd';
+import { UserOutlined, LockOutlined, PhoneOutlined } from '@ant-design/icons';
 import { useAuth } from '../../context/AuthContext';
-import ThemeToggle, { useTheme } from '../../components/ThemeToggle';
-import './index.css';
+import AuthLayout from '../../components/AuthLayout';
 
 export default function Register() {
   const [username, setUsername] = useState('');
@@ -13,7 +13,6 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
-  const { theme, toggleTheme } = useTheme();
 
   const handleRegister = async () => {
     if (!username.trim() || username.trim().length < 2) {
@@ -39,60 +38,41 @@ export default function Register() {
   };
 
   return (
-    <div className="register-container">
-      <div className="auth-page-header">
-        <div className="auth-logo" onClick={() => navigate('/')}>
-          <svg width="28" height="28" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="18" cy="18" r="17" fill="var(--gold-bg,#fffbeb)" stroke="var(--color-accent,#d97706)" strokeWidth="1.5"/>
-            <path d="M18,10 L4,28 Q18,24 32,28 Z" fill="var(--color-accent,#d97706)" opacity="0.25"/>
-            <rect x="14" y="13" width="8" height="14" rx="2" fill="var(--color-accent,#d97706)"/>
-            <polygon points="11,13 25,13 23,7 13,7" fill="var(--color-accent2,#f59e0b)"/>
-            <circle cx="18" cy="10" r="3.5" fill="#fff" opacity="0.95"/>
-            <circle cx="18" cy="10" r="2" fill="var(--color-accent2,#f59e0b)"/>
-          </svg>
-          <span className="auth-logo-name">AI炒股指南</span>
-        </div>
-        <ThemeToggle theme={theme} onToggle={toggleTheme} />
-      </div>
-      <div className="register-card">
-        <div className="register-title">创建账号</div>
-        <div className="register-subtitle">注册 AI炒股指南</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <Input
-            placeholder="用户名（2-20个字符）"
-            value={username}
-            onChange={e => setUsername(e.target.value)}
-            onPressEnter={handleRegister}
-          />
-          <Input.Password
-            placeholder="密码（至少6个字符）"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-          />
-          <Input.Password
-            placeholder="确认密码"
-            value={confirmPwd}
-            onChange={e => setConfirmPwd(e.target.value)}
-          />
-          <Input
-            placeholder="手机号（可选）"
-            value={phone}
-            onChange={e => setPhone(e.target.value)}
-            onPressEnter={handleRegister}
-          />
-          <Button
-            type="primary"
-            className="register-btn"
-            loading={loading}
-            onClick={handleRegister}
-          >
-            注册
-          </Button>
-          <div className="register-footer">
-            已有账号？<Link to="/login">去登录</Link>
-          </div>
-        </div>
-      </div>
-    </div>
+    <AuthLayout
+      title="创建账号"
+      subtitle="加入 AI炒股指南，开启智能炒股之旅"
+      footer={<>已有账号？<Link to="/login">去登录</Link></>}
+    >
+      <Input
+        prefix={<UserOutlined style={{ color: 'var(--auth-text3)' }} />}
+        placeholder="用户名（2-20个字符）"
+        value={username}
+        onChange={e => setUsername(e.target.value)}
+        onPressEnter={handleRegister}
+      />
+      <Input.Password
+        prefix={<LockOutlined style={{ color: 'var(--auth-text3)' }} />}
+        placeholder="密码（至少6个字符）"
+        value={password}
+        onChange={e => setPassword(e.target.value)}
+      />
+      <Input.Password
+        prefix={<LockOutlined style={{ color: 'var(--auth-text3)' }} />}
+        placeholder="确认密码"
+        value={confirmPwd}
+        onChange={e => setConfirmPwd(e.target.value)}
+        onPressEnter={handleRegister}
+      />
+      <Input
+        prefix={<PhoneOutlined style={{ color: 'var(--auth-text3)' }} />}
+        placeholder="手机号（可选）"
+        value={phone}
+        onChange={e => setPhone(e.target.value)}
+        onPressEnter={handleRegister}
+      />
+      <Button type="primary" loading={loading} onClick={handleRegister}>
+        注册
+      </Button>
+    </AuthLayout>
   );
 }

@@ -7,8 +7,6 @@ import { useAtom } from 'jotai';
 import {
   stockCodeAtom,
   stockBasicDataAtom,
-  fetchStockBasicAtom,
-  loadingAtom
 } from '../../../store/atoms';
 import LimitUpMonitorPanel from './LimitUpMonitorPanel';
 import { apiRequest } from '../../../config/api';
@@ -17,8 +15,6 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
   const navigate = useNavigate();
   const [stockCode, setStockCode] = useAtom(stockCodeAtom);
   const [stockBasicData] = useAtom(stockBasicDataAtom);
-  const [, fetchStockBasic] = useAtom(fetchStockBasicAtom);
-  const [loading] = useAtom(loadingAtom);
   const [_innerCode, setInnerCode] = useState(stockCode);
   const [isEditingSearch, setIsEditingSearch] = useState(false);
   const [themeTags, setThemeTags] = useState([]);
@@ -48,11 +44,6 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
     onStockCodeChange(nextCode);
     setIsEditingSearch(false);
   };
-
-  //调用basic 接口数据
-  useEffect(()=>{
-    fetchStockBasic(stockCode)
-  },[stockCode])
 
   const fetchThemeTags = async () => {
     if (!stockCode || themeLoading) return;
@@ -172,7 +163,7 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
                       onClick={handleSearchIconClick}
                     />
                   }
-                  loading={searchLoading || loading}
+                  loading={searchLoading}
                 />
               </AutoComplete>
             </div>

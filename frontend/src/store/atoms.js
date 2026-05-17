@@ -1,6 +1,12 @@
 import { atom } from 'jotai';
 import { apiRequest, getEnvironmentInfo } from '../config/api.js';
-import { alignTimeshareToTradingAxis, buildTradingTimeAxis, sliceL2DataByTime } from '../pages/StockDashboard/utils/l2Analysis.js';
+import {
+  alignTimeshareToTradingAxis,
+  buildTimeshareBaseInfo,
+  buildTradingTimeAxis,
+  isSameStockCode,
+  sliceL2DataByTime,
+} from '../pages/StockDashboard/utils/l2Analysis.js';
 // 股票代码原子
 const initCode =  new URLSearchParams(window.location.search).get('code') || '000001';
 export const stockCodeAtom = atom(initCode);
@@ -60,8 +66,11 @@ export const realtimeDataAtom = atom(null);
 // 过滤金额原子
 export const filterAmountAtom = atom(500000);
 
-// 加载状态原子
+// 加载状态原子（页面级，仅首次拉取分时等关键数据时使用）
 export const loadingAtom = atom(false);
+
+// 分时图专用加载态，避免与大单/基础信息请求共用 loadingAtom 导致图表闪烁
+export const timeshareLoadingAtom = atom(false);
 
 // 错误状态原子
 export const errorAtom = atom(null);
@@ -76,12 +85,11 @@ export const limitUpMonitorAtom = atom(null);
 export const fetchStockBasicAtom = atom(
   null,
   async (get, set, code) => {
-    set(loadingAtom, true);
     set(errorAtom, null);
-    
+
     try {
-      const today = new Date().toISOString().split('T')[0];
-      const data = await apiRequest(`/api/v1/base_info?code=${code}&dt=${today}`);
+      const dt = get(selectedDateAtom);
+      const data = await apiRequest(`/api/v1/base_info?code=${code}&dt=${dt}`);
       if (data.success === true && data.data) {
         // 转换竞品接口格式为前端期望格式
         const baseInfo = data.data;
@@ -114,8 +122,6 @@ export const fetchStockBasicAtom = atom(
       }
     } catch (error) {
       set(errorAtom, `获取股票数据失败: ${error.message}`);
-    } finally {
-      set(loadingAtom, false);
     }
   }
 );
@@ -307,10 +313,14 @@ export const fetchRealtimeDataAtom = atom(
  * 解析 L2 Dashboard 返回数据并更新 atoms
  * 供 HTTP 轮询和 WebSocket 推送共用
  */
-export const applyL2DashboardData = (set, data, cutoffTime, moneyFlow) => {
+export const applyL2DashboardData = (set, data, cutoffTime, moneyFlow, expectedCode) => {
   if (!data?.success || !data?.data) return false;
 
   const d = data.data;
+  const responseCode = d.stock_info?.code ?? expectedCode;
+  if (expectedCode && responseCode && !isSameStockCode(expectedCode, responseCode)) {
+    return false;
+  }
 
   // 1. 分时图
   const timeshare = d.timeshare || [];
@@ -348,12 +358,7 @@ export const applyL2DashboardData = (set, data, cutoffTime, moneyFlow) => {
     order_book: d.order_book || null,
     session_snapshot: d.session_snapshot ?? null,
     money_flow: slicedMoneyFlow,
-    base_info: {
-      prevClosePrice: d.stock_info?.yesterday_close ?? d.stock_info?.pre_close,
-      openPrice: d.stock_info?.open,
-      highPrice: d.stock_info?.high,
-      lowPrice: d.stock_info?.low,
-    },
+    base_info: buildTimeshareBaseInfo(d.stock_info, expectedCode),
   });
 
   // 2. 大单数据
@@ -386,8 +391,14 @@ export const applyL2DashboardData = (set, data, cutoffTime, moneyFlow) => {
     },
   });
 
-  // 3. 股票基础数据
-  set(stockBasicDataAtom, d.stock_info);
+  // 3. 股票基础数据（与分时同源，避免 header 走实时 base_info 接口）
+  if (d.stock_info) {
+    set(stockBasicDataAtom, {
+      ...d.stock_info,
+      current_price: d.stock_info.current_price ?? d.stock_info.price,
+      yesterday_close: d.stock_info.yesterday_close ?? d.stock_info.pre_close,
+    });
+  }
 
   // 4. 封单监控
   if (d.limit_up_monitor) {
@@ -409,24 +420,36 @@ export const fetchL2DashboardAtom = atom(
   null,
   async (get, set, params) => {
     const code = typeof params === 'string' ? params : params.code;
+    const requestedCode = code;
     const dt = typeof params === 'string' ? get(selectedDateAtom) : (params.dt || get(selectedDateAtom));
+    const isStale = () => !isSameStockCode(get(stockCodeAtom), requestedCode);
     const simulate = typeof params === 'object' && params.simulate;
     const simulateTime = typeof params === 'object' ? params.simulateTime : null;
-    set(loadingAtom, true);
+    const isInitialLoad = !get(timeshareDataAtom);
     set(errorAtom, null);
+    if (isInitialLoad) {
+      set(loadingAtom, true);
+      set(timeshareLoadingAtom, true);
+    }
 
     // 模拟回放 / 有 simulate_time 参数 → 仍走全量接口（前端切片用）
     if (simulate && simulateTime) {
       try {
         const query = new URLSearchParams({ code, dt, simulate: '1', simulate_time: simulateTime });
         const data = await apiRequest(`/api/v1/l2_dashboard?${query.toString()}`, { timeout: 45000 });
-        if (!applyL2DashboardData(set, data)) {
+        if (isStale()) return;
+        if (!applyL2DashboardData(set, data, null, null, requestedCode)) {
           set(errorAtom, data.message || '获取L2看板数据失败');
         }
       } catch (error) {
-        set(errorAtom, `获取L2看板数据失败: ${error.message}`);
+        if (!isStale()) {
+          set(errorAtom, `获取L2看板数据失败: ${error.message}`);
+        }
       } finally {
-        set(loadingAtom, false);
+        if (isInitialLoad && !isStale()) {
+          set(loadingAtom, false);
+          set(timeshareLoadingAtom, false);
+        }
       }
       return;
     }
@@ -440,40 +463,53 @@ export const fetchL2DashboardAtom = atom(
         apiRequest(`/api/v1/l2_money_flow?${query}`, { timeout: 30000 }).catch(() => null),
       ]);
 
+      if (isStale()) return;
+
       const timeshareOk = timeshareResp?.success && timeshareResp?.data;
 
       if (!timeshareOk) {
-        set(errorAtom, '分时数据获取失败，请检查网络');
+        if (!isStale()) {
+          set(errorAtom, '分时数据获取失败，请检查网络');
+        }
         return;
       }
 
       const d = timeshareResp.data;
+      if (d.stock_info?.code && !isSameStockCode(requestedCode, d.stock_info.code)) {
+        return;
+      }
       const timeshare = d.timeshare || [];
       const moneyFlow = d.money_flow || (moneyFlowResp?.success ? moneyFlowResp.data : null);
       const aligned = alignTimeshareToTradingAxis(timeshare);
+      const ordersPayload = ordersResp?.success && ordersResp?.data ? ordersResp.data : null;
+
+      if (isStale()) return;
+
+      // 等分时/大单/资金流都返回后一次性写入，避免两次 set 触发 ECharts merge 把价格线冲掉
       set(timeshareDataAtom, {
         timeAxis: aligned.axis,
         fenshi: aligned.fenshi,
         volume: aligned.volume,
         zhuli: [],
         sanhu: [],
-        big_map: {},
+        big_map: ordersPayload?.big_map || {},
         order_book: timeshareResp.data.order_book || null,
         session_snapshot: timeshareResp.data.session_snapshot || null,
         money_flow: moneyFlow,
-        base_info: {
-          prevClosePrice: d.stock_info?.yesterday_close ?? d.stock_info?.pre_close,
-          openPrice: d.stock_info?.open,
-          highPrice: d.stock_info?.high,
-          lowPrice: d.stock_info?.low,
-        },
+        base_info: buildTimeshareBaseInfo(d.stock_info, requestedCode),
       });
-      set(stockBasicDataAtom, d.stock_info || null);
 
-      if (ordersResp?.success && ordersResp?.data) {
-        const od = ordersResp.data;
-        const orders = od.large_orders || od.orders || [];
-        const stats = od.statistics || {};
+      if (d.stock_info) {
+        set(stockBasicDataAtom, {
+          ...d.stock_info,
+          current_price: d.stock_info.current_price ?? d.stock_info.price,
+          yesterday_close: d.stock_info.yesterday_close ?? d.stock_info.pre_close,
+        });
+      }
+
+      if (ordersPayload) {
+        const orders = ordersPayload.large_orders || ordersPayload.orders || [];
+        const stats = ordersPayload.statistics || {};
         const buyCount = orders.filter(o => o.direction === '被买' || o.direction === '主买').length;
         const sellCount = orders.filter(o => o.direction === '被卖' || o.direction === '主卖').length;
         const neutralCount = orders.length - buyCount - sellCount;
@@ -481,24 +517,6 @@ export const fetchL2DashboardAtom = atom(
         const buyAmount = orders
           .filter(o => o.direction === '被买' || o.direction === '主买')
           .reduce((sum, o) => sum + (o.amount || 0), 0);
-
-        set(timeshareDataAtom, {
-          timeAxis: aligned.axis,
-          fenshi: aligned.fenshi,
-          volume: aligned.volume,
-          zhuli: [],
-          sanhu: [],
-          big_map: od.big_map || {},
-          order_book: timeshareResp.data.order_book || null,
-          session_snapshot: timeshareResp.data.session_snapshot || null,
-          money_flow: moneyFlow,
-          base_info: {
-            prevClosePrice: d.stock_info?.yesterday_close ?? d.stock_info?.pre_close,
-            openPrice: d.stock_info?.open,
-            highPrice: d.stock_info?.high,
-            lowPrice: d.stock_info?.low,
-          },
-        });
 
         set(largeOrdersDataAtom, {
           summary: {
@@ -527,9 +545,14 @@ export const fetchL2DashboardAtom = atom(
         });
       }
     } catch (error) {
-      set(errorAtom, `获取L2看板数据失败: ${error.message}`);
+      if (!isStale()) {
+        set(errorAtom, `获取L2看板数据失败: ${error.message}`);
+      }
     } finally {
-      set(loadingAtom, false);
+      if (isInitialLoad && !isStale()) {
+        set(loadingAtom, false);
+        set(timeshareLoadingAtom, false);
+      }
     }
   }
 );
@@ -567,7 +590,8 @@ export const environmentInfoAtom = atom(getEnvironmentInfo());
 export const applySimulatedDataAtom = atom(
   null,
   (get, set, { fullData, cutoffTime, moneyFlow }) => {
+    const expectedCode = get(stockCodeAtom);
     const sliced = sliceL2DataByTime(fullData, cutoffTime);
-    if (sliced) applyL2DashboardData(set, sliced, cutoffTime, moneyFlow);
+    if (sliced) applyL2DashboardData(set, sliced, cutoffTime, moneyFlow, expectedCode);
   }
 ); 

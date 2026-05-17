@@ -1,0 +1,72 @@
+frontend/src/pages/AiDiagnosis/index.css
+  s_4474ea77e30fbd::t_25bc25cb688570 67-81,86,88,92-95,99-101,107-108,110-115
+  s_4474ea77e30fbd::t_61085d516f23c4 148-149,151
+  s_4474ea77e30fbd::t_996b965f5fe0aa 204,210,212-215,219
+  s_4474ea77e30fbd::t_4e3db5bb7e158e 119,121-127,131,133-134
+  s_4474ea77e30fbd::t_7a54cab0f82d5b 203,205-209,211,216-218,220-240,242,244,249-251,254-326,328-372,374-409,412-419,421-442
+  s_4474ea77e30fbd::t_437ed518155a5f 47-48,52-53
+  s_4474ea77e30fbd::t_1851d3cf953a0e 241,243,245-248,252-253
+frontend/src/pages/LimitUpEchelon/index.js
+  s_842524b43b6d68::t_140a06a700ed2a 267
+  s_842524b43b6d68::t_8cb825a6d92d14 275
+  s_842524b43b6d68::t_83a92889760574 257-258
+  s_842524b43b6d68::t_f791ae746e15a3 80-89,93
+frontend/src/pages/AiDiagnosis/index.js
+  s_4474ea77e30fbd::t_419fbc29946576 58-65,67-111,116,130-132,134-139,141-142,144-145,147,149,287,292,299-304,309-334,344-347,349,354-355,358-360,364,366-372,374-379,384,392,415,450,457,461,467-497
+  s_4474ea77e30fbd::t_42450ee939edcf 388-391
+  s_4474ea77e30fbd::t_10c40eb3ec71c9 21-24
+  s_4474ea77e30fbd::t_f2ee14d77380ec 2,9-14,25-28,31-38,44,50-57,66,117-125,129,140,143,151-170,172-189,191-193,200-201,204,206-213,215-219,222-229,231-235,237-241,243,245-248,250-251,253,255-259,262-263,267-268,273-274,280,335-343,348,350-353,356-357,363,365,381-383,385-387,393-394,421-424,439-441,515
+  s_4474ea77e30fbd::t_3ee0de6226de08 114-115,146,148,150,171,190,205,230,236,242,244,249,260-261
+  s_4474ea77e30fbd::t_fde18dd1729faf 254
+  s_4474ea77e30fbd::t_1da1117bc362f6 3
+  s_4474ea77e30fbd::t_1fc96dbd29d413 291
+  s_4474ea77e30fbd::t_65b183f94f226d 252
+frontend/src/pages/StockDashboard/components/StockBasicInfo.js
+  s_4474ea77e30fbd::t_acd13b24c08681 122-132
+  s_4474ea77e30fbd::t_216ccfd8c429da 4-5
+  s_4474ea77e30fbd::t_86a5a7b6d0dd57 17
+frontend/src/pages/StockDashboard/index.js
+  s_db55095f9c371d::t_e93294c04bf9c8 4
+  s_db55095f9c371d::t_57bb100d3da9fd 428-429,432,436-438
+  s_db55095f9c371d::t_189fe6b350dae3 431
+  s_db55095f9c371d::t_f4454c9cdd2e8a 27-28,32-39
+  s_db55095f9c371d::t_3736ecfde3c584 71-84,92,95-122
+  s_db55095f9c371d::t_5f641b757e6ce3 164
+  s_db55095f9c371d::t_f0e054999729e1 430
+  s_db55095f9c371d::t_2a97f6c2b8c5ab 433-435
+frontend/src/index.css
+  s_4474ea77e30fbd::t_4065344926151a 1759-1782
+  s_db55095f9c371d::t_59db82ac915508 1347-1366
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "bf7c61563fde298f263e605c5ae19898b4c03f03",
+  "prompts": {},
+  "sessions": {
+    "s_4474ea77e30fbd": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "8892c023-705b-4c8c-9ba5-a5fc14650f98",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_842524b43b6d68": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "bdc3a7bd-048b-4375-bb37-0318b588e186",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_db55095f9c371d": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "6c32cd53-96a8-4b59-906a-d6b6c6e30c6b",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

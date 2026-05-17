@@ -38,6 +38,17 @@ function stripMarkdown(text) {
     .trim();
 }
 
+function formatAmount(val) {
+  if (val == null || val === '') return '—';
+  const n = Number(val);
+  if (Number.isNaN(n)) return String(val);
+  const sign = n < 0 ? '-' : '';
+  const abs = Math.abs(n);
+  if (abs >= 1e8) return `${sign}${(abs / 1e8).toFixed(2)}亿`;
+  if (abs >= 1e4) return `${sign}${(abs / 1e4).toFixed(2)}万`;
+  return `${sign}${abs.toFixed(2)}`;
+}
+
 function SnapshotPanel({ snapshot }) {
   if (!snapshot) return null;
   const q = snapshot.quote || {};
@@ -82,7 +93,7 @@ function SnapshotPanel({ snapshot }) {
     {
       key: 'flow',
       label: '资金',
-      value: `大单净 ${mainNet != null ? mainNet : '—'} · ${sealLabel}`,
+      value: `大单净 ${mainNet != null ? formatAmount(mainNet) : '—'} · ${sealLabel}`,
     },
     ts.available && {
       key: 'ts',
@@ -104,8 +115,8 @@ function SnapshotPanel({ snapshot }) {
     dt.on_list && {
       key: 'dt',
       label: '龙虎',
-      value: `${dt.date} 净买${dt.net_buy ?? '—'}`,
-      sub: (dt.reason || '').slice(0, 28),
+      value: `${dt.date} 净买 ${formatAmount(dt.net_buy)}`,
+      sub: (dt.reason || '').slice(0, 56),
       dt: true,
     },
   ].filter(Boolean);
@@ -450,18 +461,20 @@ function AiDiagnosis() {
           onPressEnter={() => runDiagnosis(code, false)}
           maxLength={12}
         />
-        <Button
-          type="primary"
-          icon={<ThunderboltOutlined />}
-          loading={loading}
-          onClick={() => runDiagnosis(code, false)}
-        >
-          开始诊股
-        </Button>
-        <Button icon={<ReloadOutlined />} loading={loading} onClick={() => runDiagnosis(code, true)}>
-          强制刷新
-        </Button>
-        {cached && <Tag color="cyan">缓存</Tag>}
+        <div className="ai-toolbar-actions">
+          <Button
+            type="primary"
+            icon={<ThunderboltOutlined />}
+            loading={loading}
+            onClick={() => runDiagnosis(code, false)}
+          >
+            开始诊股
+          </Button>
+          <Button icon={<ReloadOutlined />} loading={loading} onClick={() => runDiagnosis(code, true)}>
+            强制刷新
+          </Button>
+          {cached && <Tag color="cyan" className="ai-cache-tag">缓存</Tag>}
+        </div>
       </div>
 
       {error && (

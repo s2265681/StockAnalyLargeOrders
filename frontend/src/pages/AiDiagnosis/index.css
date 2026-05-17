@@ -37,6 +37,17 @@
   margin-bottom: 20px;
 }
 
+.ai-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.ai-cache-tag {
+  margin: 0 !important;
+}
+
 .ai-code-input {
   width: 200px;
   max-width: 100%;
@@ -130,8 +141,9 @@
 .ai-snap-card .value {
   font-size: 12px;
   color: var(--text-primary);
-  line-height: 1.4;
+  line-height: 1.45;
   font-weight: 500;
+  word-break: break-word;
 }
 
 .ai-snap-card .value em.up {
@@ -242,10 +254,8 @@
   color: var(--text-muted);
   margin-top: 2px;
   font-weight: normal;
-  line-height: 1.35;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.4;
+  word-break: break-word;
 }
 
 .ai-snap-card--highlight {
@@ -295,8 +305,13 @@
   background: var(--bg-secondary);
   border-radius: 8px;
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.55;
   color: var(--text-primary);
+  word-break: break-word;
+}
+
+.ai-pill > span:last-child {
+  display: block;
 }
 
 .ai-pill-label {
@@ -316,29 +331,168 @@
 
 @media (max-width: 768px) {
   .ai-diagnosis-page {
-    padding: 12px 12px 32px;
+    padding: 10px 12px 28px;
     min-height: calc(100vh - 56px);
+  }
+
+  .ai-page-header {
+    margin-bottom: 14px;
   }
 
   .ai-page-title {
     font-size: 18px;
   }
 
+  .ai-page-desc {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
   .ai-toolbar {
     flex-direction: column;
     align-items: stretch;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .ai-toolbar-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .ai-toolbar-actions .ai-cache-tag {
+    grid-column: 1 / -1;
+    justify-self: start;
   }
 
   .ai-code-input {
     width: 100%;
   }
 
+  .ai-snapshot-panel,
+  .ai-report-panel,
+  .ai-chat-section {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .ai-snap-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .ai-snap-head .ai-snap-price {
+    margin-left: 0;
+    width: 100%;
+    padding-top: 4px;
+    border-top: 1px dashed var(--border-secondary);
+  }
+
   .ai-snapshot-grid {
     grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .ai-snap-card--tall {
+    grid-column: auto;
+  }
+
+  .ai-snap-card .value {
+    font-size: 13px;
+  }
+
+  .ai-snap-sub {
+    font-size: 12px;
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .ai-report-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .ai-rating-badge {
+    font-size: 14px;
+    padding: 5px 14px;
+  }
+
+  .ai-report-summary {
+    font-size: 14px;
+    line-height: 1.65;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+  }
+
+  .ai-report-pills {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .ai-pill {
+    padding: 10px;
+    font-size: 13px;
+  }
+
+  .ai-report-trade-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .ai-stop-box {
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+    padding: 10px 12px;
+  }
+
+  .ai-risks {
+    gap: 4px;
+  }
+
+  .ai-risk-tag {
+    max-width: 100%;
+    white-space: normal;
+    height: auto;
+    line-height: 1.4;
+    padding: 2px 8px;
   }
 
   .ai-sections {
     grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 12px;
+    padding-top: 12px;
+  }
+
+  .ai-section-card {
+    padding: 12px;
+  }
+
+  .ai-section-body {
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .ai-chat-section {
+    margin-top: 16px;
+  }
+
+  .ai-chat-messages {
+    max-height: 240px;
+  }
+
+  .ai-chat-bubble {
+    max-width: 92%;
+    font-size: 14px;
   }
 
   .ai-chat-input-row {
@@ -351,9 +505,25 @@
   }
 }
 
-@media (max-width: 640px) {
-  .ai-report-trade-grid {
+@media (max-width: 480px) {
+  .ai-diagnosis-page {
+    padding: 8px 10px 24px;
+  }
+
+  .ai-page-desc {
+    display: none;
+  }
+
+  .ai-toolbar-actions {
     grid-template-columns: 1fr;
+  }
+
+  .ai-toolbar-actions .ant-btn {
+    width: 100%;
+  }
+
+  .ai-main-grid {
+    gap: 10px;
   }
 }
 

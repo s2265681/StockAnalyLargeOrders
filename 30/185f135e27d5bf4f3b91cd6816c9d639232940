@@ -1,0 +1,33 @@
+frontend/src/store/atoms.js
+  s_ed82de5358c479::t_74e57212b20205 465,471
+  s_ed82de5358c479::t_efbcbf320570fa 496
+  s_ed82de5358c479::t_6e7ffac40a47de 352-355
+frontend/src/pages/StockDashboard/index.js
+  s_ed82de5358c479::t_7fb7333ea9f3bf 324,330-332
+  s_ed82de5358c479::t_40e7b881030b16 362
+frontend/src/pages/StockDashboard/components/StockChart.test.js
+  s_ed82de5358c479::t_b28ecbd47b8f8b 28
+  s_ed82de5358c479::t_6cc1d4b24ae175 32-37
+frontend/src/pages/StockDashboard/components/StockChart.js
+  s_ed82de5358c479::t_f0972460198afa 58-76
+  s_ed82de5358c479::t_37a602a50f1e57 407,411-413,419
+  s_ed82de5358c479::t_91ac5c23352c78 257-265
+  s_ed82de5358c479::t_5e1c9830a710f2 454-457
+  s_ed82de5358c479::t_b7b28bbcfec1e2 94
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "30185f135e27d5bf4f3b91cd6816c9d639232940",
+  "prompts": {},
+  "sessions": {
+    "s_ed82de5358c479": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "6beccaaa-4b8f-45dd-a1bd-8f9595208778",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

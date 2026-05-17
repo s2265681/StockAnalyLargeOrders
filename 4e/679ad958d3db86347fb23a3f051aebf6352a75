@@ -1,0 +1,21 @@
+frontend/src/index.css
+  s_acc2e4c6f72930::t_803a4512b47faa 1733-1736,1743-1764
+frontend/src/pages/StockDashboard/components/StockBasicInfo.js
+  s_acc2e4c6f72930::t_f639156dec6f67 112-119
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "4e679ad958d3db86347fb23a3f051aebf6352a75",
+  "prompts": {},
+  "sessions": {
+    "s_acc2e4c6f72930": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7719717f-7793-4aff-87b8-5b2442ed6232",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

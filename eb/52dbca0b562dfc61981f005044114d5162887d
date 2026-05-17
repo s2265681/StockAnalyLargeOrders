@@ -1,0 +1,20 @@
+backend/utils/job_notify.py
+  s_c67054ad2bb85e::t_7c78b05d1a1cac 65
+  s_c67054ad2bb85e::t_c4a698cb99baa0 15-41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "eb52dbca0b562dfc61981f005044114d5162887d",
+  "prompts": {},
+  "sessions": {
+    "s_c67054ad2bb85e": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "5558c5bb-d128-46e7-a8ae-cf05402d174d",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

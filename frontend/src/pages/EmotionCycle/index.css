@@ -7,17 +7,6 @@
   overflow: hidden;
 }
 
-.emotion-cycle-top-panel {
-  flex-shrink: 0;
-  max-height: 180px;
-  margin-bottom: 12px;
-}
-
-.emotion-cycle-top-panel .analysis-panel-block {
-  flex: none;
-  max-height: 180px;
-  overflow-y: auto;
-}
 
 .emotion-main-layout {
   display: flex;
@@ -42,6 +31,7 @@
   flex-direction: column;
   gap: 12px;
   min-height: 0;
+  overflow-y: auto;
 }
 
 .analysis-panel-block {
@@ -298,16 +288,6 @@
     height: auto;
     overflow: visible;
     padding: 10px;
-  }
-
-  .emotion-cycle-top-panel {
-    max-height: none;
-    margin-bottom: 10px;
-  }
-
-  .emotion-cycle-top-panel .analysis-panel-block {
-    max-height: none;
-    overflow-y: visible;
   }
 
   .emotion-date-nav {

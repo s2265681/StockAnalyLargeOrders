@@ -1,9 +1,39 @@
 /* frontend/src/pages/Login/index.css */
+.auth-page-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-primary);
+  z-index: 100;
+}
+
+.auth-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.auth-logo-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--color-accent);
+  letter-spacing: 0.5px;
+}
+
 .login-container {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
+  padding-top: 52px;
   background: var(--bg-primary);
 }
 

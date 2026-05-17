@@ -92,11 +92,14 @@ const getLatestRecordDate = (items) => {
   return sortedDates[sortedDates.length - 1] || null;
 };
 
-function AnalysisBlock({ title, accent, result, loading, emptyHint }) {
+function AnalysisBlock({ title, accent, result, loading, emptyHint, extra }) {
   if (loading && !result) {
     return (
       <div className={`analysis-panel-block analysis-panel-${accent}`}>
-        <div className="analysis-panel-title">{title}</div>
+        <div className="analysis-panel-title">
+          <span>{title}</span>
+          {extra && <span className="analysis-panel-extra">{extra}</span>}
+        </div>
         <div className="loading-container" style={{ padding: '24px 0' }}>
           <Spin tip="加载中..." />
         </div>
@@ -107,7 +110,10 @@ function AnalysisBlock({ title, accent, result, loading, emptyHint }) {
   if (!result) {
     return (
       <div className={`analysis-panel-block analysis-panel-${accent}`}>
-        <div className="analysis-panel-title">{title}</div>
+        <div className="analysis-panel-title">
+          <span>{title}</span>
+          {extra && <span className="analysis-panel-extra">{extra}</span>}
+        </div>
         <div className="analysis-empty compact">{emptyHint}</div>
       </div>
     );
@@ -121,10 +127,13 @@ function AnalysisBlock({ title, accent, result, loading, emptyHint }) {
   return (
     <div className={`analysis-panel-block analysis-panel-${accent}`}>
       <div className="analysis-panel-title">
-        {title}
-        {updatedAt && (
-          <span className="analysis-updated-at">更新 {String(updatedAt).slice(0, 16)}</span>
-        )}
+        <span>{title}</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {updatedAt && (
+            <span className="analysis-updated-at">更新 {String(updatedAt).slice(0, 16)}</span>
+          )}
+          {extra && <span className="analysis-panel-extra">{extra}</span>}
+        </span>
       </div>
       <div className="analysis-content">
         <Tag
@@ -381,16 +390,8 @@ function EmotionCycle() {
         >
           后一天 <RightOutlined />
         </button>
-        <button
-          type="button"
-          className="date-nav-btn date-nav-today"
-          onClick={() => setSelectedDate(todayStr)}
-        >
-          今天
-        </button>
-
-        <div className="date-nav-ai-btns">
-          {isAdmin && (
+        {isAdmin && (
+          <div className="date-nav-ai-btns">
             <Button
               type="primary"
               icon={<ThunderboltOutlined />}
@@ -401,18 +402,8 @@ function EmotionCycle() {
             >
               全量生成
             </Button>
-          )}
-          <Button
-            type={isAdmin ? 'default' : 'primary'}
-            icon={<ReloadOutlined />}
-            onClick={handleIntradayRefresh}
-            loading={intradayLoading}
-            disabled={records.length === 0 || !isTodaySelected}
-            className="ai-refresh-btn"
-          >
-            盘中刷新
-          </Button>
-        </div>
+          </div>
+        )}
       </div>
 
       <div className="emotion-main-layout">
@@ -425,7 +416,7 @@ function EmotionCycle() {
             <ReactEChartsCore
               echarts={echarts}
               option={getChartOption()}
-              style={{ height: 'calc(100vh - 160px)', minHeight: 400 }}
+              style={{ height: '100%', minHeight: 300 }}
               notMerge
               lazyUpdate
               theme="dark"
@@ -450,6 +441,20 @@ function EmotionCycle() {
               isTodaySelected
                 ? '点击「盘中刷新」生成当日研判'
                 : '仅支持查看/刷新当日盘中研判'
+            }
+            extra={
+              isTodaySelected && (
+                <Button
+                  size="small"
+                  icon={<ReloadOutlined />}
+                  onClick={handleIntradayRefresh}
+                  loading={intradayLoading}
+                  disabled={records.length === 0}
+                  className="ai-refresh-btn"
+                >
+                  刷新
+                </Button>
+              )
             }
           />
         </div>

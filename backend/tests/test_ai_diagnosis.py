@@ -110,6 +110,89 @@ class AiDiagnosisServiceTest(unittest.TestCase):
         self.assertEqual(items[0]["price"], "10.50元")
         self.assertEqual(items[1]["reason"], "突破前高")
 
+    @patch("services.ai_diagnosis_service.get_valid_trading_date")
+    @patch("services.ai_diagnosis_service.get_next_trading_date")
+    def test_session_date_before_open(self, next_mock, valid_mock):
+        from datetime import datetime
+
+        from services.ai_diagnosis_service import get_diagnosis_session_date
+
+        valid_mock.return_value = "2026-05-18"
+        next_mock.return_value = {"date": "2026-05-15"}
+        now = datetime(2026, 5, 18, 8, 0, 0)
+        self.assertEqual(get_diagnosis_session_date(now), "20260515")
+
+    @patch("services.ai_diagnosis_service.get_valid_trading_date")
+    def test_session_date_after_open(self, valid_mock):
+        from datetime import datetime
+
+        from services.ai_diagnosis_service import get_diagnosis_session_date
+
+        valid_mock.return_value = "2026-05-18"
+        now = datetime(2026, 5, 18, 10, 0, 0)
+        self.assertEqual(get_diagnosis_session_date(now), "20260518")
+
+    @patch("services.ai_diagnosis_service.get_valid_trading_date")
+    def test_session_date_weekend(self, valid_mock):
+        from datetime import datetime
+
+        from services.ai_diagnosis_service import get_diagnosis_session_date
+
+        valid_mock.return_value = "2026-05-15"
+        now = datetime(2026, 5, 16, 10, 0, 0)
+        self.assertEqual(get_diagnosis_session_date(now), "20260515")
+
+    @patch("services.ai_diagnosis_service.save_cache")
+    @patch("services.ai_diagnosis_service.build_snapshot")
+    @patch("services.ai_diagnosis_service._call_claude")
+    @patch("services.ai_diagnosis_service._parse_report_json")
+    @patch("services.ai_diagnosis_service.get_diagnosis_session_date")
+    @patch("services.ai_diagnosis_service.get_cache")
+    @patch("services.ai_diagnosis_service.purge_stale_cache")
+    def test_run_diagnosis_purges_stale_on_new_session(
+        self,
+        purge_mock,
+        cache_mock,
+        session_mock,
+        parse_mock,
+        claude_mock,
+        snap_mock,
+        save_mock,
+    ):
+        from services.ai_diagnosis_service import run_diagnosis
+
+        session_mock.return_value = "20260518"
+        cache_mock.return_value = None
+        snap_mock.return_value = {"code": "000001", "date": "20260518"}
+        claude_mock.return_value = '{"rating":"中性","summary":"新"}'
+        parse_mock.return_value = {"rating": "中性", "summary": "新", "buy_points": [], "sell_points": []}
+
+        run_diagnosis("000001")
+
+        purge_mock.assert_called_once_with("000001", "20260518")
+        save_mock.assert_called_once()
+
+    @patch("services.ai_diagnosis_service.get_diagnosis_session_date")
+    @patch("services.ai_diagnosis_service.get_cache")
+    @patch("services.ai_diagnosis_service.purge_stale_cache")
+    @patch("services.ai_diagnosis_service.build_snapshot")
+    def test_run_diagnosis_cache_hit_skips_purge(
+        self, snap_mock, purge_mock, cache_mock, session_mock
+    ):
+        from services.ai_diagnosis_service import run_diagnosis
+
+        session_mock.return_value = "20260518"
+        cache_mock.return_value = {
+            "snapshot": {"code": "000001"},
+            "report": {"rating": "中性", "summary": "缓存"},
+        }
+
+        result = run_diagnosis("000001")
+
+        self.assertTrue(result["cached"])
+        purge_mock.assert_not_called()
+        snap_mock.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

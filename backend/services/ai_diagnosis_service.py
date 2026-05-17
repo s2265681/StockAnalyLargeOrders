@@ -8,13 +8,13 @@ import re
 import subprocess
 import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from services.data_source_adapter import DataSourceAdapter
 from services.dragon_tiger_service import get_ai_analysis, get_daily_stocks
 from services.theme_service import get_limit_up_stocks_by_date, get_tags_by_date
 from services.ths_moneyflow import get_moneyflow
-from utils.date_utils import get_recent_trading_dates
+from utils.date_utils import get_next_trading_date, get_recent_trading_dates, get_valid_trading_date
 from utils.db import execute_query, execute_write
 
 logger = logging.getLogger(__name__)
@@ -49,14 +49,51 @@ def _init_cache_table():
 _init_cache_table()
 
 
+def _is_after_market_open(now: datetime) -> bool:
+    """当日 9:30 及之后视为新交易日会话（含午休、收盘后）。"""
+    if now.weekday() >= 5:
+        return False
+    return now.hour * 60 + now.minute >= 9 * 60 + 30
+
+
+def get_diagnosis_session_date(now: datetime | None = None) -> str:
+    """
+    诊股缓存所属交易日（YYYYMMDD）。
+    - 盘中/收盘后：当日
+    - 次日 9:30 前：上一交易日（沿用上日缓存）
+    - 周末/节假日：最近一个交易日
+    """
+    now = now or datetime.now()
+    valid = get_valid_trading_date(now)
+    valid_compact = valid.replace("-", "")
+    calendar_today = now.strftime("%Y-%m-%d")
+
+    if calendar_today != valid:
+        return valid_compact
+
+    if _is_after_market_open(now):
+        return valid_compact
+
+    prev = get_next_trading_date(valid, forward=False)
+    return prev["date"].replace("-", "")
+
+
 def get_trading_date_str() -> str:
-    d = datetime.now()
-    dow = d.weekday()
-    if dow == 5:
-        d -= timedelta(days=1)
-    elif dow == 6:
-        d -= timedelta(days=2)
-    return d.strftime("%Y%m%d")
+    """兼容旧调用，等同 get_diagnosis_session_date。"""
+    return get_diagnosis_session_date()
+
+
+def purge_stale_cache(code: str, session_date: str) -> None:
+    """清除该股票非当前会话日的诊股缓存。"""
+    code = normalize_code(code)
+    dt = session_date.replace("-", "")
+    try:
+        execute_write(
+            "DELETE FROM ai_diagnosis_cache WHERE code=%s AND date<>%s",
+            (code, dt),
+        )
+    except Exception as e:
+        logger.warning(f"清理诊股旧缓存失败 code={code}: {e}")
 
 
 def normalize_code(code: str) -> str:
@@ -761,7 +798,7 @@ JSON 结构（字段名必须一致）：
 
 def run_diagnosis(code: str, force_refresh: bool = False) -> dict:
     code = normalize_code(code)
-    trade_date = get_trading_date_str()
+    trade_date = get_diagnosis_session_date()
 
     if not force_refresh:
         cached = get_cache(trade_date, code)
@@ -773,6 +810,8 @@ def run_diagnosis(code: str, force_refresh: bool = False) -> dict:
                 "report": cached["report"],
                 "cached": True,
             }
+
+    purge_stale_cache(code, trade_date)
 
     snapshot = build_snapshot(code, trade_date)
     prompt = _build_diagnosis_prompt(snapshot)

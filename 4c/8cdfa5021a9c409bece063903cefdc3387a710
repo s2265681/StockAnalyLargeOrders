@@ -1,0 +1,31 @@
+frontend/public/index.html
+  s_003ed3b0245347::t_350aabbb37c4f8 8-9
+backend/tests/test_env.py
+  s_003ed3b0245347::t_c80f6d58b96244 29-39
+frontend/public/landing.html
+  s_003ed3b0245347::t_731cc332a2b2dd 7-8
+backend/utils/db.py
+  s_003ed3b0245347::t_93a0e396e74c98 8,15-19
+frontend/public/favicon.svg
+  s_003ed3b0245347::t_e8702817b6ba46 1-8
+backend/utils/env.py
+  s_003ed3b0245347::t_87be6aebcb3193 48-50,53-60
+backend/.env.example
+  s_003ed3b0245347::t_48b98d7b9064f9 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "4c8cdfa5021a9c409bece063903cefdc3387a710",
+  "prompts": {},
+  "sessions": {
+    "s_003ed3b0245347": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "e0fe8d64-bd87-4d21-b9d9-5e8dc636e863",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

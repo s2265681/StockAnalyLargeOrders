@@ -1,0 +1,23 @@
+frontend/src/index.css
+  s_acc2e4c6f72930::t_c23655899d33e3 2673,2690-2695,2730-2815
+  s_acc2e4c6f72930::t_e62a63e8224b97 2689,2696-2729,2816
+  s_acc2e4c6f72930::t_1932670e230a83 2817-2846
+frontend/src/App.js
+  s_acc2e4c6f72930::t_8735bacbfa8b58 102
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "fe17be252c52ab3b46b57b49b131ea24954cf0e2",
+  "prompts": {},
+  "sessions": {
+    "s_acc2e4c6f72930": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7719717f-7793-4aff-87b8-5b2442ed6232",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

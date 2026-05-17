@@ -1,0 +1,31 @@
+frontend/src/pages/EmotionCycle/index.css
+  s_acc2e4c6f72930::t_97398f4d02279b 294-346
+  s_dd1282fd4f0a01::t_ce08abb538c074 10-21
+  s_dd1282fd4f0a01::t_94ab41c7faf3ba 83-87
+frontend/src/index.css
+  s_acc2e4c6f72930::t_6bad219fe0257c 2886
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "b14c1f39e1729adba30534023472653667bdf183",
+  "prompts": {},
+  "sessions": {
+    "s_acc2e4c6f72930": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7719717f-7793-4aff-87b8-5b2442ed6232",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_dd1282fd4f0a01": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "85ce98f9-2dda-4285-8585-3a4e7ad28f70",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

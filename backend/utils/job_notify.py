@@ -12,6 +12,33 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 DEFAULT_ALERT_EMAIL = "s2265681@163.com"
+_ENV_LOADED = False
+
+
+def _load_backend_env() -> None:
+    """加载 backend/.env（手动执行 notify 脚本时与 cron 的 source .env 一致）。"""
+    global _ENV_LOADED
+    if _ENV_LOADED:
+        return
+    backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    env_path = os.path.join(backend_dir, ".env")
+    if not os.path.isfile(env_path):
+        _ENV_LOADED = True
+        return
+    try:
+        with open(env_path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, _, value = line.partition("=")
+                key = key.strip()
+                value = value.strip().strip('"').strip("'")
+                if key and key not in os.environ:
+                    os.environ[key] = value
+    except OSError as e:
+        logger.warning("读取 .env 失败: %s", e)
+    _ENV_LOADED = True
 
 
 def _smtp_config() -> dict | None:
@@ -35,6 +62,7 @@ def _smtp_config() -> dict | None:
 
 
 def notify_on_success_enabled() -> bool:
+    _load_backend_env()
     return os.getenv("JOB_NOTIFY_ON_SUCCESS", "1").lower() in ("1", "true", "yes")
 
 

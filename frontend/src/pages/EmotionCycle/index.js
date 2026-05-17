@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button, Spin, Tag } from 'antd';
 import { ThunderboltOutlined, LeftOutlined, RightOutlined, ReloadOutlined } from '@ant-design/icons';
 import ReactEChartsCore from 'echarts-for-react/lib/core';
@@ -14,6 +14,7 @@ import {
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import { apiRequest } from '../../config/api';
+import { useAuth } from '../../context/AuthContext';
 import './index.css';
 
 
@@ -53,21 +54,19 @@ const seriesConfig = [
   { key: 'limit_down_count', name: '跌停家数', color: '#40a9ff', yAxisIndex: 0 },
 ];
 
-// 获取最近交易日（周末自动退到周五）
 const getLastTradingDayStr = () => {
   const d = new Date();
   const dow = d.getDay();
-  if (dow === 6) d.setDate(d.getDate() - 1); // 周六 -> 周五
-  if (dow === 0) d.setDate(d.getDate() - 2); // 周日 -> 周五
+  if (dow === 6) d.setDate(d.getDate() - 1);
+  if (dow === 0) d.setDate(d.getDate() - 2);
   return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
 };
 
-// 日期偏移（跳过周末）
 const offsetDate = (dateStr, delta) => {
   const d = new Date(
-    parseInt(dateStr.slice(0, 4)),
-    parseInt(dateStr.slice(4, 6)) - 1,
-    parseInt(dateStr.slice(6, 8))
+    parseInt(dateStr.slice(0, 4), 10),
+    parseInt(dateStr.slice(4, 6), 10) - 1,
+    parseInt(dateStr.slice(6, 8), 10)
   );
   let count = 0;
   const step = delta > 0 ? 1 : -1;
@@ -79,7 +78,6 @@ const offsetDate = (dateStr, delta) => {
   return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
 };
 
-// 格式化日期显示（YYYYMMDD -> YYYY-MM-DD）
 const formatDateDisplay = (dateStr) => {
   if (!dateStr || dateStr.length !== 8) return dateStr;
   return `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
@@ -94,15 +92,99 @@ const getLatestRecordDate = (items) => {
   return sortedDates[sortedDates.length - 1] || null;
 };
 
+function AnalysisBlock({ title, accent, result, loading, emptyHint }) {
+  if (loading && !result) {
+    return (
+      <div className={`analysis-panel-block analysis-panel-${accent}`}>
+        <div className="analysis-panel-title">{title}</div>
+        <div className="loading-container" style={{ padding: '24px 0' }}>
+          <Spin tip="加载中..." />
+        </div>
+      </div>
+    );
+  }
+
+  if (!result) {
+    return (
+      <div className={`analysis-panel-block analysis-panel-${accent}`}>
+        <div className="analysis-panel-title">{title}</div>
+        <div className="analysis-empty compact">{emptyHint}</div>
+      </div>
+    );
+  }
+
+  const { stage, analysis, advice, recommendations, updated_at: updatedAt } = result;
+  const stageColor = stageColorMap[stage]
+    || Object.entries(stageColorMap).find(([k]) => stage?.includes(k))?.[1]
+    || '#1890ff';
+
+  return (
+    <div className={`analysis-panel-block analysis-panel-${accent}`}>
+      <div className="analysis-panel-title">
+        {title}
+        {updatedAt && (
+          <span className="analysis-updated-at">更新 {String(updatedAt).slice(0, 16)}</span>
+        )}
+      </div>
+      <div className="analysis-content">
+        <Tag
+          color={stageColor}
+          style={{ fontSize: 14, padding: '2px 12px', marginBottom: 10, fontWeight: 'bold' }}
+        >
+          {stage}
+        </Tag>
+
+        {analysis && (
+          <div style={{ marginBottom: 10 }}>
+            <div className="analysis-section-title">分析</div>
+            <div className="analysis-text">{analysis}</div>
+          </div>
+        )}
+
+        {advice && (
+          <div style={{ marginBottom: 10 }}>
+            <div className="analysis-section-title">建议</div>
+            <div className="advice-text">{advice}</div>
+          </div>
+        )}
+
+        {recommendations && recommendations.length > 0 && (
+          <div>
+            <div className="analysis-section-title">备选标的</div>
+            <div className="recommendations-list">
+              {recommendations.map((rec, idx) => (
+                <div key={idx} className="recommendation-item">
+                  <div className="rec-header">
+                    <span className="rec-stock">{rec.stock}</span>
+                    {rec.position && <Tag color="blue" style={{ fontSize: 11 }}>{rec.position}</Tag>}
+                  </div>
+                  <div className="rec-reason">{rec.reason}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function EmotionCycle() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+  const todayStr = useMemo(() => getLastTradingDayStr(), []);
+
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [analysisLoading, setAnalysisLoading] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState(null);
-
-  // 新增：日期选择 state
+  const [batchLoading, setBatchLoading] = useState(false);
+  const [intradayLoading, setIntradayLoading] = useState(false);
+  const [cycleAnalysis, setCycleAnalysis] = useState(null);
+  const [intradayAnalysis, setIntradayAnalysis] = useState(null);
   const [selectedDate, setSelectedDate] = useState(() => getLastTradingDayStr());
+
   const minDate = records.length > 0 ? records[0].date.replace(/-/g, '') : '20000101';
+  const latestDate = getLatestRecordDate(records);
+  const isTodaySelected = selectedDate === todayStr && selectedDate === latestDate;
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -122,79 +204,64 @@ function EmotionCycle() {
     fetchData();
   }, [fetchData]);
 
-  // 切换日期时自动加载已有的分析结果
   useEffect(() => {
-    const loadCachedAnalysis = async () => {
-      setAnalysisResult(null);
+    const loadCycleCache = async () => {
+      setCycleAnalysis(null);
       try {
         const res = await apiRequest(`/api/v1/emotion-analysis-cache?date=${selectedDate}`);
-        if (res?.data) {
-          setAnalysisResult(res.data);
-        }
-      } catch (err) {
-        // 无缓存，忽略
-      }
+        if (res?.data) setCycleAnalysis(res.data);
+      } catch (_) { /* ignore */ }
     };
-    if (records.length > 0) {
-      loadCachedAnalysis();
-    }
+    if (records.length > 0) loadCycleCache();
   }, [selectedDate, records.length]);
 
-  // 全量分析：把所有数据传给AI，为每天生成分析，批量存库
-  // force: false=只分析新日期, 'all'=全部重刷
-  const handleAnalysis = async (force = false) => {
-    if (records.length === 0) return;
+  useEffect(() => {
+    const loadIntradayCache = async () => {
+      setIntradayAnalysis(null);
+      if (!isTodaySelected) return;
+      try {
+        const res = await apiRequest(`/api/v1/emotion-intraday-cache?date=${selectedDate}`);
+        if (res?.data) setIntradayAnalysis(res.data);
+      } catch (_) { /* ignore */ }
+    };
+    if (records.length > 0) loadIntradayCache();
+  }, [selectedDate, records.length, isTodaySelected]);
 
-    setAnalysisLoading(true);
-    setAnalysisResult(null);
+  const handleBatchAnalysis = async (force = false) => {
+    if (!isAdmin || records.length === 0) return;
+    setBatchLoading(true);
     try {
       let url = '/api/v1/emotion-analysis-with-storage';
       if (force) url += `?force=${force}`;
-      const res = await apiRequest(url, {
+      await apiRequest(url, {
         method: 'POST',
         body: JSON.stringify({ records }),
         timeout: 600000,
       });
-      if (res?.data) {
-        // 分析完成后，加载当前选中日期的缓存
-        try {
-          const cacheRes = await apiRequest(`/api/v1/emotion-analysis-cache?date=${selectedDate}`);
-          if (cacheRes?.data) {
-            setAnalysisResult(cacheRes.data);
-          }
-        } catch (_) { /* ignore */ }
-      }
+      const cacheRes = await apiRequest(`/api/v1/emotion-analysis-cache?date=${selectedDate}`);
+      if (cacheRes?.data) setCycleAnalysis(cacheRes.data);
     } catch (err) {
       console.error('Failed to batch analyze:', err);
     } finally {
-      setAnalysisLoading(false);
+      setBatchLoading(false);
     }
   };
 
-  const handleRefreshCurrent = async () => {
-    if (records.length === 0) return;
-
-    const latestDate = getLatestRecordDate(records);
-    setAnalysisLoading(true);
-    if (selectedDate === latestDate) {
-      setAnalysisResult(null);
-    }
+  const handleIntradayRefresh = async () => {
+    if (!isTodaySelected) return;
+    setIntradayLoading(true);
+    setIntradayAnalysis(null);
     try {
-      const res = await apiRequest('/api/v1/emotion-analysis-refresh-current', {
+      const res = await apiRequest('/api/v1/emotion-intraday-refresh', {
         method: 'POST',
-        body: JSON.stringify({ records }),
         timeout: 240000,
       });
-      if (res?.data) {
-        if (latestDate && selectedDate !== latestDate) {
-          setSelectedDate(latestDate);
-        }
-        setAnalysisResult(res.data);
-      }
+      if (res?.data?.intraday) setIntradayAnalysis(res.data.intraday);
+      if (res?.data?.records) setRecords(res.data.records);
     } catch (err) {
-      console.error('Failed to refresh current emotion analysis:', err);
+      console.error('Failed to refresh intraday analysis:', err);
     } finally {
-      setAnalysisLoading(false);
+      setIntradayLoading(false);
     }
   };
 
@@ -207,12 +274,7 @@ function EmotionCycle() {
     const axisLineColor = isLightTheme ? '#c9c9c9' : '#333';
     const splitLineColor = isLightTheme ? '#e6e6e6' : '#2a2a2a';
 
-    // 过滤到选中日期的数据
-    const filteredRecords = records.filter(r => {
-      const rDate = r.date.replace(/-/g, '');
-      return rDate <= selectedDate;
-    });
-
+    const filteredRecords = records.filter((r) => r.date.replace(/-/g, '') <= selectedDate);
     const dates = filteredRecords.map((r) => r.date);
 
     const series = seriesConfig.map((cfg) => ({
@@ -222,19 +284,10 @@ function EmotionCycle() {
       smooth: true,
       symbol: cfg.showLabel ? 'circle' : 'none',
       symbolSize: cfg.showLabel ? 6 : 4,
-      lineStyle: {
-        color: cfg.color,
-        width: cfg.showLabel ? 3 : 2,
-      },
+      lineStyle: { color: cfg.color, width: cfg.showLabel ? 3 : 2 },
       itemStyle: { color: cfg.color },
       label: cfg.showLabel
-        ? {
-            show: true,
-            position: 'top',
-            color: cfg.color,
-            fontSize: 11,
-            fontWeight: 'bold',
-          }
+        ? { show: true, position: 'top', color: cfg.color, fontSize: 11, fontWeight: 'bold' }
         : { show: false },
       data: filteredRecords.map((r) => r[cfg.key]),
     }));
@@ -278,20 +331,11 @@ function EmotionCycle() {
           return html;
         },
       },
-      grid: {
-        left: 60,
-        right: 60,
-        bottom: 80,
-        top: 80,
-      },
+      grid: { left: 60, right: 60, bottom: 80, top: 80 },
       xAxis: {
         type: 'category',
         data: dates,
-        axisLabel: {
-          color: axisTextColor,
-          rotate: 45,
-          fontSize: 11,
-        },
+        axisLabel: { color: axisTextColor, rotate: 45, fontSize: 11 },
         axisLine: { lineStyle: { color: axisLineColor } },
       },
       yAxis: [
@@ -312,71 +356,13 @@ function EmotionCycle() {
           axisLine: { lineStyle: { color: axisLineColor } },
         },
       ],
-      dataZoom: [
-        {
-          type: 'inside',
-          start: 0,
-          end: 100,
-        },
-      ],
+      dataZoom: [{ type: 'inside', start: 0, end: 100 }],
       series,
     };
   };
 
-  const renderAnalysis = () => {
-    if (!analysisResult) return null;
-
-    const { stage, analysis, advice, recommendations } = analysisResult;
-    const stageColor = stageColorMap[stage]
-      || Object.entries(stageColorMap).find(([k]) => stage?.includes(k))?.[1]
-      || '#1890ff';
-
-    return (
-      <div className="analysis-content">
-        <Tag
-          color={stageColor}
-          style={{ fontSize: 15, padding: '4px 14px', marginBottom: 12, fontWeight: 'bold' }}
-        >
-          {stage}
-        </Tag>
-
-        {analysis && (
-          <div style={{ marginBottom: 12 }}>
-            <div className="analysis-section-title">分析</div>
-            <div className="analysis-text">{analysis}</div>
-          </div>
-        )}
-
-        {advice && (
-          <div style={{ marginBottom: 12 }}>
-            <div className="analysis-section-title">建议</div>
-            <div className="advice-text">{advice}</div>
-          </div>
-        )}
-
-        {recommendations && recommendations.length > 0 && (
-          <div>
-            <div className="analysis-section-title">备选标的</div>
-            <div className="recommendations-list">
-              {recommendations.map((rec, idx) => (
-                <div key={idx} className="recommendation-item">
-                  <div className="rec-header">
-                    <span className="rec-stock">{rec.stock}</span>
-                    {rec.position && <Tag color="blue" style={{ fontSize: 11 }}>{rec.position}</Tag>}
-                  </div>
-                  <div className="rec-reason">{rec.reason}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
   return (
     <div className="emotion-cycle-container">
-      {/* 日期导航栏 + AI分析按钮 */}
       <div className="emotion-date-nav">
         <button
           type="button"
@@ -391,38 +377,40 @@ function EmotionCycle() {
           type="button"
           className="date-nav-btn"
           onClick={() => setSelectedDate(offsetDate(selectedDate, 1))}
-          disabled={selectedDate >= getLastTradingDayStr()}
+          disabled={selectedDate >= todayStr}
         >
           后一天 <RightOutlined />
         </button>
         <button
           type="button"
           className="date-nav-btn date-nav-today"
-          onClick={() => setSelectedDate(getLastTradingDayStr())}
+          onClick={() => setSelectedDate(todayStr)}
         >
           今天
         </button>
 
         <div className="date-nav-ai-btns">
+          {isAdmin && (
+            <Button
+              type="primary"
+              icon={<ThunderboltOutlined />}
+              onClick={() => handleBatchAnalysis(false)}
+              loading={batchLoading}
+              disabled={records.length === 0}
+              className="ai-analysis-btn admin-batch-btn"
+            >
+              全量生成
+            </Button>
+          )}
           <Button
-            type="primary"
-            icon={<ThunderboltOutlined />}
-            onClick={() => handleAnalysis(false)}
-            loading={analysisLoading}
-            disabled={records.length === 0}
-            className="ai-analysis-btn"
-          >
-            AI 情绪分析
-          </Button>
-          <Button
-            type="text"
+            type={isAdmin ? 'default' : 'primary'}
             icon={<ReloadOutlined />}
-            onClick={handleRefreshCurrent}
-            loading={analysisLoading}
-            disabled={records.length === 0}
+            onClick={handleIntradayRefresh}
+            loading={intradayLoading}
+            disabled={records.length === 0 || !isTodaySelected}
             className="ai-refresh-btn"
           >
-            刷新
+            盘中刷新
           </Button>
         </div>
       </div>
@@ -438,29 +426,32 @@ function EmotionCycle() {
               echarts={echarts}
               option={getChartOption()}
               style={{ height: 'calc(100vh - 160px)', minHeight: 400 }}
-              notMerge={true}
-              lazyUpdate={true}
+              notMerge
+              lazyUpdate
               theme="dark"
             />
           )}
         </div>
 
-        <div className="ai-analysis-panel">
-          {analysisLoading && !analysisResult && (
-            <div className="loading-container">
-              <Spin size="large" tip="AI 正在分析中..." />
-            </div>
-          )}
-
-          {analysisResult ? renderAnalysis() : (
-            !analysisLoading && (
-              <div className="analysis-empty">
-                <ThunderboltOutlined style={{ fontSize: 32, color: '#444', marginBottom: 12 }} />
-                <div>点击「AI 情绪分析」生成全部日期的分析</div>
-                <div style={{ marginTop: 4, fontSize: 12 }}>切换日期可查看对应分析</div>
-              </div>
-            )
-          )}
+        <div className="emotion-right-column">
+          <AnalysisBlock
+            title="周期研判"
+            accent="cycle"
+            result={cycleAnalysis}
+            loading={batchLoading}
+            emptyHint="暂无周期研判，请联系管理员生成"
+          />
+          <AnalysisBlock
+            title="盘中研判"
+            accent="intraday"
+            result={isTodaySelected ? intradayAnalysis : null}
+            loading={intradayLoading}
+            emptyHint={
+              isTodaySelected
+                ? '点击「盘中刷新」生成当日研判'
+                : '仅支持查看/刷新当日盘中研判'
+            }
+          />
         </div>
       </div>
     </div>

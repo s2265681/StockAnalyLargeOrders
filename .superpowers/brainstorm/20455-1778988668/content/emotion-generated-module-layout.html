@@ -1,0 +1,65 @@
+<h2>情绪周期：生成数据展示模块放哪里？</h2>
+<p class="subtitle">基于当前页面：左侧走势图，右侧 AI 分析卡片，顶部有日期和刷新按钮。</p>
+
+<div class="cards">
+  <div class="card" data-choice="right-panel" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">A. 右侧独立“盘中生成”面板</div>
+        <div class="mockup-body">
+          <div style="display:flex; gap:10px; min-height:180px;">
+            <div class="placeholder" style="flex:1;">情绪周期走势图</div>
+            <div style="width:120px; display:flex; flex-direction:column; gap:8px;">
+              <div class="placeholder" style="height:72px;">AI 分析</div>
+              <div class="placeholder" style="height:94px; border-color:#1677ff;">盘中生成数据</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>右侧双卡片</h3>
+      <p>最贴近现有布局，生成的数据和 AI 分析并列但独立。适合内容不太长、需要边看图边看结果。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="bottom-panel" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">B. 下方“盘中生成结果”区域</div>
+        <div class="mockup-body">
+          <div style="display:flex; gap:10px; min-height:120px;">
+            <div class="placeholder" style="flex:1;">情绪周期走势图</div>
+            <div class="placeholder" style="width:110px;">AI 分析</div>
+          </div>
+          <div class="placeholder" style="margin-top:10px; height:60px; border-color:#1677ff;">盘中生成数据列表 / 摘要 / 时间戳</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>下方横向结果区</h3>
+      <p>展示空间最大，适合生成内容较多。缺点是会压缩走势图高度，需要处理滚动。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="separate-tab" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">C. 独立子模块 / 标签</div>
+        <div class="mockup-body">
+          <div class="mock-nav">走势图 | AI分析 | 盘中生成</div>
+          <div class="placeholder" style="margin-top:10px; min-height:150px; border-color:#1677ff;">盘中生成数据完整模块</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>独立标签页</h3>
+      <p>边界最清楚，便于以后扩展更多盘中生成结果。缺点是不能同时看到走势图和生成内容。</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>我的建议</h3>
+  <p>优先选 A：保持当前“图 + 右侧信息流”的阅读方式，把盘中刷新生成的数据作为右侧新的独立卡片。接口也可以单独返回 generated/current，不影响已有 AI 分析缓存。</p>
+</div>

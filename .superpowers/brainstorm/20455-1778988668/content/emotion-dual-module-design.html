@@ -1,0 +1,72 @@
+<h2>情绪周期：双模块独立方案（确认稿）</h2>
+<p class="subtitle">模块1 管理员全量生成 · 模块2 用户盘中刷新当日 · 同库不同字段 · 互不影响</p>
+
+<div class="mockup">
+  <div class="mockup-header">页面结构预览</div>
+  <div class="mockup-body">
+    <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+      <button class="mock-button" style="opacity:.4">前一天</button>
+      <span style="padding:4px 12px;border:1px solid #444;border-radius:4px;">2026-05-17</span>
+      <button class="mock-button" style="opacity:.4">后一天 · 今天</button>
+      <span style="margin-left:auto;display:flex;gap:8px;">
+        <button class="mock-button" style="background:#722ed1;color:#fff;">管理员：全量生成</button>
+        <button class="mock-button" style="background:#1677ff;color:#fff;">盘中刷新</button>
+      </span>
+    </div>
+    <div style="display:flex;gap:10px;min-height:200px;">
+      <div class="placeholder" style="flex:1;">情绪周期走势图</div>
+      <div style="width:150px;display:flex;flex-direction:column;gap:8px;">
+        <div style="flex:1;border:1px solid #52c41a;border-radius:6px;padding:6px;font-size:11px;color:#aaa;">
+          <strong style="color:#52c41a;">模块1 · 周期研判</strong><br/>
+          读库 analysis_result_json<br/>
+          随日期切换 · 用户只读
+        </div>
+        <div style="flex:1;border:1px solid #1677ff;border-radius:6px;padding:6px;font-size:11px;color:#aaa;">
+          <strong style="color:#1677ff;">模块2 · 盘中研判</strong><br/>
+          读库 intraday_result_json<br/>
+          仅当日 · 点刷新更新
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>数据流</h3>
+  <div class="pros-cons">
+    <div class="pros">
+      <h4>模块1（管理员）</h4>
+      <ul>
+        <li>POST emotion-analysis-with-storage（admin）</li>
+        <li>批量生成全部日期 → analysis_result_json</li>
+        <li>用户不显示按钮，切换日期自动读缓存</li>
+      </ul>
+    </div>
+    <div class="cons" style="background:transparent;border:none;">
+      <h4>模块2（盘中）</h4>
+      <ul>
+        <li>POST emotion-intraday-refresh（登录用户）</li>
+        <li>后端拉最新 StockAPI + 引用模块1当日/近期 stage</li>
+        <li>轻量 prompt，只生成当天 → intraday_result_json</li>
+        <li>反复刷新只覆盖当天盘中字段</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="approve" onclick="toggleSelect(this)">
+    <div class="letter">OK</div>
+    <div class="content">
+      <h3>确认，按此方案实现</h3>
+      <p>同表双字段、右侧双卡片、管理员全量 + 用户盘中刷新</p>
+    </div>
+  </div>
+  <div class="option" data-choice="revise" onclick="toggleSelect(this)">
+    <div class="letter">?</div>
+    <div class="content">
+      <h3>需要调整</h3>
+      <p>在终端说明要改的点</p>
+    </div>
+  </div>
+</div>

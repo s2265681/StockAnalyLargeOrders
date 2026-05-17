@@ -332,6 +332,8 @@ export const applyL2DashboardData = (set, data, cutoffTime, moneyFlow) => {
         chaoda: sliceArr(slicedMoneyFlow.chaoda),
         dadan: sliceArr(slicedMoneyFlow.dadan),
         zhongdan: sliceArr(slicedMoneyFlow.zhongdan),
+        chaoda_delta: sliceArr(slicedMoneyFlow.chaoda_delta),
+        sanhu_delta: sliceArr(slicedMoneyFlow.sanhu_delta),
       };
     }
   }

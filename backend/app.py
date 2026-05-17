@@ -23,6 +23,7 @@ from routes import (
     auth_bp,
     user_bp,
     orders_bp,
+    ai_diagnosis_bp,
 )
 
 app = Flask(__name__)
@@ -47,6 +48,7 @@ def register_blueprints(app):
     app.register_blueprint(auth_bp)
     app.register_blueprint(user_bp)
     app.register_blueprint(orders_bp)
+    app.register_blueprint(ai_diagnosis_bp)
 
 
 register_blueprints(app)

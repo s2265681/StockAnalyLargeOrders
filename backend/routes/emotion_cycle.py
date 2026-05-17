@@ -1,16 +1,18 @@
 """
 情绪周期接口模块
 - GET  /api/v1/emotion-cycle     代理 StockAPI 情绪周期数据
-- POST /api/v1/emotion-analysis  调用 Claude 分析情绪周期阶段
-- POST /api/v1/emotion-analysis-refresh-current  刷新最新交易日情绪分析
+- POST /api/v1/emotion-analysis-with-storage  管理员全量分析
+- POST /api/v1/emotion-intraday-refresh       盘中刷新当日研判
 """
 import json
 import logging
 import requests
 import urllib3
+from typing import Optional
 from flask import Blueprint, request
 
 from utils.response import v1_success_response, v1_error_response
+from utils.auth_middleware import login_required, admin_required
 
 # 抑制 StockAPI 的 SSL 警告
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -39,8 +41,30 @@ def _init_emotion_analysis_table():
         logger.warning(f"emotion_analysis_results 表可能已存在: {e}")
 
 
+def _migrate_emotion_intraday_columns():
+    """为已有表补充盘中研判字段"""
+    from utils.db import execute_write
+    migrations = [
+        (
+            "ALTER TABLE emotion_analysis_results "
+            "ADD COLUMN intraday_result_json LONGTEXT NULL AFTER analysis_result_json"
+        ),
+        (
+            "ALTER TABLE emotion_analysis_results "
+            "ADD COLUMN intraday_updated_at TIMESTAMP NULL AFTER intraday_result_json"
+        ),
+    ]
+    for sql in migrations:
+        try:
+            execute_write(sql)
+        except Exception as e:
+            if "Duplicate column" not in str(e):
+                logger.warning(f"迁移 emotion 盘中字段: {e}")
+
+
 # 模块加载时初始化
 _init_emotion_analysis_table()
+_migrate_emotion_intraday_columns()
 
 
 # ---------- 常量 ----------
@@ -96,33 +120,34 @@ def _transform_row(col_names: list, row: list) -> dict:
 
 # ---------- 1. 情绪周期数据 ----------
 
+def _fetch_emotion_records():
+    """从 StockAPI 拉取情绪周期原始记录列表"""
+    resp = requests.get(
+        STOCKAPI_EMOTION_URL,
+        headers={"User-Agent": "Mozilla/5.0"},
+        verify=False,
+        timeout=15,
+    )
+    resp.raise_for_status()
+    body = resp.json()
+    if body.get("code") != 20000:
+        raise ValueError(f"StockAPI 返回异常: code={body.get('code')}")
+    data = body["data"]
+    col_names = data["colNameList"]
+    return [_transform_row(col_names, row) for row in data["contentList"]]
+
+
 @emotion_cycle_bp.route('/api/v1/emotion-cycle', methods=['GET'])
 def get_emotion_cycle():
     """代理 StockAPI 情绪周期数据并转换格式"""
     try:
-        resp = requests.get(
-            STOCKAPI_EMOTION_URL,
-            headers={"User-Agent": "Mozilla/5.0"},
-            verify=False,
-            timeout=15,
-        )
-        resp.raise_for_status()
-        body = resp.json()
-
-        if body.get("code") != 20000:
-            return v1_error_response(
-                message=f"StockAPI 返回异常: code={body.get('code')}"
-            )
-
-        data = body["data"]
-        col_names = data["colNameList"]
-        records = [_transform_row(col_names, row) for row in data["contentList"]]
-
+        records = _fetch_emotion_records()
         return v1_success_response(data={"records": records})
-
     except requests.RequestException as e:
         logger.error(f"请求 StockAPI 情绪周期失败: {e}")
         return v1_error_response(message=f"请求 StockAPI 失败: {str(e)}")
+    except ValueError as e:
+        return v1_error_response(message=str(e))
     except Exception as e:
         logger.error(f"处理情绪周期数据异常: {e}")
         return v1_error_response(message=f"处理数据异常: {str(e)}")
@@ -265,6 +290,63 @@ def _save_analysis_to_db(dt: str, analysis_json: dict) -> bool:
         return True
     except Exception as e:
         logger.error(f"保存分析结果失败: {e}")
+        return False
+
+
+def _get_intraday_from_db(dt: str) -> dict:
+    """从数据库查询盘中研判结果"""
+    from utils.db import execute_query
+    sql = (
+        "SELECT intraday_result_json, intraday_updated_at "
+        "FROM emotion_analysis_results WHERE date = %s"
+    )
+    result = execute_query(sql, (dt,))
+    if not result or not result[0].get("intraday_result_json"):
+        return None
+    try:
+        data = json.loads(result[0]["intraday_result_json"])
+        updated_at = result[0].get("intraday_updated_at")
+        if updated_at and isinstance(data, dict):
+            data["updated_at"] = str(updated_at)
+        return data
+    except (json.JSONDecodeError, KeyError):
+        return None
+
+
+def _save_intraday_to_db(dt: str, intraday_json: dict) -> bool:
+    """保存盘中研判，不覆盖 analysis_result_json"""
+    from utils.db import execute_query, execute_write
+    payload = json.dumps(intraday_json, ensure_ascii=False)
+    existing = execute_query(
+        "SELECT id FROM emotion_analysis_results WHERE date = %s",
+        (dt,),
+    )
+    if existing:
+        sql = """
+        UPDATE emotion_analysis_results
+        SET intraday_result_json = %s, intraday_updated_at = CURRENT_TIMESTAMP
+        WHERE date = %s
+        """
+        try:
+            execute_write(sql, (payload, dt))
+            return True
+        except Exception as e:
+            logger.error(f"更新盘中研判失败: {e}")
+            return False
+
+    placeholder = json.dumps(
+        {"stage": "待生成", "analysis": "", "advice": "", "recommendations": []},
+        ensure_ascii=False,
+    )
+    sql = """
+    INSERT INTO emotion_analysis_results (date, analysis_result_json, intraday_result_json)
+    VALUES (%s, %s, %s)
+    """
+    try:
+        execute_write(sql, (dt, placeholder, payload))
+        return True
+    except Exception as e:
+        logger.error(f"保存盘中研判失败: {e}")
         return False
 
 
@@ -412,6 +494,161 @@ def get_emotion_analysis_cache():
 def _record_date_key(record: dict) -> str:
     """统一记录日期格式为 YYYYMMDD，方便比较和存库。"""
     return str(record.get("date", "")).replace("-", "")
+
+
+INTRADAY_SYSTEM_PROMPT = """你是短线情绪博弈高手。请基于【最新盘中情绪数据】输出当日盘中研判。
+已给出的「周期研判」来自管理员离线全量分析，作为阶段锚点；你需结合实时数据判断盘中变化、分歧与操作节奏。
+
+请严格按以下 JSON 返回（不要返回其他内容）：
+{
+  "stage": "冰点期/修复期/升温期/高潮期/退潮期",
+  "analysis": "盘中变化解读：与锚定阶段的异同、关键指标、拐点信号（200字以内）",
+  "advice": "盘中操作建议：仓位、节奏、风控（120字以内）",
+  "recommendations": [
+    {"stock": "股票名称", "reason": "理由", "position": "建议仓位"}
+  ]
+}
+JSON 字符串值内不得包含未转义的英文双引号。"""
+
+
+def _call_claude_intraday(
+    current_record: dict,
+    context_records: list,
+    cycle_anchor: Optional[dict],
+) -> dict:
+    """轻量单日盘中研判"""
+    import os
+    import re
+    import subprocess
+    import tempfile
+
+    anchor_text = "（暂无周期研判锚点，请仅依据数据判断）"
+    if cycle_anchor:
+        anchor_text = json.dumps(
+            {
+                "stage": cycle_anchor.get("stage"),
+                "analysis": cycle_anchor.get("analysis"),
+                "advice": cycle_anchor.get("advice"),
+            },
+            ensure_ascii=False,
+        )
+
+    data_text = json.dumps(
+        {"context": context_records, "today": current_record},
+        ensure_ascii=False,
+        indent=2,
+    )
+    user_prompt = (
+        f"周期研判锚点：\n{anchor_text}\n\n"
+        f"情绪周期数据（context 为前几日，today 为当日最新）：\n{data_text}\n\n"
+        "请输出【当日】盘中研判 JSON。"
+    )
+
+    payload = json.dumps({
+        "model": CLAUDE_MODEL,
+        "messages": [
+            {"role": "user", "content": INTRADAY_SYSTEM_PROMPT + "\n\n" + user_prompt},
+        ],
+        "max_tokens": 2048,
+    })
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        f.write(payload)
+        payload_file = f.name
+    try:
+        proc = subprocess.run(
+            [
+                "curl", "-s", "--max-time", "90",
+                CLAUDE_API_URL,
+                "-H", f"Authorization: Bearer {CLAUDE_API_KEY}",
+                "-H", "Content-Type: application/json",
+                "-d", f"@{payload_file}",
+            ],
+            capture_output=True, text=True, timeout=95,
+        )
+        os.unlink(payload_file)
+        if proc.returncode != 0:
+            raise Exception(f"curl 失败 (exit {proc.returncode}): {proc.stderr[:500]}")
+        claude_body = json.loads(proc.stdout)
+        if "error" in claude_body:
+            raise Exception(f"Claude API 错误: {claude_body['error']}")
+    except subprocess.TimeoutExpired:
+        raise Exception("Claude API 调用超时(90s)")
+
+    content = (
+        claude_body.get("choices", [{}])[0]
+        .get("message", {})
+        .get("content", "")
+    )
+    clean = content.strip()
+    if clean.startswith("```"):
+        clean = clean.split("\n", 1)[-1]
+        clean = clean.rsplit("```", 1)[0].strip()
+    try:
+        result = json.loads(clean)
+    except json.JSONDecodeError:
+        match = re.search(r'\{[\s\S]*\}', content)
+        if match:
+            result = json.loads(match.group())
+        else:
+            raise Exception("AI 返回格式异常")
+    if not isinstance(result, dict):
+        raise Exception("AI 返回格式异常")
+    result["date"] = current_record.get("date")
+    return result
+
+
+@emotion_cycle_bp.route('/api/v1/emotion-intraday-cache', methods=['GET'])
+@login_required
+def get_emotion_intraday_cache():
+    """查询盘中研判缓存"""
+    dt = request.args.get('date')
+    if not dt:
+        return v1_error_response(message="请提供 date 参数")
+    dt = dt.replace("-", "")
+    db_result = _get_intraday_from_db(dt)
+    if db_result:
+        return v1_success_response(data=db_result)
+    return v1_success_response(data=None)
+
+
+@emotion_cycle_bp.route('/api/v1/emotion-intraday-refresh', methods=['POST'])
+@login_required
+def refresh_emotion_intraday():
+    """盘中刷新：拉最新行情 + 引用周期研判锚点 + 生成当日研判"""
+    try:
+        records = _fetch_emotion_records()
+        if not records:
+            return v1_error_response(message="未获取到情绪周期数据")
+
+        ordered = sorted(records, key=_record_date_key)
+        current_record = ordered[-1]
+        current_dt = _record_date_key(current_record)
+        context_start = max(0, len(ordered) - 6)
+        context_records = ordered[context_start:-1]
+
+        cycle_anchor = _get_analysis_from_db(current_dt)
+        if not cycle_anchor and context_records:
+            prev_dt = _record_date_key(context_records[-1])
+            cycle_anchor = _get_analysis_from_db(prev_dt)
+
+        logger.info(f"盘中刷新: {current_dt}, 上下文 {len(context_records)} 条")
+        result = _call_claude_intraday(current_record, context_records, cycle_anchor)
+
+        if not _save_intraday_to_db(current_dt, result):
+            return v1_error_response(message="保存盘中研判失败")
+
+        return v1_success_response(
+            data={"intraday": result, "records": records},
+            message=f"已刷新 {current_dt} 盘中研判",
+        )
+    except requests.RequestException as e:
+        logger.error(f"盘中刷新拉取行情失败: {e}")
+        return v1_error_response(message=f"请求 StockAPI 失败: {str(e)}")
+    except ValueError as e:
+        return v1_error_response(message=str(e))
+    except Exception as e:
+        logger.error(f"盘中刷新异常: {e}")
+        return v1_error_response(message=f"盘中研判异常: {str(e)}")
 
 
 @emotion_cycle_bp.route('/api/v1/emotion-analysis-refresh-current', methods=['POST'])
@@ -692,6 +929,7 @@ BATCH_SIZE = 10  # 每批处理的记录数
 
 
 @emotion_cycle_bp.route('/api/v1/emotion-analysis-with-storage', methods=['POST'])
+@admin_required
 def post_emotion_analysis_with_storage():
     """
     全量分析：接收所有交易日数据，分批调用 Claude 为每天生成分析，批量存库

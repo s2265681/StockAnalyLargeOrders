@@ -847,23 +847,31 @@ code {
   color: #1890ff;
 }
 
-/* 错误提示 */
-.ant-alert {
-  background-color: rgba(255, 77, 79, 0.1);
-  border: 1px solid rgba(255, 77, 79, 0.3);
-}
-
+/* 错误提示（不透明背景，避免透出底层导航文字） */
 .ant-alert-error {
-  background-color: rgba(255, 77, 79, 0.1);
-  border-color: rgba(255, 77, 79, 0.3);
+  background-color: #2a1215;
+  border: 1px solid #a61d24;
 }
 
 .ant-alert-error .ant-alert-message {
-  color: #ff4d4f;
+  color: #ff7875;
 }
 
 .ant-alert-error .ant-alert-description {
-  color: #ffccc7;
+  color: #ffa39e;
+}
+
+[data-theme="light"] .ant-alert-error {
+  background-color: #fff2f0;
+  border-color: #ffccc7;
+}
+
+[data-theme="light"] .ant-alert-error .ant-alert-message {
+  color: #cf1322;
+}
+
+[data-theme="light"] .ant-alert-error .ant-alert-description {
+  color: #ff7875;
 }
 
 /* 大单分析样式 */
@@ -1639,19 +1647,35 @@ code {
 .smart-theme-btn {
   display: inline-flex;
   align-items: center;
-  padding: 3px 10px;
-  background: #1a2332;
-  border: 1px solid #2a4a6b;
-  border-radius: 6px;
-  color: #60a5fa;
+  padding: 2px 10px;
+  height: 26px;
+  background: #e6f4ff;
+  border: 1px solid #91caff;
+  border-radius: 14px;
+  color: #1677ff;
   font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
   white-space: nowrap;
 }
 
 .smart-theme-btn:hover:not(:disabled) {
-  background: #1f3050;
+  background: #1677ff;
+  border-color: #1677ff;
+  color: #fff;
+}
+
+[data-theme="dark"] .smart-theme-btn {
+  background: rgba(22, 119, 255, 0.12);
+  border-color: #1668dc;
+  color: #69b1ff;
+}
+
+[data-theme="dark"] .smart-theme-btn:hover:not(:disabled) {
+  background: #1668dc;
+  border-color: #1668dc;
+  color: #fff;
 }
 
 .smart-theme-btn:disabled {

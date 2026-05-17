@@ -23,14 +23,60 @@
   min-width: 0;
 }
 
-.ai-analysis-panel {
-  width: 360px;
+.emotion-right-column {
+  width: 380px;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+.analysis-panel-block {
+  flex: 1;
+  min-height: 0;
   background: var(--bg-tooltip);
   border: 1px solid var(--border-secondary);
   border-radius: 8px;
-  padding: 16px;
+  padding: 12px 14px;
   overflow-y: auto;
+}
+
+.analysis-panel-cycle {
+  border-top: 3px solid #52c41a;
+}
+
+.analysis-panel-intraday {
+  border-top: 3px solid #1677ff;
+}
+
+.analysis-panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.analysis-updated-at {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.analysis-empty.compact {
+  height: auto;
+  padding: 20px 8px;
+  font-size: 12px;
+}
+
+.admin-batch-btn {
+  background: #722ed1 !important;
+  border-color: #722ed1 !important;
 }
 
 .analysis-empty {
@@ -164,13 +210,31 @@
 }
 
 .ai-refresh-btn {
-  color: var(--text-muted);
   font-size: 13px;
   height: 32px;
 }
 
-.ai-refresh-btn:hover:not(:disabled) {
-  color: var(--text-primary) !important;
+.ai-refresh-btn.ant-btn-primary {
+  background: #1677ff !important;
+  border-color: #1677ff !important;
+  color: #fff !important;
+}
+
+.ai-refresh-btn.ant-btn-primary:hover:not(:disabled),
+.ai-refresh-btn.ant-btn-primary:focus:not(:disabled) {
+  background: #4096ff !important;
+  border-color: #4096ff !important;
+  color: #fff !important;
+}
+
+.ai-refresh-btn.ant-btn-default {
+  color: var(--text-secondary);
+  border-color: #1677ff;
+}
+
+.ai-refresh-btn.ant-btn-default:hover:not(:disabled) {
+  color: #1677ff !important;
+  border-color: #4096ff !important;
 }
 
 /* 备选标的列表 */

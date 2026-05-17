@@ -100,7 +100,7 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
               </span>
               {/* 智能题材按钮 + 标签结果 */}
               <div className="smart-theme-area">
-                <Tooltip title="智能分析今日题材归属及同类涨停数">
+                <Tooltip title="识别涨停题材归属，查看同题材今日涨停家数">
                   <button
                     className={`smart-theme-btn ${themeLoading ? 'loading' : ''}`}
                     onClick={fetchThemeTags}

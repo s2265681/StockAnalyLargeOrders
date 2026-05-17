@@ -9,6 +9,7 @@ import EmotionCycle from './pages/EmotionCycle';
 import LimitUpEchelon from './pages/LimitUpEchelon';
 import AuctionGrab from './pages/AuctionGrab';
 import DragonTiger from './pages/DragonTiger';
+import AiDiagnosis from './pages/AiDiagnosis';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import UserCenter from './pages/UserCenter';
@@ -22,6 +23,7 @@ const { Content, Header } = Layout;
 
 const NAV_ITEMS = [
   { key: '/stock-dashboard', label: '个股分析' },
+  { key: '/ai-diagnosis', label: 'AI诊股' },
   { key: '/limit-up-echelon', label: '涨停梯队' },
   { key: '/dragon-tiger', label: '核心游资' },
   { key: '/emotion-cycle', label: '情绪周期' },
@@ -119,6 +121,7 @@ function AppInner() {
             showIcon
             closable
             onClose={() => setError(null)}
+            className="app-error-banner"
             style={{
               position: 'fixed',
               top: 20,
@@ -126,6 +129,7 @@ function AppInner() {
               transform: 'translateX(-50%)',
               zIndex: 9999,
               maxWidth: '600px',
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.45)',
             }}
           />
         )}
@@ -137,6 +141,10 @@ function AppInner() {
           <Route
             path="/stock-dashboard"
             element={<RequireAuth><StockDashboard /></RequireAuth>}
+          />
+          <Route
+            path="/ai-diagnosis"
+            element={<RequireAuth><AiDiagnosis /></RequireAuth>}
           />
           <Route
             path="/limit-up-echelon"

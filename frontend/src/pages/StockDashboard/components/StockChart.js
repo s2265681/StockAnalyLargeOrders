@@ -45,6 +45,91 @@ echarts.use([
   CanvasRenderer
 ]);
 
+export const formatPercentLabel = (value) => {
+  const roundedValue = Math.round(Number(value || 0) * 100) / 100;
+  if (Object.is(roundedValue, -0) || Math.abs(roundedValue) < 0.005) {
+    return '0%';
+  }
+
+  const absText = Math.abs(roundedValue).toFixed(2).replace(/\.?0+$/, '');
+  return `${roundedValue > 0 ? '+' : '-'}${absText}%`;
+};
+
+export const formatTradingTimeLabel = (value) => {
+  if (!value || typeof value !== 'string') {
+    return '';
+  }
+
+  if (value === '11:30') {
+    return '11:30/13:00';
+  }
+  if (value === '13:00') {
+    return '';
+  }
+
+  const targetTimes = ['09:30', '10:30', '11:30', '14:00', '15:00'];
+  return targetTimes.includes(value) ? value : '';
+};
+
+export const getLimitPercentBounds = ({ stockBasicData, baseInfo, fallbackPercents = [] }) => {
+  const prevClosePrice = parseFloat(baseInfo?.prevClosePrice || stockBasicData?.yesterday_close);
+  const limitUpPrice = parseFloat(stockBasicData?.limit_up || baseInfo?.limit_up);
+  const limitDownPrice = parseFloat(stockBasicData?.limit_down || baseInfo?.limit_down);
+  const validPercents = fallbackPercents
+    .map(Number)
+    .filter(Number.isFinite);
+  const maxAbsFallback = validPercents.reduce((max, value) => Math.max(max, Math.abs(value)), 0);
+
+  const getAdaptiveBounds = (maxLimit = 30) => {
+    const paddedMax = maxAbsFallback >= 5
+      ? maxAbsFallback
+      : Math.max(maxAbsFallback * 1.2, 0.2);
+    const niceBounds = [0.5, 1, 1.5, 2, 3, 5, 7.5, 10, 20, 30];
+    const bound = niceBounds.find((candidate) => paddedMax <= candidate + 0.2) || Math.min(maxLimit, 30);
+    const clampedBound = Math.min(bound, maxLimit);
+    return { min: -clampedBound, max: clampedBound };
+  };
+
+  if (Number.isFinite(prevClosePrice) && prevClosePrice > 0) {
+    const upper = Number.isFinite(limitUpPrice)
+      ? ((limitUpPrice - prevClosePrice) / prevClosePrice) * 100
+      : null;
+    const lower = Number.isFinite(limitDownPrice)
+      ? ((limitDownPrice - prevClosePrice) / prevClosePrice) * 100
+      : null;
+
+    if (Number.isFinite(upper) && Number.isFinite(lower) && upper > lower) {
+      const maxLimit = Math.max(Math.abs(upper), Math.abs(lower));
+      const nearLimit = validPercents.some((value) => value >= upper - 0.35 || value <= lower + 0.35);
+      if (!nearLimit && maxAbsFallback > 0 && maxAbsFallback < maxLimit * 0.55) {
+        return getAdaptiveBounds(maxLimit);
+      }
+      return { min: lower, max: upper };
+    }
+
+    const oneSidedLimit = Math.max(Math.abs(upper || 0), Math.abs(lower || 0));
+    if (oneSidedLimit > 0) {
+      if (maxAbsFallback > 0 && maxAbsFallback < oneSidedLimit * 0.55) {
+        return getAdaptiveBounds(oneSidedLimit);
+      }
+      return { min: -oneSidedLimit, max: oneSidedLimit };
+    }
+  }
+
+  return getAdaptiveBounds();
+};
+
+export const getPercentAxisInterval = ({ min, max, sections = 4 }) => {
+  const span = Number(max) - Number(min);
+  if (!Number.isFinite(span) || span <= 0 || sections <= 0) {
+    return undefined;
+  }
+  return span / sections;
+};
+
+export const getZeroLineLabel = () => ({ show: false });
+
+
 const StockChart = () => {
   const [stockBasicData] = useAtom(stockBasicDataAtom);
   const [largeOrdersData] = useAtom(largeOrdersDataAtom);
@@ -350,7 +435,7 @@ const StockChart = () => {
       }
     });
     
-    // Y 轴：按分时实际涨跌幅区间收紧，避免 ±1% 把曲线压扁
+    // Y 轴使用个股真实涨跌停百分比，避免封板走势显示成 +12%/-9.99% 这类伪边界。
     const pricePercents = (fenshi || [])
       .map((p) => (p != null && prevClosePrice
         ? ((parseFloat(p) - prevClosePrice) / prevClosePrice) * 100
@@ -361,16 +446,16 @@ const StockChart = () => {
       .filter((v) => v != null && !Number.isNaN(Number(v)))
       .map(Number);
     const allPct = [...pricePercents, ...avgPercents];
-    let lo = allPct.length ? Math.min(...allPct, 0) : -0.15;
-    let hi = allPct.length ? Math.max(...allPct, 0) : 0.15;
-    const span = Math.max(hi - lo, 0.08);
-    const pad = Math.max(span * 0.15, 0.03);
-    let yAxisMax = hi + pad;
-    let yAxisMin = lo - pad;
+    let { min: yAxisMin, max: yAxisMax } = getLimitPercentBounds({
+      stockBasicData,
+      baseInfo: base_info,
+      fallbackPercents: allPct,
+    });
     if (!Number.isFinite(yAxisMax) || !Number.isFinite(yAxisMin) || yAxisMax <= yAxisMin) {
-      yAxisMax = 0.2;
-      yAxisMin = -0.2;
+      yAxisMax = 10;
+      yAxisMin = -10;
     }
+    const yAxisInterval = getPercentAxisInterval({ min: yAxisMin, max: yAxisMax });
     
     // 主力线和散户线 - 基于 big_map 计算累计 VWAP（加权平均成本）
     // 竞品原理：主力线 = 大单（>=阈值）的累计VWAP，散户线 = 小单（<阈值）的累计VWAP
@@ -434,27 +519,36 @@ const StockChart = () => {
       }
     });
 
-    // 资金博弈线：红线 = (超大单+大单)/2，绿线 = (小单+中单)/2
+    // 资金博弈线：主力=超大单博弈得分，散户=小单博弈得分；标注用分钟净流入
+    const formatFlowAmount = (val) => {
+      const amount = Number(val);
+      if (Number.isNaN(amount)) return '--';
+      const absVal = Math.abs(amount);
+      return absVal >= 10000
+        ? `${(amount / 10000).toFixed(2)}亿`
+        : `${Math.round(amount)}万`;
+    };
+
     const bigFlowData = [];
     const smallFlowData = [];
     let bigFlowMarkers = [];
     const moneyFlow = timeshareData.money_flow;
+    let chaodaDeltaArr = [];
+    let sanhuDeltaArr = [];
     if (moneyFlow && moneyFlow.chaoda && moneyFlow.chaoda.length > 0) {
       const chaodaArr = moneyFlow.chaoda;
-      const dadanArr = moneyFlow.dadan || [];
       const xiaoArr = moneyFlow.sanhu || [];
-      const zhongArr = moneyFlow.zhongdan || [];
+      chaodaDeltaArr = moneyFlow.chaoda_delta || [];
+      sanhuDeltaArr = moneyFlow.sanhu_delta || [];
       const len = chaodaArr.length;
 
-      // 计算合并后的原始值
-      const bigRaw = [];   // (超大单+大单)/2
-      const smallRaw = []; // (小单+中单)/2
+      const bigRaw = [];
+      const smallRaw = [];
       for (let i = 0; i < len; i++) {
-        bigRaw.push(((parseFloat(chaodaArr[i]) || 0) + (parseFloat(dadanArr[i]) || 0)) / 2);
-        smallRaw.push(((parseFloat(xiaoArr[i]) || 0) + (parseFloat(zhongArr[i]) || 0)) / 2);
+        bigRaw.push(parseFloat(chaodaArr[i]) || 0);
+        smallRaw.push(parseFloat(xiaoArr[i]) || 0);
       }
 
-      // 共用归一化基准
       const maxAbsFlow = Math.max(
         ...bigRaw.map(Math.abs),
         ...smallRaw.map(Math.abs),
@@ -474,40 +568,35 @@ const StockChart = () => {
         smallFlowData.push([timePoint, yMid + (smallRaw[i] / maxAbsFlow) * yRange]);
       }
 
-      // 在关键时间点标注金额（整点/半点 + 最后一个有效点）
       const markerTimes = ['09:30', '10:00', '10:30', '11:00', '11:30', '13:00', '13:30', '14:00', '14:30', '15:00'];
       const timeToIndex = {};
       for (let i = 0; i < len; i++) {
         if (fullTimeAxis[i]) timeToIndex[fullTimeAxis[i]] = i;
       }
-      const formatFlowLabel = (val) => {
-        const absVal = Math.abs(val);
-        return absVal >= 10000
-          ? `${(val / 10000).toFixed(2)}亿`
-          : `${Math.round(val)}万`;
-      };
       for (const t of markerTimes) {
         const idx = timeToIndex[t];
         if (idx !== undefined && bigFlowData[idx] && bigFlowData[idx][1] !== null) {
-          const totalVal = bigRaw[idx] * 2;
+          const minuteNet = parseFloat(chaodaDeltaArr[idx]) || 0;
+          if (Math.abs(minuteNet) < 1) continue;
           bigFlowMarkers.push({
             coord: bigFlowData[idx],
-            name: formatFlowLabel(totalVal),
-            value: formatFlowLabel(totalVal),
+            name: formatFlowAmount(minuteNet),
+            value: formatFlowAmount(minuteNet),
           });
         }
       }
-      // 确保最后一个有效点一定标注
       for (let i = len - 1; i >= 0; i--) {
         if (bigFlowData[i] && bigFlowData[i][1] !== null) {
           const t = fullTimeAxis[i];
           if (!markerTimes.includes(t)) {
-            const totalVal = bigRaw[i] * 2;
-            bigFlowMarkers.push({
-              coord: bigFlowData[i],
-              name: formatFlowLabel(totalVal),
-              value: formatFlowLabel(totalVal),
-            });
+            const minuteNet = parseFloat(chaodaDeltaArr[i]) || 0;
+            if (Math.abs(minuteNet) >= 1) {
+              bigFlowMarkers.push({
+                coord: bigFlowData[i],
+                name: formatFlowAmount(minuteNet),
+                value: formatFlowAmount(minuteNet),
+              });
+            }
           }
           break;
         }
@@ -536,7 +625,61 @@ const StockChart = () => {
     const chartOption = {
       backgroundColor: 'transparent',
       tooltip: {
-        show: false
+        show: true,
+        trigger: 'axis',
+        confine: true,
+        axisPointer: {
+          type: 'line',
+          snap: true,
+          lineStyle: {
+            color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.35)',
+            width: 1,
+            type: 'dashed'
+          }
+        },
+        backgroundColor: isDark ? 'rgba(18, 24, 38, 0.94)' : 'rgba(255, 255, 255, 0.96)',
+        borderColor: borderColor,
+        textStyle: {
+          color: textColor,
+          fontSize: 12
+        },
+        extraCssText: 'box-shadow: 0 8px 24px rgba(0,0,0,0.18); border-radius: 8px;',
+        formatter: function(params) {
+          const list = Array.isArray(params) ? params : [params];
+          const firstValue = list[0]?.value;
+          const time = Array.isArray(firstValue) ? firstValue[0] : list[0]?.axisValue || '';
+          const rows = list
+            .filter((item) => item?.value != null)
+            .map((item) => {
+              const rawValue = Array.isArray(item.value) ? item.value[1] : item.value;
+              if (rawValue == null || Number.isNaN(Number(rawValue))) {
+                return '';
+              }
+
+              const marker = item.marker || '';
+              if (item.seriesName === '成交量') {
+                return `<div>${marker}${item.seriesName}: ${Number(rawValue).toLocaleString()}</div>`;
+              }
+
+              if (item.seriesName === '主力' || item.seriesName === '散户') {
+                const flowIndex = fullTimeAxis.indexOf(time);
+                if (flowIndex < 0) return '';
+                const deltaArr = item.seriesName === '主力' ? chaodaDeltaArr : sanhuDeltaArr;
+                const minuteNet = parseFloat(deltaArr[flowIndex]);
+                if (Number.isNaN(minuteNet)) return '';
+                return `<div>${marker}${item.seriesName}: ${formatFlowAmount(minuteNet)}</div>`;
+              }
+
+              const percentText = formatPercentLabel(rawValue);
+              const priceText = item.seriesName === '价格' && prevClosePrice
+                ? ` (${(prevClosePrice * (1 + Number(rawValue) / 100)).toFixed(2)})`
+                : '';
+              return `<div>${marker}${item.seriesName}: ${percentText}${priceText}</div>`;
+            })
+            .filter(Boolean);
+
+          return [`<div style="font-weight:600;margin-bottom:4px;">${time}</div>`, ...rows].join('');
+        }
       },
       grid: [
         {
@@ -570,23 +713,11 @@ const StockChart = () => {
           },
           axisLabel: {
             color: textColor,
-            formatter: function(value, index) {
-              if (!value || typeof value !== 'string') {
-                return '';
-              }
-              
-              const targetTimes = ['09:30', '10:30', '11:30', '13:00', '14:00', '15:00'];
-              
-              if (targetTimes.includes(value)) {
-                return value;
-              }
-              
-              return '';
-            },
+            formatter: formatTradingTimeLabel,
             show: true,
             interval: 0
           },
-          silent: true
+          silent: false
         },
         {
           type: 'category',
@@ -607,7 +738,7 @@ const StockChart = () => {
           axisLabel: { 
             show: false 
           },
-          silent: true
+          silent: false
         }
       ],
       yAxis: [
@@ -615,7 +746,8 @@ const StockChart = () => {
           scale: false,
           min: yAxisMin,
           max: yAxisMax,
-          splitNumber: 6,
+          interval: yAxisInterval,
+          splitNumber: 4,
           position: 'right',
           splitArea: { 
             show: false
@@ -631,24 +763,14 @@ const StockChart = () => {
           },
           axisLabel: {
             color: textColor,
-            formatter: function(value) {
-              // 取整到小数点后2位
-              const roundedValue = Math.round(value * 100) / 100;
-              if (roundedValue === 0) {
-                return '0%';
-              } else if (roundedValue > 0) {
-                return `+${roundedValue}%`;
-              } else {
-                return `${roundedValue}%`;
-              }
-            },
+            formatter: formatPercentLabel,
             show: true,
             inside: false,
             margin: 12,
             align: 'center',
             verticalAlign: 'middle'
           },
-          silent: true
+          silent: false
         },
         {
           scale: true,
@@ -666,7 +788,7 @@ const StockChart = () => {
           splitLine: { 
             show: false 
           },
-          silent: true
+          silent: false
         }
       ],
       animation: false,
@@ -678,7 +800,7 @@ const StockChart = () => {
       },
       dataZoom: [],
       graphic: [],
-      silent: true,
+      silent: false,
       series: [
         // 主力线、散户线暂时隐藏（数据不准，代码保留）
         // {
@@ -688,14 +810,15 @@ const StockChart = () => {
         //   name: '散户线', type: 'line', data: retailData, ...
         // },
         ...(bigFlowData.length > 0 ? [{
-          name: '大资金',
+          name: '主力',
           type: 'line',
           data: bigFlowData,
           smooth: true,
           connectNulls: true,
           lineStyle: {
             width: 2,
-            color: '#ff4500'
+            color: '#ff4500',
+            type: 'dashed'
           },
           itemStyle: {
             color: '#ff4500'
@@ -716,23 +839,24 @@ const StockChart = () => {
             },
             data: bigFlowMarkers,
           },
-          silent: true
+          silent: false
         }] : []),
         ...(smallFlowData.length > 0 ? [{
-          name: '小资金',
+          name: '散户',
           type: 'line',
           data: smallFlowData,
           smooth: true,
           connectNulls: true,
           lineStyle: {
             width: 1.5,
-            color: '#22c55e'
+            color: '#22c55e',
+            type: 'dashed'
           },
           itemStyle: {
             color: '#22c55e'
           },
           symbol: 'none',
-          silent: true
+          silent: false
         }] : []),
         {
           name: '均价',
@@ -748,7 +872,7 @@ const StockChart = () => {
             color: '#ffd700'
           },
           symbol: 'none',
-          silent: true
+          silent: false
         },
         {
           name: '价格',
@@ -777,16 +901,12 @@ const StockChart = () => {
                   type: 'dashed'
                 },
                 label: {
-                  show: true,
-                  position: 'end',
-                  color: '#666',
-                  fontSize: 10,
-                  formatter: '0%'
+                  ...getZeroLineLabel()
                 }
               }
             ]
           },
-          silent: true
+          silent: false
         },
         {
           name: '成交量',
@@ -795,7 +915,7 @@ const StockChart = () => {
           yAxisIndex: 1,
           data: volumeData,
           barWidth: '60%',
-          silent: true
+          silent: false
         }
       ]
     };
@@ -1017,12 +1137,12 @@ const StockChart = () => {
           {/* 图例 */}
           <div className="chart-legend">
             <div className="legend-item">
-              <span className="legend-line" style={{ borderTop: '2px solid #ff4500', width: 20, display: 'inline-block', verticalAlign: 'middle', marginRight: 4 }}></span>
-              <span className="legend-text" style={{ color: '#ff4500' }}>大资金</span>
+              <span className="legend-line" style={{ borderTop: '2px dashed #ff4500', width: 20, display: 'inline-block', verticalAlign: 'middle', marginRight: 4 }}></span>
+              <span className="legend-text" style={{ color: '#ff4500' }}>主力</span>
             </div>
             <div className="legend-item">
-              <span className="legend-line" style={{ borderTop: '2px solid #22c55e', width: 20, display: 'inline-block', verticalAlign: 'middle', marginRight: 4 }}></span>
-              <span className="legend-text" style={{ color: '#22c55e' }}>小资金</span>
+              <span className="legend-line" style={{ borderTop: '2px dashed #22c55e', width: 20, display: 'inline-block', verticalAlign: 'middle', marginRight: 4 }}></span>
+              <span className="legend-text" style={{ color: '#22c55e' }}>散户</span>
             </div>
           </div>
         </div>

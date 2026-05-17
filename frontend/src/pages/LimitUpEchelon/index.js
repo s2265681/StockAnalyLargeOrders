@@ -74,6 +74,9 @@ const formatDateDisplay = (dateStr) => {
   return `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
 };
 
+// 始终带上 dt，避免周末「最近交易日」与后端日历日不一致导致 AI 缓存 miss
+const toDtQuery = (dateStr) => `dt=${formatDateDisplay(dateStr)}`;
+
 const MIN_LOADING_MS = 300;
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -439,13 +442,14 @@ function LimitUpEchelon() {
             <span
               className={`theme-ranking-item theme-refresh-btn ${refreshingThemes || aiStatus === 'pending' ? 'refreshing' : ''}`}
               onClick={refreshingThemes || aiStatus === 'pending' ? undefined : refreshThemes}
-              style={{ cursor: refreshingThemes || aiStatus === 'pending' ? 'not-allowed' : 'pointer', color: '#fff', opacity: refreshingThemes || aiStatus === 'pending' ? 0.7 : 1 }}
             >
               {refreshingThemes || aiStatus === 'pending'
                 ? <LoadingOutlined spin style={{ fontSize: 14 }} />
                 : <ReloadOutlined style={{ fontSize: 14 }} />
               }
-              <span style={{ marginLeft: 4 }}>{refreshingThemes || aiStatus === 'pending' ? 'AI分组中...' : '更新'}</span>
+              <span className="theme-refresh-btn-label">
+                {refreshingThemes || aiStatus === 'pending' ? 'AI分组中...' : '更新'}
+              </span>
             </span>
           </Tooltip>
         </div>

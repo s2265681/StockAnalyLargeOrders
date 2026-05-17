@@ -6,6 +6,12 @@ from flask import Flask
 from routes.emotion_cycle import emotion_cycle_bp
 
 
+def _auth_headers(role='user'):
+    from utils.auth_middleware import generate_token
+    token = generate_token(1, 'tester', role)
+    return {'Authorization': f'Bearer {token}'}
+
+
 class EmotionCycleCurrentRefreshTest(unittest.TestCase):
     def test_refresh_current_analysis_only_updates_latest_trading_day(self):
         app = Flask(__name__)
@@ -48,6 +54,67 @@ class EmotionCycleCurrentRefreshTest(unittest.TestCase):
             ],
         )
         save.assert_called_once_with("20260515", ai_result)
+
+
+class EmotionIntradayRefreshTest(unittest.TestCase):
+    def setUp(self):
+        self.app = Flask(__name__)
+        self.app.register_blueprint(emotion_cycle_bp)
+        self.client = self.app.test_client()
+
+    def test_intraday_refresh_saves_separate_field(self):
+        records = [
+            {"date": "2026-05-14", "limit_up_count": 40},
+            {"date": "2026-05-15", "limit_up_count": 35},
+        ]
+        cycle_anchor = {"stage": "退潮期", "analysis": "锚点", "advice": "轻仓"}
+        intraday_result = {
+            "date": "2026-05-15",
+            "stage": "退潮期",
+            "analysis": "盘中分歧加大",
+            "advice": "观望",
+            "recommendations": [],
+        }
+
+        with patch("routes.emotion_cycle._fetch_emotion_records", return_value=records):
+            with patch("routes.emotion_cycle._get_analysis_from_db", return_value=cycle_anchor):
+                with patch(
+                    "routes.emotion_cycle._call_claude_intraday",
+                    return_value=intraday_result,
+                ) as call_intraday:
+                    with patch(
+                        "routes.emotion_cycle._save_intraday_to_db",
+                        return_value=True,
+                    ) as save_intraday:
+                        response = self.client.post(
+                            "/api/v1/emotion-intraday-refresh",
+                            headers=_auth_headers("user"),
+                        )
+
+        payload = response.get_json()
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(payload["success"])
+        self.assertEqual(payload["data"]["intraday"], intraday_result)
+        self.assertEqual(payload["data"]["records"], records)
+        call_intraday.assert_called_once()
+        save_intraday.assert_called_once_with("20260515", intraday_result)
+
+    def test_batch_storage_requires_admin(self):
+        with patch("routes.emotion_cycle._call_claude_batch", return_value=[]):
+            response = self.client.post(
+                "/api/v1/emotion-analysis-with-storage",
+                json={"records": [{"date": "2026-05-15"}]},
+                headers=_auth_headers("user"),
+            )
+        self.assertEqual(response.status_code, 403)
+
+        with patch("routes.emotion_cycle._call_claude_batch", return_value=[]):
+            response = self.client.post(
+                "/api/v1/emotion-analysis-with-storage",
+                json={"records": [{"date": "2026-05-15"}]},
+                headers=_auth_headers("admin"),
+            )
+        self.assertEqual(response.status_code, 200)
 
 
 if __name__ == "__main__":

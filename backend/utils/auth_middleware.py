@@ -48,3 +48,13 @@ def login_required(f):
         request.current_user = payload
         return f(*args, **kwargs)
     return decorated
+
+
+def admin_required(f):
+    @wraps(f)
+    @login_required
+    def decorated(*args, **kwargs):
+        if request.current_user.get('role') != 'admin':
+            return jsonify({'success': False, 'message': '需要管理员权限'}), 403
+        return f(*args, **kwargs)
+    return decorated

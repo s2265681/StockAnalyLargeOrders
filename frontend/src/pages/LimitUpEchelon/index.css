@@ -120,6 +120,29 @@
   font-size: 14px;
 }
 
+.theme-refresh-btn {
+  color: #d48806;
+  font-weight: 500;
+}
+
+.theme-refresh-btn .anticon {
+  color: inherit;
+}
+
+.theme-refresh-btn:hover:not(.refreshing) {
+  color: #ad6800;
+}
+
+.theme-refresh-btn.refreshing {
+  color: #1890ff;
+  opacity: 0.85;
+  cursor: not-allowed;
+}
+
+.theme-refresh-btn-label {
+  margin-left: 4px;
+}
+
 /* 题材弹窗 */
 .theme-popover-overlay .ant-popover-inner {
   background: var(--bg-tooltip);
@@ -209,6 +232,24 @@
   color: #d6f3ff;
   background: rgba(24, 144, 255, 0.12);
   border: 1px solid rgba(24, 144, 255, 0.24);
+}
+
+[data-theme="light"] .theme-popover-stock:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .theme-popover-role.dragon {
+  color: #cf1322;
+  background: rgba(255, 77, 79, 0.12);
+  border: 1px solid rgba(255, 77, 79, 0.35);
+  font-weight: 500;
+}
+
+[data-theme="light"] .theme-popover-role.general {
+  color: #0958d9;
+  background: rgba(24, 144, 255, 0.1);
+  border: 1px solid rgba(24, 144, 255, 0.35);
+  font-weight: 500;
 }
 
 .theme-popover-seal {

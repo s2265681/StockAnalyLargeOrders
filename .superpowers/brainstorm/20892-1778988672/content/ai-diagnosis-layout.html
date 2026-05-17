@@ -1,0 +1,72 @@
+<h2>AI诊股页面布局草图</h2>
+<p class="subtitle">目标：输入股票后自动聚合行情、L2资金、情绪周期、竞价抢筹和当天题材，生成买卖点研判；右侧支持继续追问。</p>
+
+<div class="mockup">
+  <div class="mockup-header">推荐布局：结构化诊股 + 连续追问</div>
+  <div class="mockup-body">
+    <div style="display:grid;grid-template-columns:260px 1fr 320px;gap:16px;min-height:520px;">
+      <aside style="border:1px solid #ddd;border-radius:12px;padding:14px;background:#fafafa;">
+        <div class="label">股票诊断</div>
+        <input class="mock-input" placeholder="输入代码/名称，如 000001" style="width:100%;margin:10px 0;">
+        <button class="mock-button" style="width:100%;">开始AI诊股</button>
+        <div style="margin-top:18px;">
+          <h3 style="margin:0 0 10px;">数据融合</h3>
+          <div class="placeholder" style="height:auto;padding:10px;">实时行情 / 分时</div>
+          <div class="placeholder" style="height:auto;padding:10px;">L2大单 / 资金流</div>
+          <div class="placeholder" style="height:auto;padding:10px;">情绪周期</div>
+          <div class="placeholder" style="height:auto;padding:10px;">竞价抢筹</div>
+          <div class="placeholder" style="height:auto;padding:10px;">当天题材</div>
+        </div>
+      </aside>
+
+      <main style="display:flex;flex-direction:column;gap:14px;">
+        <section style="border:1px solid #ddd;border-radius:14px;padding:16px;background:white;">
+          <div class="label">AI核心结论</div>
+          <h3 style="margin:8px 0;">偏强震荡，适合低吸观察，不建议追高</h3>
+          <p style="margin:0;color:#666;">综合题材强度、资金净流入、分时承接和市场情绪给出短线研判。</p>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;">
+            <div class="placeholder" style="height:auto;padding:12px;">买点：回踩均线承接</div>
+            <div class="placeholder" style="height:auto;padding:12px;">卖点：放量滞涨/破位</div>
+            <div class="placeholder" style="height:auto;padding:12px;">风险：情绪退潮</div>
+          </div>
+        </section>
+        <section style="border:1px solid #ddd;border-radius:14px;padding:16px;background:white;flex:1;">
+          <div class="label">分项评分</div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:12px;">
+            <div class="placeholder">资金强度 78</div>
+            <div class="placeholder">题材热度 82</div>
+            <div class="placeholder">情绪配合 65</div>
+            <div class="placeholder">技术位置 70</div>
+          </div>
+          <div class="placeholder" style="height:130px;margin-top:14px;">这里展示 AI 拆解：为何看多/看空、关键观察位、次日应对策略</div>
+        </section>
+      </main>
+
+      <aside style="border:1px solid #ddd;border-radius:12px;padding:14px;background:#fbfbff;display:flex;flex-direction:column;">
+        <div class="label">继续追问</div>
+        <div style="flex:1;margin:12px 0;display:flex;flex-direction:column;gap:10px;">
+          <div class="placeholder" style="height:auto;padding:10px;">用户：明天如果高开怎么办？</div>
+          <div class="placeholder" style="height:auto;padding:10px;background:#eef5ff;">AI：看开盘量能和题材强度...</div>
+        </div>
+        <input class="mock-input" placeholder="继续问买点、卖点、仓位..." style="width:100%;">
+      </aside>
+    </div>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>使用这个三栏布局</h3>
+      <p>信息密度高，适合盘中快速看结论、数据来源和追问。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>改成上下布局</h3>
+      <p>先展示完整诊股报告，再在下方追问，移动端更友好。</p>
+    </div>
+  </div>
+</div>

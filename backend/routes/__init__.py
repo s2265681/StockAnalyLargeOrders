@@ -12,6 +12,7 @@ from .dragon_tiger import dragon_tiger_bp
 from .auth import auth_bp
 from .user import user_bp
 from .orders import orders_bp
+from .ai_diagnosis import ai_diagnosis_bp
 
 __all__ = [
     'stock_basic_bp',
@@ -27,4 +28,5 @@ __all__ = [
     'auth_bp',
     'user_bp',
     'orders_bp',
+    'ai_diagnosis_bp',
 ]

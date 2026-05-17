@@ -181,11 +181,42 @@ def get_eastmoney_money_flow_data(code):
             'Referer': 'https://quote.eastmoney.com',
         }
 
-        response = requests.get(url, params=params, headers=headers, timeout=15)
-        if response.status_code != 200:
-            return None
+        # eventlet.monkey_patch() 下裸 requests 偶发 SSL 递归崩溃，
+        # 与仓库其它源一致：requests(eventlet超时) 失败回退 curl 子进程。
+        data = None
 
-        data = json.loads(response.text)
+        def _do():
+            r = requests.get(url, params=params, headers=headers, timeout=10)
+            r.raise_for_status()
+            return json.loads(r.text)
+
+        try:
+            import eventlet
+            with eventlet.Timeout(12):
+                data = _do()
+        except ImportError:
+            try:
+                data = _do()
+            except Exception:
+                data = None
+        except Exception as e:
+            logger.info(f"东财fflow requests失败，回退curl: {e}")
+
+        if data is None:
+            import subprocess
+            from urllib.parse import urlencode
+            full_url = f"{url}?{urlencode(params)}"
+            try:
+                cp = subprocess.run(
+                    ['curl', '-s', '--max-time', '10',
+                     '-A', headers['User-Agent'], '-e', headers['Referer'], full_url],
+                    capture_output=True, text=True, timeout=14,
+                )
+                if cp.returncode == 0 and cp.stdout.strip():
+                    data = json.loads(cp.stdout)
+            except Exception as e:
+                logger.warning(f"东财fflow curl兜底失败: {e}")
+
         if not data or 'data' not in data or not data['data']:
             return None
 
@@ -194,6 +225,8 @@ def get_eastmoney_money_flow_data(code):
             return None
 
         # kline字段: f51=时间, f52=主力净流入(超大+大单), f53=小单, f54=中单, f55=大单, f56=超大单
+        # 数值为当日累计净流入（元）
+        time_data = []
         zhuli_data = []     # 主力 = 超大单+大单
         sanhu_data = []     # 小单
         chaoda_data = []    # 超大单
@@ -202,6 +235,8 @@ def get_eastmoney_money_flow_data(code):
         for kline in klines:
             parts = kline.split(',')
             zero = "0.000"
+            raw_time = parts[0] if parts else ''
+            time_data.append(raw_time.split(' ')[1] if ' ' in raw_time else raw_time)
             if len(parts) < 6:
                 zhuli_data.append(zero)
                 sanhu_data.append(zero)
@@ -228,6 +263,7 @@ def get_eastmoney_money_flow_data(code):
                 zhongdan_data.append(zero)
 
         return {
+            'time': time_data,
             'zhuli': zhuli_data,
             'sanhu': sanhu_data,
             'chaoda': chaoda_data,

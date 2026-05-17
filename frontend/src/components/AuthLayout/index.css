@@ -363,6 +363,12 @@
   gap: 16px;
 }
 
+.auth-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 .auth-card-footer {
   text-align: center;
   margin-top: 20px;

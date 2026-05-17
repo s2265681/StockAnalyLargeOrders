@@ -57,17 +57,44 @@ class L2MoneyFlowRouteTest(unittest.TestCase):
         self.assertGreater(float(payload['data']['chaoda'][-1]), float(payload['data']['sanhu'][-1]))
         self.assertEqual(payload['data']['zhuli'], payload['data']['chaoda'])
 
-    def test_l2_money_flow_returns_unavailable_when_ths_is_empty(self):
-        with patch('routes.l2_dashboard.get_moneyflow', return_value={'success': False, 'items': []}):
-            with patch('routes.l2_dashboard.adapter.get_orders_data') as get_orders_data:
-                response = self.app.test_client().get('/api/v1/l2_money_flow?code=002342&dt=2026-05-15')
+    def test_l2_money_flow_returns_unavailable_when_both_sources_empty(self):
+        with patch('routes.l2_dashboard.get_moneyflow', return_value={'success': False, 'items': []}), \
+             patch('routes.stock_timeshare.get_eastmoney_money_flow_data', return_value=None):
+            response = self.app.test_client().get('/api/v1/l2_money_flow?code=002342&dt=2026-05-15')
 
         payload = response.get_json()
         self.assertEqual(response.status_code, 200)
         self.assertFalse(payload['success'])
         self.assertEqual(payload['message'], '资金流数据暂不可用')
         self.assertIsNone(payload['data'])
-        get_orders_data.assert_not_called()
+
+    def test_l2_money_flow_falls_back_to_eastmoney_for_shenzhen(self):
+        """同花顺对深市恒空，回退东财 fflow（累计净流入→分钟delta），
+        形状必须与同花顺一致，避免沪深不一致导致主力/散户线时有时无。"""
+        eastmoney_raw = {
+            'time': ['09:30', '09:31'],
+            'chaoda': ['10.000', '25.000'],   # 超大单累计净(万)
+            'dadan': ['5.000', '8.000'],      # 大单累计净
+            'zhongdan': ['2.000', '1.000'],   # 中单累计净
+            'sanhu': ['-3.000', '-6.000'],    # 小单累计净
+            'zhuli': ['15.000', '33.000'],
+        }
+        with patch('routes.l2_dashboard.get_moneyflow', return_value={'success': False, 'items': []}), \
+             patch('routes.stock_timeshare.get_eastmoney_money_flow_data', return_value=eastmoney_raw):
+            response = self.app.test_client().get('/api/v1/l2_money_flow?code=300750&dt=2026-05-15')
+
+        payload = response.get_json()
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(payload['success'])
+        data = payload['data']
+        self.assertEqual(data['source'], 'eastmoney_fflow')
+        self.assertEqual(data['time'], ['09:30', '09:31'])
+        # 累计净 → 分钟净: 超大 [10,15], 小单 [-3,-3]
+        self.assertEqual(data['chaoda_delta'], ['10.000', '15.000'])
+        self.assertEqual(data['sanhu_delta'], ['-3.000', '-3.000'])
+        self.assertEqual(data['zhuli'], data['chaoda'])
+        self.assertEqual(data['summary']['main_net_wan'], 33.0)
+        self.assertEqual(len(data['chaoda']), 2)
 
 
 class ThsMoneyflowSessionTest(unittest.TestCase):

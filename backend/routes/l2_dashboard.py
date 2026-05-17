@@ -119,6 +119,60 @@ def _convert_ths_moneyflow_to_l2_flow(moneyflow):
     }
 
 
+def _convert_eastmoney_fflow_to_l2_flow(mf):
+    """东财 fflow（当日累计净流入，万元）→ 前端分时博弈线结构，
+    形状与 _convert_ths_moneyflow_to_l2_flow 完全一致（含 chaoda_delta），
+    用作同花顺无深市数据时的兜底，避免沪深数据形状不一致导致“时有时无”。
+    """
+    if not mf:
+        return None
+    times = mf.get('time') or []
+    chaoda_cum = [float(x or 0) for x in (mf.get('chaoda') or [])]   # 超大单
+    dadan_cum = [float(x or 0) for x in (mf.get('dadan') or [])]     # 大单
+    zhongdan_cum = [float(x or 0) for x in (mf.get('zhongdan') or [])]  # 中单
+    sanhu_cum = [float(x or 0) for x in (mf.get('sanhu') or [])]     # 小单
+    n = min(len(times), len(chaoda_cum), len(dadan_cum), len(zhongdan_cum), len(sanhu_cum))
+    if n == 0:
+        return None
+
+    def _deltas(cum):
+        return [cum[0] if i == 0 else cum[i] - cum[i - 1] for i in range(n)]
+
+    cd, dd, zd, sd = (_deltas(chaoda_cum), _deltas(dadan_cum),
+                      _deltas(zhongdan_cum), _deltas(sanhu_cum))
+    # _build_intraday_game_scores 期望每分钟 [超大,大,中,小]
+    minute_deltas = [[cd[i], dd[i], zd[i], sd[i]] for i in range(n)]
+    game = _build_intraday_game_scores(minute_deltas)
+
+    chaoda = game[0]
+    dadan = game[1]
+    zhongdan = game[2]
+    sanhu = game[3]
+    chaoda_delta = [_format_delta_wan(v) for v in cd]
+    sanhu_delta = [_format_delta_wan(v) for v in sd]
+    main_net_wan = round(chaoda_cum[n - 1] + dadan_cum[n - 1], 2)
+
+    return {
+        'source': 'eastmoney_fflow',
+        'date': '',
+        'time': times[:n],
+        'zhuli': chaoda[:],
+        'sanhu': sanhu,
+        'chaoda': chaoda,
+        'dadan': dadan,
+        'zhongdan': zhongdan,
+        'chaoda_delta': chaoda_delta,
+        'sanhu_delta': sanhu_delta,
+        'summary': {
+            'super_big_net_wan': round(chaoda_cum[n - 1], 2),
+            'big_net_wan': round(dadan_cum[n - 1], 2),
+            'main_net_wan': main_net_wan,
+            'mid_net_wan': round(zhongdan_cum[n - 1], 2),
+            'small_net_wan': round(sanhu_cum[n - 1], 2),
+        },
+    }
+
+
 @l2_dashboard_bp.route('/api/v1/l2_dashboard')
 def l2_dashboard():
     """L2大单看板统一接口（全量，含分时+大单）"""
@@ -195,6 +249,11 @@ def l2_money_flow():
 
     try:
         money_flow = _convert_ths_moneyflow_to_l2_flow(get_moneyflow(code))
+        if not money_flow:
+            # 同花顺对深市(00/30)恒无分钟资金流，回退东财 fflow（沪深通用）
+            from routes.stock_timeshare import get_eastmoney_money_flow_data
+            money_flow = _convert_eastmoney_fflow_to_l2_flow(
+                get_eastmoney_money_flow_data(code))
         if not money_flow:
             return jsonify({'success': False, 'message': '资金流数据暂不可用', 'data': None})
         return jsonify({'success': True, 'data': money_flow})

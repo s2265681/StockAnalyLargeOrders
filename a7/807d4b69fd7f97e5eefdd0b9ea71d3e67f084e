@@ -1,0 +1,19 @@
+docs/superpowers/plans/2026-05-17-emotion-cycle-offline.md
+  s_8b1898977013c2::t_c5d212cbc931d1 1-731
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "a7807d4b69fd7f97e5eefdd0b9ea71d3e67f084e",
+  "prompts": {},
+  "sessions": {
+    "s_8b1898977013c2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "093e2884-cc61-465e-8ff1-b3a538af93f5",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

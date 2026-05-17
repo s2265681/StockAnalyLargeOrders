@@ -1,0 +1,19 @@
+frontend/src/pages/EmotionCycle/index.js
+  s_acc2e4c6f72930::t_038393152ee427 95-126,129,132-137,139-152,154-158,161-171,173-174,176-187
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "0ae8bb8c60d8fad42d5d69f9cc8b3829578f0d5c",
+  "prompts": {},
+  "sessions": {
+    "s_acc2e4c6f72930": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7719717f-7793-4aff-87b8-5b2442ed6232",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

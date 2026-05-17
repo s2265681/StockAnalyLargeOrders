@@ -270,6 +270,19 @@ def _get_analysis_from_db(dt: str) -> dict:
     return None
 
 
+def _is_placeholder_analysis(data: dict) -> bool:
+    """判断周期研判是否为占位/未生成（盘中刷新会写入空占位）"""
+    if not isinstance(data, dict):
+        return True
+    if data.get("stage") == "待生成":
+        return True
+    return not (
+        data.get("analysis")
+        or data.get("advice")
+        or data.get("recommendations")
+    )
+
+
 def _save_analysis_to_db(dt: str, analysis_json: dict) -> bool:
     """保存分析结果到数据库"""
     from utils.db import execute_write
@@ -451,9 +464,9 @@ def get_emotion_analysis_cache():
     if not dt:
         return v1_error_response(message="请提供 date 参数")
     db_result = _get_analysis_from_db(dt)
-    if db_result:
+    if db_result and not _is_placeholder_analysis(db_result):
         return v1_success_response(data=db_result)
-    return v1_success_response(data=None)
+    return v1_success_response(data=None, message="还未生成")
 
 
 def _record_date_key(record: dict) -> str:
@@ -830,6 +843,52 @@ def _call_claude_batch(records_batch):
     if not isinstance(results, list):
         raise Exception("AI 返回格式异常")
     return results
+
+
+def analyze_one_date(target_dt: str, all_records: list, force: bool = False) -> str:
+    """为单个交易日生成周期研判并存库（幂等、不依赖 HTTP）。
+
+    返回 'skipped' | 'saved' | 'failed'。
+    - force=False 且 DB 已有该日 → 'skipped'
+    - 取 target 当日 + 之前 5 个交易日作趋势上下文
+    - 调 _call_claude_batch，从返回中取 target 当日结果并存库
+    """
+    target_dt = str(target_dt).replace("-", "")
+    if not force and _get_analysis_from_db(target_dt):
+        logger.info(f"{target_dt} 已有周期研判，跳过")
+        return "skipped"
+
+    valid = [r for r in all_records if isinstance(r, dict) and _record_date_key(r)]
+    ordered = sorted(valid, key=_record_date_key)
+    idx = next(
+        (i for i, r in enumerate(ordered) if _record_date_key(r) == target_dt),
+        None,
+    )
+    if idx is None:
+        logger.error(f"{target_dt} 不在记录列表中，无法分析")
+        return "failed"
+
+    ctx_start = max(0, idx - 5)
+    batch = ordered[ctx_start:idx + 1]
+    logger.info(f"分析 {target_dt}，上下文 {len(batch)} 条")
+
+    results = _call_claude_batch(batch)
+    item = next(
+        (
+            x for x in results
+            if isinstance(x, dict) and _record_date_key(x) == target_dt
+        ),
+        None,
+    )
+    if item is None:
+        logger.error(f"AI 返回未包含 {target_dt}")
+        return "failed"
+
+    if not _save_analysis_to_db(target_dt, item):
+        logger.error(f"{target_dt} 存库失败")
+        return "failed"
+    logger.info(f"{target_dt} 周期研判已存库")
+    return "saved"
 
 
 BATCH_SIZE = 10  # 每批处理的记录数

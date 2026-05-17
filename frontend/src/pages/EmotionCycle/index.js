@@ -92,88 +92,99 @@ const getLatestRecordDate = (items) => {
   return sortedDates[sortedDates.length - 1] || null;
 };
 
-function AnalysisBlock({ title, accent, result, loading, emptyHint, extra }) {
-  if (loading && !result) {
+function AnalysisBlock({ title, accent, result, loading, emptyHint, extra, children }) {
+  const content = (() => {
+    if (loading && !result) {
+      return (
+        <>
+          <div className="analysis-panel-title">
+            <span>{title}</span>
+            {extra && <span className="analysis-panel-extra">{extra}</span>}
+          </div>
+          <div className="loading-container" style={{ padding: '24px 0' }}>
+            <Spin tip="加载中..." />
+          </div>
+        </>
+      );
+    }
+
+    if (!result) {
+      return (
+        <>
+          <div className="analysis-panel-title">
+            <span>{title}</span>
+            {extra && <span className="analysis-panel-extra">{extra}</span>}
+          </div>
+          <div className="analysis-empty compact">{emptyHint}</div>
+        </>
+      );
+    }
+
+    const { stage, analysis, advice, recommendations, updated_at: updatedAt } = result;
+    const stageColor = stageColorMap[stage]
+      || Object.entries(stageColorMap).find(([k]) => stage?.includes(k))?.[1]
+      || '#1890ff';
+
     return (
-      <div className={`analysis-panel-block analysis-panel-${accent}`}>
+      <>
         <div className="analysis-panel-title">
           <span>{title}</span>
-          {extra && <span className="analysis-panel-extra">{extra}</span>}
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {updatedAt && (
+              <span className="analysis-updated-at">更新 {String(updatedAt).slice(0, 16)}</span>
+            )}
+            {extra && <span className="analysis-panel-extra">{extra}</span>}
+          </span>
         </div>
-        <div className="loading-container" style={{ padding: '24px 0' }}>
-          <Spin tip="加载中..." />
-        </div>
-      </div>
-    );
-  }
+        <div className="analysis-content">
+          <Tag
+            color={stageColor}
+            style={{ fontSize: 14, padding: '2px 12px', marginBottom: 10, fontWeight: 'bold' }}
+          >
+            {stage}
+          </Tag>
 
-  if (!result) {
-    return (
-      <div className={`analysis-panel-block analysis-panel-${accent}`}>
-        <div className="analysis-panel-title">
-          <span>{title}</span>
-          {extra && <span className="analysis-panel-extra">{extra}</span>}
-        </div>
-        <div className="analysis-empty compact">{emptyHint}</div>
-      </div>
-    );
-  }
+          {analysis && (
+            <div style={{ marginBottom: 10 }}>
+              <div className="analysis-section-title">分析</div>
+              <div className="analysis-text">{analysis}</div>
+            </div>
+          )}
 
-  const { stage, analysis, advice, recommendations, updated_at: updatedAt } = result;
-  const stageColor = stageColorMap[stage]
-    || Object.entries(stageColorMap).find(([k]) => stage?.includes(k))?.[1]
-    || '#1890ff';
+          {advice && (
+            <div style={{ marginBottom: 10 }}>
+              <div className="analysis-section-title">建议</div>
+              <div className="advice-text">{advice}</div>
+            </div>
+          )}
+
+          {recommendations && recommendations.length > 0 && (
+            <div>
+              <div className="analysis-section-title">备选标的</div>
+              <div className="recommendations-list">
+                {recommendations.map((rec, idx) => (
+                  <div key={idx} className="recommendation-item">
+                    <div className="rec-header">
+                      <span className="rec-stock">{rec.stock}</span>
+                      {rec.position && <Tag color="blue" style={{ fontSize: 11 }}>{rec.position}</Tag>}
+                    </div>
+                    <div className="rec-reason">{rec.reason}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </>
+    );
+  })();
 
   return (
     <div className={`analysis-panel-block analysis-panel-${accent}`}>
-      <div className="analysis-panel-title">
-        <span>{title}</span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {updatedAt && (
-            <span className="analysis-updated-at">更新 {String(updatedAt).slice(0, 16)}</span>
-          )}
-          {extra && <span className="analysis-panel-extra">{extra}</span>}
-        </span>
-      </div>
-      <div className="analysis-content">
-        <Tag
-          color={stageColor}
-          style={{ fontSize: 14, padding: '2px 12px', marginBottom: 10, fontWeight: 'bold' }}
-        >
-          {stage}
-        </Tag>
-
-        {analysis && (
-          <div style={{ marginBottom: 10 }}>
-            <div className="analysis-section-title">分析</div>
-            <div className="analysis-text">{analysis}</div>
-          </div>
-        )}
-
-        {advice && (
-          <div style={{ marginBottom: 10 }}>
-            <div className="analysis-section-title">建议</div>
-            <div className="advice-text">{advice}</div>
-          </div>
-        )}
-
-        {recommendations && recommendations.length > 0 && (
-          <div>
-            <div className="analysis-section-title">备选标的</div>
-            <div className="recommendations-list">
-              {recommendations.map((rec, idx) => (
-                <div key={idx} className="recommendation-item">
-                  <div className="rec-header">
-                    <span className="rec-stock">{rec.stock}</span>
-                    {rec.position && <Tag color="blue" style={{ fontSize: 11 }}>{rec.position}</Tag>}
-                  </div>
-                  <div className="rec-reason">{rec.reason}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+      {content}
+      {children && (
+        <div className="analysis-panel-children">{children}</div>
+      )}
     </div>
   );
 }

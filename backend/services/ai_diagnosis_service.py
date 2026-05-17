@@ -16,6 +16,7 @@ from services.theme_service import get_limit_up_stocks_by_date, get_tags_by_date
 from services.ths_moneyflow import get_moneyflow
 from utils.date_utils import get_next_trading_date, get_recent_trading_dates, get_valid_trading_date
 from utils.db import execute_query, execute_write
+from utils.json_safe import dumps_json, json_safe
 
 logger = logging.getLogger(__name__)
 
@@ -545,7 +546,7 @@ def build_snapshot(code: str, trade_date: str = None) -> dict:
         snapshot["partial"] = True
         snapshot["missing_dims"] = missing
 
-    return snapshot
+    return json_safe(snapshot)
 
 
 def get_cache(trade_date: str, code: str):
@@ -580,7 +581,7 @@ def save_cache(trade_date: str, code: str, snapshot: dict, report: dict) -> bool
     try:
         execute_write(
             sql,
-            (dt, code, json.dumps(snapshot, ensure_ascii=False), json.dumps(report, ensure_ascii=False)),
+            (dt, code, dumps_json(snapshot), dumps_json(report)),
         )
         return True
     except Exception as e:
@@ -765,7 +766,7 @@ def _build_diagnosis_prompt(snapshot: dict) -> str:
 - buy_points/sell_points 每项为 {{"price":"价位或条件","reason":"依据"}}
 
 快照数据：
-{json.dumps(snapshot, ensure_ascii=False, indent=2)}
+{dumps_json(snapshot, indent=2)}
 
 JSON 结构（字段名必须一致）：
 {{
@@ -851,10 +852,10 @@ def run_chat(code: str, message: str, context: dict) -> dict:
     prompt = f"""你是 A 股诊股助手。用户正在分析股票 {code}。
 
 【已生成的诊股报告】
-{json.dumps(report, ensure_ascii=False, indent=2)}
+{dumps_json(report, indent=2)}
 
 【数据快照】
-{json.dumps(snapshot, ensure_ascii=False, indent=2)}
+{dumps_json(snapshot, indent=2)}
 
 【用户追问】
 {message}

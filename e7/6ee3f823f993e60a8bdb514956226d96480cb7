@@ -1,0 +1,20 @@
+.github/workflows/deploy.yml
+  s_acc2e4c6f72930::t_0ab249ce00929e 237
+  s_acc2e4c6f72930::t_4762202e806e49 188
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "e76ee3f823f993e60a8bdb514956226d96480cb7",
+  "prompts": {},
+  "sessions": {
+    "s_acc2e4c6f72930": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7719717f-7793-4aff-87b8-5b2442ed6232",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

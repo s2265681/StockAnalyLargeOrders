@@ -2735,6 +2735,11 @@ code {
     margin-left: auto;
   }
 
+  /* 移动端隐藏 logo 文字，只保留图标 */
+  .nav-logo-name {
+    display: none !important;
+  }
+
   /* ── 个股分析 - 股票信息上下布局 ── */
   .stock-title-bar {
     flex-direction: column;

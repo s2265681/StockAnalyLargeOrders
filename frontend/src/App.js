@@ -81,6 +81,25 @@ function AppInner() {
             style={{ marginLeft: 8, flexShrink: 0 }}
           />
 
+          {/* Logo */}
+          <div
+            className="nav-logo-brand"
+            onClick={() => window.location.href = '/'}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', flexShrink: 0 }}
+          >
+            <svg width="30" height="30" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="18" cy="18" r="17" fill="var(--gold-bg,#fffbeb)" stroke="var(--color-accent,#d97706)" strokeWidth="1.5"/>
+              <path d="M18,10 L4,28 Q18,24 32,28 Z" fill="var(--color-accent,#d97706)" opacity="0.25"/>
+              <rect x="14" y="13" width="8" height="14" rx="2" fill="var(--color-accent,#d97706)"/>
+              <polygon points="11,13 25,13 23,7 13,7" fill="var(--color-accent2,#f59e0b)"/>
+              <circle cx="18" cy="10" r="3.5" fill="#fff" opacity="0.95"/>
+              <circle cx="18" cy="10" r="2" fill="var(--color-accent2,#f59e0b)"/>
+            </svg>
+            <span className="nav-logo-name" style={{ fontSize: 15, fontWeight: 800, color: 'var(--color-accent)', letterSpacing: 0.5 }}>
+              AI炒股指南
+            </span>
+          </div>
+
           {/* 桌面端水平菜单 */}
           <Menu
             className="desktop-nav-menu"

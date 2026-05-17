@@ -297,7 +297,7 @@ body{background:var(--bg);color:var(--text);font-family:'PingFang SC','Helvetica
   </div>
   <div class="nav-right">
     <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙 <span class="theme-btn-label">暗色模式</span></button>
-    <a href="/register" class="nav-try">免费试用 →</a>
+    <a href="/login" class="nav-try" onclick="event.preventDefault();goToApp()">免费试用 →</a>
   </div>
 </nav>
 
@@ -315,7 +315,7 @@ body{background:var(--bg);color:var(--text);font-family:'PingFang SC','Helvetica
     专为 A 股打板党和短线交易者设计，帮你在最关键的时刻做出最正确的决策。
   </p>
   <div class="hero-cta-group">
-    <a href="/register" class="btn-primary">
+    <a href="/login" class="btn-primary" onclick="event.preventDefault();goToApp()">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
       点击进入，免费试一试
     </a>
@@ -785,7 +785,7 @@ body{background:var(--bg);color:var(--text);font-family:'PingFang SC','Helvetica
 <div class="try-section">
   <h2 class="try-title">现在试一试<br><span class="em">不需要信用卡</span></h2>
   <p class="try-sub">注册后即可体验核心功能，感受 AI 分析的真实效果</p>
-  <a href="/register" class="try-btn">
+  <a href="/login" class="try-btn" onclick="event.preventDefault();goToApp()">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
     点击进入，立即试一试
   </a>
@@ -806,7 +806,7 @@ body{background:var(--bg);color:var(--text);font-family:'PingFang SC','Helvetica
         <div class="price-amt"><span class="price-sym">¥</span>380</div>
         <div class="price-days">30 天</div>
         <div class="price-daily">≈ ¥12.7 / 天</div>
-        <a href="/register" class="price-btn price-btn-outline">立即开通</a>
+        <a href="/login" class="price-btn price-btn-outline" onclick="event.preventDefault();goToApp()">立即开通</a>
       </div>
       <div class="price-card hot">
         <div class="price-hot-badge">热门</div>
@@ -814,14 +814,14 @@ body{background:var(--bg);color:var(--text);font-family:'PingFang SC','Helvetica
         <div class="price-amt"><span class="price-sym">¥</span>900</div>
         <div class="price-days">90 天</div>
         <div class="price-daily">≈ ¥10 / 天，省 ¥240</div>
-        <a href="/register" class="price-btn price-btn-gold">立即开通</a>
+        <a href="/login" class="price-btn price-btn-gold" onclick="event.preventDefault();goToApp()">立即开通</a>
       </div>
       <div class="price-card">
         <div class="price-tier">半年VIP</div>
         <div class="price-amt"><span class="price-sym">¥</span>1600</div>
         <div class="price-days">180 天</div>
         <div class="price-daily">≈ ¥8.9 / 天，省 ¥680</div>
-        <a href="/register" class="price-btn price-btn-outline">立即开通</a>
+        <a href="/login" class="price-btn price-btn-outline" onclick="event.preventDefault();goToApp()">立即开通</a>
       </div>
       <div class="price-card">
         <div class="price-best-badge">最划算</div>
@@ -829,7 +829,7 @@ body{background:var(--bg);color:var(--text);font-family:'PingFang SC','Helvetica
         <div class="price-amt"><span class="price-sym">¥</span>2500</div>
         <div class="price-days">365 天</div>
         <div class="price-daily">≈ ¥6.8 / 天，省 ¥1060</div>
-        <a href="/register" class="price-btn price-btn-outline">立即开通</a>
+        <a href="/login" class="price-btn price-btn-outline" onclick="event.preventDefault();goToApp()">立即开通</a>
       </div>
     </div>
     <p class="pricing-note">支持支付宝 · 微信支付 · 数据仅供参考，不构成投资建议</p>
@@ -873,7 +873,13 @@ function toggleTheme(){
   const h=document.documentElement;
   const dark=h.getAttribute('data-theme')==='dark';
   h.setAttribute('data-theme',dark?'light':'dark');
-  document.getElementById('theme-btn').textContent=dark?'🌙 暗色模式':'☀️ 亮色模式';
+  const btn=document.getElementById('theme-btn');
+  btn.childNodes[0].textContent=dark?'🌙 ':'☀️ ';
+  const label=btn.querySelector('.theme-btn-label');
+  if(label) label.textContent=dark?'暗色模式':'亮色模式';
+}
+function goToApp(){
+  location.href=localStorage.getItem('niuniu_token')?'/stock-dashboard':'/login';
 }
 </script>
 </body>

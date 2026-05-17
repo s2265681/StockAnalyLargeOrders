@@ -40,6 +40,13 @@ source venv/bin/activate
 echo "📥 安装后端依赖..."
 pip install -r requirements.txt
 
+# 加载 .env 环境变量（含线上数据库配置）
+if [ -f .env ]; then
+    set -a
+    . ./.env
+    set +a
+fi
+
 # 启动后端服务
 echo "🎯 启动Flask后端服务 (端口: 9001)..."
 nohup python app.py > ../backend.log 2>&1 &

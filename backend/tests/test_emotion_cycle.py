@@ -77,27 +77,27 @@ class EmotionIntradayRefreshTest(unittest.TestCase):
         }
 
         with patch("routes.emotion_cycle._fetch_emotion_records", return_value=records):
-            with patch("routes.emotion_cycle._get_analysis_from_db", return_value=cycle_anchor):
+            with patch(
+                "routes.emotion_cycle.analyze_daily_one_date",
+                return_value="saved",
+            ) as analyze_daily:
                 with patch(
-                    "routes.emotion_cycle._call_claude_intraday",
+                    "routes.emotion_cycle._get_intraday_from_db",
                     return_value=intraday_result,
-                ) as call_intraday:
-                    with patch(
-                        "routes.emotion_cycle._save_intraday_to_db",
-                        return_value=True,
-                    ) as save_intraday:
-                        response = self.client.post(
-                            "/api/v1/emotion-intraday-refresh",
-                            headers=_auth_headers("user"),
-                        )
+                ):
+                    response = self.client.post(
+                        "/api/v1/emotion-intraday-refresh",
+                        headers=_auth_headers("user"),
+                        json={"date": "20260515", "force": True},
+                    )
 
         payload = response.get_json()
         self.assertEqual(response.status_code, 200)
         self.assertTrue(payload["success"])
         self.assertEqual(payload["data"]["intraday"], intraday_result)
+        self.assertEqual(payload["data"]["daily"], intraday_result)
         self.assertEqual(payload["data"]["records"], records)
-        call_intraday.assert_called_once()
-        save_intraday.assert_called_once_with("20260515", intraday_result)
+        analyze_daily.assert_called_once_with("20260515", records, force=True)
 
     def test_batch_storage_requires_admin(self):
         with patch("routes.emotion_cycle._call_claude_batch", return_value=[]):
@@ -229,6 +229,49 @@ class AnalyzeOneDateTest(unittest.TestCase):
         self.assertEqual(status, "saved")
         mock_claude.assert_called_once()  # 应该被调用，而不是跳过
         mock_save.assert_called_once_with("20260515", ai_result)
+
+
+class AnalyzeDailyOneDateTest(unittest.TestCase):
+    def _records(self):
+        return [
+            {"date": f"2026-05-{day:02d}", "limit_up_count": day}
+            for day in range(13, 17)
+        ]
+
+    def test_skips_when_daily_exists(self):
+        from routes.emotion_cycle import analyze_daily_one_date
+        with patch(
+            "routes.emotion_cycle._get_intraday_from_db",
+            return_value={
+                "analysis": "已有",
+                "trade_plans": [{"stock": "A"}],
+            },
+        ):
+            with patch("routes.emotion_cycle._call_claude_daily_analysis") as call_ai:
+                status = analyze_daily_one_date("20260516", self._records())
+        self.assertEqual(status, "skipped")
+        call_ai.assert_not_called()
+
+    def test_saves_daily_analysis(self):
+        from routes.emotion_cycle import analyze_daily_one_date
+        ai_result = {
+            "date": "2026-05-16",
+            "stage": "升温期",
+            "analysis": "走强",
+            "trade_plans": [],
+        }
+        with patch("routes.emotion_cycle._get_intraday_from_db", return_value=None):
+            with patch(
+                "routes.emotion_cycle._call_claude_daily_analysis",
+                return_value=ai_result,
+            ):
+                with patch(
+                    "routes.emotion_cycle._save_intraday_to_db",
+                    return_value=True,
+                ) as save:
+                    status = analyze_daily_one_date("20260516", self._records())
+        self.assertEqual(status, "saved")
+        save.assert_called_once_with("20260516", ai_result)
 
 
 if __name__ == "__main__":

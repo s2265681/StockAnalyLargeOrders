@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button, Spin, Tag } from 'antd';
-import { ThunderboltOutlined, LeftOutlined, RightOutlined, ReloadOutlined } from '@ant-design/icons';
+import { LeftOutlined, RightOutlined, ReloadOutlined } from '@ant-design/icons';
 import ReactEChartsCore from 'echarts-for-react/lib/core';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
@@ -14,7 +14,6 @@ import {
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import { apiRequest } from '../../config/api';
-import { useAuth } from '../../context/AuthContext';
 import './index.css';
 
 
@@ -190,13 +189,10 @@ function AnalysisBlock({ title, accent, result, loading, emptyHint, extra, child
 }
 
 function EmotionCycle() {
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
   const todayStr = useMemo(() => getLastTradingDayStr(), []);
 
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [batchLoading, setBatchLoading] = useState(false);
   const [intradayLoading, setIntradayLoading] = useState(false);
   const [cycleAnalysis, setCycleAnalysis] = useState(null);
   const [intradayAnalysis, setIntradayAnalysis] = useState(null);
@@ -246,26 +242,6 @@ function EmotionCycle() {
     };
     if (records.length > 0) loadIntradayCache();
   }, [selectedDate, records.length, isTodaySelected]);
-
-  const handleBatchAnalysis = async (force = false) => {
-    if (!isAdmin || records.length === 0) return;
-    setBatchLoading(true);
-    try {
-      let url = '/api/v1/emotion-analysis-with-storage';
-      if (force) url += `?force=${force}`;
-      await apiRequest(url, {
-        method: 'POST',
-        body: JSON.stringify({ records }),
-        timeout: 600000,
-      });
-      const cacheRes = await apiRequest(`/api/v1/emotion-analysis-cache?date=${selectedDate}`);
-      if (cacheRes?.data) setCycleAnalysis(cacheRes.data);
-    } catch (err) {
-      console.error('Failed to batch analyze:', err);
-    } finally {
-      setBatchLoading(false);
-    }
-  };
 
   const handleIntradayRefresh = async () => {
     if (!isTodaySelected) return;
@@ -401,20 +377,6 @@ function EmotionCycle() {
         >
           后一天 <RightOutlined />
         </button>
-        {isAdmin && (
-          <div className="date-nav-ai-btns">
-            <Button
-              type="primary"
-              icon={<ThunderboltOutlined />}
-              onClick={() => handleBatchAnalysis(false)}
-              loading={batchLoading}
-              disabled={records.length === 0}
-              className="ai-analysis-btn admin-batch-btn"
-            >
-              全量生成
-            </Button>
-          </div>
-        )}
       </div>
 
       <div className="emotion-main-layout">
@@ -440,8 +402,7 @@ function EmotionCycle() {
             title="周期研判"
             accent="cycle"
             result={cycleAnalysis}
-            loading={batchLoading}
-            emptyHint="暂无周期研判，请联系管理员生成"
+            emptyHint="还未生成，由每日定时任务生成"
           />
           <AnalysisBlock
             title="盘中研判"

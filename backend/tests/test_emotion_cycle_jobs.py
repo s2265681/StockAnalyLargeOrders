@@ -119,5 +119,58 @@ class EmotionCycleDailyTest(unittest.TestCase):
         self.assertNotEqual(cm.exception.code, 0)
 
 
+class BackfillEmotionCycleTest(unittest.TestCase):
+    """测试 backfill_emotion_cycle.py 回填任务"""
+
+    @patch('jobs.backfill_emotion_cycle.time.sleep')
+    @patch('jobs.backfill_emotion_cycle.analyze_one_date')
+    @patch('jobs.backfill_emotion_cycle._fetch_emotion_records')
+    def test_processes_records_reverse_chronologically(self, mock_fetch, mock_analyze, mock_sleep):
+        """按日期从新到旧逆序遍历"""
+        mock_fetch.return_value = [
+            {'date': '2026-03-10', 'limit_up_count': 1},
+            {'date': '2026-03-11', 'limit_up_count': 2},
+            {'date': '2026-03-12', 'limit_up_count': 3},
+        ]
+        mock_analyze.side_effect = ['saved', 'skipped', 'saved']
+
+        import jobs.backfill_emotion_cycle as backfill
+        backfill.main(force=False)
+
+        # 应该从最新的日期开始（2026-03-12）
+        calls = mock_analyze.call_args_list
+        self.assertEqual(calls[0][0][0], '20260312')  # 第一个调用应该是最新的
+        self.assertEqual(calls[1][0][0], '20260311')
+        self.assertEqual(calls[2][0][0], '20260310')  # 最后是最旧的
+
+        # sleep 应该被调用两次（每日之间）
+        self.assertEqual(mock_sleep.call_count, 2)
+
+
+class BackfillEmotionDailyAnalysisTest(unittest.TestCase):
+    """测试 backfill_emotion_daily_analysis.py 正序回填"""
+
+    @patch('jobs.backfill_emotion_daily_analysis.time.sleep')
+    @patch('jobs.backfill_emotion_daily_analysis.analyze_daily_one_date')
+    @patch('jobs.backfill_emotion_daily_analysis._get_intraday_from_db')
+    @patch('jobs.backfill_emotion_daily_analysis._fetch_emotion_records')
+    def test_processes_oldest_first(self, mock_fetch, mock_get_db, mock_analyze, mock_sleep):
+        mock_fetch.return_value = [
+            {'date': '2026-03-10'},
+            {'date': '2026-03-11'},
+            {'date': '2026-03-12'},
+        ]
+        mock_get_db.return_value = None
+        mock_analyze.side_effect = ['saved', 'saved', 'saved']
+
+        import jobs.backfill_emotion_daily_analysis as backfill
+        backfill.main(force=False)
+
+        calls = mock_analyze.call_args_list
+        self.assertEqual(calls[0][0][0], '20260310')
+        self.assertEqual(calls[1][0][0], '20260311')
+        self.assertEqual(calls[2][0][0], '20260312')
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -2,7 +2,7 @@
 情绪周期接口模块
 - GET  /api/v1/emotion-cycle     代理 StockAPI 情绪周期数据
 - POST /api/v1/emotion-analysis-with-storage  管理员全量分析
-- POST /api/v1/emotion-intraday-refresh       盘中刷新当日研判
+- POST /api/v1/emotion-intraday-refresh       刷新当天分析（可指定日期）
 """
 import json
 import logging
@@ -42,7 +42,7 @@ def _init_emotion_analysis_table():
 
 
 def _migrate_emotion_intraday_columns():
-    """为已有表补充盘中研判字段"""
+    """为已有表补充当天分析字段（列名 intraday_* 保持兼容）"""
     from utils.db import execute_write
     migrations = [
         (
@@ -305,7 +305,7 @@ def _save_analysis_to_db(dt: str, analysis_json: dict) -> bool:
 
 
 def _get_intraday_from_db(dt: str) -> dict:
-    """从数据库查询盘中研判结果"""
+    """从数据库查询当天分析结果（intraday_result_json）"""
     from utils.db import execute_query
     sql = (
         "SELECT intraday_result_json, intraday_updated_at "
@@ -325,7 +325,7 @@ def _get_intraday_from_db(dt: str) -> dict:
 
 
 def _save_intraday_to_db(dt: str, intraday_json: dict) -> bool:
-    """保存盘中研判，不覆盖 analysis_result_json"""
+    """保存当天分析，不覆盖 analysis_result_json"""
     from utils.db import execute_query, execute_write
     payload = json.dumps(intraday_json, ensure_ascii=False)
     existing = execute_query(
@@ -342,7 +342,7 @@ def _save_intraday_to_db(dt: str, intraday_json: dict) -> bool:
             execute_write(sql, (payload, dt))
             return True
         except Exception as e:
-            logger.error(f"更新盘中研判失败: {e}")
+            logger.error(f"更新当天分析失败: {e}")
             return False
 
     placeholder = json.dumps(
@@ -357,8 +357,48 @@ def _save_intraday_to_db(dt: str, intraday_json: dict) -> bool:
         execute_write(sql, (dt, placeholder, payload))
         return True
     except Exception as e:
-        logger.error(f"保存盘中研判失败: {e}")
+        logger.error(f"保存当天分析失败: {e}")
         return False
+
+
+def _json_safe(value):
+    """将 DB Decimal 等类型转为 JSON 可序列化值"""
+    from decimal import Decimal
+
+    if isinstance(value, Decimal):
+        return float(value)
+    if isinstance(value, dict):
+        return {k: _json_safe(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(v) for v in value]
+    return value
+
+
+def _summarize_echelon_context(dt: str) -> str:
+    """压缩当日涨停梯队，供当天分析 prompt 使用"""
+    try:
+        from services.theme_service import get_limit_up_stocks_by_date
+
+        stocks = get_limit_up_stocks_by_date(dt.replace("-", "")) or []
+        if not stocks:
+            return "（当日涨停梯队数据暂无，请结合情绪数据与热门板块推断）"
+        compact = []
+        for s in stocks[:45]:
+            compact.append(_json_safe({
+                "name": s.get("name"),
+                "code": s.get("code"),
+                "boards": s.get("boards"),
+                "tag": s.get("tag_name") or s.get("industry"),
+                "seal_ratio": s.get("seal_ratio"),
+                "turnover_rate": s.get("turnover_rate"),
+                "first_time": s.get("first_time"),
+                "break_count": s.get("break_count"),
+                "is_leader": s.get("is_leader"),
+            }))
+        return json.dumps(compact, ensure_ascii=False)[:3500]
+    except Exception as e:
+        logger.warning(f"获取涨停梯队摘要失败 {dt}: {e}")
+        return "（涨停梯队数据暂不可用）"
 
 
 def _fetch_hot_sectors() -> str:
@@ -474,32 +514,108 @@ def _record_date_key(record: dict) -> str:
     return str(record.get("date", "")).replace("-", "")
 
 
-INTRADAY_SYSTEM_PROMPT = """你是短线情绪博弈高手。请基于【最新盘中情绪数据】输出当日盘中研判。
-已给出的「周期研判」来自管理员离线全量分析，作为阶段锚点；你需结合实时数据判断盘中变化、分歧与操作节奏。
+DAILY_ANALYSIS_SYSTEM_PROMPT = """你是 A 股短线情绪博弈高手，输出【当天分析】：结合实时/收盘情绪、涨停梯队与周期锚点，给出可执行的操作建议、买卖点与前瞻标的。
+
+## 输入说明
+- 周期研判锚点：离线全量周期分析，作为阶段基准
+- 昨日当天分析：用于复盘昨日 trade_plans 的兑现情况并修正
+- 情绪数据：context 为前几日，today 为分析日
+- 涨停梯队：当日连板结构，用于连板接力、打板、一进二筛选
+- 热门板块：主线题材参考
+
+## 战法与输出要求
+1. **连板接力**：高标/主线龙头续板机会，明确竞价与封板确认条件
+2. **龙头低吸**：首阴、分歧回踩的买点区间与止损
+3. **打板**：封板质量、封成比、时间窗口，失败则放弃
+4. **弱转强/一进二**：次日竞价观察要点与确认买入时机
+
+必须包含：
+- **prev_day_review**：复盘上一交易日 trade_plans/recommendations 的买卖点是否有效、如何修正（若无昨日分析写「暂无昨日研判可复盘」）
+- **trade_plans**：2-4 只最有前瞻性的标的，每只写明 technique、entry、exit、timing、position
+- **recommendations**：简要备选（可与 trade_plans 部分重叠）
 
 请严格按以下 JSON 返回（不要返回其他内容）：
 {
   "stage": "冰点期/修复期/升温期/高潮期/退潮期",
-  "analysis": "盘中变化解读：与锚定阶段的异同、关键指标、拐点信号（200字以内）",
-  "advice": "盘中操作建议：仓位、节奏、风控（120字以内）",
+  "analysis": "当日情绪与盘面解读：相对锚点阶段的变化、关键指标、拐点（250字以内）",
+  "advice": "总仓位与节奏：进攻/防守、风控要点（150字以内）",
+  "prev_day_review": "对前一交易日买卖点与持仓建议的复盘与修正（200字以内）",
   "recommendations": [
-    {"stock": "股票名称", "reason": "理由", "position": "建议仓位"}
+    {"stock": "股票名称", "reason": "关注理由", "position": "建议仓位"}
+  ],
+  "trade_plans": [
+    {
+      "stock": "股票名称",
+      "code": "6位代码或空",
+      "technique": "连板接力/龙头低吸/打板/弱转强/一进二",
+      "entry": "买点：价格区间或条件",
+      "exit": "卖点/止盈止损",
+      "timing": "进出场时机（竞价/开盘5分钟/封板确认/尾盘等）",
+      "position": "建议仓位如1-2成",
+      "reason": "前瞻逻辑与风险点"
+    }
   ]
 }
-JSON 字符串值内不得包含未转义的英文双引号。"""
+约束：trade_plans 最多 2 条，recommendations 最多 2 条；analysis/prev_day_review 各 150 字内；必须输出完整闭合 JSON；字符串内勿用英文双引号，用书名号。"""
+
+# 兼容旧测试与调用方
+INTRADAY_SYSTEM_PROMPT = DAILY_ANALYSIS_SYSTEM_PROMPT
 
 
-def _call_claude_intraday(
+def _relax_json_text(text: str) -> str:
+    """修正常见 JSON 语法问题（尾逗号、智能引号等）"""
+    import re
+
+    t = text.replace("\u201c", '"').replace("\u201d", '"')
+    t = re.sub(r",\s*}", "}", t)
+    t = re.sub(r",\s*]", "]", t)
+    return t
+
+
+def _parse_claude_json_object(content: str) -> dict:
+    """解析 Claude 返回的单个 JSON 对象"""
+    import re
+
+    clean = content.strip()
+    if clean.startswith("```"):
+        clean = clean.split("\n", 1)[-1]
+        clean = clean.rsplit("```", 1)[0].strip()
+
+    candidates = [clean]
+    match = re.search(r'\{[\s\S]*\}', content)
+    if match:
+        candidates.append(match.group())
+
+    result = None
+    last_err = None
+    for raw in candidates:
+        for variant in (raw, _fix_json_quotes(raw), _relax_json_text(raw),
+                        _relax_json_text(_fix_json_quotes(raw))):
+            try:
+                result = json.loads(variant)
+                break
+            except json.JSONDecodeError as e:
+                last_err = e
+        if result is not None:
+            break
+
+    if result is None:
+        logger.warning(f"JSON 解析失败: {last_err}, 片段: {content[:400]}")
+        raise Exception("AI 返回格式异常")
+    if not isinstance(result, dict):
+        raise Exception("AI 返回格式异常")
+    return result
+
+
+def _call_claude_daily_analysis(
     current_record: dict,
     context_records: list,
     cycle_anchor: Optional[dict],
+    prev_daily: Optional[dict] = None,
+    echelon_text: str = "",
+    hot_sectors: str = "",
 ) -> dict:
-    """轻量单日盘中研判"""
-    import os
-    import re
-    import subprocess
-    import tempfile
-
+    """生成单日当天分析（含买卖点与昨日复盘）"""
     anchor_text = "（暂无周期研判锚点，请仅依据数据判断）"
     if cycle_anchor:
         anchor_text = json.dumps(
@@ -507,6 +623,19 @@ def _call_claude_intraday(
                 "stage": cycle_anchor.get("stage"),
                 "analysis": cycle_anchor.get("analysis"),
                 "advice": cycle_anchor.get("advice"),
+                "recommendations": cycle_anchor.get("recommendations"),
+            },
+            ensure_ascii=False,
+        )
+
+    prev_text = "（无上一交易日当天分析）"
+    if prev_daily:
+        prev_text = json.dumps(
+            {
+                "stage": prev_daily.get("stage"),
+                "advice": prev_daily.get("advice"),
+                "recommendations": prev_daily.get("recommendations"),
+                "trade_plans": prev_daily.get("trade_plans"),
             },
             ensure_ascii=False,
         )
@@ -517,39 +646,182 @@ def _call_claude_intraday(
         indent=2,
     )
     user_prompt = (
+        f"分析日期：{current_record.get('date')}\n\n"
         f"周期研判锚点：\n{anchor_text}\n\n"
-        f"情绪周期数据（context 为前几日，today 为当日最新）：\n{data_text}\n\n"
-        "请输出【当日】盘中研判 JSON。"
+        f"上一交易日当天分析（用于 prev_day_review 复盘）：\n{prev_text}\n\n"
+        f"情绪周期数据：\n{data_text}\n\n"
+        f"当日涨停梯队（按连板高度排序）：\n{echelon_text}\n\n"
+        f"热门板块：\n{hot_sectors}\n\n"
+        "请输出【当天分析】JSON，trade_plans 需具体可执行。"
     )
 
     content = call_claude(
-        INTRADAY_SYSTEM_PROMPT + "\n\n" + user_prompt,
-        max_tokens=2048,
-        curl_timeout=90,
+        DAILY_ANALYSIS_SYSTEM_PROMPT + "\n\n" + user_prompt,
+        max_tokens=8192,
+        curl_timeout=150,
         raise_on_error=True,
     )
-    clean = content.strip()
-    if clean.startswith("```"):
-        clean = clean.split("\n", 1)[-1]
-        clean = clean.rsplit("```", 1)[0].strip()
-    try:
-        result = json.loads(clean)
-    except json.JSONDecodeError:
-        match = re.search(r'\{[\s\S]*\}', content)
-        if match:
-            result = json.loads(match.group())
-        else:
-            raise Exception("AI 返回格式异常")
-    if not isinstance(result, dict):
-        raise Exception("AI 返回格式异常")
+    result = _parse_claude_json_object(content)
     result["date"] = current_record.get("date")
     return result
+
+
+def _call_claude_intraday(
+    current_record: dict,
+    context_records: list,
+    cycle_anchor: Optional[dict],
+) -> dict:
+    """兼容旧接口：调用当天分析（无昨日复盘上下文时）"""
+    dt = _record_date_key(current_record)
+    prev_dt = None
+    if context_records:
+        prev_dt = _record_date_key(context_records[-1])
+    prev_daily = _get_intraday_from_db(prev_dt) if prev_dt else None
+    echelon_text = _summarize_echelon_context(dt)
+    hot_sectors = _fetch_hot_sectors()
+    return _call_claude_daily_analysis(
+        current_record,
+        context_records,
+        cycle_anchor,
+        prev_daily=prev_daily,
+        echelon_text=echelon_text,
+        hot_sectors=hot_sectors,
+    )
+
+
+def _is_empty_daily_analysis(data: dict) -> bool:
+    if not isinstance(data, dict):
+        return True
+    return not (
+        data.get("analysis")
+        or data.get("trade_plans")
+        or data.get("recommendations")
+    )
+
+
+def analyze_daily_one_date(
+    target_dt: str,
+    all_records: list,
+    force: bool = False,
+) -> str:
+    """为单个交易日生成当天分析并存库。返回 skipped | saved | failed"""
+    target_dt = str(target_dt).replace("-", "")
+    if not force:
+        existing = _get_intraday_from_db(target_dt)
+        if existing and not _is_empty_daily_analysis(existing):
+            logger.info(f"{target_dt} 已有当天分析，跳过")
+            return "skipped"
+
+    valid = [r for r in all_records if isinstance(r, dict) and _record_date_key(r)]
+    ordered = sorted(valid, key=_record_date_key)
+    idx = next(
+        (i for i, r in enumerate(ordered) if _record_date_key(r) == target_dt),
+        None,
+    )
+    if idx is None:
+        logger.error(f"{target_dt} 不在记录列表中，无法生成当天分析")
+        return "failed"
+
+    current_record = ordered[idx]
+    ctx_start = max(0, idx - 5)
+    context_records = ordered[ctx_start:idx]
+
+    cycle_anchor = _get_analysis_from_db(target_dt)
+    if not cycle_anchor and context_records:
+        cycle_anchor = _get_analysis_from_db(_record_date_key(context_records[-1]))
+
+    prev_daily = None
+    if context_records:
+        prev_daily = _get_intraday_from_db(_record_date_key(context_records[-1]))
+
+    echelon_text = _summarize_echelon_context(target_dt)
+    hot_sectors = _fetch_hot_sectors()
+
+    logger.info(f"生成当天分析 {target_dt}，上下文 {len(context_records)} 条")
+    result = None
+    last_err = None
+    for attempt in range(2):
+        try:
+            result = _call_claude_daily_analysis(
+                current_record,
+                context_records,
+                cycle_anchor,
+                prev_daily=prev_daily,
+                echelon_text=echelon_text,
+                hot_sectors=hot_sectors,
+            )
+            break
+        except Exception as e:
+            last_err = e
+            logger.warning(f"{target_dt} 当天分析第 {attempt + 1} 次失败: {e}")
+    if result is None:
+        logger.error(f"{target_dt} 当天分析 AI 失败: {last_err}")
+        return "failed"
+
+    if not _save_intraday_to_db(target_dt, result):
+        logger.error(f"{target_dt} 当天分析存库失败")
+        return "failed"
+    logger.info(f"{target_dt} 当天分析已存库")
+    return "saved"
+
+
+def run_batch_daily_analysis(records: list, force_mode: str = "missing") -> dict:
+    """批量离线生成当天分析。force_mode: missing | recent | all"""
+    if not records or not isinstance(records, list):
+        raise ValueError("records 必须为非空 list")
+
+    all_dates = sorted({_record_date_key(r) for r in records if _record_date_key(r)})
+    if force_mode == "all":
+        target_dates = all_dates
+    elif force_mode == "recent":
+        target_dates = all_dates[-3:]
+    elif force_mode == "missing":
+        target_dates = []
+        for dt in all_dates:
+            existing = _get_intraday_from_db(dt)
+            if not existing or _is_empty_daily_analysis(existing):
+                target_dates.append(dt)
+    else:
+        raise ValueError(f"未知 force_mode: {force_mode}")
+
+    if not target_dates:
+        return {
+            "analyzed": 0,
+            "total": len(records),
+            "target_dates": 0,
+            "message": "所有目标日期已有当天分析",
+        }
+
+    saved = 0
+    failed = 0
+    skipped = 0
+    force = force_mode in ("all", "recent")
+    # 从旧到新，保证 prev_day_review 可引用前一日结果
+    for dt in sorted(target_dates):
+        status = analyze_daily_one_date(dt, records, force=force)
+        if status == "saved":
+            saved += 1
+        elif status == "failed":
+            failed += 1
+        else:
+            skipped += 1
+
+    msg = f"当天分析完成: 生成 {saved} 天，跳过 {skipped} 天，失败 {failed} 天"
+    logger.info(msg)
+    return {
+        "analyzed": saved,
+        "skipped": skipped,
+        "failed": failed,
+        "total": len(records),
+        "target_dates": len(target_dates),
+        "message": msg,
+    }
 
 
 @emotion_cycle_bp.route('/api/v1/emotion-intraday-cache', methods=['GET'])
 @login_required
 def get_emotion_intraday_cache():
-    """查询盘中研判缓存"""
+    """查询当天分析缓存"""
     dt = request.args.get('date')
     if not dt:
         return v1_error_response(message="请提供 date 参数")
@@ -563,41 +835,63 @@ def get_emotion_intraday_cache():
 @emotion_cycle_bp.route('/api/v1/emotion-intraday-refresh', methods=['POST'])
 @login_required
 def refresh_emotion_intraday():
-    """盘中刷新：拉最新行情 + 引用周期研判锚点 + 生成当日研判"""
+    """刷新当天分析：可传 date(YYYYMMDD)，默认最新交易日；force=1 强制重算"""
     try:
+        body = request.get_json(silent=True) or {}
+        force = str(body.get("force") or request.args.get("force", "0")).lower() in (
+            "1", "true", "yes"
+        )
         records = _fetch_emotion_records()
         if not records:
             return v1_error_response(message="未获取到情绪周期数据")
 
         ordered = sorted(records, key=_record_date_key)
-        current_record = ordered[-1]
-        current_dt = _record_date_key(current_record)
-        context_start = max(0, len(ordered) - 6)
-        context_records = ordered[context_start:-1]
+        req_date = (body.get("date") or request.args.get("date") or "").replace("-", "")
+        if req_date:
+            current_record = next(
+                (r for r in ordered if _record_date_key(r) == req_date),
+                None,
+            )
+            if not current_record:
+                return v1_error_response(message=f"日期 {req_date} 无情绪数据")
+            current_dt = req_date
+            idx = ordered.index(current_record)
+            context_records = ordered[max(0, idx - 5):idx]
+        else:
+            current_record = ordered[-1]
+            current_dt = _record_date_key(current_record)
+            context_records = ordered[max(0, len(ordered) - 6):-1]
 
-        cycle_anchor = _get_analysis_from_db(current_dt)
-        if not cycle_anchor and context_records:
-            prev_dt = _record_date_key(context_records[-1])
-            cycle_anchor = _get_analysis_from_db(prev_dt)
+        if force:
+            status = analyze_daily_one_date(current_dt, ordered, force=True)
+            if status == "failed":
+                return v1_error_response(message="生成当天分析失败")
+            result = _get_intraday_from_db(current_dt)
+        else:
+            status = analyze_daily_one_date(current_dt, ordered, force=False)
+            if status == "failed":
+                return v1_error_response(message="生成当天分析失败")
+            result = _get_intraday_from_db(current_dt)
 
-        logger.info(f"盘中刷新: {current_dt}, 上下文 {len(context_records)} 条")
-        result = _call_claude_intraday(current_record, context_records, cycle_anchor)
-
-        if not _save_intraday_to_db(current_dt, result):
-            return v1_error_response(message="保存盘中研判失败")
+        if not result:
+            return v1_error_response(message="当天分析结果为空")
 
         return v1_success_response(
-            data={"intraday": result, "records": records},
-            message=f"已刷新 {current_dt} 盘中研判",
+            data={
+                "intraday": result,
+                "daily": result,
+                "records": records,
+            },
+            message=f"已刷新 {current_dt} 当天分析",
         )
     except requests.RequestException as e:
-        logger.error(f"盘中刷新拉取行情失败: {e}")
+        logger.error(f"当天分析拉取行情失败: {e}")
         return v1_error_response(message=f"请求 StockAPI 失败: {str(e)}")
     except ValueError as e:
         return v1_error_response(message=str(e))
     except Exception as e:
-        logger.error(f"盘中刷新异常: {e}")
-        return v1_error_response(message=f"盘中研判异常: {str(e)}")
+        logger.error(f"当天分析刷新异常: {e}")
+        return v1_error_response(message=f"当天分析异常: {str(e)}")
 
 
 @emotion_cycle_bp.route('/api/v1/emotion-analysis-refresh-current', methods=['POST'])
@@ -893,7 +1187,93 @@ def analyze_one_date(target_dt: str, all_records: list, force: bool = False) -> 
     return "saved"
 
 
-BATCH_SIZE = 10  # 每批处理的记录数
+BATCH_SIZE = 5  # 每批处理的记录数
+
+
+def run_batch_emotion_analysis(records: list, force_mode: str = "missing") -> dict:
+    """离线批量生成周期研判。force_mode: missing | recent | all"""
+    if not records or not isinstance(records, list):
+        raise ValueError("records 必须为非空 list")
+
+    all_dates = [r["date"].replace("-", "") for r in records]
+    need_analysis_dates = set(all_dates)
+
+    if force_mode == "all":
+        pass
+    elif force_mode == "recent":
+        sorted_dates = sorted(all_dates)
+        need_analysis_dates = set(sorted_dates[-3:])
+    elif force_mode == "missing":
+        from utils.db import execute_query
+        placeholders = ",".join(["%s"] * len(all_dates))
+        existing = execute_query(
+            f"SELECT date FROM emotion_analysis_results WHERE date IN ({placeholders})",
+            tuple(all_dates),
+        )
+        existing_dates = {row["date"] for row in existing} if existing else set()
+        need_analysis_dates -= existing_dates
+    else:
+        raise ValueError(f"未知 force_mode: {force_mode}")
+
+    if not need_analysis_dates:
+        logger.info("所有目标日期已有分析结果，跳过 AI 调用")
+        return {
+            "analyzed": 0,
+            "total": len(records),
+            "total_batches": 0,
+            "need_dates": 0,
+            "message": "所有日期已有分析缓存",
+        }
+
+    records_to_analyze = []
+    for i, r in enumerate(records):
+        dt = r["date"].replace("-", "")
+        if dt in need_analysis_dates:
+            ctx_start = max(0, i - 5)
+            ctx_records = records[ctx_start:i]
+            for cr in ctx_records:
+                cdt = cr["date"].replace("-", "")
+                if not any(x["date"].replace("-", "") == cdt for x in records_to_analyze):
+                    records_to_analyze.append(cr)
+            if not any(x["date"].replace("-", "") == dt for x in records_to_analyze):
+                records_to_analyze.append(r)
+
+    logger.info(
+        f"需分析 {len(need_analysis_dates)} 天, 含上下文共 {len(records_to_analyze)} 条记录"
+    )
+
+    total_saved = 0
+    total_batches = (len(records_to_analyze) + BATCH_SIZE - 1) // BATCH_SIZE
+
+    for batch_idx in range(total_batches):
+        start = batch_idx * BATCH_SIZE
+        end = min(start + BATCH_SIZE, len(records_to_analyze))
+        batch = records_to_analyze[start:end]
+
+        logger.info(f"处理第 {batch_idx + 1}/{total_batches} 批 ({len(batch)} 条)")
+
+        try:
+            results = _call_claude_batch(batch)
+        except Exception as e:
+            logger.error(f"第 {batch_idx + 1} 批分析失败: {e}")
+            continue
+
+        for item in results:
+            if not isinstance(item, dict) or "date" not in item:
+                continue
+            dt = item["date"].replace("-", "")
+            if dt in need_analysis_dates:
+                _save_analysis_to_db(dt, item)
+                total_saved += 1
+
+    logger.info(f"批量分析完成: 共 {total_batches} 批, 存库 {total_saved} 条")
+    return {
+        "analyzed": total_saved,
+        "total": len(records),
+        "total_batches": total_batches,
+        "need_dates": len(need_analysis_dates),
+        "message": f"已分析 {total_saved} 个交易日（分 {total_batches} 批完成）",
+    }
 
 
 @emotion_cycle_bp.route('/api/v1/emotion-analysis-with-storage', methods=['POST'])
@@ -907,90 +1287,21 @@ def post_emotion_analysis_with_storage():
         body = request.get_json(silent=True) or {}
         records = body.get("records")
         force_param = request.args.get("force", "0")
-        force_recent = force_param == "1"    # 刷新最近3天
-        force_all = force_param == "all"     # 全部重刷
+        if force_param == "all":
+            force_mode = "all"
+        elif force_param == "1":
+            force_mode = "recent"
+        else:
+            force_mode = "missing"
 
         if not records or not isinstance(records, list):
             return v1_error_response(message="请在 body 中提供 records 数组")
 
-        # 1. 确定哪些日期需要分析
-        all_dates = [r["date"].replace("-", "") for r in records]
-        need_analysis_dates = set(all_dates)
+        result = run_batch_emotion_analysis(records, force_mode=force_mode)
+        return v1_success_response(data=result, message=result["message"])
 
-        if force_all:
-            # 全部重刷
-            pass
-        elif force_recent:
-            # 只刷新最近3天
-            sorted_dates = sorted(all_dates)
-            recent_dates = set(sorted_dates[-3:])
-            need_analysis_dates = recent_dates
-        else:
-            # 默认模式：只分析尚无缓存的日期
-            from utils.db import execute_query
-            placeholders = ",".join(["%s"] * len(all_dates))
-            existing = execute_query(
-                f"SELECT date FROM emotion_analysis_results WHERE date IN ({placeholders})",
-                tuple(all_dates),
-            )
-            existing_dates = {row["date"] for row in existing} if existing else set()
-            need_analysis_dates -= existing_dates
-
-            if not need_analysis_dates:
-                logger.info("所有日期已有分析结果，跳过 AI 调用")
-                return v1_success_response(data={"analyzed": 0, "total": len(all_dates)},
-                                           message="所有日期已有分析缓存")
-
-        # 2. 筛选需要分析的记录（但始终带上前几天作为趋势上下文）
-        records_to_analyze = []
-        for i, r in enumerate(records):
-            dt = r["date"].replace("-", "")
-            if dt in need_analysis_dates:
-                # 向前带最多5天作为上下文
-                ctx_start = max(0, i - 5)
-                ctx_records = records[ctx_start:i]
-                # 加入上下文（去重）
-                for cr in ctx_records:
-                    cdt = cr["date"].replace("-", "")
-                    if not any(x["date"].replace("-", "") == cdt for x in records_to_analyze):
-                        records_to_analyze.append(cr)
-                if not any(x["date"].replace("-", "") == dt for x in records_to_analyze):
-                    records_to_analyze.append(r)
-
-        logger.info(f"需分析 {len(need_analysis_dates)} 天, 含上下文共 {len(records_to_analyze)} 条记录")
-
-        # 3. 分批调用 Claude
-        total_saved = 0
-        total_batches = (len(records_to_analyze) + BATCH_SIZE - 1) // BATCH_SIZE
-
-        for batch_idx in range(total_batches):
-            start = batch_idx * BATCH_SIZE
-            end = min(start + BATCH_SIZE, len(records_to_analyze))
-            batch = records_to_analyze[start:end]
-
-            logger.info(f"处理第 {batch_idx + 1}/{total_batches} 批 ({len(batch)} 条)")
-
-            try:
-                results = _call_claude_batch(batch)
-            except Exception as e:
-                logger.error(f"第 {batch_idx + 1} 批分析失败: {e}")
-                continue
-
-            # 存库（只存需要分析的日期，跳过上下文日期）
-            for item in results:
-                if not isinstance(item, dict) or "date" not in item:
-                    continue
-                dt = item["date"].replace("-", "")
-                if dt in need_analysis_dates:
-                    _save_analysis_to_db(dt, item)
-                    total_saved += 1
-
-        logger.info(f"全量分析完成: 共 {total_batches} 批, 存库 {total_saved} 条")
-        return v1_success_response(
-            data={"analyzed": total_saved, "total": len(records)},
-            message=f"已分析 {total_saved} 个交易日（分 {total_batches} 批完成）"
-        )
-
+    except ValueError as e:
+        return v1_error_response(message=str(e))
     except requests.Timeout:
         logger.error("调用 Claude API 超时")
         return v1_error_response(message="AI 分析超时，请稍后重试")

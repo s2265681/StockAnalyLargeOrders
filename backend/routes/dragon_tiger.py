@@ -1,8 +1,9 @@
 # backend/routes/dragon_tiger.py
 """
 龙虎榜接口模块
-- GET  /api/v1/dragon-tiger?date=YYYYMMDD   获取龙虎榜列表（含席位）
-- POST /api/v1/dragon-tiger/ai-analysis     AI解读（有缓存直接返回）
+- GET  /api/v1/dragon-tiger?date=YYYYMMDD              获取龙虎榜列表（含席位）
+- GET  /api/v1/dragon-tiger/ai-analysis-cache?date&code  只读查询已入库 AI 解读
+- POST /api/v1/dragon-tiger/ai-analysis                  兼容旧客户端，仅返回缓存
 """
 import json
 import logging
@@ -300,9 +301,105 @@ def get_dragon_tiger():
         return v1_error_response(message=f"获取龙虎榜失败: {str(e)}")
 
 
+def _has_valid_ai_cache(analysis: str | None) -> bool:
+    """旧版缓存可能缺少题材字段，离线任务会强制重跑。"""
+    if not analysis:
+        return False
+    return (
+        "所属题材" in analysis
+        or "题材地位" in analysis
+        or "所属行业" in analysis
+    )
+
+
+def analyze_dragon_tiger_stock(date: str, code: str, force: bool = False) -> str:
+    """
+    为单只股票生成 AI 解读并入库。
+    返回: saved | skipped | failed | no_data
+    """
+    date = (date or "").replace("-", "")
+    code = (code or "").zfill(6)
+    if not date or not code:
+        return "failed"
+
+    try:
+        if not force:
+            cached = get_ai_analysis(date, code)
+            if _has_valid_ai_cache(cached):
+                return "skipped"
+
+        stocks = get_daily_stocks(date)
+        stock = next((s for s in stocks if s["code"] == code), None)
+        if not stock:
+            return "no_data"
+
+        theme_profile = _build_theme_profile(date, code)
+        prompt = _build_ai_prompt(stock, theme_profile)
+        analysis = _call_claude(prompt)
+        if not analysis:
+            return "failed"
+
+        save_ai_analysis(date, code, analysis)
+        return "saved"
+    except Exception as e:
+        logger.error(f"龙虎榜 AI 分析失败({date}-{code}): {e}", exc_info=True)
+        return "failed"
+
+
+def run_dragon_tiger_ai_for_date(date: str, force: bool = False) -> dict:
+    """为指定交易日全部上榜股批量生成 AI 解读（离线任务入口）。"""
+    date = (date or "").replace("-", "")
+    stocks = get_daily_stocks(date)
+    if not stocks:
+        result = _fetch_from_akshare(date)
+        if result:
+            stocks, all_seats = result
+            save_daily_stocks(date, stocks)
+            save_seats(date, all_seats)
+
+    if not stocks:
+        return {"date": date, "total": 0, "saved": 0, "skipped": 0, "failed": 0, "no_data": 0}
+
+    saved = skipped = failed = no_data = 0
+    for stock in stocks:
+        code = stock.get("code", "")
+        status = analyze_dragon_tiger_stock(date, code, force=force)
+        if status == "saved":
+            saved += 1
+        elif status == "skipped":
+            skipped += 1
+        elif status == "no_data":
+            no_data += 1
+        else:
+            failed += 1
+
+    return {
+        "date": date,
+        "total": len(stocks),
+        "saved": saved,
+        "skipped": skipped,
+        "failed": failed,
+        "no_data": no_data,
+    }
+
+
+@dragon_tiger_bp.route("/api/v1/dragon-tiger/ai-analysis-cache", methods=["GET"])
+def get_dragon_tiger_ai_cache():
+    """只读查询已入库的 AI 解读，不触发新分析。"""
+    date = (request.args.get("date", "") or "").replace("-", "")
+    code = (request.args.get("code", "") or "").zfill(6)
+    if not date or not code:
+        return v1_error_response(message="请提供 date 和 code 参数")
+
+    cached = get_ai_analysis(date, code)
+    if cached and _has_valid_ai_cache(cached):
+        return v1_success_response(data={"analysis": cached, "cached": True})
+    return v1_success_response(data=None, message="还未生成")
+
+
 @dragon_tiger_bp.route("/api/v1/dragon-tiger/ai-analysis", methods=["POST"])
 def ai_analysis():
-    """AI解读龙虎榜资金意图（有DB缓存则直接返回，不重复分析）"""
+    """兼容旧接口：仅返回已入库结果，不在线生成。"""
     body = request.get_json(silent=True) or {}
     date = (body.get("date", "") or "").replace("-", "")
     code = (body.get("code", "") or "").zfill(6)
@@ -310,29 +407,7 @@ def ai_analysis():
     if not date or not code:
         return v1_error_response(message="请提供date和code")
 
-    try:
-        # 1. 检查DB缓存
-        cached = get_ai_analysis(date, code)
-        if cached and ("所属题材" in cached or "题材地位" in cached or "所属行业" in cached):
-            return v1_success_response(data={"analysis": cached, "cached": True})
-
-        # 2. 加载股票数据构建prompt
-        stocks = get_daily_stocks(date)
-        stock = next((s for s in stocks if s["code"] == code), None)
-        if not stock:
-            return v1_error_response(message=f"未找到{date}日{code}的龙虎榜数据")
-
-        theme_profile = _build_theme_profile(date, code)
-        prompt = _build_ai_prompt(stock, theme_profile)
-        analysis = _call_claude(prompt)
-        if not analysis:
-            return v1_error_response(message="AI分析失败，请稍后重试")
-
-        # 3. 写入DB
-        save_ai_analysis(date, code, analysis)
-
-        return v1_success_response(data={"analysis": analysis, "cached": False})
-
-    except Exception as e:
-        logger.error(f"AI分析失败: {e}", exc_info=True)
-        return v1_error_response(message=f"AI分析失败: {str(e)}")
+    cached = get_ai_analysis(date, code)
+    if cached and _has_valid_ai_cache(cached):
+        return v1_success_response(data={"analysis": cached, "cached": True})
+    return v1_success_response(data=None, message="还未生成，由每日定时任务生成")

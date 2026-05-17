@@ -68,11 +68,22 @@ def delete_tag(date, tag_name):
 
 
 def rename_tag(date, old_name, new_name):
-    """重命名题材标签（同时更新 limit_up_stocks）"""
-    execute_write(
-        "UPDATE theme_tags SET tag_name = %s WHERE date = %s AND tag_name = %s",
-        (new_name, date, old_name),
+    """重命名题材标签（同时更新 limit_up_stocks，保留人工校准标记）"""
+    old_rows = execute_query(
+        "SELECT reason, source FROM theme_tags WHERE date = %s AND tag_name = %s",
+        (date, old_name),
     )
+    execute_write("DELETE FROM theme_tags WHERE date = %s AND tag_name = %s", (date, old_name))
+    if old_rows:
+        row = old_rows[0]
+        upsert_tag(
+            date,
+            new_name,
+            row.get("reason") or "",
+            row.get("source") or "manual",
+        )
+    else:
+        upsert_tag(date, new_name, "", "manual")
     execute_write(
         "UPDATE limit_up_stocks SET tag_name = %s WHERE date = %s AND tag_name = %s",
         (new_name, date, old_name),
@@ -89,6 +100,13 @@ def get_limit_up_stocks_by_date(date):
         ORDER BY boards DESC, seal_amount DESC
     """
     return execute_query(sql, (date,))
+
+
+def clear_echelon_date(date):
+    """清除指定日期的涨停梯队入库数据（强制重跑前调用）"""
+    execute_write("DELETE FROM limit_up_stocks WHERE date = %s", (date,))
+    execute_write("DELETE FROM theme_tags WHERE date = %s", (date,))
+    logger.info(f"已清除 date={date} 的涨停梯队数据")
 
 
 def save_limit_up_stocks(date, stocks):
@@ -156,27 +174,56 @@ def save_limit_up_stocks(date, stocks):
 
 
 def update_stock_tag(date, code, tag_name):
-    """修改单只股票的题材标签"""
+    """修改单只股票的题材标签（并标记该标签为人工校准）"""
     sql = "UPDATE limit_up_stocks SET tag_name = %s WHERE date = %s AND code = %s"
-    return execute_write(sql, (tag_name, date, code))
+    result = execute_write(sql, (tag_name, date, code))
+    if tag_name:
+        existing = {t["tag_name"]: t for t in get_tags_by_date(date)}
+        prev = existing.get(tag_name) or {}
+        upsert_tag(
+            date,
+            tag_name,
+            prev.get("reason") or "",
+            "manual",
+        )
+    return result
+
+
+def date_has_manual_tags(date: str) -> bool:
+    """该日是否存在人工校准过的题材标签"""
+    tags = get_tags_by_date(date)
+    return any(t.get("source") == "manual" for t in tags)
 
 
 # ========== 综合：保存完整 AI 分组结果 ==========
 
 def save_ai_grouping_result(date, stocks, group_result):
     """保存完整的 AI 分组结果到数据库
-    - 更新 theme_tags
+    - 更新 theme_tags（不覆盖 source=manual 的人工校准）
     - 更新 limit_up_stocks（含 tag_name、龙头信息）
     """
     labels = group_result.get("labels") or {}
     reasons = group_result.get("reasons") or {}
+    existing_tags = {t["tag_name"]: t for t in get_tags_by_date(date)}
 
     # 1. 保存题材标签
-    tags = [
-        {"tag_name": tag, "reason": reasons.get(tag, ""), "source": "ai"}
-        for tag in set(labels.values())
-        if tag
-    ]
+    tags = []
+    for tag in set(labels.values()):
+        if not tag:
+            continue
+        prev = existing_tags.get(tag) or {}
+        if prev.get("source") == "manual":
+            tags.append({
+                "tag_name": tag,
+                "reason": prev.get("reason") or reasons.get(tag, ""),
+                "source": "manual",
+            })
+        else:
+            tags.append({
+                "tag_name": tag,
+                "reason": reasons.get(tag, "") or prev.get("reason", ""),
+                "source": "ai",
+            })
     if tags:
         upsert_tags_batch(date, tags)
         logger.info(f"保存 {len(tags)} 个题材标签到数据库 (date={date})")

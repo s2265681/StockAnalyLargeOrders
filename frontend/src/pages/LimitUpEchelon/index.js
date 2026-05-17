@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Spin, Tag, Tooltip, Popover, Button } from 'antd';
-import { FireOutlined, ClockCircleOutlined, LoadingOutlined, ReloadOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
+import { Spin, Tag, Tooltip, Popover } from 'antd';
+import { FireOutlined, ClockCircleOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { apiRequest } from '../../config/api';
 import './index.css';
@@ -31,7 +31,7 @@ const getSealQuality = (stock) => {
   if (seal_ratio >= 10) score += 3;
   else if (seal_ratio >= 3) score += 2;
   else if (seal_ratio >= 1) score += 1;
-  const timeNum = parseInt(first_time || '150000');
+  const timeNum = parseInt(first_time || '150000', 10);
   if (timeNum <= 93000) score += 3;
   else if (timeNum <= 103000) score += 2;
   else if (timeNum <= 130000) score += 1;
@@ -43,21 +43,19 @@ const getSealQuality = (stock) => {
   return { label: 'C', color: '#666' };
 };
 
-// 获取最近交易日（周末自动退到周五）
 const getLastTradingDayStr = () => {
   const d = new Date();
   const dow = d.getDay();
-  if (dow === 6) d.setDate(d.getDate() - 1); // 周六 -> 周五
-  if (dow === 0) d.setDate(d.getDate() - 2); // 周日 -> 周五
+  if (dow === 6) d.setDate(d.getDate() - 1);
+  if (dow === 0) d.setDate(d.getDate() - 2);
   return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
 };
 
-// 日期偏移（跳过周末）
 const offsetDate = (dateStr, delta) => {
   const d = new Date(
-    parseInt(dateStr.slice(0, 4)),
-    parseInt(dateStr.slice(4, 6)) - 1,
-    parseInt(dateStr.slice(6, 8))
+    parseInt(dateStr.slice(0, 4), 10),
+    parseInt(dateStr.slice(4, 6), 10) - 1,
+    parseInt(dateStr.slice(6, 8), 10)
   );
   let count = 0;
   const step = delta > 0 ? 1 : -1;
@@ -74,7 +72,6 @@ const formatDateDisplay = (dateStr) => {
   return `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
 };
 
-// 始终带上 dt，避免周末「最近交易日」与后端日历日不一致导致 AI 缓存 miss
 const toDtQuery = (dateStr) => `dt=${formatDateDisplay(dateStr)}`;
 
 const MIN_LOADING_MS = 300;
@@ -84,14 +81,10 @@ function LimitUpEchelon() {
   const navigate = useNavigate();
   const todayStr = useMemo(() => getLastTradingDayStr(), []);
   const [currentDate, setCurrentDate] = useState(getLastTradingDayStr);
-  const dataCache = useRef({}); // dateStr -> data
+  const dataCache = useRef({});
   const requestSeq = useRef(0);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-
-
-  const [aiStatus, setAiStatus] = useState('none'); // none | pending | done | error
-  const [refreshingThemes, setRefreshingThemes] = useState(false);
 
   const fetchData = useCallback(async (dt) => {
     const targetDate = dt || getLastTradingDayStr();
@@ -111,25 +104,19 @@ function LimitUpEchelon() {
 
     setLoading(true);
 
-    // 已缓存则直接使用，不重新请求
     if (dataCache.current[targetDate]) {
-      const cached = dataCache.current[targetDate];
       if (requestSeq.current === requestId) {
-        setData(cached);
-        setAiStatus(cached.ai?.status || 'none');
+        setData(dataCache.current[targetDate]);
       }
       await finishLoading();
       return;
     }
 
     try {
-      // 初始加载：读取股票数据 + 自动加载 DB 已有标签（不触发 AI）
       const res = await apiRequest(`/api/v1/limit-up-echelon?${toDtQuery(targetDate)}`);
       if (res?.data && requestSeq.current === requestId) {
         dataCache.current[targetDate] = res.data;
         setData(res.data);
-        const status = res.data.ai?.status || 'none';
-        setAiStatus(status);
       }
     } catch (err) {
       console.error('Failed to fetch limit up echelon:', err);
@@ -142,80 +129,8 @@ function LimitUpEchelon() {
     fetchData(currentDate);
   }, [fetchData, currentDate]);
 
-  // 手动触发 AI 分组
-  const refreshThemes = useCallback(async () => {
-    setRefreshingThemes(true);
-    try {
-      const res = await apiRequest(`/api/v1/limit-up-echelon?force=1&${toDtQuery(currentDate)}`);
-      if (res?.data) {
-        const status = res.data.ai?.status || 'none';
-        if (status === 'done') {
-          // AI 已经完成（命中缓存等），直接更新数据
-          dataCache.current[currentDate] = res.data;
-          setData(res.data);
-          setAiStatus('done');
-          setRefreshingThemes(false);
-        } else {
-          // pending：只更新 aiStatus 触发轮询，保留当前展示数据不变
-          setAiStatus(status);
-        }
-      }
-    } catch (err) {
-      console.error('刷新题材标签失败:', err);
-      setRefreshingThemes(false);
-    }
-  }, [currentDate]);
-
-  // AI分组轮询：pending 时每2秒查一次
-  useEffect(() => {
-    if (aiStatus !== 'pending') return;
-    const timer = setInterval(async () => {
-      try {
-        const res = await apiRequest(`/api/v1/limit-up-echelon/ai-status?${toDtQuery(currentDate)}`);
-        if (res?.data?.status === 'done') {
-          setAiStatus('done');
-          setRefreshingThemes(false);
-          // 重新拉取完整数据，一次性刷新所有标签和分类
-          try {
-            const fullRes = await apiRequest(`/api/v1/limit-up-echelon?${toDtQuery(currentDate)}`);
-            if (fullRes?.data) {
-              dataCache.current[currentDate] = fullRes.data;
-              setData(fullRes.data);
-            }
-          } catch (_) {
-            // fallback: 合并AI分组到现有数据
-            setData((prev) => {
-              if (!prev) return prev;
-              const themedStocks = res.data.themed_stocks || {};
-              const newEchelons = prev.echelons.map((echelon) => ({
-                ...echelon,
-                stocks: echelon.stocks.map((stock) => {
-                  const ai = themedStocks[stock.code];
-                  return ai ? { ...stock, ...ai } : stock;
-                }),
-              }));
-              return {
-                ...prev,
-                echelons: newEchelons,
-                theme_ranking: res.data.theme_ranking || prev.theme_ranking,
-                ai: { ...prev.ai, ok: true, status: 'done' },
-              };
-            });
-          }
-        } else if (res?.data?.status === 'error') {
-          setAiStatus('error');
-          setRefreshingThemes(false);
-        }
-      } catch (e) {
-        console.error('AI status poll failed:', e);
-      }
-    }, 2000);
-    return () => clearInterval(timer);
-  }, [aiStatus, currentDate]);
-
   const echelons = useMemo(() => data?.echelons || [], [data]);
   const summary = data?.summary || {};
-  const themedStocks = {};
   const themeRanking = useMemo(() => data?.theme_ranking || [], [data]);
   const allStocks = useMemo(() => echelons.flatMap((e) => e.stocks || []), [echelons]);
 
@@ -253,7 +168,6 @@ function LimitUpEchelon() {
     });
   }, [allStocks, themeRanking]);
 
-  // 按大标签分组所有股票，并排序（其他概念放最后）
   const stocksByTheme = useMemo(() => {
     const getTheme = (stock) => stock.group_label || stock.theme || stock.industry;
     const map = {};
@@ -263,7 +177,6 @@ function LimitUpEchelon() {
       if (!map[theme]) map[theme] = [];
       map[theme].push(stock);
     }
-    // 按连板高度 > 封单额排序每个组内的股票
     for (const key of Object.keys(map)) {
       map[key].sort((a, b) => {
         const boardDiff = (b.boards || 0) - (a.boards || 0);
@@ -274,7 +187,6 @@ function LimitUpEchelon() {
     return map;
   }, [allStocks]);
 
-  // 排序后的主题列表（其他概念放最后）
   const sortedThemeRanking = useMemo(() => {
     const others = [];
     const normal = [];
@@ -302,14 +214,13 @@ function LimitUpEchelon() {
   if (!data || !data.echelons || data.echelons.length === 0) {
     return (
       <div className="echelon-container">
-        <div className="echelon-empty">暂无涨停板数据</div>
+        <div className="echelon-empty">暂无涨停板数据（收盘后由系统离线生成，请稍后刷新）</div>
       </div>
     );
   }
 
   return (
     <div className="echelon-container">
-      {/* 顶部统计 + 日期导航 */}
       <div className="echelon-top-bar">
         <div className="echelon-summary">
           <div className="summary-item">
@@ -328,55 +239,29 @@ function LimitUpEchelon() {
             <span className="summary-label">最高</span>
             <span className="summary-value purple">{summary?.max_boards || 0}板</span>
           </div>
-          {aiStatus === 'pending' && (
-            <div className="summary-item ai-loading">
-              <LoadingOutlined style={{ marginRight: 4, color: '#1890ff' }} />
-              <span style={{ color: '#1890ff', fontSize: 12 }}>AI分组中...</span>
-            </div>
-          )}
-          {aiStatus !== 'pending' && (
-            <div
-              className={`summary-item ai-group-btn ${refreshingThemes ? 'refreshing' : ''}`}
-              onClick={refreshingThemes ? undefined : refreshThemes}
-              style={{ cursor: refreshingThemes ? 'not-allowed' : 'pointer', opacity: refreshingThemes ? 0.6 : 1 }}
-            >
-              {refreshingThemes
-                ? <LoadingOutlined style={{ fontSize: 14, color: '#1890ff' }} />
-                : <ReloadOutlined style={{ fontSize: 14, color: '#faad14' }} />
-              }
-              <span style={{ marginLeft: 4, fontSize: 12, color: '#faad14', whiteSpace: 'nowrap' }}>AI分组</span>
-            </div>
-          )}
         </div>
         <div className="date-nav">
           <button
+            type="button"
             className="date-nav-btn"
-            onClick={() => {
-              const prev = offsetDate(currentDate, -1);
-              setCurrentDate(prev);
-              setAiStatus('none');
-            }}
+            onClick={() => setCurrentDate(offsetDate(currentDate, -1))}
           >
             <LeftOutlined /> 前一天
           </button>
           <span className="date-nav-label">{formatDateDisplay(currentDate)}</span>
           <button
+            type="button"
             className="date-nav-btn"
-            disabled={currentDate >= todayStr}            onClick={() => {
-              const next = offsetDate(currentDate, 1);
-              setCurrentDate(next);
-              setAiStatus('none');
-            }}
+            disabled={currentDate >= todayStr}
+            onClick={() => setCurrentDate(offsetDate(currentDate, 1))}
           >
             后一天 <RightOutlined />
           </button>
           {currentDate !== todayStr && (
             <button
+              type="button"
               className="date-nav-btn date-nav-today"
-              onClick={() => {
-                setCurrentDate(todayStr);
-                setAiStatus('none');
-              }}
+              onClick={() => setCurrentDate(todayStr)}
             >
               今天
             </button>
@@ -384,7 +269,6 @@ function LimitUpEchelon() {
         </div>
       </div>
 
-      {/* 题材排行 */}
       {sortedThemeRanking.length > 0 && (
         <div className="theme-ranking-bar">
           {sortedThemeRanking.map((t) => {
@@ -434,24 +318,9 @@ function LimitUpEchelon() {
               </Popover>
             );
           })}
-          <Tooltip title="重新分析题材标签（优先使用已有标签，新股票调用AI归类）">
-            <span
-              className={`theme-ranking-item theme-refresh-btn ${refreshingThemes || aiStatus === 'pending' ? 'refreshing' : ''}`}
-              onClick={refreshingThemes || aiStatus === 'pending' ? undefined : refreshThemes}
-            >
-              {refreshingThemes || aiStatus === 'pending'
-                ? <LoadingOutlined spin style={{ fontSize: 14 }} />
-                : <ReloadOutlined style={{ fontSize: 14 }} />
-              }
-              <span className="theme-refresh-btn-label">
-                {refreshingThemes || aiStatus === 'pending' ? 'AI分组中...' : '更新'}
-              </span>
-            </span>
-          </Tooltip>
         </div>
       )}
 
-      {/* 梯队列表 */}
       {echelons.map((echelon) => {
         const color = getBoardColor(echelon.boards);
         return (
@@ -483,24 +352,13 @@ function LimitUpEchelon() {
 
               {echelon.stocks.map((stock) => {
                 const quality = getSealQuality(stock);
-                const stockTheme = themedStocks[stock.code];
-                const primary =
-                  stock.group_label ||
-                  stockTheme?.group_label ||
-                  stockTheme?.theme ||
-                  stock.theme ||
-                  stock.industry;
-                const themeCount =
-                  stock.theme_count ||
-                  stock.group_count ||
-                  stockTheme?.theme_count ||
-                  0;
-                const hasAiGroup = !!(stock.group_label || stock.theme || stockTheme);
+                const primary = stock.group_label || stock.theme || stock.industry;
+                const themeCount = stock.theme_count || stock.group_count || 0;
+                const hasTheme = !!(stock.group_label || stock.theme);
                 const thsTag = (stock.ths_hot_tag || '').trim();
                 const themeReason =
                   stock.ths_analyse_title ||
                   stock.theme_reason ||
-                  stockTheme?.theme_reason ||
                   themeRankingWithLeaders.find((t) => t.theme === primary)?.reason ||
                   '';
                 const rankingTheme = themeRankingWithLeaders.find((t) => t.theme === primary);
@@ -512,7 +370,7 @@ function LimitUpEchelon() {
                 const currentLeader = leaders.find((item) => item.code === stock.code);
                 const tooltipLines = [
                   stock.ths_analyse && `同花顺：${stock.ths_analyse}`,
-                  primary && `AI 分组：${primary}${themeCount > 1 ? `（${themeCount} 家）` : ''}`,
+                  primary && `题材：${primary}${themeCount > 1 ? `（${themeCount} 家）` : ''}`,
                   themeReason && `涨停原因：${themeReason}`,
                   isThemeLeader && currentLeader?.reason && `龙头理由：${currentLeader.reason}`,
                 ].filter(Boolean);
@@ -548,9 +406,9 @@ function LimitUpEchelon() {
                         overlayStyle={{ maxWidth: 400 }}
                       >
                         <div className="theme-tags-cell">
-                          <span className={`theme-tag ${hasAiGroup ? 'ai-theme' : ''}`}>
+                          <span className={`theme-tag ${hasTheme ? 'ai-theme' : ''}`}>
                             {primary}
-                            {hasAiGroup && themeCount > 1 && (
+                            {hasTheme && themeCount > 1 && (
                               <em className="theme-count">{themeCount}</em>
                             )}
                           </span>

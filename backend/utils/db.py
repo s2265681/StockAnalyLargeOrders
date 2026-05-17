@@ -5,6 +5,10 @@ import os
 import logging
 import pymysql
 
+from utils.env import load_env
+
+load_env()
+
 logger = logging.getLogger(__name__)
 
 DB_CONFIG = {

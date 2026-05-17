@@ -1,6 +1,10 @@
 """
 Flask应用主文件
 """
+from utils.env import load_env
+
+load_env()
+
 import eventlet
 eventlet.monkey_patch()
 

@@ -1,0 +1,30 @@
+frontend/src/pages/AiDiagnosis/index.js
+  s_003ed3b0245347::t_79f651eb8a55b6 477
+  s_003ed3b0245347::t_4c0528ffba6988 118-119
+  s_003ed3b0245347::t_935caba60cfdab 96
+  s_003ed3b0245347::t_f5d86f71612fc3 465-476
+  s_003ed3b0245347::t_375bb55dd1c364 41-51
+  s_003ed3b0245347::t_5e5217dd30036e 464
+frontend/src/pages/AiDiagnosis/index.css
+  s_003ed3b0245347::t_1e2a702872f168 334,338-341,346-350,354-366,373-392,395-466,471-495,508-517,520-526
+  s_003ed3b0245347::t_e531e4e1b83840 40-50
+  s_003ed3b0245347::t_11632bd3afe7f2 257-258
+  s_003ed3b0245347::t_8b3a9e694477e7 144,146
+  s_003ed3b0245347::t_77c8094171a94f 308,310-314
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "9054292aa30cd7b57f2b00c6cc55c736abe8c15b",
+  "prompts": {},
+  "sessions": {
+    "s_003ed3b0245347": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "e0fe8d64-bd87-4d21-b9d9-5e8dc636e863",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

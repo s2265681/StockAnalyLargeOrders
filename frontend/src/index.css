@@ -1,5 +1,45 @@
 /* ===== 主题变量 ===== */
+/* 默认使用亮色，避免 React 加载前出现黑屏闪烁 */
 :root,
+[data-theme="light"] {
+  --bg-primary: #f0f2f5;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f5f5f5;
+  --bg-input: #ffffff;
+  --bg-header: #ffffff;
+  --bg-gradient-start: #ffffff;
+  --bg-gradient-end: #f5f5f5;
+  --bg-tag: rgba(24, 144, 255, 0.08);
+  --bg-tooltip: #ffffff;
+
+  --text-primary: #1a1a1a;
+  --text-secondary: rgba(0, 0, 0, 0.65);
+  --text-tertiary: rgba(0, 0, 0, 0.45);
+  --text-muted: #888;
+
+  --border-primary: #e0e0e0;
+  --border-secondary: #f0f0f0;
+  --border-input: #d9d9d9;
+
+  --color-up: #cf1322;
+  --color-down: #389e0d;
+  --color-accent: #1890ff;
+  --color-warning: #fa8c16;
+
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+  --border-subtle: rgba(0, 0, 0, 0.1);
+  --border-faint: rgba(0, 0, 0, 0.05);
+  --border-light: rgba(0, 0, 0, 0.08);
+  --bg-subtle: rgba(0, 0, 0, 0.02);
+  --bg-hover: rgba(0, 0, 0, 0.04);
+  --bg-highlight: rgba(0, 0, 0, 0.06);
+  --bg-overlay: rgba(0, 0, 0, 0.03);
+  --text-dim: rgba(0, 0, 0, 0.45);
+  --text-soft: rgba(0, 0, 0, 0.65);
+  --text-medium: rgba(0, 0, 0, 0.82);
+}
+
 [data-theme="dark"] {
   --bg-primary: #141213;
   --bg-card: #1a1a1a;
@@ -171,6 +211,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--bg-primary);
   color: var(--text-primary);
+  overflow-x: hidden;
 }
 
 code {
@@ -181,6 +222,7 @@ code {
 #root {
   min-height: 100vh;
   background-color: var(--bg-primary);
+  overflow-x: hidden;
 }
 
 .ant-layout-content {
@@ -1289,6 +1331,7 @@ code {
 .stock-dashboard-container{
   max-width: 1580px;
   margin: 0 auto;
+  overflow-x: hidden;
 }
 
 .dashboard-layout {

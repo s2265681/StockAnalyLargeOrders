@@ -406,3 +406,54 @@
   background: rgba(114, 46, 209, 0.1);
   border-color: rgba(114, 46, 209, 0.28);
 }
+
+/* ── 移动端适配 ── */
+@media (max-width: 768px) {
+  .dt-container {
+    height: auto;
+    overflow: visible;
+    overflow-x: hidden;
+  }
+
+  .dt-top-bar {
+    justify-content: center;
+    padding: 10px 12px;
+  }
+
+  .dt-main {
+    flex-direction: column;
+    overflow: visible;
+  }
+
+  .dt-stock-list {
+    width: 100%;
+    max-height: 320px;
+    border-right: none;
+    border-bottom: 1px solid var(--border-secondary);
+    flex-shrink: unset;
+  }
+
+  .dt-detail {
+    overflow-y: visible;
+    padding: 12px 14px;
+    min-height: 200px;
+  }
+
+  .dt-detail-empty {
+    height: 120px;
+  }
+
+  .dt-seats-row {
+    grid-template-columns: 1fr;
+  }
+
+  .dt-seat-row {
+    grid-template-columns: 1fr 70px 70px 70px;
+    padding: 8px 10px;
+  }
+
+  .dt-seat-header {
+    grid-template-columns: 1fr 70px 70px 70px;
+    padding: 6px 10px;
+  }
+}

@@ -1,0 +1,79 @@
+.superpowers/brainstorm/64227-1778992851/content/project-name-v2.html
+  s_acc2e4c6f72930::t_eed42a26c62094 1-181
+.superpowers/brainstorm/64227-1778992851/content/project-name-v3.html
+  s_acc2e4c6f72930::t_9843142867ef7a 1-188
+.superpowers/brainstorm/64227-1778992851/content/full-mockup-v2.html
+  s_acc2e4c6f72930::t_42e714d99ad687 1-495
+.superpowers/brainstorm/64227-1778992851/content/project-name.html
+  s_acc2e4c6f72930::t_f21c704ef8e430 1-191
+backend/routes/dragon_tiger.py
+  s_ff5edfa5f67a4b::t_4f7284d3b66e23 30
+backend/routes/limit_up_echelon.py
+  s_58cd5624a3a18f::t_497106c4b9545f 33-43
+  s_58cd5624a3a18f::t_4889a99f18e5d6 604
+  s_ff5edfa5f67a4b::t_004a6044cbec75 44
+  s_58cd5624a3a18f::t_048823843b083c 16
+  s_58cd5624a3a18f::t_1fe6cf7133738a 722
+backend/services/ai_diagnosis_service.py
+  s_ff5edfa5f67a4b::t_f274c0a113a250 22
+.superpowers/brainstorm/64227-1778992851/content/page-layout.html
+  s_acc2e4c6f72930::t_caf1e5bda3f2bd 1-117
+.superpowers/brainstorm/64227-1778992851/content/visual-style.html
+  s_acc2e4c6f72930::t_022506cad6384d 1-104
+backend/routes/emotion_cycle.py
+  s_ff5edfa5f67a4b::t_f3517123089d17 81
+  s_ff5edfa5f67a4b::t_2987e11a6eeb0d 393-397
+  s_ff5edfa5f67a4b::t_8926dcd034d064 793
+  s_ff5edfa5f67a4b::t_be321ad481e77a 798-802
+  s_ff5edfa5f67a4b::t_0bb5234dd07539 512-516
+.github/workflows/deploy.yml
+  s_acc2e4c6f72930::t_2ee571ffd6b649 187-191,202,237-239
+.superpowers/brainstorm/64227-1778992851/content/brand-confirm.html
+  s_acc2e4c6f72930::t_3d95d754ef9d72 1-158
+backend/utils/claude_client.py
+  s_ff5edfa5f67a4b::t_b581f3783a9c52 61
+  s_ff5edfa5f67a4b::t_dd3388975897db 1-60,62-131
+.superpowers/brainstorm/64227-1778992851/content/full-mockup.html
+  s_acc2e4c6f72930::t_b5c80768be637e 1-485
+.superpowers/brainstorm/64227-1778992851/state/server-info
+  s_acc2e4c6f72930::t_b64dfb9519359f 1
+backend/tests/test_limit_up_echelon.py
+  s_58cd5624a3a18f::t_f9acf309216131 8-13
+  s_58cd5624a3a18f::t_2eb768fb4c8c06 2-3,5
+.superpowers/brainstorm/64227-1778992851/content/project-name-v4.html
+  s_acc2e4c6f72930::t_d4f282d360580e 1-195
+frontend/src/pages/LimitUpEchelon/index.js
+  s_58cd5624a3a18f::t_a6842c6ae99ca2 180
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "0aaca625aae5411ad3d46f49662e4824958c86ef",
+  "prompts": {},
+  "sessions": {
+    "s_58cd5624a3a18f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "78a02300-4a32-483e-8d7c-44a709c4ed69",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_acc2e4c6f72930": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7719717f-7793-4aff-87b8-5b2442ed6232",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_ff5edfa5f67a4b": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "03ae248a-2493-4cae-ae5a-09e45d544ff0",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

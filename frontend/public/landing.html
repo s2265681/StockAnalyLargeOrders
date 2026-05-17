@@ -8,6 +8,7 @@
 <meta name="description" content="AI炒股指南：实时大单追踪、涨停梯队分析、情绪周期判断、AI个股诊断。专为A股打板党、短线交易者设计的智能分析工具。">
 <meta name="keywords" content="AI炒股,打板神器,涨停分析,短线炒股,大单追踪,情绪周期,AI诊股">
 <style>
+html,body{max-width:100%;overflow-x:hidden}
 :root {
   --bg:#f8fafc; --bg2:#fff; --bg3:#f1f5f9; --bg4:#e8edf5;
   --border:#e2e8f0; --border2:#cbd5e1;
@@ -259,15 +260,14 @@ body{background:var(--bg);color:var(--text);font-family:'PingFang SC','Helvetica
   .ticker-inner{grid-template-columns:repeat(2,1fr);gap:16px 0}
   .tick-item:nth-child(2){border-right:none}
   .nav-links{display:none}
-  .nav{padding:0 4%;gap:12px}
+  .nav{padding:0 16px;gap:8px}
   .theme-btn{display:none}
   .nav-name{font-size:15px}
+  .nav-try{padding:7px 14px;font-size:13px;white-space:nowrap}
 }
 @media(max-width:600px){
   .pricing-grid{grid-template-columns:1fr}
   .hero-stats{gap:24px}
-  .nav{padding:0 16px}
-  .nav-try{padding:7px 14px;font-size:12px}
 }
 </style>
 </head>

@@ -1,0 +1,31 @@
+frontend/public/landing.html
+  s_003ed3b0245347::t_ddf48b026774bb 6,8-13
+frontend/src/pages/DragonTiger/index.css
+  s_003ed3b0245347::t_504b57f2ee33f2 445,447,466-479
+  s_003ed3b0245347::t_b8e3bfc225e389 441-442
+frontend/src/index.css
+  s_003ed3b0245347::t_356dfceb4f20a6 2986
+frontend/public/manifest.json
+  s_003ed3b0245347::t_b3c899f07c5e94 1-23
+frontend/scripts/generate_app_icons.py
+  s_003ed3b0245347::t_b0190af81de32e 1-10,21-22,24,29-30,33-96
+  s_003ed3b0245347::t_cfeb9cce9c20d9 11-20,23,25-28,31-32
+frontend/public/index.html
+  s_003ed3b0245347::t_a7d867be22d8bd 6,8-10,12-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "ee1eae23b125c7637c91286ee4562abad5ca792f",
+  "prompts": {},
+  "sessions": {
+    "s_003ed3b0245347": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "e0fe8d64-bd87-4d21-b9d9-5e8dc636e863",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

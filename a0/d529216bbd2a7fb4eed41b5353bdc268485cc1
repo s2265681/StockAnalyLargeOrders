@@ -1,0 +1,19 @@
+frontend/public/landing.html
+  s_acc2e4c6f72930::t_87848f99f61e63 262-264,269-270
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "a0d529216bbd2a7fb4eed41b5353bdc268485cc1",
+  "prompts": {},
+  "sessions": {
+    "s_acc2e4c6f72930": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7719717f-7793-4aff-87b8-5b2442ed6232",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

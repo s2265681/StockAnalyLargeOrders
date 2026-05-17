@@ -72,32 +72,91 @@ class GetLimitUpEchelonApiTest(unittest.TestCase):
         mock_db.assert_called_once_with("20260515", "2026-05-15")
 
 
-class NormalizeBroadTagsTest(unittest.TestCase):
-    def test_merges_fine_tags_into_canonical(self):
-        from routes.limit_up_echelon import _normalize_to_broad_tags
+class RuleHintTest(unittest.TestCase):
+    def test_hint_robot_and_fluorine(self):
+        from routes.limit_up_echelon import _assign_broad_tag_from_stock
+
+        self.assertEqual(
+            _assign_broad_tag_from_stock({
+                "name": "巨轮智能", "industry": "专用设备",
+                "ths_analyse_title": "人形机器人+RV减速器",
+                "stock_concept_tags": ["减速器", "人形机器人"],
+            }),
+            "机器人",
+        )
+        self.assertEqual(
+            _assign_broad_tag_from_stock({
+                "name": "多氟多", "industry": "化学制品",
+                "ths_analyse_title": "氢氟酸涨价",
+                "stock_concept_tags": ["氟化工概念"],
+            }),
+            "电子特气/化工",
+        )
+        # 单字「消费」不足以判大消费
+        self.assertEqual(
+            _hint_label_from_stock({
+                "name": "某股", "industry": "软件",
+                "ths_analyse_title": "消费复苏预期",
+                "ths_concept_tags": [],
+            }),
+            "",
+        )
+
+
+class StockConceptWeightTest(unittest.TestCase):
+    def test_merge_em_and_ths_concepts(self):
+        from routes.limit_up_echelon import _merge_stock_concept_tags
+
+        merged = _merge_stock_concept_tags(
+            {"em_concept_tags": ["人形机器人", "减速器"]},
+            {"concept_tags": ["减速器", "专精特新"]},
+        )
+        self.assertEqual(merged, ["人形机器人", "减速器", "专精特新"])
+
+    def test_label_overlap_prefers_stock_concepts(self):
+        from routes.limit_up_echelon import _label_text_overlap
+
+        stock = {
+            "stock_concept_tags": ["光通信", "CPO"],
+            "industry": "通信设备",
+            "ths_analyse_title": "电力转型",
+        }
+        self.assertGreater(
+            _label_text_overlap("光通信", stock),
+            _label_text_overlap("电力", stock),
+        )
+
+
+class FinalizeGroupLabelsTest(unittest.TestCase):
+    def test_merges_single_stock_tag_without_forcing_canonical(self):
+        from routes.limit_up_echelon import _finalize_group_labels
 
         labels = {
-            "000001": "汽车零部件",
-            "000002": "工业自动化",
-            "000003": "绿电",
-            "000004": "消费食品",
+            "000001": "光通信",
+            "000002": "光通信",
+            "000003": "孤立题材",
         }
-        result = _normalize_to_broad_tags(
+        stocks = [
+            {"code": "000001", "name": "A", "ths_analyse_title": "光通信模块"},
+            {"code": "000002", "name": "B", "ths_analyse_title": "光通信"},
+            {"code": "000003", "name": "C", "ths_analyse_title": "光通信测试"},
+        ]
+        result = _finalize_group_labels(
             {"labels": labels, "reasons": {}, "leaders": {}},
-            [{"code": c} for c in labels],
+            stocks,
         )
-        self.assertEqual(result["labels"]["000001"], "机器人")
-        self.assertEqual(result["labels"]["000003"], "电力")
-        self.assertEqual(result["labels"]["000004"], "大消费")
+        self.assertEqual(result["labels"]["000001"], "光通信")
+        self.assertIn(result["labels"]["000003"], ("光通信", "其他概念"))
 
 
 class EnforceGroupLimitsTest(unittest.TestCase):
     def test_caps_tag_count_and_other_bucket(self):
         from routes.limit_up_echelon import _enforce_group_limits, MAX_DAY_TAGS, MAX_OTHER_STOCKS
 
+        broad = ["机器人", "氟化工", "大消费", "电力", "光伏", "光通信"]
         labels = {}
         for i in range(12):
-            labels[f"{i:06d}"] = f"题材{i}"
+            labels[f"{i:06d}"] = broad[i % len(broad)]
         for i in range(12, 12 + MAX_OTHER_STOCKS + 3):
             labels[f"{i:06d}"] = "其他概念"
         stocks = [{"code": c} for c in labels]

@@ -8,8 +8,8 @@
   python jobs/dragon_tiger_ai_daily.py force        # 最新交易日强制重跑
   python jobs/dragon_tiger_ai_daily.py 20260515 force
 
-建议 crontab（工作日 16:00，A 股收盘后）：
-  0 16 * * 1-5 /Users/mac/Github/NiuNIuNiu/backend/jobs/run_dragon_tiger.sh force \
+建议 crontab（工作日 18:00，补全当日并清理 7 天前数据）：
+  0 18 * * 1-5 /Users/mac/Github/NiuNIuNiu/backend/jobs/run_dragon_tiger.sh \
     >> /Users/mac/Github/NiuNIuNiu/dragon_tiger_job.log 2>&1
 """
 import logging
@@ -19,6 +19,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from routes.dragon_tiger import run_dragon_tiger_ai_for_date
+from services.dragon_tiger_service import cleanup_dragon_tiger_older_than
 from utils.date_utils import get_valid_trading_date
 
 logging.basicConfig(
@@ -46,10 +47,11 @@ def main():
 
     logger.info("===== 龙虎榜 AI 离线任务 date=%s force=%s =====", dt, force)
     result = run_dragon_tiger_ai_for_date(dt, force=force)
-    logger.info("===== 任务结束: %s =====", result)
+    logger.info("当日补全结果: %s", result)
 
-    if result.get("total", 0) == 0:
-        sys.exit(2)
+    cleanup = cleanup_dragon_tiger_older_than()
+    logger.info("===== 任务结束 cleanup=%s =====", cleanup)
+
     if result.get("failed", 0) > 0:
         sys.exit(1)
 

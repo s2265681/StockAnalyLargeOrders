@@ -255,3 +255,21 @@ def save_ai_analysis(date: str, code: str, analysis: str) -> None:
         """,
         (date, code, analysis),
     )
+
+
+# 与前端「近 5 日」展示错开，多留 2 天自然日缓冲
+RETENTION_CALENDAR_DAYS = 7
+
+
+def cleanup_dragon_tiger_older_than(days: int = RETENTION_CALENDAR_DAYS) -> dict:
+    """删除早于 cutoff 的龙虎榜数据（daily / seats / ai）。"""
+    from datetime import datetime, timedelta
+
+    days = max(int(days), 1)
+    cutoff = (datetime.now() - timedelta(days=days)).strftime("%Y%m%d")
+    deleted = {}
+    for table in ("dragon_tiger_ai", "dragon_tiger_seats", "dragon_tiger_daily"):
+        n = execute_write(f"DELETE FROM {table} WHERE date < %s", (cutoff,))
+        deleted[table] = int(n or 0)
+    logger.info("龙虎榜清理完成 cutoff<%s deleted=%s", cutoff, deleted)
+    return {"cutoff": cutoff, "deleted": deleted}

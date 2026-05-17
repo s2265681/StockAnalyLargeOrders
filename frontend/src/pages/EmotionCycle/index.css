@@ -247,19 +247,33 @@
   border-radius: 6px;
   padding: 8px 10px;
   border-left: 3px solid #1890ff;
+  min-width: 0;
 }
 
 .rec-header {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 6px 8px;
   margin-bottom: 4px;
 }
 
 .rec-stock {
+  flex: 1 1 100%;
   font-weight: bold;
   color: #b26a00;
   font-size: 13px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.rec-header .ant-tag {
+  margin: 0;
+  max-width: 100%;
+  height: auto;
+  line-height: 1.4;
+  white-space: normal;
+  word-break: break-word;
 }
 
 [data-theme="dark"] .analysis-section-title,
@@ -271,6 +285,52 @@
   font-size: 12px;
   color: var(--text-secondary);
   line-height: 1.5;
+  word-break: break-word;
+}
+
+.prev-review-text {
+  padding: 8px 10px;
+  background: var(--bg-card-hover);
+  border-radius: 6px;
+  border-left: 3px solid #fa8c16;
+}
+
+.trade-plans-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.trade-plan-item {
+  background: var(--bg-card-hover);
+  border-radius: 6px;
+  padding: 10px;
+  border-left: 3px solid #f5222d;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.trade-plan-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  margin-top: 4px;
+  color: var(--text-secondary);
+}
+
+.trade-plan-row > span:not(.trade-plan-label) {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.trade-plan-label {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: #1677ff;
+  min-width: 32px;
 }
 
 /* ── 移动端适配 ── */

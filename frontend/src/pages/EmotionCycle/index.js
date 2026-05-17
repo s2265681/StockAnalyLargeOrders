@@ -82,6 +82,9 @@ const formatDateDisplay = (dateStr) => {
   return `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
 };
 
+/** 暂时隐藏盘中「生成/刷新」入口，恢复时改为 true */
+const SHOW_INTRADAY_REFRESH_BTN = false;
+
 const getLatestRecordDate = (items) => {
   if (!items || items.length === 0) return null;
   const sortedDates = items
@@ -119,7 +122,15 @@ function AnalysisBlock({ title, accent, result, loading, emptyHint, extra, child
       );
     }
 
-    const { stage, analysis, advice, recommendations, updated_at: updatedAt } = result;
+    const {
+      stage,
+      analysis,
+      advice,
+      prev_day_review: prevDayReview,
+      recommendations,
+      trade_plans: tradePlans,
+      updated_at: updatedAt,
+    } = result;
     const stageColor = stageColorMap[stage]
       || Object.entries(stageColorMap).find(([k]) => stage?.includes(k))?.[1]
       || '#1890ff';
@@ -150,10 +161,57 @@ function AnalysisBlock({ title, accent, result, loading, emptyHint, extra, child
             </div>
           )}
 
+          {prevDayReview && (
+            <div style={{ marginBottom: 10 }}>
+              <div className="analysis-section-title">昨日复盘修正</div>
+              <div className="analysis-text prev-review-text">{prevDayReview}</div>
+            </div>
+          )}
+
           {advice && (
             <div style={{ marginBottom: 10 }}>
-              <div className="analysis-section-title">建议</div>
+              <div className="analysis-section-title">操作建议</div>
               <div className="advice-text">{advice}</div>
+            </div>
+          )}
+
+          {tradePlans && tradePlans.length > 0 && (
+            <div style={{ marginBottom: 10 }}>
+              <div className="analysis-section-title">买卖点与进出场</div>
+              <div className="trade-plans-list">
+                {tradePlans.map((plan, idx) => (
+                  <div key={idx} className="trade-plan-item">
+                    <div className="rec-header">
+                      <span className="rec-stock">{plan.stock}</span>
+                      {plan.technique && (
+                        <Tag color="volcano" style={{ fontSize: 11 }}>{plan.technique}</Tag>
+                      )}
+                      {plan.position && (
+                        <Tag color="blue" style={{ fontSize: 11 }}>{plan.position}</Tag>
+                      )}
+                    </div>
+                    {plan.entry && (
+                      <div className="trade-plan-row">
+                        <span className="trade-plan-label">买点</span>
+                        <span>{plan.entry}</span>
+                      </div>
+                    )}
+                    {plan.exit && (
+                      <div className="trade-plan-row">
+                        <span className="trade-plan-label">卖点</span>
+                        <span>{plan.exit}</span>
+                      </div>
+                    )}
+                    {plan.timing && (
+                      <div className="trade-plan-row">
+                        <span className="trade-plan-label">时机</span>
+                        <span>{plan.timing}</span>
+                      </div>
+                    )}
+                    {plan.reason && <div className="rec-reason">{plan.reason}</div>}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
@@ -200,7 +258,9 @@ function EmotionCycle() {
 
   const minDate = records.length > 0 ? records[0].date.replace(/-/g, '') : '20000101';
   const latestDate = getLatestRecordDate(records);
-  const isTodaySelected = selectedDate === todayStr && selectedDate === latestDate;
+  const hasSelectedRecord = records.some(
+    (r) => r.date?.replace(/-/g, '') === selectedDate
+  );
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -234,28 +294,30 @@ function EmotionCycle() {
   useEffect(() => {
     const loadIntradayCache = async () => {
       setIntradayAnalysis(null);
-      if (!isTodaySelected) return;
+      if (!hasSelectedRecord) return;
       try {
         const res = await apiRequest(`/api/v1/emotion-intraday-cache?date=${selectedDate}`);
         if (res?.data) setIntradayAnalysis(res.data);
       } catch (_) { /* ignore */ }
     };
     if (records.length > 0) loadIntradayCache();
-  }, [selectedDate, records.length, isTodaySelected]);
+  }, [selectedDate, records.length, hasSelectedRecord]);
 
   const handleIntradayRefresh = async () => {
-    if (!isTodaySelected) return;
+    if (!hasSelectedRecord) return;
     setIntradayLoading(true);
     setIntradayAnalysis(null);
     try {
       const res = await apiRequest('/api/v1/emotion-intraday-refresh', {
         method: 'POST',
-        timeout: 240000,
+        body: JSON.stringify({ date: selectedDate, force: true }),
+        timeout: 300000,
       });
-      if (res?.data?.intraday) setIntradayAnalysis(res.data.intraday);
+      const daily = res?.data?.daily || res?.data?.intraday;
+      if (daily) setIntradayAnalysis(daily);
       if (res?.data?.records) setRecords(res.data.records);
     } catch (err) {
-      console.error('Failed to refresh intraday analysis:', err);
+      console.error('Failed to refresh daily analysis:', err);
     } finally {
       setIntradayLoading(false);
     }
@@ -405,17 +467,17 @@ function EmotionCycle() {
             emptyHint="还未生成，由每日定时任务生成"
           />
           <AnalysisBlock
-            title="盘中研判"
+            title="盘中买卖指导"
             accent="intraday"
-            result={isTodaySelected ? intradayAnalysis : null}
+            result={hasSelectedRecord ? intradayAnalysis : null}
             loading={intradayLoading}
             emptyHint={
-              isTodaySelected
-                ? '点击「盘中刷新」生成当日研判'
-                : '仅支持查看/刷新当日盘中研判'
+              hasSelectedRecord
+                ? '暂无盘中分析，由定时任务生成（含买卖点与昨日复盘）'
+                : '该日期暂无行情数据'
             }
             extra={
-              isTodaySelected && (
+              SHOW_INTRADAY_REFRESH_BTN && hasSelectedRecord ? (
                 <Button
                   size="small"
                   icon={<ReloadOutlined />}
@@ -424,9 +486,9 @@ function EmotionCycle() {
                   disabled={records.length === 0}
                   className="ai-refresh-btn"
                 >
-                  刷新
+                  生成/刷新
                 </Button>
-              )
+              ) : null
             }
           />
         </div>

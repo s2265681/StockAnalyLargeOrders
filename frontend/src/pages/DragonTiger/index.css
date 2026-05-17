@@ -327,6 +327,11 @@
   line-height: 1.8;
 }
 
+.dt-ai-empty-text {
+  color: #8c8c8c;
+  font-style: italic;
+}
+
 .dt-ai-result-heading {
   font-size: 22px;
   font-weight: 700;

@@ -1,6 +1,6 @@
 // frontend/src/pages/DragonTiger/index.js
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Spin } from 'antd';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { Spin, message } from 'antd';
 import { LeftOutlined, RightOutlined, RobotOutlined, LoadingOutlined } from '@ant-design/icons';
 import { apiRequest } from '../../config/api';
 import './index.css';
@@ -32,6 +32,17 @@ const offsetDate = (dateStr, delta) => {
 
 const formatDateDisplay = (s) =>
   s && s.length === 8 ? `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}` : s;
+
+/** 核心游资仅展示最近 N 个交易日（与离线补全范围一致） */
+const VISIBLE_TRADING_DAYS = 5;
+
+const getMinVisibleDate = (endDate) => {
+  let d = endDate;
+  for (let i = 0; i < VISIBLE_TRADING_DAYS - 1; i += 1) {
+    d = offsetDate(d, -1);
+  }
+  return d;
+};
 
 const fmtAmount = (val) => {
   const v = parseFloat(val || 0);
@@ -135,12 +146,14 @@ export function SeatTable({ seats, direction }) {
 }
 
 function DragonTiger() {
-  const todayStr = getLastTradingDayStr();
-  const [currentDate, setCurrentDate] = useState(todayStr);
+  const todayStr = useMemo(() => getLastTradingDayStr(), []);
+  const minDate = useMemo(() => getMinVisibleDate(todayStr), [todayStr]);
+  const [currentDate, setCurrentDate] = useState(() => getLastTradingDayStr());
   const [loading, setLoading] = useState(false);
   const [stocks, setStocks] = useState([]);
   const [selectedCode, setSelectedCode] = useState(null);
   const [aiResults, setAiResults] = useState({}); // code -> analysis
+  const [aiEmptyHint, setAiEmptyHint] = useState(null); // code -> 未生成提示
   const [aiLoading, setAiLoading] = useState(new Set());
   const dataCache = useRef({}); // date -> stocks[]
 
@@ -177,26 +190,37 @@ function DragonTiger() {
 
   const handleDateChange = (delta) => {
     const next = delta > 0 ? offsetDate(currentDate, 1) : offsetDate(currentDate, -1);
+    if (next < minDate || next > todayStr) return;
     setCurrentDate(next);
     setAiResults({});
+    setAiEmptyHint(null);
   };
 
   const handleAiAnalysis = async (stock) => {
     const code = stock.code;
-    if (aiResults[code] || aiLoading.has(code)) return;
+    if (aiLoading.has(code)) return;
     setAiLoading((prev) => new Set([...prev, code]));
+    setAiEmptyHint((prev) => ({ ...prev, [code]: null }));
     try {
-      const res = await apiRequest('/api/v1/dragon-tiger/ai-analysis', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: currentDate, code }),
-        timeout: 100000,
-      });
+      const res = await apiRequest(
+        `/api/v1/dragon-tiger/ai-analysis-cache?date=${currentDate}&code=${code}`
+      );
       if (res?.data?.analysis) {
         setAiResults((prev) => ({ ...prev, [code]: res.data.analysis }));
+        setAiEmptyHint((prev) => ({ ...prev, [code]: null }));
+      } else {
+        setAiResults((prev) => {
+          const next = { ...prev };
+          delete next[code];
+          return next;
+        });
+        const hint = res?.message || '还未生成，由每日定时任务生成';
+        setAiEmptyHint((prev) => ({ ...prev, [code]: hint }));
+        message.info(hint);
       }
     } catch (e) {
-      console.error('AI分析失败:', e);
+      console.error('AI分析加载失败:', e);
+      message.error('加载 AI 解读失败，请稍后重试');
     } finally {
       setAiLoading((prev) => {
         const next = new Set(prev);
@@ -213,11 +237,20 @@ function DragonTiger() {
       {/* 顶部日期导航 */}
       <div className="dt-top-bar">
         <div className="date-nav">
-          <button className="date-nav-btn" onClick={() => handleDateChange(-1)}>
+          <button
+            type="button"
+            className="date-nav-btn"
+            disabled={currentDate <= minDate}
+            onClick={() => handleDateChange(-1)}
+          >
             <LeftOutlined /> 前一天
           </button>
-          <span className="date-nav-label">{formatDateDisplay(currentDate)}</span>
+          <span className="date-nav-label">
+            {formatDateDisplay(currentDate)}
+            <span className="date-nav-hint">近{VISIBLE_TRADING_DAYS}日</span>
+          </span>
           <button
+            type="button"
             className="date-nav-btn"
             disabled={currentDate >= todayStr}
             onClick={() => handleDateChange(1)}
@@ -245,7 +278,10 @@ function DragonTiger() {
                 <div
                   key={stock.code}
                   className={`dt-stock-item ${selectedCode === stock.code ? 'selected' : ''}`}
-                  onClick={() => setSelectedCode(stock.code)}
+                  onClick={() => {
+                    setSelectedCode(stock.code);
+                    setAiEmptyHint(null);
+                  }}
                 >
                   <div className="dt-stock-item-header">
                     <span className="dt-stock-name">{stock.name}</span>
@@ -292,13 +328,23 @@ function DragonTiger() {
                   onClick={() => handleAiAnalysis(selectedStock)}
                 >
                   {aiLoading.has(selectedStock.code)
-                    ? <><LoadingOutlined style={{ marginRight: 4 }} />分析中...</>
+                    ? <><LoadingOutlined style={{ marginRight: 4 }} />加载中...</>
                     : <><RobotOutlined style={{ marginRight: 4 }} />AI分析</>
                   }
                 </button>
               </div>
 
               {/* AI分析结果 */}
+              {aiEmptyHint?.[selectedStock.code] && !aiResults[selectedStock.code] && (
+                <div className="dt-ai-result dt-ai-empty">
+                  <div className="dt-ai-result-title">
+                    <RobotOutlined style={{ marginRight: 6 }} />AI 资金意图解读
+                  </div>
+                  <div className="dt-ai-result-text dt-ai-empty-text">
+                    {aiEmptyHint[selectedStock.code]}
+                  </div>
+                </div>
+              )}
               {aiResults[selectedStock.code] && (
                 <div className="dt-ai-result">
                   <div className="dt-ai-result-title">

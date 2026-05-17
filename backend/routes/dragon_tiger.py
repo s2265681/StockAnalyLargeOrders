@@ -302,14 +302,9 @@ def get_dragon_tiger():
 
 
 def _has_valid_ai_cache(analysis: str | None) -> bool:
-    """旧版缓存可能缺少题材字段，离线任务会强制重跑。"""
-    if not analysis:
-        return False
-    return (
-        "所属题材" in analysis
-        or "题材地位" in analysis
-        or "所属行业" in analysis
-    )
+    """有非空且足够长度的入库内容即视为有效（AI 输出为自然段，不含固定字段名）。"""
+    text = (analysis or "").strip()
+    return len(text) >= 20
 
 
 def analyze_dragon_tiger_stock(date: str, code: str, force: bool = False) -> str:
@@ -346,16 +341,41 @@ def analyze_dragon_tiger_stock(date: str, code: str, force: bool = False) -> str
         return "failed"
 
 
+def sync_dragon_tiger_for_date(date: str, force: bool = False) -> dict:
+    """仅拉取并入库龙虎榜列表与席位，不生成 AI。"""
+    date = (date or "").replace("-", "")
+    if not date:
+        return {"date": date, "stocks": 0, "seats": 0, "source": "invalid", "skipped": True}
+
+    stocks = get_daily_stocks(date)
+    if stocks and not force:
+        seats = sum(len(s.get("buy_seats", [])) + len(s.get("sell_seats", [])) for s in stocks)
+        return {"date": date, "stocks": len(stocks), "seats": seats, "source": "db", "skipped": True}
+
+    result = _fetch_from_akshare(date)
+    if not result:
+        return {"date": date, "stocks": 0, "seats": 0, "source": "empty", "skipped": False}
+
+    stocks, all_seats = result
+    save_daily_stocks(date, stocks)
+    save_seats(date, all_seats)
+    return {
+        "date": date,
+        "stocks": len(stocks),
+        "seats": len(all_seats),
+        "source": "api",
+        "skipped": False,
+    }
+
+
 def run_dragon_tiger_ai_for_date(date: str, force: bool = False) -> dict:
     """为指定交易日全部上榜股批量生成 AI 解读（离线任务入口）。"""
     date = (date or "").replace("-", "")
     stocks = get_daily_stocks(date)
     if not stocks:
-        result = _fetch_from_akshare(date)
-        if result:
-            stocks, all_seats = result
-            save_daily_stocks(date, stocks)
-            save_seats(date, all_seats)
+        sync = sync_dragon_tiger_for_date(date, force=True)
+        if sync.get("stocks"):
+            stocks = get_daily_stocks(date)
 
     if not stocks:
         return {"date": date, "total": 0, "saved": 0, "skipped": 0, "failed": 0, "no_data": 0}

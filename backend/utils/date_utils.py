@@ -102,6 +102,23 @@ def get_next_trading_date(current_date: str, forward: bool = True) -> dict:
         return {'date': current_date, 'is_latest': False, 'message': str(e)}
 
 
+def get_recent_trading_dates(count: int = 5) -> list[str]:
+    """返回最近 count 个交易日，格式 YYYYMMDD，从旧到新。"""
+    if count < 1:
+        return []
+    collected: list[str] = []
+    current = get_valid_trading_date()
+    for _ in range(count):
+        compact = current.replace("-", "")
+        if collected and collected[-1] == compact:
+            break
+        collected.append(compact)
+        prev_dt = datetime.strptime(current, "%Y-%m-%d") - timedelta(days=1)
+        current = get_valid_trading_date(prev_dt)
+    collected.reverse()
+    return collected
+
+
 def validate_and_get_trading_date(date_param: str | None) -> str:
     """验证并返回有效交易日（不传则返回最近交易日）"""
     if not date_param:

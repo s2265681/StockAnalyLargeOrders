@@ -46,16 +46,25 @@ def main():
 
     logger.info(f"准备补录 {len(dates)} 个交易日: {dates[0]} ~ {dates[-1]}")
 
-    from jobs.echelon_daily import run
+    from routes.limit_up_echelon import build_echelon_one_date
 
     success, skip, fail = 0, 0, 0
     for dt in dates:
         logger.info(f"--- 处理 {dt} ---")
         try:
-            run(dt)
-            success += 1
+            result = build_echelon_one_date(dt, force=True)
+            if result == "saved":
+                success += 1
+            elif result == "skipped":
+                skip += 1
+            elif result == "empty":
+                logger.warning(f"{dt} 涨停池为空")
+                fail += 1
+            else:
+                logger.error(f"{dt} 失败: {result}")
+                fail += 1
         except Exception as e:
-            logger.error(f"{dt} 失败: {e}")
+            logger.error(f"{dt} 异常: {e}")
             fail += 1
         time.sleep(2)  # 避免请求过快
 

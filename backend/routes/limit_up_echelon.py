@@ -58,88 +58,246 @@ MAX_DAY_TAGS = 10
 MAX_OTHER_STOCKS = 5
 MIN_TAG_STOCKS = 2
 OTHER_LABEL_SET = frozenset({"其他概念", "其他", "其他行业"})
+# 所属概念在文本匹配中的权重（高于行业/标题关键词）
+CONCEPT_MATCH_WEIGHT = 4
+CONCEPT_TEXT_REPEAT = 3
 
-# 复盘常用大主线（对齐复盘图：约 7 主线 + 其他概念≤5）
-CANONICAL_BROAD_TAGS = (
-    "机器人", "氟化工", "大消费", "半导体产业链", "电力", "AI应用", "体育产业",
+# 复盘「通用大类」白名单（标签名必须落在此集合，禁止长句标签；顺序用于 prompt 展示）
+GENERAL_BROAD_TAGS_ORDERED = (
+    "合成生物", "机器人", "低空经济", "算力/服务器", "算力/半导体产业化",
+    "半导体产业链", "第三代半导体", "光通信", "PCB", "电力", "光伏",
+    "锂电池", "医药", "房地产", "大消费", "教育", "文化传媒", "AI应用",
+    "军工", "油气", "稀土永磁", "充电桩", "电子特气/化工", "氟化工",
+    "猪肉", "并购重组", "体育产业", "其他概念",
 )
+GENERAL_BROAD_TAG_SET = frozenset(GENERAL_BROAD_TAGS_ORDERED)
 
-# 细碎标签强制并入大主线（名称与复盘图一致，勿再缩写）
+
+def _broad_tags_prompt_list() -> str:
+    return "、".join(GENERAL_BROAD_TAGS_ORDERED)
+
+
+# 细碎/长标签名 → 通用大类（按复盘图口径）
 BROAD_TAG_ALIASES = {
     "人形机器人": "机器人", "减速器": "机器人", "汽车零部件": "机器人",
-    "工业自动化": "机器人", "电机及驱动": "机器人", "自动化设备": "机器人",
-    "专用设备": "机器人", "智能制造": "机器人",
-    "化工新材料": "氟化工", "化学制品": "氟化工", "塑料制品": "氟化工",
-    "电子化学品": "氟化工", "氢氟酸": "氟化工",
-    "消费": "大消费", "消费食品": "大消费", "家居建材": "大消费", "建筑陶瓷": "大消费",
-    "家居用品": "大消费", "食品饮料": "大消费", "白酒": "大消费", "零售": "大消费",
-    "绿电": "电力", "绿色电力": "电力", "新能源产业链": "电力", "储能": "电力",
-    "风电": "电力", "光伏": "电力", "火电": "电力",
+    "工业自动化": "机器人", "智能物流": "机器人", "具身智能": "机器人",
+    "伺服电机": "机器人", "智能制造": "机器人",
+    "化工": "氟化工", "化工新材料": "氟化工", "化学制品": "氟化工",
+    "氢氟酸": "氟化工", "制冷剂": "氟化工",
+    "电子特气": "电子特气/化工", "电子化学品": "电子特气/化工",
+    "六氟化钨": "电子特气/化工", "硅烷": "电子特气/化工", "环氧丙烷": "电子特气/化工",
+    "消费": "大消费", "食品饮料": "大消费", "白酒": "大消费", "家居": "大消费",
+    "建材": "大消费", "陶瓷": "大消费", "家电": "大消费", "小家电": "大消费",
+    "零售": "大消费", "预制菜": "大消费",
     "半导体": "半导体产业链", "芯片": "半导体产业链", "存储芯片": "半导体产业链",
-    "先进封装": "半导体产业链", "光刻胶": "半导体产业链", "其他电子": "半导体产业链",
-    "传媒短剧": "AI应用", "传媒广告": "AI应用", "传媒": "AI应用", "短剧": "AI应用",
-    "游戏": "AI应用", "影视": "AI应用",
-    "AI营销": "AI应用", "人工智能": "AI应用", "AIGC": "AI应用", "算力": "AI应用",
-    "体育": "体育产业", "足球": "体育产业", "世界杯": "体育产业",
+    "存储": "半导体产业链", "HBM": "半导体产业链", "GPU": "半导体产业链",
+    "先进封装": "算力/半导体产业化", "玻璃基板": "算力/半导体产业化",
+    "算力租赁": "算力/服务器", "AI服务器": "算力/服务器", "液冷": "算力/服务器",
+    "数据中心": "算力/服务器", "东数西算": "算力/服务器",
+    "碳化硅": "第三代半导体", "SiC": "第三代半导体", "功率器件": "第三代半导体",
+    "绿电": "电力", "火电": "电力", "风电": "电力", "储能": "电力",
+    "发电": "电力", "煤电": "电力", "虚拟电厂": "电力", "热电": "电力",
+    "TOPCon": "光伏", "HJT": "光伏", "硅片": "光伏", "组件": "光伏", "逆变器": "光伏",
+    "CPO": "光通信", "光模块": "光通信", "1.6T": "光通信", "800G": "光通信",
+    "覆铜板": "PCB", "铜箔": "PCB", "电子布": "PCB",
+    "生猪": "猪肉", "养殖": "猪肉", "屠宰": "猪肉",
+    "股权转让": "并购重组", "借壳": "并购重组", "资产注入": "并购重组",
+    "资产重组": "并购重组", "要约收购": "并购重组",
+    "短剧": "AI应用", "AIGC": "AI应用", "AI电商": "AI应用", "AI营销": "AI应用",
+    "游戏": "文化传媒", "影视": "文化传媒", "传媒": "文化传媒",
+    "职业教育": "教育", "K12": "教育", "在线教育": "教育",
+    "创新药": "医药", "医疗器械": "医药", "生物制药": "医药", "维生素": "合成生物",
+    "生物柴油": "合成生物", "酶制剂": "合成生物", "细胞培养": "合成生物",
+    "飞行汽车": "低空经济", "eVTOL": "低空经济", "无人机": "低空经济",
+    "固态电池": "锂电池", "正极材料": "锂电池", "锂电": "锂电池",
+    "房地产": "房地产", "地产": "房地产", "物业": "房地产", "新型城镇化": "房地产",
+    "基建": "房地产", "建筑装饰": "房地产",
+    "商业航天": "军工", "卫星导航": "军工", "航天": "军工", "军工电子": "军工",
+    "页岩气": "油气", "可燃冰": "油气", "天然气": "油气", "石油": "油气",
+    "稀土": "稀土永磁", "永磁": "稀土永磁",
+    "换电": "充电桩", "超充": "充电桩",
+}
+
+# 通用大类关键词（先匹配更细的类；电力与光伏分开）
+GENERAL_THEME_KEYWORD_RULES = (
+    ("合成生物", (
+        "合成生物", "生物制造", "酶制剂", "细胞培养", "工业大麻", "维生素",
+        "蔚蓝生物", "鲁抗医药", "播恩集团", "圣达生物", "富士莱",
+    )),
+    ("低空经济", (
+        "低空经济", "飞行汽车", "eVTOL", "无人机", "通航", "低空基建",
+        "宗申动力", "亿嘉和", "威奥股份", "康达新材",
+    )),
+    ("锂电池", (
+        "锂电池", "固态电池", "正极材料", "锂矿", "碳酸锂", "储能电池",
+        "丰元股份", "融捷股份", "江特电机", "领湃科技",
+    )),
+    ("医药", (
+        "医药", "创新药", "医疗器械", "眼科", "CXO", "仿制药",
+        "济民医疗", "兴齐眼药", "海思科", "奥锐特",
+    )),
+    ("房地产", (
+        "房地产", "地产", "物业", "新型城镇化", "装修装饰", "基建",
+        "荣盛发展", "金科股份", "南国置业", "我爱我家", "特发服务",
+    )),
+    ("教育", (
+        "教育", "职业教育", "K12", "在线教育", "公考",
+        "昂立教育", "学大教育", "传智教育", "中公教育",
+    )),
+    ("文化传媒", (
+        "文化传媒", "游戏", "影视", "出版", "IP",
+        "巨人网络", "恺英网络", "完美世界", "读客文化",
+    )),
+    ("军工", (
+        "军工", "航天", "商业航天", "卫星导航", "北斗", "航空零部件",
+        "航天晨光", "航天科技", "航天电子", "中兵红箭",
+    )),
+    ("PCB", (
+        "PCB", "覆铜板", "铜箔", "电子布", "印制电路",
+        "胜宏科技", "崇达技术", "华正新材", "协和电子",
+    )),
+    ("油气", (
+        "油气", "页岩气", "可燃冰", "天然气", "石油", "油服",
+        "仁智股份", "准油股份",
+    )),
+    ("稀土永磁", (
+        "稀土永磁", "稀土", "永磁", "磁材",
+        "英洛华", "中科三环",
+    )),
+    ("充电桩", (
+        "充电桩", "换电", "超充", "充电设施",
+        "超讯通信", "博菲电气",
+    )),
+    ("算力/服务器", (
+        "算力/服务器", "AI服务器", "液冷散热", "液冷", "服务器", "IDC",
+        "浪潮信息", "曙光数创", "申菱环境", "朗威股份",
+    )),
+    ("并购重组", (
+        "并购重组", "股权转让", "借壳", "资产注入", "卖壳", "重组", "要约收购",
+        "智微智能", "花王", "威龙股份", "宁波中百", "金正大", "豪悦股份",
+    )),
+    ("第三代半导体", (
+        "第三代半导体", "碳化硅", "SiC", "功率器件", "氮化镓", "GaN",
+        "普冉股份", "康强电子", "中瓷电子",
+    )),
+    ("电子特气/化工", (
+        "电子特气", "氢氟酸", "六氟化钨", "硅烷偶联", "环氧丙烷", "氟化工",
+        "和远气体", "中船特气", "晨光新材", "红宝丽", "红墙股份", "宁波韵升",
+    )),
+    ("光通信", (
+        "光通信", "CPO", "光模块", "1.6T", "800G", "光芯片", "共封装", "交换机",
+        "剑桥科技", "联特科技", "天孚通信", "汇绿生态",
+    )),
+    ("算力/半导体产业化", (
+        "算力/半导体", "算力芯片", "先进封装", "玻璃基板", "OLED", "封测",
+        "宏盛华源", "宁夏建材", "盛视科技", "金富科技", "兆易创新",
+    )),
+    ("光伏", (
+        "光伏", "TOPCon", "HJT", "异质结", "硅片", "组件", "TCO玻璃",
+        "协鑫集成", "双良节能", "钧达股份", "耀皮玻璃", "联泓新科",
+    )),
+    ("猪肉", (
+        "猪肉", "生猪", "养殖", "屠宰", "猪周期", "天邦食品", "华统股份",
+        "神农集团", "天域生态",
+    )),
+    ("机器人", (
+        "机器人", "人形机器人", "减速器", "RV减速", "Optimus", "Figure",
+        "谐波", "执行器", "智能物流", "北特科技", "丰立智能", "鸣志电器",
+    )),
+    ("氟化工", (
+        "氟化工", "制冷剂", "PVDF", "多氟多", "金石资源",
+    )),
+    ("大消费", (
+        "大消费", "家居用品", "建筑陶瓷", "蒙娜丽莎", "食品饮料", "白酒",
+        "利仁科技", "有友食品", "零售", "家电", "绝味食品", "三只松鼠",
+    )),
+    ("半导体产业链", (
+        "半导体产业链", "半导体设备", "光刻胶", "存储芯片", "中巨芯", "半导体材料",
+        "寒武纪", "佰维存储", "江波龙",
+    )),
+    ("电力", (
+        "电力", "绿电", "火电", "煤电", "超临界", "发电", "虚拟电厂", "热电",
+        "京能电力", "天富能源", "明星电力", "西昌电力", "大连热电", "算电协同",
+    )),
+    ("AI应用", (
+        "AI应用", "AI营销", "AIGC", "短剧", "漫剧", "AI视频", "知识产权",
+        "值得买", "达实智能", "宣亚国际",
+    )),
+    ("体育产业", (
+        "体育", "世界杯", "足球", "赛事", "舒华体育", "共创草坪",
+    )),
+)
+
+# 兼容旧引用
+THEME_KEYWORD_RULES = GENERAL_THEME_KEYWORD_RULES
+CANONICAL_BROAD_TAGS = tuple(t for t, _ in GENERAL_THEME_KEYWORD_RULES)
+
+DEFAULT_THEME_REASONS = {
+    "合成生物": "生物制造与新质生产力赛道景气",
+    "机器人": "人形机器人量产与零部件订单放量",
+    "低空经济": "低空基建与飞行汽车政策催化",
+    "算力/服务器": "AI服务器、液冷与数据中心需求",
+    "算力/半导体产业化": "国产算力芯片、先进封装等产业化",
+    "半导体产业链": "半导体材料、存储与设备景气",
+    "第三代半导体": "AI数据中心带动碳化硅等需求",
+    "光通信": "AI基建带动光模块/CPO需求",
+    "PCB": "AI服务器带动PCB与覆铜板景气",
+    "电力": "绿电直供、算电协同及电力改革预期",
+    "光伏": "光伏去产能与行业预期修复",
+    "锂电池": "碳酸锂反弹与储能需求",
+    "医药": "创新药与医疗器械政策催化",
+    "房地产": "地产政策放松与产业链修复",
+    "大消费": "家居建材、食品饮料等消费复苏",
+    "教育": "职业教育与AI+教育预期",
+    "文化传媒": "游戏影视与IP内容催化",
+    "AI应用": "AI营销、短剧等应用落地",
+    "军工": "商业航天与军工装备景气",
+    "油气": "国际油价波动与油气板块",
+    "稀土永磁": "稀土供给与磁材需求",
+    "充电桩": "充电基建与换电政策",
+    "电子特气/化工": "电子特气涨价与氟化工景气",
+    "氟化工": "氢氟酸及制冷剂产业链景气",
+    "猪肉": "产能去化与猪价见底预期",
+    "并购重组": "股权转让、借壳等事件活跃",
+    "体育产业": "体育赛事相关催化",
+    "其他概念": "未能归入当日主线",
 }
 
 # ---------- Claude 分组（相近概念合并为同一 group_label）----------
 
-GROUP_PROMPT = """你是A股超短题材复盘专家。下面是同一交易日涨停股列表，包含同花顺热股的概念、标题和分析。
-
-任务：把涨停股归入当天 **6-8 个**最强风口大主线（另可加「其他概念」≤5 只），**总共不超过 10 个标签名**。
-
-**标准复盘结构（20260515 参考，按当日实际涨停池调整数量）：**
-机器人、氟化工、大消费、半导体产业链、电力、AI应用、体育产业，其余≤5只放「其他概念」。
-
-要求：
-1. 大标签优先且尽量只使用以下名称（不要自创近义词）：
-   机器人、氟化工、大消费、半导体产业链、电力、AI应用、体育产业。
-2. 禁止细碎标签单独成类。必须合并（示例）：
-   - 汽车零部件/工业自动化/电机及驱动/减速器/人形机器人 → **机器人**
-   - 绿电/储能/风电/光伏 → **电力**
-   - 消费食品/家居建材/建筑陶瓷/白酒 → **大消费**
-   - 化工新材料/塑料制品/电子化学品 → **氟化工**
-   - 传媒短剧/短剧/游戏/AI营销 → **AI应用**（传媒类）或 **体育产业**（体育赛事项）
-   - 芯片/存储/先进封装/光刻胶/电子化学品 → **半导体产业链**（不要用「半导体」简称）
-   不满 2 只涨停的细分方向不得单独成标签，并入最接近的大主线。
-3. **优先使用以下已有标签**（来自近期历史数据库），如果今天的涨停股能匹配这些标签就直接使用，不要创造语义相近的新标签：
-{known_tags}
-   如果某些已有标签今天没有对应的涨停股，不需要输出。如果出现全新的主线，可以创建新标签。
-4. 每只股票必须只属于一个大标签。归类时重点参考同花顺给出的概念标签和涨停标题，找到该票与哪个大标签关联最紧密。
-5. **「其他概念」必须控制在 5 只以内**。只有完全无法与任何大标签关联的个股才放「其他概念」。如果某只票的同花顺概念、行业、涨停标题中能找到与任一大标签的关联（哪怕是次要关联），就必须归入那个大标签，而非「其他概念」。宁可放进关联性较弱的大标签，也不要轻易扔进「其他概念」。
-6. **大标签总数（含其他概念）不得超过 10 个**，禁止细碎小题材单独成类。
-7. 每个大标签必须给一句「涨停原因」，像短线复盘语言，概括该主题当天爆发原因，例如"特斯拉Optimus Gen-3启动量产，Figure机器人连续工作30小时"。
-8. 每个大标签选出 1-2 个「板块龙头」，优先只选 1 个。按顺序输出：最正宗、最有带动性的先锋龙放第一；如需要，再给一个容量/辨识度最高的中军放第二。优先考虑连板高度、封板强度、同花顺热度、市场辨识度、题材正宗性和带动性。
-9. 按成分股数量从高到低输出 groups，「其他概念」放最后。
-股票列表（每行：代码 名称 行业 连板 同花顺热度 同花顺标题 同花顺概念 同花顺分析）：
-{stock_list}
-
-只输出一个 JSON 对象，不要 markdown，不要解释文字，格式严格为：
-{{"groups":[{{"label":"机器人","reason":"涨停原因","leaders":[{{"code":"000000","name":"示例","role":"先锋龙","reason":"龙头理由"}}],"stocks":[{{"code":"000000","name":"示例","why":"归类依据"}}]}}],"stock_groups":{{"000000":"机器人"}}}}
-股票代码必须与输入一致（6位数字字符串）。"""
+GROUP_PROMPT = (
+    "你是A股超短题材复盘专家。把涨停股归入**通用大类**（复盘图顶部短标签），禁止长句题材名。\n\n"
+    "**label 只能使用以下名称之一：**\n"
+    + _broad_tags_prompt_list()
+    + "\n\n禁止：「电子特气产业链景气」「光伏系统集成」等长句。\n\n"
+    "归类权重：①所属概念 ②涨停标题/统计 ③同花顺概念 ④行业。可参考每行「规则参考」。\n"
+    "当日选 6-12 个大类即可；「其他概念」≤5；单类≥2只且≤总数30%。\n\n"
+    "近期标签：{known_tags}\n\n"
+    "股票列表：\n{stock_list}\n\n"
+    "只输出 JSON，groups 按数量降序，「其他概念」最后：\n"
+    '{{"groups":[{{"label":"电力","reason":"…","leaders":[…],"stocks":[…]}}],'
+    '"stock_groups":{{"000000":"电力"}}}}'
+)
 
 THEME_PROMPT = GROUP_PROMPT
 
-# 当「其他概念」超过 5 只时，用此 prompt 二次归纳新标签
-REGROUP_PROMPT = """你是A股超短题材复盘专家。下面这些涨停股被初步归为「其他概念」，请尽量并入已有大主线，不要新建细碎标签。
+SPLIT_OVERSIZED_PROMPT = (
+    "下列股票过多归入「{tag_name}」，请按涨停原因拆到**其他通用大类**（只能从下列名称中选）：\n"
+    + _broad_tags_prompt_list()
+    + "\n\n已有大类：{existing_labels}\n"
+    "每新类≥2只；禁止长句标签名。\n\n"
+    "股票列表：\n{stock_list}\n\n"
+    "只输出 JSON。"
+)
 
-要求：
-1. **只能**使用以下已有大标签之一（禁止新建「低空经济」「医疗器械」等细碎名）：
-{existing_labels}
-   若实在无法归入，可保留在「其他概念」（全市场其他概念合计不得超过 5 只）。
-2. 每个大标签至少 2 只股票才单独成类，否则并入最接近的大主线。
-3. 不要创造与机器人/氟化工/消费/电力/传媒短剧/半导体/AI应用 语义重复的新名字。
-4. 每个被使用的大标签写一句涨停原因，选出 1 个龙头。
-5. 已有主流大标签：
-{existing_labels}
-
-股票列表（每行：代码 名称 行业 连板 同花顺标题 同花顺概念 同花顺分析）：
-{stock_list}
-
-只输出一个 JSON 对象，格式同前：
-{{"groups":[{{"label":"低空经济","reason":"涨停原因","leaders":[{{"code":"000000","name":"示例","role":"先锋龙","reason":"龙头理由"}}],"stocks":[{{"code":"000000","name":"示例","why":"归类依据"}}]}}],"stock_groups":{{"000000":"低空经济"}}}}
-不属于任何新标签的股票放入「其他概念」组。"""
+REGROUP_PROMPT = (
+    "下列涨停股在「其他概念」，请并入已有**通用大类**（只能选下列名称）：\n"
+    + _broad_tags_prompt_list()
+    + "\n\n当日已有：{existing_labels}\n"
+    "「其他概念」全市场≤5只。禁止长句标签。\n\n"
+    "{stock_list}\n\n"
+    "只输出 JSON。"
+)
 
 
 def _fetch_ths_hot_stocks() -> tuple:
@@ -218,6 +376,130 @@ def _build_ths_hot_tag(ths_info: dict) -> str:
         t0 = tags[0]
         return str(t0).strip() if t0 else ""
     return ""
+
+
+def _code_to_em_symbol(code: str) -> str:
+    """6 位代码 → 东财 F10 代码 SZ/SH"""
+    c = str(code or "").strip().zfill(6)
+    if c.startswith(("5", "6", "9")):
+        return f"SH{c}"
+    return f"SZ{c}"
+
+
+def _fetch_em_stock_concepts(code: str) -> list:
+    """拉取个股所属概念/板块（东方财富 CoreConception）"""
+    import requests
+
+    try:
+        resp = requests.get(
+            "https://emweb.securities.eastmoney.com/PC_HSF10/CoreConception/PageAjax",
+            params={"code": _code_to_em_symbol(code)},
+            headers={"User-Agent": "Mozilla/5.0"},
+            timeout=8,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        if data.get("status") == -1:
+            return []
+        items = data.get("ssbk") or []
+        ranked = sorted(
+            items,
+            key=lambda x: int(x.get("BOARD_RANK") or 999),
+        )
+        names = []
+        for item in ranked:
+            name = (item.get("BOARD_NAME") or "").strip()
+            if name and name not in names:
+                names.append(name)
+        return names[:20]
+    except Exception as e:
+        logger.debug("东财所属概念 %s 获取失败: %s", code, e)
+        return []
+
+
+def _merge_stock_concept_tags(stock: dict, ths_info: Optional[dict] = None) -> list:
+    """合并东财所属概念 + 同花顺概念，去重保序"""
+    ths_info = ths_info if ths_info is not None else {}
+    ths_tags = ths_info.get("concept_tags") if isinstance(ths_info, dict) else []
+    if not ths_tags:
+        ths_tags = stock.get("ths_concept_tags") or []
+    em_tags = stock.get("em_concept_tags") or []
+    seen = set()
+    merged = []
+    for tag in list(em_tags) + list(ths_tags):
+        t = str(tag).strip()
+        if t and t not in seen:
+            seen.add(t)
+            merged.append(t)
+    return merged
+
+
+def _enrich_stocks_concepts(stocks: list, ths_hot_map: dict) -> None:
+    """批量补充个股所属概念（东财），写入 stock_concept_tags"""
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    if not stocks:
+        return
+    codes = [s.get("code") for s in stocks if s.get("code")]
+    em_map: dict = {}
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        futures = {
+            pool.submit(_fetch_em_stock_concepts, code): code for code in codes
+        }
+        for fut in as_completed(futures):
+            code = futures[fut]
+            try:
+                em_map[code] = fut.result()
+            except Exception:
+                em_map[code] = []
+
+    filled = 0
+    for s in stocks:
+        code = s.get("code", "")
+        s["em_concept_tags"] = em_map.get(code, [])
+        s["stock_concept_tags"] = _merge_stock_concept_tags(
+            s, ths_hot_map.get(code, {})
+        )
+        if s["stock_concept_tags"]:
+            filled += 1
+    logger.info(
+        "所属概念 enrichment: %s/%s 只股票有概念标签",
+        filled,
+        len(stocks),
+    )
+
+
+def _stock_concept_text(stock: dict, *, weighted: bool = False) -> str:
+    """所属概念文本；weighted=True 时重复以提高规则/匹配权重"""
+    tags = (
+        stock.get("stock_concept_tags")
+        or stock.get("em_concept_tags")
+        or stock.get("ths_concept_tags")
+        or []
+    )
+    blob = " ".join(str(t) for t in tags if t)
+    if weighted and blob:
+        return (blob + " ") * CONCEPT_TEXT_REPEAT
+    return blob
+
+
+def _format_stock_prompt_line(stock: dict) -> str:
+    """统一 prompt 行：所属概念置顶标注"""
+    ths_tags = stock.get("ths_concept_tags") or []
+    ths_tag_str = ",".join(str(t) for t in ths_tags if t) if ths_tags else ""
+    stock_concepts = stock.get("stock_concept_tags") or []
+    concept_str = ",".join(stock_concepts) if stock_concepts else "无"
+    rule_hint = _hint_label_from_stock(stock) or "无"
+    return (
+        f"{stock['code']} {stock['name']} 行业:{stock.get('industry', '')} "
+        f"连板:{stock.get('boards', 1)} 涨停统计:{stock.get('zt_stat') or ''} "
+        f"所属概念【重点】:[{concept_str}] "
+        f"规则参考:{rule_hint} "
+        f"同花顺热度:{stock.get('ths_rank') or '-'} "
+        f"同花顺标题:{stock.get('ths_analyse_title') or ''} "
+        f"同花顺概念:[{ths_tag_str}] "
+        f"同花顺分析:{(stock.get('ths_analyse') or '')[:260]}"
+    )
 
 
 def _parse_grouping_json(content: str) -> dict:
@@ -335,62 +617,289 @@ def _is_other_label(label: str) -> bool:
     return not name or name in OTHER_LABEL_SET
 
 
-def _resolve_broad_label(label: str) -> str:
-    """将细碎标签映射到复盘大主线"""
+def _stock_rule_text(stock: dict) -> str:
+    parts = [
+        _stock_concept_text(stock, weighted=True),
+        stock.get("name") or "",
+        stock.get("industry") or "",
+        stock.get("ths_analyse_title") or "",
+        " ".join(str(t) for t in (stock.get("ths_concept_tags") or []) if t),
+        (stock.get("ths_analyse") or "")[:240],
+    ]
+    return " ".join(p for p in parts if p)
+
+
+def _rule_scores_from_stock(stock: dict) -> dict:
+    text = _stock_rule_text(stock)
+    concepts = " ".join(
+        str(t) for t in (stock.get("stock_concept_tags") or []) if t
+    )
+    if not text.strip():
+        return {}
+    scores = {}
+    for tag, keywords in GENERAL_THEME_KEYWORD_RULES:
+        score = 0
+        for kw in keywords:
+            if not kw or kw not in text:
+                continue
+            if kw in concepts:
+                score += CONCEPT_MATCH_WEIGHT
+            else:
+                score += 1
+        if score:
+            scores[tag] = score
+    return scores
+
+
+def _hint_label_from_stock(stock: dict) -> str:
+    """规则引擎：通用大类建议"""
+    return _assign_broad_tag_from_stock(stock)
+
+
+def _assign_broad_tag_from_stock(stock: dict) -> str:
+    """按所属概念+涨停文本打分，返回通用大类"""
+    scores = _rule_scores_from_stock(stock)
+    if not scores:
+        return ""
+    best_tag, best_score = max(scores.items(), key=lambda item: item[1])
+    if best_score < 2:
+        return ""
+    return best_tag
+
+
+def _coerce_general_broad_label(label: str, stock: Optional[dict] = None) -> str:
+    """将任意标签名规范为通用大类"""
     name = (label or "").strip()
     if _is_other_label(name):
         return "其他概念"
+    if name in GENERAL_BROAD_TAG_SET:
+        return name
     if name in BROAD_TAG_ALIASES:
         return BROAD_TAG_ALIASES[name]
-    if name in CANONICAL_BROAD_TAGS:
-        return name
-    for broad in CANONICAL_BROAD_TAGS:
-        if broad in name or name in broad:
+    for broad in GENERAL_BROAD_TAG_SET:
+        if broad != "其他概念" and (broad in name or name in broad):
             return broad
-    return name
+    if stock:
+        assigned = _assign_broad_tag_from_stock(stock)
+        if assigned:
+            return assigned
+    return ""
 
 
-def _normalize_to_broad_tags(group_result: dict, stocks: list) -> dict:
-    """合并到复盘大主线，避免汽车零部件/绿电等细碎标签"""
+def _prefill_labels_from_rules(stocks: list) -> dict:
+    return {
+        s["code"]: hint
+        for s in stocks
+        if (hint := _hint_label_from_stock(s))
+    }
+
+
+def _normalize_label_name(label: str, stock: Optional[dict] = None) -> str:
+    """规范为通用大类名称"""
+    name = (label or "").strip()
+    if name.startswith("其他") and name != "其他概念":
+        return ""
+    return _coerce_general_broad_label(name, stock)
+
+
+def _reassign_invalid_labels(labels: dict, stocks: list) -> dict:
+    """将空标签/伪「其他XXX」股票并入文本最相近的合法主线"""
+    counter = Counter(
+        lbl for lbl in labels.values()
+        if lbl and lbl != "其他概念" and not lbl.startswith("其他")
+    )
+    if not counter:
+        return labels
+    for code, lbl in list(labels.items()):
+        norm = _normalize_label_name(lbl)
+        if norm:
+            labels[code] = norm
+            continue
+        labels[code] = _best_tag_for_stock(code, labels, stocks, counter)
+    return labels
+
+
+def _label_text_overlap(label: str, stock: dict) -> int:
+    """标签名与个股文本重合度；所属概念匹配权重更高"""
+    if not label:
+        return 0
+    score = 0
+    concepts = (
+        stock.get("stock_concept_tags")
+        or stock.get("em_concept_tags")
+        or stock.get("ths_concept_tags")
+        or []
+    )
+    for concept in concepts:
+        c = str(concept).strip()
+        if len(c) < 2:
+            continue
+        if c in label or label in c:
+            score += CONCEPT_MATCH_WEIGHT
+        else:
+            for part in label.replace("/", " ").replace("+", " ").split():
+                part = part.strip()
+                if len(part) >= 2 and (part in c or c in part):
+                    score += CONCEPT_MATCH_WEIGHT - 1
+                    break
+
+    text = _stock_rule_text(stock)
+    if not text:
+        return score
+    for part in label.replace("/", " ").replace("+", " ").split():
+        part = part.strip()
+        if len(part) >= 2 and part in text:
+            score += 2
+    if label in text:
+        score += 2
+    return score
+
+
+def _best_tag_for_stock(code: str, labels: dict, stocks: list, counter: Counter) -> str:
+    """为单只股票找当日最合适的大标签（按文本重合 + 板块规模）"""
+    stock_by_code = {s.get("code"): s for s in stocks if s.get("code")}
+    st = stock_by_code.get(code) or {}
+    candidates = [
+        t for t in counter if not _is_other_label(t)
+    ]
+    if not candidates:
+        return "其他概念"
+    scored = []
+    for tag in candidates:
+        overlap = _label_text_overlap(tag, st)
+        scored.append((overlap + counter[tag] * 0.01, tag))
+    scored.sort(reverse=True)
+    return scored[0][1] if scored and scored[0][0] > 0 else counter.most_common(1)[0][0]
+
+
+def _merge_synonym_labels(labels: dict, reasons: dict, leaders: dict) -> tuple:
+    """合并高度同义的标签名（子串包含且合计≥2只）"""
+    counter = Counter(labels.values())
+    tag_list = [t for t in counter if not _is_other_label(t)]
+    merge_map = {}
+    for i, a in enumerate(tag_list):
+        for b in tag_list[i + 1:]:
+            if a == b:
+                continue
+            if a in b or b in a:
+                keep, drop = (a, b) if counter[a] >= counter[b] else (b, a)
+                merge_map[drop] = keep
+    for code, lbl in list(labels.items()):
+        if lbl in merge_map:
+            labels[code] = merge_map[lbl]
+    for drop, keep in merge_map.items():
+        if drop in reasons and keep not in reasons:
+            reasons[keep] = reasons.pop(drop)
+        if drop in leaders and keep not in leaders:
+            leaders[keep] = leaders.pop(drop)
+    return labels, reasons, leaders
+
+
+def _split_oversized_in_result(
+    group_result: dict,
+    stocks: list,
+    max_ratio: float = 0.30,
+) -> dict:
+    """对结果中占比过高的标签做二次拆分（限额合并后再执行）"""
+    labels = dict((group_result or {}).get("labels") or {})
+    reasons = dict((group_result or {}).get("reasons") or {})
+    leaders = dict((group_result or {}).get("leaders") or {})
+    if not labels:
+        return group_result or {}
+    n = len(labels)
+    threshold = max(8, int(n * max_ratio))
+    counter = Counter(labels.values())
+    for tag, cnt in list(counter.most_common()):
+        if _is_other_label(tag) or cnt <= threshold:
+            continue
+        codes = [c for c, l in labels.items() if l == tag]
+        _split_oversized_tag(tag, codes, stocks, labels, reasons, leaders)
+    labels = _reassign_invalid_labels(labels, stocks)
+    return {"labels": labels, "reasons": reasons, "leaders": leaders}
+
+
+def _split_oversized_tag(
+    tag_name: str,
+    codes: list,
+    stocks: list,
+    labels: dict,
+    reasons: dict,
+    leaders: dict,
+) -> None:
+    """单标签占比过高时，对该批股票二次 AI 拆分"""
+    if len(codes) < 8:
+        return
+    stock_map = {s["code"]: s for s in stocks}
+    subset = [stock_map[c] for c in codes if c in stock_map]
+    if not subset:
+        return
+    existing = "、".join(
+        t for t in set(labels.values()) if t != tag_name and not _is_other_label(t)
+    ) or "（无）"
+    lines = [_format_stock_prompt_line(s) for s in subset]
+    prompt = (
+        SPLIT_OVERSIZED_PROMPT.replace("{tag_name}", tag_name)
+        .replace("{existing_labels}", existing)
+        .replace("{stock_list}", "\n".join(lines))
+    )
+    try:
+        content = _call_claude(prompt, max_tokens=8192)
+        parsed = _parse_grouping_json(content)
+        if not parsed.get("labels"):
+            return
+        for code in codes:
+            new_lbl = _normalize_label_name(parsed["labels"].get(code, ""))
+            if new_lbl and new_lbl != tag_name:
+                labels[code] = new_lbl
+        if parsed.get("reasons"):
+            reasons.update(parsed["reasons"])
+        if parsed.get("leaders"):
+            for t, ldr in parsed["leaders"].items():
+                if t not in leaders:
+                    leaders[t] = ldr
+        logger.info(
+            "过大标签「%s」已拆分为 %s 个子类",
+            tag_name,
+            len({labels[c] for c in codes}),
+        )
+    except Exception as e:
+        logger.warning("拆分过大标签「%s」失败: %s", tag_name, e)
+
+
+def _finalize_group_labels(group_result: dict, stocks: list) -> dict:
+    """后处理：规范名称、合并同义/过小标签，不强制七大主线"""
     labels = dict((group_result or {}).get("labels") or {})
     reasons = dict((group_result or {}).get("reasons") or {})
     leaders = dict((group_result or {}).get("leaders") or {})
     if not labels:
         return group_result or {}
 
+    stock_by_code = {s.get("code"): s for s in stocks if s.get("code")}
     for code, lbl in list(labels.items()):
-        labels[code] = _resolve_broad_label(lbl)
+        labels[code] = _normalize_label_name(lbl, stock_by_code.get(code))
+    labels = _reassign_invalid_labels(labels, stocks)
 
+    labels, reasons, leaders = _merge_synonym_labels(labels, reasons, leaders)
     counter = Counter(labels.values())
-    if not counter:
-        return group_result or {}
 
-    dominant = counter.most_common(1)[0][0]
+    # 不足 MIN_TAG_STOCKS 的标签并入文本最相近的大标签
     for lbl, cnt in list(counter.items()):
-        if _is_other_label(lbl) or cnt >= MIN_TAG_STOCKS or lbl in CANONICAL_BROAD_TAGS:
+        if _is_other_label(lbl) or cnt >= MIN_TAG_STOCKS:
             continue
-        target = dominant if not _is_other_label(dominant) else "其他概念"
         for code, l in list(labels.items()):
-            if l == lbl:
-                labels[code] = target
-
-    # 非标准主线名：并入当日股数最多的标准主线
-    counter = Counter(labels.values())
-    for lbl in list(counter.keys()):
-        if _is_other_label(lbl) or lbl in CANONICAL_BROAD_TAGS:
-            continue
-        target = next(
-            (t for t, _ in counter.most_common() if t in CANONICAL_BROAD_TAGS),
-            dominant,
-        )
-        for code, l in list(labels.items()):
-            if l == lbl:
-                labels[code] = target if not _is_other_label(target) else "其他概念"
+            if l != lbl:
+                continue
+            labels[code] = _best_tag_for_stock(code, labels, stocks, counter)
 
     active = set(labels.values())
     reasons = {k: v for k, v in reasons.items() if k in active}
     leaders = {k: v for k, v in leaders.items() if k in active}
-    return {"labels": labels, "reasons": reasons, "leaders": leaders}
+    result = {"labels": labels, "reasons": reasons, "leaders": leaders}
+    return _split_oversized_in_result(result, stocks, max_ratio=0.28)
+
+
+# 兼容旧调用
+_normalize_to_broad_tags = _finalize_group_labels
 
 
 def _enforce_group_limits(group_result: dict, stocks: list) -> dict:
@@ -423,15 +932,28 @@ def _enforce_group_limits(group_result: dict, stocks: list) -> dict:
                 labels[code] = fallback
         logger.info("大标签超过 %s 个，已合并细碎题材", MAX_DAY_TAGS)
 
+    stock_by_code = {s.get("code"): s for s in stocks if s.get("code")}
+
+    def _fallback_main_for_code(code: str) -> str:
+        c = _counter()
+        ranked = [t for t, cnt in c.most_common() if not _is_other_label(t)]
+        if len(ranked) >= 2 and c[ranked[0]] > len(labels) * 0.25:
+            # 避免「其他概念」溢出时全部塞进最大标签
+            for tag in ranked[1:]:
+                if _label_text_overlap(tag, stock_by_code.get(code) or {}) >= 2:
+                    return tag
+            return ranked[1]
+        return _best_tag_for_stock(code, labels, stocks, c)
+
     counter = _counter()
     other_codes = [c for c, l in labels.items() if l == "其他概念"]
     if len(other_codes) > MAX_OTHER_STOCKS:
-        # 优先并入当日第二大主线，避免全部塞进机器人
-        ranked = [t for t, _ in counter.most_common() if not _is_other_label(t)]
-        main_fallback = ranked[1] if len(ranked) > 1 else (ranked[0] if ranked else "大消费")
         for code in other_codes[MAX_OTHER_STOCKS:]:
-            labels[code] = main_fallback
-        logger.info("「其他概念」超过 %s 只，已并入 %s", MAX_OTHER_STOCKS, main_fallback)
+            labels[code] = _fallback_main_for_code(code)
+        logger.info(
+            "「其他概念」超过 %s 只，已按规则分散并入各主线",
+            MAX_OTHER_STOCKS,
+        )
 
     counter = _counter()
     while len(counter) > MAX_DAY_TAGS:
@@ -449,14 +971,17 @@ def _enforce_group_limits(group_result: dict, stocks: list) -> dict:
     reasons = {k: v for k, v in reasons.items() if k in active_tags}
     leaders = {k: v for k, v in leaders.items() if k in active_tags}
     if "其他概念" in active_tags and not reasons.get("其他概念"):
-        reasons["其他概念"] = "未能归入当日主线"
+        reasons["其他概念"] = DEFAULT_THEME_REASONS.get(
+            "其他概念", "未能归入当日主线"
+        )
 
     logger.info(
         "分组限额: 标签数=%s, 其他概念=%s只",
         len(active_tags),
         sum(1 for l in labels.values() if l == "其他概念"),
     )
-    return {"labels": labels, "reasons": reasons, "leaders": leaders}
+    result = {"labels": labels, "reasons": reasons, "leaders": leaders}
+    return _split_oversized_in_result(result, stocks, max_ratio=0.25)
 
 
 def _claude_group_labels_for_stocks(stocks: list) -> dict:
@@ -477,21 +1002,25 @@ def _claude_group_labels_for_stocks(stocks: list) -> dict:
     except Exception as e:
         logger.warning(f"获取历史标签失败，跳过: {e}")
 
-    lines = []
-    for s in stocks:
-        ths_tags = s.get("ths_concept_tags") or []
-        tag_str = ",".join(str(t) for t in ths_tags if t) if ths_tags else ""
-        lines.append(
-            f"{s['code']} {s['name']} 行业:{s.get('industry', '')} "
-            f"连板:{s.get('boards', 1)} 同花顺热度:{s.get('ths_rank') or '-'} "
-            f"同花顺标题:{s.get('ths_analyse_title') or ''} "
-            f"同花顺概念:[{tag_str}] 同花顺分析:{(s.get('ths_analyse') or '')[:260]}"
+    lines = [_format_stock_prompt_line(s) for s in stocks]
+    prompt = GROUP_PROMPT.replace("{stock_list}", "\n".join(lines)).replace(
+        "{known_tags}", known_tags_text
+    )
+    parsed = {}
+    for attempt in range(2):
+        content = _call_claude(prompt, max_tokens=8192)
+        try:
+            parsed = _parse_grouping_json(content)
+        except Exception as e:
+            logger.warning("Claude 分组解析异常 attempt=%s: %s", attempt + 1, e)
+            parsed = {}
+        if parsed.get("labels"):
+            return parsed
+        logger.warning(
+            "Claude 分组解析为空 attempt=%s，原始长度=%s",
+            attempt + 1,
+            len(content or ""),
         )
-    prompt = GROUP_PROMPT.replace("{stock_list}", "\n".join(lines)).replace("{known_tags}", known_tags_text)
-    content = _call_claude(prompt, max_tokens=8192)
-    parsed = _parse_grouping_json(content)
-    if not parsed.get("labels"):
-        logger.warning("Claude 分组解析为空，原始长度=%s", len(content or ""))
     return parsed
 
 
@@ -534,10 +1063,77 @@ def _apply_group_labels(stocks: list, group_result: dict) -> tuple:
     ]
 
 
-def _smart_group_stocks(stocks: list, dt: str) -> dict:
-    """智能分组：先用库里已有标签（含手动改动）匹配，剩余的才调 AI
-    返回与 _claude_group_labels_for_stocks 相同的 group_result 结构
-    """
+def _cap_other_bucket(group_result: dict, stocks: list) -> dict:
+    """最终兜底：「其他概念」不得超过 MAX_OTHER_STOCKS"""
+    labels = dict((group_result or {}).get("labels") or {})
+    reasons = dict((group_result or {}).get("reasons") or {})
+    leaders = dict((group_result or {}).get("leaders") or {})
+    other_codes = [c for c, l in labels.items() if l == "其他概念"]
+    if len(other_codes) <= MAX_OTHER_STOCKS:
+        return group_result
+    counter = Counter(labels.values())
+    stock_by_code = {s.get("code"): s for s in stocks if s.get("code")}
+    ranked = [t for t, _ in counter.most_common() if not _is_other_label(t)]
+    overflow = other_codes[MAX_OTHER_STOCKS:]
+    for i, code in enumerate(overflow):
+        st = stock_by_code.get(code) or {}
+        scored = sorted(
+            (( _label_text_overlap(tag, st), tag) for tag in ranked),
+            reverse=True,
+        )
+        if scored and scored[0][0] > 0:
+            labels[code] = scored[0][1]
+        elif ranked:
+            labels[code] = ranked[i % len(ranked)]
+        else:
+            labels[code] = "其他概念"
+    logger.info(
+        "「其他概念」从 %s 只压至 %s 只",
+        len(other_codes),
+        sum(1 for l in labels.values() if l == "其他概念"),
+    )
+    return {"labels": labels, "reasons": reasons, "leaders": leaders}
+
+
+def _group_stocks_fresh(stocks: list) -> dict:
+    """全新归纳：规则通用大类 + AI 补充 reason/leader，标签强制落通用大类"""
+    rule_labels = {
+        s["code"]: _assign_broad_tag_from_stock(s)
+        for s in stocks
+        if s.get("code")
+    }
+    ai_result = _claude_group_labels_for_stocks(stocks)
+    if not (ai_result or {}).get("labels"):
+        raise ValueError("AI 分组未返回有效标签")
+    labels = {}
+    for s in stocks:
+        code = s.get("code", "")
+        if not code:
+            continue
+        ai_lbl = _coerce_general_broad_label(
+            (ai_result.get("labels") or {}).get(code, ""), s
+        )
+        rule_lbl = rule_labels.get(code) or ""
+        if rule_lbl:
+            labels[code] = rule_lbl
+        else:
+            labels[code] = ai_lbl
+    reasons = dict((ai_result or {}).get("reasons") or {})
+    leaders = dict((ai_result or {}).get("leaders") or {})
+    group_result = {"labels": labels, "reasons": reasons, "leaders": leaders}
+    group_result = _finalize_group_labels(group_result, stocks)
+    group_result = _enforce_group_limits(group_result, stocks)
+    group_result = _cap_other_bucket(group_result, stocks)
+    group_result = _split_oversized_in_result(group_result, stocks, max_ratio=0.20)
+    return _cap_other_bucket(group_result, stocks)
+
+
+def _smart_group_stocks(stocks: list, dt: str, *, fresh: bool = False) -> dict:
+    """智能分组：fresh=True 时忽略库内旧标签，按复盘模板全量重算"""
+    if fresh or not get_limit_up_stocks_by_date(dt):
+        logger.info("全量 AI 归纳（按当日涨停因果动态合并标签）")
+        return _group_stocks_fresh(stocks)
+
     # 1. 从库里读取当天已有的 stock -> tag 映射（含手动修改）
     db_stocks = get_limit_up_stocks_by_date(dt)
     db_code_to_tag = {s["code"]: s["tag_name"] for s in db_stocks if s.get("tag_name")}
@@ -583,12 +1179,16 @@ def _smart_group_stocks(stocks: list, dt: str) -> dict:
 
     logger.info(f"智能分组: 库里匹配 {len(labels)} 只, 未匹配 {len(unmatched)} 只")
 
-    # 3. 未匹配的调 AI（传入已知标签作为参考）
+    # 3. 未匹配的调 AI（以 AI 结果为准）
     ai_result = {}
     if unmatched:
         ai_result = _claude_group_labels_for_stocks(unmatched)
-        if ai_result.get("labels"):
-            labels.update(ai_result["labels"])
+        for s in unmatched:
+            code = s.get("code", "")
+            ai_lbl = _coerce_general_broad_label(
+                ((ai_result or {}).get("labels") or {}).get(code, ""), s
+            )
+            labels[code] = ai_lbl or "其他概念"
 
     # 4. 合并 reasons 和 leaders
     reasons = dict(db_reasons)
@@ -623,16 +1223,7 @@ def _smart_group_stocks(stocks: list, dt: str) -> dict:
             lbl for lbl in set(labels.values()) if not _is_other_label(lbl)
         )
 
-        lines = []
-        for s in other_stocks:
-            ths_tags = s.get("ths_concept_tags") or []
-            tag_str = ",".join(str(t) for t in ths_tags if t) if ths_tags else ""
-            lines.append(
-                f"{s['code']} {s['name']} 行业:{s.get('industry', '')} "
-                f"连板:{s.get('boards', 1)} "
-                f"同花顺标题:{s.get('ths_analyse_title') or ''} "
-                f"同花顺概念:[{tag_str}] 同花顺分析:{(s.get('ths_analyse') or '')[:200]}"
-            )
+        lines = [_format_stock_prompt_line(s) for s in other_stocks]
         regroup_prompt = (
             REGROUP_PROMPT
             .replace("{existing_labels}", existing_labels_text or "（无）")
@@ -656,8 +1247,9 @@ def _smart_group_stocks(stocks: list, dt: str) -> dict:
             logger.error(f"二次归纳失败: {e}", exc_info=True)
 
     group_result = {"labels": labels, "reasons": reasons, "leaders": leaders}
-    group_result = _normalize_to_broad_tags(group_result, stocks)
-    return _enforce_group_limits(group_result, stocks)
+    group_result = _finalize_group_labels(group_result, stocks)
+    group_result = _enforce_group_limits(group_result, stocks)
+    return _cap_other_bucket(group_result, stocks)
 
 
 def _bg_ai_grouping(stocks: list, cache_key: tuple):
@@ -720,6 +1312,8 @@ def _build_stocks_from_df(df, ths_hot_map: dict) -> list:
             "ths_analyse": ths_info.get("analyse", ""),
             "ths_analyse_title": ths_info.get("analyse_title", ""),
             "ths_concept_tags": ths_info.get("concept_tags", []),
+            "em_concept_tags": [],
+            "stock_concept_tags": [],
             "ths_popularity": ths_info.get("popularity_tag", ""),
             "ths_hot_tag": _build_ths_hot_tag(ths_info),
             "group_label": "",
@@ -864,7 +1458,8 @@ def build_echelon_one_date(dt: str, force: bool = False) -> str:
         if not stocks:
             return "empty"
 
-        group_result = _smart_group_stocks(stocks, dt_clean)
+        _enrich_stocks_concepts(stocks, ths_hot_map)
+        group_result = _smart_group_stocks(stocks, dt_clean, fresh=force)
 
         if not group_result.get("labels"):
             logger.error("分组无结果 date=%s", dt_clean)

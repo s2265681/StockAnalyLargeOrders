@@ -12,7 +12,10 @@ class DragonTigerAiCacheTest(unittest.TestCase):
         self.app.register_blueprint(dragon_tiger_bp)
         self.client = self.app.test_client()
 
-    @patch("routes.dragon_tiger.get_ai_analysis", return_value="所属题材：人工智能")
+    @patch(
+        "routes.dragon_tiger.get_ai_analysis",
+        return_value="世嘉科技本次上榜的资金性质全部为机构专用席位，未见游资参与，机构分歧较大。",
+    )
     def test_cache_returns_analysis_when_present(self, _mock_get):
         res = self.client.get(
             "/api/v1/dragon-tiger/ai-analysis-cache",
@@ -21,7 +24,7 @@ class DragonTigerAiCacheTest(unittest.TestCase):
         payload = res.get_json()
         self.assertEqual(res.status_code, 200)
         self.assertTrue(payload["success"])
-        self.assertEqual(payload["data"]["analysis"], "所属题材：人工智能")
+        self.assertIn("世嘉科技", payload["data"]["analysis"])
 
     @patch("routes.dragon_tiger.get_ai_analysis", return_value=None)
     def test_cache_returns_not_generated_message(self, _mock_get):
@@ -35,7 +38,7 @@ class DragonTigerAiCacheTest(unittest.TestCase):
         self.assertIsNone(payload["data"])
         self.assertEqual(payload["message"], "还未生成")
 
-    @patch("routes.dragon_tiger.get_ai_analysis", return_value="旧版无题材字段")
+    @patch("routes.dragon_tiger.get_ai_analysis", return_value="太短")
     def test_post_compat_readonly_no_generation(self, mock_get):
         with patch("routes.dragon_tiger._call_claude") as mock_claude:
             res = self.client.post(

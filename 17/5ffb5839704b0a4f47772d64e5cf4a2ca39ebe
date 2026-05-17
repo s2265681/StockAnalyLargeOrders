@@ -1,0 +1,37 @@
+frontend/src/components/AuthLayout/index.css
+  s_003ed3b0245347::t_7dd172a51484df 366-371
+frontend/src/pages/Login/index.js
+  s_003ed3b0245347::t_baf4b395c2dd02 43-72
+  s_003ed3b0245347::t_60f48e12ef63a0 1,12,16-18
+backend/tests/test_l2_money_flow.py
+  s_175be243455184::t_e7024a5c2f468e 60-63,70-97
+backend/routes/l2_dashboard.py
+  s_175be243455184::t_76250c02f18916 122-175
+  s_175be243455184::t_ac195e63d87f1c 253-256
+backend/routes/stock_timeshare.py
+  s_175be243455184::t_8cd72dc332939e 184-218,228-229,238-239,266
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "175ffb5839704b0a4f47772d64e5cf4a2ca39ebe",
+  "prompts": {},
+  "sessions": {
+    "s_003ed3b0245347": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "e0fe8d64-bd87-4d21-b9d9-5e8dc636e863",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_175be243455184": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d6d21cd2-e666-48b4-9b55-52d2ecb03d5c",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

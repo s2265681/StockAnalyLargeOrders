@@ -201,20 +201,6 @@ function AppInner() {
               </Button>
             </div>
           )}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '8px 24px',
-              marginTop: 4,
-              color: 'var(--text-muted)',
-              fontSize: 13,
-            }}
-          >
-            <ThemeToggle theme={theme} onToggle={toggleTheme} />
-            {theme === 'dark' ? '切换白天模式' : '切换夜间模式'}
-          </div>
         </div>
       </Drawer>
 

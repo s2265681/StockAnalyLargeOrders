@@ -12,7 +12,7 @@ class TestJobNotify(unittest.TestCase):
             "SMTP_HOST": "smtp.example.com",
             "SMTP_USER": "u@example.com",
             "SMTP_PASS": "secret",
-            "JOB_ALERT_EMAIL": "rock.shang@kalowave.com",
+            "JOB_ALERT_EMAIL": "s2265681@163.com",
         },
         clear=False,
     )

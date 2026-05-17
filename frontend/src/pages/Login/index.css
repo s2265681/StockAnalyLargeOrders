@@ -93,3 +93,31 @@
 .login-footer a {
   color: var(--color-accent);
 }
+
+@media (max-width: 768px) {
+  .auth-page-header {
+    padding: 0 12px;
+    height: 48px;
+  }
+
+  .auth-logo-name {
+    font-size: 14px;
+  }
+
+  .login-container {
+    padding: 48px 16px 24px;
+    align-items: flex-start;
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: 400px;
+    padding: 28px 20px;
+    margin: 0 auto;
+    box-sizing: border-box;
+  }
+
+  .login-title {
+    font-size: 20px;
+  }
+}

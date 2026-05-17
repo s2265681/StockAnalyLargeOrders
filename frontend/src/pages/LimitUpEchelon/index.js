@@ -210,9 +210,34 @@ function LimitUpEchelon() {
     return [...normal, ...others];
   }, [themeRankingWithLeaders]);
 
+  const dateNav = (
+    <div className="page-date-nav">
+      <button
+        type="button"
+        className="date-nav-btn"
+        disabled={currentDate <= MIN_ECHELON_DATE}
+        onClick={() => setCurrentDate(clampEchelonDate(offsetDate(currentDate, -1)))}
+      >
+        <LeftOutlined /> 前一天
+      </button>
+      <div className="page-date-nav-end">
+        <button
+          type="button"
+          className="date-nav-btn"
+          disabled={currentDate >= todayStr}
+          onClick={() => setCurrentDate(clampEchelonDate(offsetDate(currentDate, 1)))}
+        >
+          后一天 <RightOutlined />
+        </button>
+        <span className="date-nav-label">{formatDateDisplay(currentDate)}</span>
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="echelon-container">
+        {dateNav}
         <div className="loading-container">
           <Spin size="large" />
           <div className="loading-text">加载涨停板梯队...</div>
@@ -224,6 +249,7 @@ function LimitUpEchelon() {
   if (!data || !data.echelons || data.echelons.length === 0) {
     return (
       <div className="echelon-container">
+        {dateNav}
         <div className="echelon-empty">暂无涨停板数据（收盘后由系统离线生成，请稍后刷新）</div>
       </div>
     );
@@ -231,6 +257,7 @@ function LimitUpEchelon() {
 
   return (
     <div className="echelon-container">
+      {dateNav}
       <div className="echelon-top-bar">
         <div className="echelon-summary">
           <div className="summary-item">
@@ -249,34 +276,6 @@ function LimitUpEchelon() {
             <span className="summary-label">最高</span>
             <span className="summary-value purple">{summary?.max_boards || 0}板</span>
           </div>
-        </div>
-        <div className="date-nav">
-          <button
-            type="button"
-            className="date-nav-btn"
-            disabled={currentDate <= MIN_ECHELON_DATE}
-            onClick={() => setCurrentDate(clampEchelonDate(offsetDate(currentDate, -1)))}
-          >
-            <LeftOutlined /> 前一天
-          </button>
-          <span className="date-nav-label">{formatDateDisplay(currentDate)}</span>
-          <button
-            type="button"
-            className="date-nav-btn"
-            disabled={currentDate >= todayStr}
-            onClick={() => setCurrentDate(clampEchelonDate(offsetDate(currentDate, 1)))}
-          >
-            后一天 <RightOutlined />
-          </button>
-          {currentDate !== todayStr && (
-            <button
-              type="button"
-              className="date-nav-btn date-nav-today"
-              onClick={() => setCurrentDate(clampEchelonDate(todayStr))}
-            >
-              今天
-            </button>
-          )}
         </div>
       </div>
 

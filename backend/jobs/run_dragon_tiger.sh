@@ -1,12 +1,12 @@
 #!/bin/bash
-# 龙虎榜离线任务：补全当日 AI + 删除 7 天前数据
+# 龙虎榜离线任务：补全当日 AI
 # crontab（工作日 18:00）:
 #   0 18 * * 1-5 /Users/mac/Github/NiuNIuNiu/backend/jobs/run_dragon_tiger.sh \
 #     >> /Users/mac/Github/NiuNIuNiu/dragon_tiger_job.log 2>&1
 # 用法:
-#   run_dragon_tiger.sh              # 最新交易日补全 + 清理（crontab 推荐）
-#   run_dragon_tiger.sh force        # 最新交易日强制重跑 + 清理
-#   run_dragon_tiger.sh recent       # 近 5 日缺失补全 + 清理（手动）
+#   run_dragon_tiger.sh              # 最新交易日补全（crontab 推荐）
+#   run_dragon_tiger.sh force        # 最新交易日强制重跑
+#   run_dragon_tiger.sh recent       # 近 5 日缺失补全（手动）
 #   run_dragon_tiger.sh sync 20260513 20260514  # 仅同步榜单，不跑 AI
 #   run_dragon_tiger.sh 20260515 force
 

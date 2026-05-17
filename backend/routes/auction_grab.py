@@ -198,10 +198,15 @@ def get_auction_grab():
 
     _enrich_close_and_next_change(items, trade_date)
 
+    from services.auction_grab_recommendation import enrich_auction_recommendations
+    rec_meta = enrich_auction_recommendations(items, trade_date, int(period))
+
     return v1_success_response(data={
         'items': items,
         'total': len(items),
         'date': dt,
         'period': int(period),
         'sort': sort_by,
+        'emotion_stage': rec_meta.get('stage', ''),
+        'recommend_hint': rec_meta.get('hint', ''),
     })

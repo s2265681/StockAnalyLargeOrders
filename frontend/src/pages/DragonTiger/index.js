@@ -1,7 +1,7 @@
 // frontend/src/pages/DragonTiger/index.js
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Spin, message } from 'antd';
-import { LeftOutlined, RightOutlined, RobotOutlined, LoadingOutlined } from '@ant-design/icons';
+import { LeftOutlined, RightOutlined, RobotOutlined, LoadingOutlined, CloseOutlined } from '@ant-design/icons';
 import { apiRequest } from '../../config/api';
 import './index.css';
 
@@ -33,15 +33,14 @@ const offsetDate = (dateStr, delta) => {
 const formatDateDisplay = (s) =>
   s && s.length === 8 ? `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}` : s;
 
-/** 核心游资仅展示最近 N 个交易日（与离线补全范围一致） */
-const VISIBLE_TRADING_DAYS = 5;
+/** 龙虎榜离线数据自 2026-05-11 起可用，此前日期不可选 */
+const MIN_DRAGON_TIGER_DATE = '20260511';
 
-const getMinVisibleDate = (endDate) => {
-  let d = endDate;
-  for (let i = 0; i < VISIBLE_TRADING_DAYS - 1; i += 1) {
-    d = offsetDate(d, -1);
-  }
-  return d;
+const clampDragonTigerDate = (dateStr) => {
+  if (!dateStr || dateStr.length !== 8) return dateStr;
+  if (dateStr < MIN_DRAGON_TIGER_DATE) return MIN_DRAGON_TIGER_DATE;
+  const today = getLastTradingDayStr();
+  return dateStr > today ? today : dateStr;
 };
 
 const fmtAmount = (val) => {
@@ -147,8 +146,7 @@ export function SeatTable({ seats, direction }) {
 
 function DragonTiger() {
   const todayStr = useMemo(() => getLastTradingDayStr(), []);
-  const minDate = useMemo(() => getMinVisibleDate(todayStr), [todayStr]);
-  const [currentDate, setCurrentDate] = useState(() => getLastTradingDayStr());
+  const [currentDate, setCurrentDate] = useState(() => clampDragonTigerDate(getLastTradingDayStr()));
   const [loading, setLoading] = useState(false);
   const [stocks, setStocks] = useState([]);
   const [selectedCode, setSelectedCode] = useState(null);
@@ -188,9 +186,22 @@ function DragonTiger() {
     fetchData(currentDate);
   }, [currentDate]); // eslint-disable-line
 
+  useEffect(() => {
+    if (!selectedCode) return undefined;
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+    if (!isMobile) return undefined;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [selectedCode]);
+
   const handleDateChange = (delta) => {
-    const next = delta > 0 ? offsetDate(currentDate, 1) : offsetDate(currentDate, -1);
-    if (next < minDate || next > todayStr) return;
+    const next = clampDragonTigerDate(
+      delta > 0 ? offsetDate(currentDate, 1) : offsetDate(currentDate, -1)
+    );
+    if (next === currentDate) return;
     setCurrentDate(next);
     setAiResults({});
     setAiEmptyHint(null);
@@ -234,21 +245,16 @@ function DragonTiger() {
 
   return (
     <div className="dt-container">
-      {/* 顶部日期导航 */}
-      <div className="dt-top-bar">
-        <div className="date-nav">
-          <button
-            type="button"
-            className="date-nav-btn"
-            disabled={currentDate <= minDate}
-            onClick={() => handleDateChange(-1)}
-          >
-            <LeftOutlined /> 前一天
-          </button>
-          <span className="date-nav-label">
-            {formatDateDisplay(currentDate)}
-            <span className="date-nav-hint">近{VISIBLE_TRADING_DAYS}日</span>
-          </span>
+      <div className="page-date-nav">
+        <button
+          type="button"
+          className="date-nav-btn"
+          disabled={currentDate <= MIN_DRAGON_TIGER_DATE}
+          onClick={() => handleDateChange(-1)}
+        >
+          <LeftOutlined /> 前一天
+        </button>
+        <div className="page-date-nav-end">
           <button
             type="button"
             className="date-nav-btn"
@@ -257,6 +263,7 @@ function DragonTiger() {
           >
             后一天 <RightOutlined />
           </button>
+          <span className="date-nav-label">{formatDateDisplay(currentDate)}</span>
         </div>
       </div>
 
@@ -302,12 +309,31 @@ function DragonTiger() {
           )}
         </div>
 
-        {/* 右侧详情 */}
-        <div className="dt-detail">
+        {selectedStock && (
+          <div
+            className="dt-detail-backdrop"
+            onClick={() => setSelectedCode(null)}
+            aria-hidden="true"
+          />
+        )}
+
+        {/* 右侧详情 / 移动端底部弹层 */}
+        <div className={`dt-detail${selectedStock ? ' dt-detail--open' : ''}`}>
           {!selectedStock ? (
             <div className="dt-detail-empty">← 点击左侧股票查看龙虎榜详情</div>
           ) : (
             <>
+              <div className="dt-detail-sheet">
+              <button
+                type="button"
+                className="dt-detail-close"
+                onClick={() => setSelectedCode(null)}
+                aria-label="关闭详情"
+              >
+                <CloseOutlined />
+              </button>
+              <div className="dt-detail-sheet-handle" aria-hidden="true" />
+              <div className="dt-detail-body">
               {/* 头部 */}
               <div className="dt-detail-header">
                 <div className="dt-detail-title">
@@ -366,6 +392,8 @@ function DragonTiger() {
                   <div className="dt-seats-title sell">卖出席位</div>
                   <SeatTable seats={selectedStock.sell_seats} direction="sell" />
                 </div>
+              </div>
+              </div>
               </div>
             </>
           )}

@@ -1,7 +1,18 @@
 import React, { useState } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Layout, Alert, Menu, Button, Drawer } from 'antd';
-import { MenuOutlined, UserOutlined, LogoutOutlined } from '@ant-design/icons';
+import {
+  MenuOutlined,
+  UserOutlined,
+  LogoutOutlined,
+  LineChartOutlined,
+  RobotOutlined,
+  FireOutlined,
+  ThunderboltOutlined,
+  DashboardOutlined,
+  ClockCircleOutlined,
+  SafetyCertificateOutlined,
+} from '@ant-design/icons';
 import { useAtom } from 'jotai';
 import Home from './pages/Home';
 import StockDashboard from './pages/StockDashboard';
@@ -22,13 +33,13 @@ import { errorAtom } from './store/atoms';
 const { Content, Header } = Layout;
 
 const NAV_ITEMS = [
-  { key: '/stock-dashboard', label: '个股分析' },
-  { key: '/ai-diagnosis', label: 'AI诊股' },
-  { key: '/limit-up-echelon', label: '涨停梯队' },
-  { key: '/dragon-tiger', label: '核心游资' },
-  { key: '/emotion-cycle', label: '情绪周期' },
-  { key: '/auction-grab', label: '竞价抢筹' },
-  { key: '/permission-center', label: '权限中心' },
+  { key: '/stock-dashboard', icon: <LineChartOutlined />, label: '个股分析' },
+  { key: '/ai-diagnosis', icon: <RobotOutlined />, label: 'AI诊股' },
+  { key: '/limit-up-echelon', icon: <FireOutlined />, label: '涨停梯队' },
+  { key: '/dragon-tiger', icon: <ThunderboltOutlined />, label: '核心游资' },
+  { key: '/emotion-cycle', icon: <DashboardOutlined />, label: '情绪周期' },
+  { key: '/auction-grab', icon: <ClockCircleOutlined />, label: '竞价抢筹' },
+  { key: '/permission-center', icon: <SafetyCertificateOutlined />, label: '权限中心' },
 ];
 
 function RequireAuth({ children }) {
@@ -160,18 +171,21 @@ function AppInner() {
 
       {/* 移动端抽屉菜单 */}
       <Drawer
+        className="mobile-nav-drawer"
         title={<span style={{ fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>AI炒股指南</span>}
         placement="left"
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        width={260}
+        width={220}
         styles={{
-          header: { background: 'var(--bg-header)', borderBottom: '1px solid var(--border-secondary)' },
+          header: { background: 'var(--bg-header)', borderBottom: '1px solid var(--border-secondary)', padding: '12px 16px' },
           body: { padding: 0, background: 'var(--bg-primary)' },
         }}
       >
         <Menu
+          className="mobile-drawer-menu"
           mode="inline"
+          inlineIndent={12}
           selectedKeys={[location.pathname]}
           items={NAV_ITEMS}
           onClick={handleMenuClick}
@@ -189,7 +203,7 @@ function AppInner() {
             <>
               <div
                 style={{
-                  padding: '10px 24px',
+                  padding: '10px 16px',
                   cursor: 'pointer',
                   color: 'var(--color-accent)',
                   display: 'flex',
@@ -207,7 +221,7 @@ function AppInner() {
                 type="text"
                 danger
                 icon={<LogoutOutlined />}
-                style={{ textAlign: 'left', justifyContent: 'flex-start', paddingLeft: 24, height: 40 }}
+                style={{ textAlign: 'left', justifyContent: 'flex-start', paddingLeft: 16, height: 40 }}
                 onClick={handleLogout}
               >
                 退出登录

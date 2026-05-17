@@ -314,6 +314,43 @@
   margin-bottom: 16px;
 }
 
+@media (max-width: 768px) {
+  .ai-diagnosis-page {
+    padding: 12px 12px 32px;
+    min-height: calc(100vh - 56px);
+  }
+
+  .ai-page-title {
+    font-size: 18px;
+  }
+
+  .ai-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ai-code-input {
+    width: 100%;
+  }
+
+  .ai-snapshot-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-sections {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-chat-input-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ai-chat-input-row .ant-btn {
+    width: 100%;
+  }
+}
+
 @media (max-width: 640px) {
   .ai-report-trade-grid {
     grid-template-columns: 1fr;

@@ -64,3 +64,22 @@
 .register-footer a {
   color: var(--color-accent);
 }
+
+@media (max-width: 768px) {
+  .register-container {
+    padding: 48px 16px 24px;
+    align-items: flex-start;
+  }
+
+  .register-card {
+    width: 100%;
+    max-width: 400px;
+    padding: 28px 20px;
+    margin: 0 auto;
+    box-sizing: border-box;
+  }
+
+  .register-title {
+    font-size: 20px;
+  }
+}

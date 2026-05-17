@@ -1,7 +1,8 @@
 .echelon-container {
-  padding: 20px;
+  padding: 16px;
   background: var(--bg-primary);
   min-height: calc(100vh - 64px);
+  box-sizing: border-box;
 }
 
 .echelon-empty {
@@ -11,11 +12,11 @@
   font-size: 16px;
 }
 
-/* 顶部栏 */
+/* 统计摘要栏 */
 .echelon-top-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   margin-bottom: 16px;
   padding: 14px 20px;
   background: var(--bg-tooltip);
@@ -47,7 +48,7 @@
 .summary-item {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   min-width: 60px;
 }
 
@@ -299,6 +300,7 @@
   border-bottom: 1px solid var(--border-secondary);
   font-size: 12px;
   color: var(--text-muted);
+  box-sizing: border-box;
 }
 
 .echelon-table-row {
@@ -308,6 +310,7 @@
   align-items: center;
   transition: background 0.15s;
   min-height: 58px;
+  box-sizing: border-box;
 }
 
 .echelon-table-row:hover {
@@ -354,7 +357,7 @@
 .col-ratio { flex: 0 0 60px; text-align: right; }
 .col-turnover { flex: 0 0 80px; text-align: right; color: #aaa; }
 .col-rate { flex: 0 0 65px; text-align: right; color: #aaa; }
-.col-time { flex: 0 0 95px; color: #aaa; font-size: 12px; }
+.col-time { flex: 0 0 95px; text-align: right; color: #aaa; font-size: 12px; }
 .col-break { flex: 0 0 50px; text-align: center; }
 .col-quality { flex: 0 0 45px; text-align: center; }
 .col-reason { flex: 1; min-width: 160px; color: #aaa; }
@@ -528,4 +531,84 @@
 .loading-text {
   color: var(--text-secondary);
   font-size: 14px;
+}
+
+/* ── 移动端适配 ── */
+@media (max-width: 768px) {
+  .echelon-container {
+    padding: 10px;
+    min-height: calc(100vh - 56px);
+  }
+
+  .echelon-top-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 12px 14px;
+  }
+
+  .echelon-top-bar {
+    justify-content: center;
+  }
+
+  .echelon-summary {
+    justify-content: space-around;
+    width: 100%;
+    gap: 12px;
+  }
+
+  .summary-item {
+    align-items: center;
+  }
+
+  .summary-value {
+    font-size: 18px;
+  }
+
+  .theme-ranking-bar {
+    padding: 10px 12px;
+    gap: 6px;
+  }
+
+  .theme-ranking-item {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+
+  .echelon-group {
+    overflow: visible;
+  }
+
+  .echelon-table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 列宽合计 > 920，须用 max-content 否则行背景铺不满横向滚动区 */
+  .echelon-table-header,
+  .echelon-table-row {
+    width: max-content;
+    min-width: 100%;
+  }
+
+  .echelon-table-row {
+    padding: 10px 12px;
+    min-height: 52px;
+  }
+
+  .echelon-header {
+    padding: 8px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .echelon-summary {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .summary-item {
+    min-width: 0;
+  }
 }

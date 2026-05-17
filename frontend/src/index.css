@@ -118,6 +118,20 @@
   --text-medium: rgba(0, 0, 0, 0.82);
 }
 
+/* 独立日期导航卡片（情绪周期 / 核心游资 / 竞价抢筹） */
+.page-date-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 10px 16px;
+  background: var(--bg-tooltip);
+  border: 1px solid var(--border-secondary);
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
 /* 统一日期导航样式 */
 .date-nav {
   display: flex;
@@ -137,6 +151,26 @@
   flex-direction: column;
   align-items: center;
   gap: 2px;
+}
+
+/* PC：前一天居左，后一天+日期成组贴右（日期在最右侧） */
+@media (min-width: 769px) {
+  .page-date-nav {
+    justify-content: space-between;
+  }
+
+  .page-date-nav-end {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .page-date-nav-end .date-nav-label {
+    min-width: auto;
+    text-align: right;
+    align-items: flex-end;
+  }
 }
 
 .date-nav-hint {
@@ -1712,7 +1746,7 @@ code {
 .smart-theme-area {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 12px;
   margin-left: 12px;
   flex-wrap: wrap;
 }
@@ -2840,6 +2874,27 @@ code {
     display: none !important;
   }
 
+  /* 移动端抽屉菜单：收紧左侧留白 */
+  .mobile-nav-drawer .ant-drawer-header-title {
+    flex: 1;
+  }
+
+  .mobile-drawer-menu.ant-menu {
+    padding: 4px 0 !important;
+  }
+
+  .mobile-drawer-menu.ant-menu-inline > .ant-menu-item {
+    padding-inline-start: 12px !important;
+    padding-inline-end: 12px !important;
+    margin-inline: 8px;
+    width: calc(100% - 16px);
+    border-radius: 8px;
+  }
+
+  .mobile-drawer-menu.ant-menu-inline > .ant-menu-item .anticon {
+    margin-inline-end: 10px !important;
+  }
+
   /* ── 个股分析 - 股票信息上下布局 ── */
   .stock-title-bar {
     flex-direction: column;
@@ -2979,6 +3034,197 @@ code {
   .ag-container,
   .emotion-cycle-container {
     padding: 10px !important;
+  }
+
+  .page-date-nav {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 10px;
+    justify-content: center;
+  }
+
+  /* ── 全局日期导航：单行，隐藏「今天」 ── */
+  .date-nav {
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .date-nav-today {
+    display: none;
+  }
+
+  .date-nav-btn {
+    padding: 8px 10px;
+    font-size: 12px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .page-date-nav-end {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .page-date-nav-end .date-nav-label {
+    order: 1;
+    flex: 1;
+    margin-left: 0;
+    text-align: center;
+    align-items: center;
+  }
+
+  .page-date-nav-end .date-nav-btn {
+    order: 2;
+  }
+
+  .date-nav-label {
+    min-width: 0;
+    width: auto;
+  }
+
+  /* ── 个股分析：图表工具栏 ── */
+  .chart-legend-nav {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    min-height: auto;
+  }
+
+  .date-navigation {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .period-buttons {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .chart-legend {
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  .cost-indicator {
+    margin-left: 0;
+    text-align: center;
+  }
+
+  /* ── 题材面板 ── */
+  .theme-current-box {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .theme-current-reason,
+  .theme-current-note {
+    white-space: normal;
+    text-overflow: unset;
+  }
+
+  .theme-rank-list {
+    grid-template-columns: 1fr;
+  }
+
+  /* ── 大单筛选与统计 ── */
+  .filter-checkboxes {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .filter-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .filter-level-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .flow-indicators {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .price-analysis {
+    grid-template-columns: 1fr;
+  }
+
+  .simulation-toolbar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .toolbar-clock {
+    margin-left: 0;
+    width: 100%;
+    text-align: right;
+  }
+
+  /* ── 交易明细横向滚动 ── */
+  .trade-table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -4px;
+  }
+
+  .trade-table-scroll .trade-header,
+  .trade-table-scroll .trade-item {
+    min-width: 420px;
+  }
+
+  .trade-header,
+  .trade-item {
+    grid-template-columns: 72px 56px 64px 56px 80px;
+    gap: 8px;
+    padding-left: 10px;
+    padding-right: 10px;
+    font-size: 12px;
+  }
+
+  /* ── 盘口与 handicap ── */
+  .handicap-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .handicap-label {
+    font-size: 18px;
+  }
+
+  .orderbook-levels {
+    gap: 8px;
+  }
+
+  /* ── 错误提示 ── */
+  .app-error-banner {
+    left: 16px !important;
+    right: 16px !important;
+    transform: none !important;
+    max-width: none !important;
+    width: auto;
+  }
+
+  .stock-card .ant-card-body {
+    padding: 12px;
+  }
+
+  .basic-stats .stats-row {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 8px 16px;
   }
 }
 

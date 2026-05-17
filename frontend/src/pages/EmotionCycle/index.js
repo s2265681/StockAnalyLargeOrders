@@ -258,9 +258,19 @@ function EmotionCycle() {
 
   const minDate = records.length > 0 ? records[0].date.replace(/-/g, '') : '20000101';
   const latestDate = getLatestRecordDate(records);
+  const navMaxDate = latestDate && latestDate < todayStr ? latestDate : todayStr;
   const hasSelectedRecord = records.some(
     (r) => r.date?.replace(/-/g, '') === selectedDate
   );
+
+  // 默认日期用日历「最近工作日」，但行情/分析可能仍停在上一交易日；对齐到有数据的最新日
+  useEffect(() => {
+    if (!latestDate) return;
+    const hasCurrent = records.some((r) => r.date?.replace(/-/g, '') === selectedDate);
+    if (!hasCurrent) {
+      setSelectedDate(latestDate);
+    }
+  }, [records, latestDate, selectedDate]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -421,7 +431,7 @@ function EmotionCycle() {
 
   return (
     <div className="emotion-cycle-container">
-      <div className="emotion-date-nav">
+      <div className="page-date-nav">
         <button
           type="button"
           className="date-nav-btn"
@@ -430,15 +440,17 @@ function EmotionCycle() {
         >
           <LeftOutlined /> 前一天
         </button>
-        <span className="date-nav-label">{formatDateDisplay(selectedDate)}</span>
-        <button
-          type="button"
-          className="date-nav-btn"
-          onClick={() => setSelectedDate(offsetDate(selectedDate, 1))}
-          disabled={selectedDate >= todayStr}
-        >
-          后一天 <RightOutlined />
-        </button>
+        <div className="page-date-nav-end">
+          <button
+            type="button"
+            className="date-nav-btn"
+            onClick={() => setSelectedDate(offsetDate(selectedDate, 1))}
+            disabled={selectedDate >= navMaxDate}
+          >
+            后一天 <RightOutlined />
+          </button>
+          <span className="date-nav-label">{formatDateDisplay(selectedDate)}</span>
+        </div>
       </div>
 
       <div className="emotion-main-layout">

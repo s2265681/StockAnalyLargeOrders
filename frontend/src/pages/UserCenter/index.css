@@ -59,10 +59,45 @@
   max-width: 400px;
 }
 
-.uc-pwd-form .ant-input {
+.uc-pwd-form .ant-input-affix-wrapper {
   background: var(--bg-input);
   border-color: var(--border-input);
+}
+
+.uc-pwd-form .ant-input-affix-wrapper .ant-input {
+  background: transparent;
+  border: none;
   color: var(--text-primary);
+  box-shadow: none;
+}
+
+.uc-pwd-form .ant-input-affix-wrapper .ant-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.uc-pwd-form .ant-input-affix-wrapper:focus,
+.uc-pwd-form .ant-input-affix-wrapper-focused,
+.uc-pwd-form .ant-input-affix-wrapper:focus-within {
+  border-color: var(--color-accent);
+  box-shadow: none;
+}
+
+.uc-pwd-form .ant-input-password-icon {
+  color: var(--text-muted);
+}
+
+.uc-pwd-form .ant-input-password-icon:hover {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .uc-pwd-form .ant-input-password-icon,
+[data-theme="dark"] .uc-pwd-form .ant-input-password-icon .anticon {
+  color: #fff;
+}
+
+[data-theme="dark"] .uc-pwd-form .ant-input-password-icon:hover,
+[data-theme="dark"] .uc-pwd-form .ant-input-password-icon:hover .anticon {
+  color: rgba(255, 255, 255, 0.75);
 }
 
 .uc-order-item {
@@ -77,3 +112,31 @@
 .uc-order-item:last-child { border-bottom: none; }
 .uc-order-status-paid { color: #52c41a; }
 .uc-order-status-pending { color: #ffa940; }
+
+@media (max-width: 768px) {
+  .user-center-container {
+    padding: 16px 12px;
+  }
+
+  .uc-section {
+    padding: 16px;
+  }
+
+  .uc-info-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 10px 0;
+  }
+
+  .uc-pwd-form {
+    max-width: none;
+    width: 100%;
+  }
+
+  .uc-order-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+}

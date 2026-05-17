@@ -14,7 +14,6 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from routes.dragon_tiger import run_dragon_tiger_ai_for_date, sync_dragon_tiger_for_date
-from services.dragon_tiger_service import cleanup_dragon_tiger_older_than
 from utils.date_utils import get_recent_trading_dates
 
 # 仅同步榜单/席位、不跑 AI 的日期（YYYYMMDD）
@@ -52,8 +51,7 @@ def main():
         if result.get("total", 0) == 0:
             logger.warning("date=%s 无龙虎榜数据", dt)
 
-    cleanup = cleanup_dragon_tiger_older_than()
-    logger.info("===== 近 %s 日补全结束 failed=%s cleanup=%s =====", VISIBLE_DAYS, total_failed, cleanup)
+    logger.info("===== 近 %s 日补全结束 failed=%s =====", VISIBLE_DAYS, total_failed)
     if total_failed > 0:
         sys.exit(1)
 

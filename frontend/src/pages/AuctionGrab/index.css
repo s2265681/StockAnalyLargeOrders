@@ -1,14 +1,14 @@
 .ag-container {
-  padding: 20px;
+  padding: 16px;
   background: var(--bg-primary);
   min-height: calc(100vh - 64px);
+  box-sizing: border-box;
 }
 
 /* 工具栏 */
 .ag-toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   margin-bottom: 16px;
   padding: 14px 20px;
   background: var(--bg-tooltip);
@@ -130,9 +130,33 @@
   overflow-y: hidden;
 }
 
+.ag-rec-hint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  margin-bottom: 12px;
+  padding: 10px 16px;
+  background: rgba(24, 144, 255, 0.08);
+  border: 1px solid rgba(24, 144, 255, 0.2);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.ag-rec-stage {
+  color: #1890ff;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.ag-rec-text {
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
 .ag-table-header {
   display: flex;
-  min-width: 1240px;
+  min-width: 1440px;
   padding: 10px 20px;
   background: var(--bg-card-hover);
   border-bottom: 1px solid var(--border-secondary);
@@ -142,7 +166,7 @@
 
 .ag-table-row {
   display: flex;
-  min-width: 1240px;
+  min-width: 1440px;
   padding: 12px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   align-items: center;
@@ -202,8 +226,63 @@
 }
 
 .ag-col-date {
-  flex: 0 0 130px;
+  flex: 0 0 110px;
   color: var(--text-muted);
+}
+
+.ag-col-recommend {
+  flex: 0 0 200px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ag-stars {
+  display: inline-flex;
+  gap: 2px;
+  line-height: 1;
+}
+
+.ag-star {
+  color: #faad14;
+  font-size: 15px;
+}
+
+.ag-stars-empty {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.ag-rec-reason {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  width: 100%;
+  max-width: 190px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  cursor: pointer;
+  word-break: break-all;
+}
+
+.ag-rec-reason:focus-visible {
+  outline: 1px solid rgba(24, 144, 255, 0.5);
+  border-radius: 2px;
+}
+
+.ag-rec-popover .ant-popover-inner {
+  max-width: min(92vw, 360px);
+}
+
+.ag-rec-popover-content {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 /* 股票名称 */
@@ -231,4 +310,58 @@
   color: var(--text-muted);
   padding: 80px 0;
   font-size: 14px;
+}
+
+/* ── 移动端适配 ── */
+@media (max-width: 768px) {
+  .ag-container {
+    padding: 10px;
+    min-height: calc(100vh - 56px);
+  }
+
+  .ag-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px 14px;
+  }
+
+  .ag-toolbar-left {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .ag-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+  }
+
+  .ag-tab {
+    padding: 6px 12px;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  .ag-sort-trigger {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .ag-table-header,
+  .ag-table-row {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .ag-col-recommend {
+    flex: 0 0 168px;
+  }
+
+  .ag-rec-reason {
+    max-width: 156px;
+    font-size: 11px;
+  }
 }

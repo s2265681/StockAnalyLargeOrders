@@ -181,19 +181,6 @@
   padding: 40px 0;
 }
 
-/* 日期导航栏 */
-.emotion-date-nav {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-  padding: 10px 16px;
-  background: var(--bg-tooltip);
-  border: 1px solid var(--border-secondary);
-  border-radius: 8px;
-  flex-shrink: 0;
-}
-
 .date-nav-ai-btns {
   display: flex;
   align-items: center;
@@ -339,13 +326,6 @@
     height: auto;
     overflow: visible;
     padding: 10px;
-  }
-
-  .emotion-date-nav {
-    flex-wrap: wrap;
-    gap: 6px;
-    padding: 8px 10px;
-    justify-content: center;
   }
 
   .date-nav-ai-btns {

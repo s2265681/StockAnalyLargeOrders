@@ -406,6 +406,7 @@ const StockOrderDetails = () => {
             />
           </div>
 
+          <div className="trade-table-scroll">
           {/* 可排序的表头 */}
           <div className="trade-header sortable">
             <div 
@@ -470,12 +471,14 @@ const StockOrderDetails = () => {
               </div>
             ))}
           </div>
+          </div>
         </Card>
       )}
 
       {/* 实时交易数据 */}
       {realtimeData && realtimeData.recentTrades && (
         <Card className="stock-card" title="实时交易数据">
+          <div className="trade-table-scroll">
           {/* 表头 */}
           <div className="trade-header">
             <div className="header-item time">时间</div>
@@ -499,6 +502,7 @@ const StockOrderDetails = () => {
                 <div className="trade-amount">{(trade.amount / 10000).toFixed(2)}</div>
               </div>
             ))}
+          </div>
           </div>
         </Card>
       )}

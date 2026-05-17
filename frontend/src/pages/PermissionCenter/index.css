@@ -75,3 +75,31 @@
   background: rgba(24, 144, 255, 0.1);
   color: var(--color-accent);
 }
+
+@media (max-width: 768px) {
+  .permission-center-container {
+    padding: 16px 12px;
+  }
+
+  .pc-title {
+    font-size: 20px;
+  }
+
+  .pc-subtitle {
+    margin-bottom: 20px;
+    font-size: 13px;
+  }
+
+  .pc-plans {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .pc-plan-card {
+    padding: 20px 16px;
+  }
+
+  .pc-plan-price {
+    font-size: 24px;
+  }
+}

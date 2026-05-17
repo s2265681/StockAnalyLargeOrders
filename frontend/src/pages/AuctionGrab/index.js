@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Spin } from 'antd';
+import { Spin, Popover } from 'antd';
 import { LeftOutlined, RightOutlined, DownOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { apiRequest } from '../../config/api';
@@ -40,6 +40,27 @@ const SORT_OPTIONS = [
   { key: 'kpje', label: '开盘金额' },
   { key: 'zf', label: '涨幅' },
 ];
+
+function RecommendReason({ text }) {
+  if (!text) return null;
+  return (
+    <Popover
+      content={<div className="ag-rec-popover-content">{text}</div>}
+      trigger={['hover', 'click']}
+      placement="topLeft"
+      overlayClassName="ag-rec-popover"
+    >
+      <span
+        className="ag-rec-reason"
+        role="button"
+        tabIndex={0}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {text}
+      </span>
+    </Popover>
+  );
+}
 
 function AuctionGrab() {
   const navigate = useNavigate();
@@ -93,6 +114,20 @@ function AuctionGrab() {
   }, [fetchData, currentDate, activeTab, sortBy]);
 
   const items = data?.items || [];
+  const emotionStage = data?.emotion_stage || '';
+  const recommendHint = data?.recommend_hint || '';
+
+  const renderStars = (stars, reason) => {
+    const n = Math.min(3, Math.max(0, parseInt(stars, 10) || 0));
+    if (n === 0) return <span className="ag-stars-empty">—</span>;
+    return (
+      <span className="ag-stars" title={reason || ''}>
+        {Array.from({ length: n }).map((_, i) => (
+          <span key={i} className="ag-star">★</span>
+        ))}
+      </span>
+    );
+  };
 
   const getChangeColor = (val) => {
     const num = parseFloat(val);
@@ -118,7 +153,27 @@ function AuctionGrab() {
 
   return (
     <div className="ag-container">
-      {/* 工具栏：Tab + 排序 + 日期 */}
+      <div className="page-date-nav">
+        <button
+          type="button"
+          className="date-nav-btn"
+          onClick={() => setCurrentDate(offsetDate(currentDate, -1))}
+        >
+          <LeftOutlined /> 前一天
+        </button>
+        <div className="page-date-nav-end">
+          <button
+            type="button"
+            className="date-nav-btn"
+            disabled={currentDate >= todayStr}
+            onClick={() => setCurrentDate(offsetDate(currentDate, 1))}
+          >
+            后一天 <RightOutlined />
+          </button>
+          <span className="date-nav-label">{formatDateDisplay(currentDate)}</span>
+        </div>
+      </div>
+
       <div className="ag-toolbar">
         <div className="ag-toolbar-left">
           <div className="ag-tabs">
@@ -162,32 +217,14 @@ function AuctionGrab() {
             )}
           </div>
         </div>
-
-        <div className="date-nav">
-          <button
-            className="date-nav-btn"
-            onClick={() => setCurrentDate(offsetDate(currentDate, -1))}
-          >
-            <LeftOutlined /> 前一天
-          </button>
-          <span className="date-nav-label">{formatDateDisplay(currentDate)}</span>
-          <button
-            className="date-nav-btn"
-            disabled={currentDate >= todayStr}
-            onClick={() => setCurrentDate(offsetDate(currentDate, 1))}
-          >
-            后一天 <RightOutlined />
-          </button>
-          {currentDate !== todayStr && (
-            <button
-              className="date-nav-btn date-nav-today"
-              onClick={() => setCurrentDate(todayStr)}
-            >
-              今天
-            </button>
-          )}
-        </div>
       </div>
+
+      {(emotionStage || recommendHint) && (
+        <div className="ag-rec-hint">
+          {emotionStage && <span className="ag-rec-stage">情绪周期：{emotionStage}</span>}
+          {recommendHint && <span className="ag-rec-text">{recommendHint}</span>}
+        </div>
+      )}
 
       {/* 表格 */}
       <div className="ag-table-wrap">
@@ -200,6 +237,7 @@ function AuctionGrab() {
           <div className="ag-col ag-col-turnover">抢筹成交额</div>
           <div className="ag-col ag-col-order">抢筹委托金额</div>
           <div className="ag-col ag-col-date">时间</div>
+          <div className="ag-col ag-col-recommend">推荐度</div>
         </div>
 
         {loading ? (
@@ -248,6 +286,13 @@ function AuctionGrab() {
               </div>
               <div className="ag-col ag-col-date">
                 {item.date}
+              </div>
+              <div
+                className="ag-col ag-col-recommend"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {renderStars(item.recommend_stars, item.recommend_reason)}
+                <RecommendReason text={item.recommend_reason} />
               </div>
             </div>
           ))

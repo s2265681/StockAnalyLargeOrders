@@ -1,0 +1,22 @@
+backend/routes/emotion_cycle.py
+  s_8b1898977013c2::t_93ca24160ce300 857-861
+backend/tests/test_emotion_cycle.py
+  s_8b1898977013c2::t_54869235b7df8c 131-136
+  s_8b1898977013c2::t_b410a799058a8d 206-232
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "33c39e98755b733c838da2d34d255d71a3cd7484",
+  "prompts": {},
+  "sessions": {
+    "s_8b1898977013c2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "093e2884-cc61-465e-8ff1-b3a538af93f5",
+        "model": "claude-haiku-4-5-20251001"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

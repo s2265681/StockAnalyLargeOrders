@@ -2983,37 +2983,7 @@ code {
     padding: 10px !important;
   }
 
-  /* ── 龙虎榜 - 左右布局改为上下 ── */
-  .dt-container {
-    height: auto !important;
-    overflow: visible !important;
-  }
-
-  .dt-main {
-    flex-direction: column !important;
-    overflow: visible !important;
-  }
-
-  .dt-stock-list {
-    width: 100% !important;
-    max-height: 360px;
-    border-right: none !important;
-    border-bottom: 1px solid var(--border-secondary);
-  }
-
-  .dt-detail {
-    width: 100% !important;
-    overflow-y: visible !important;
-    min-height: 300px;
-  }
-
-  .dt-seats-row {
-    flex-direction: column !important;
-  }
-
-  .dt-seats-panel {
-    width: 100% !important;
-  }
+  /* 龙虎榜移动端布局见 pages/DragonTiger/index.css */
 
   /* ── 情绪周期 - 左右布局改为上下 ── */
   .emotion-cycle-container {

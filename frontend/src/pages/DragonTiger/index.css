@@ -438,9 +438,13 @@
   .dt-container {
     display: flex;
     flex-direction: column;
+    height: calc(100vh - 64px);
+    height: calc(100dvh - 64px);
     min-height: calc(100vh - 64px);
     min-height: calc(100dvh - 64px);
+    padding: 10px;
     overflow: hidden;
+    box-sizing: border-box;
   }
 
   .dt-main {
@@ -459,6 +463,20 @@
     border-bottom: none;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .dt-stock-item {
+    flex-shrink: 0;
+  }
+
+  .dt-stock-reason {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.4;
   }
 
   .dt-detail-empty {

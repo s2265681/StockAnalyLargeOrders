@@ -85,7 +85,7 @@ function AppInner() {
           <div
             className="nav-logo-brand"
             onClick={() => window.location.href = '/'}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', flexShrink: 0 }}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', flexShrink: 0, marginRight: 8 }}
           >
             <svg width="30" height="30" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
               <circle cx="18" cy="18" r="17" fill="var(--gold-bg,#fffbeb)" stroke="var(--color-accent,#d97706)" strokeWidth="1.5"/>

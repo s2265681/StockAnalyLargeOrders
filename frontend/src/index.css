@@ -2732,6 +2732,26 @@ code {
   display: flex !important;
 }
 
+/* 选中项：去掉蓝色实心背景，改为底部蓝线 + 淡蓝色文字 */
+.desktop-nav-menu.ant-menu-horizontal .ant-menu-item-selected,
+.desktop-nav-menu.ant-menu-horizontal .ant-menu-item-selected:hover {
+  background-color: transparent !important;
+}
+.desktop-nav-menu.ant-menu-horizontal > .ant-menu-item::after {
+  border-bottom: 2px solid transparent !important;
+  transition: border-color 0.2s !important;
+}
+.desktop-nav-menu.ant-menu-horizontal > .ant-menu-item-selected::after {
+  border-bottom-color: #1677ff !important;
+}
+/* 悬停项背景也收敛 */
+.desktop-nav-menu.ant-menu-horizontal .ant-menu-item:hover {
+  background-color: rgba(22, 119, 255, 0.06) !important;
+}
+[data-theme="dark"] .desktop-nav-menu.ant-menu-horizontal .ant-menu-item:hover {
+  background-color: rgba(22, 119, 255, 0.12) !important;
+}
+
 .desktop-user-actions {
   display: flex;
   align-items: center;

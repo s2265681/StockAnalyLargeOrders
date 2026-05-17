@@ -1,0 +1,27 @@
+backend/services/ai_diagnosis_service.py
+  s_003ed3b0245347::t_d3f2bda862fc6e 855
+  s_003ed3b0245347::t_3ccbab2659def8 769,858
+  s_003ed3b0245347::t_ec34b228ad8984 584
+  s_003ed3b0245347::t_c998c394026b56 549
+  s_003ed3b0245347::t_27b4f2de93ea5c 19
+backend/tests/test_json_safe.py
+  s_003ed3b0245347::t_fc9f3660271b48 1-12
+backend/utils/json_safe.py
+  s_003ed3b0245347::t_92832aad28a372 1-22
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "5962d6423bf9c5d435cc4fc96467fd7e857bec61",
+  "prompts": {},
+  "sessions": {
+    "s_003ed3b0245347": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "e0fe8d64-bd87-4d21-b9d9-5e8dc636e863",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

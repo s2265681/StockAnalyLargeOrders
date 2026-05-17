@@ -1,0 +1,23 @@
+backend/tests/test_emotion_cycle_jobs.py
+  s_8b1898977013c2::t_f5d988e0e47ba5 1-123
+backend/jobs/emotion_cycle_daily.py
+  s_8b1898977013c2::t_ecb20796337451 1-136
+backend/jobs/__init__.py
+  s_8b1898977013c2::t_029d62937d956b 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "785081debd8c09862808e9ee9dd2f921eaa57e9d",
+  "prompts": {},
+  "sessions": {
+    "s_8b1898977013c2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "093e2884-cc61-465e-8ff1-b3a538af93f5",
+        "model": "claude-haiku-4-5-20251001"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

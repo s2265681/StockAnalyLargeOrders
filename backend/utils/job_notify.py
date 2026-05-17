@@ -11,10 +11,11 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_ALERT_EMAIL = "rock.shang@kalowave.com"
+DEFAULT_ALERT_EMAIL = "s2265681@163.com"
 
 
 def _smtp_config() -> dict | None:
+    _load_backend_env()
     host = os.getenv("SMTP_HOST", "").strip()
     user = os.getenv("SMTP_USER", "").strip()
     password = os.getenv("SMTP_PASS", os.getenv("SMTP_PASSWORD", "")).strip()

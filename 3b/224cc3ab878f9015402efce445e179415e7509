@@ -1,0 +1,21 @@
+backend/utils/job_notify.py
+  s_c67054ad2bb85e::t_42a16900d9e497 18
+docs/local-cron-jobs.md
+  ai_agent 20,41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "3b224cc3ab878f9015402efce445e179415e7509",
+  "prompts": {},
+  "sessions": {
+    "s_c67054ad2bb85e": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "5558c5bb-d128-46e7-a8ae-cf05402d174d",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

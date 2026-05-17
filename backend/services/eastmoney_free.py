@@ -915,16 +915,17 @@ else:
             })
 
         if data is None:
-            logger.warning("东方财富日K线接口超时或不可达")
-            return None
+            logger.warning("东方财富日K线接口不可达，回退腾讯日K")
+            return self._get_tencent_daily_kline(code, dt)
 
         try:
             if data.get('rc') != 0 or not data.get('data'):
-                return None
+                return self._get_tencent_daily_kline(code, dt)
 
             klines = data['data'].get('klines', [])
             if not klines:
-                return None
+                # 请求日为周末/停牌等，东财返回空，回退腾讯并取≤dt最近交易日
+                return self._get_tencent_daily_kline(code, dt)
 
             # 日K线格式: 日期,开,收,高,低,成交量(手),成交额,振幅,涨跌幅,涨跌额,换手率
             parts = klines[0].split(',')
@@ -947,6 +948,61 @@ else:
             }
         except Exception as e:
             logger.error(f"获取日K线数据失败({dt}): {e}")
+            return self._get_tencent_daily_kline(code, dt)
+
+    def _get_tencent_daily_kline(self, code, dt):
+        """腾讯日K兜底：东财不可达或请求日无数据（周末/停牌）时使用。
+        取 <= dt 的最近交易日，昨收=上一交易日收盘价，避免一字涨停被画成 0%。
+        """
+        try:
+            datetime.strptime(dt, '%Y-%m-%d')
+        except (ValueError, TypeError):
+            return None
+
+        symbol = self._get_akshare_symbol(code)
+        try:
+            start_dt = (datetime.strptime(dt, '%Y-%m-%d') - timedelta(days=400)).strftime('%Y-%m-%d')
+        except ValueError:
+            return None
+
+        from urllib.parse import urlencode
+        # 不复权（不带 qfq），保证昨收/涨跌幅与交易所口径一致
+        params = {'param': f'{symbol},day,{start_dt},{dt},640,'}
+        url = f"https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?{urlencode(params)}"
+
+        data = _subprocess_fetch_json(url, headers={
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+            'Referer': 'https://gu.qq.com/',
+        })
+        if not data or data.get('code') != 0:
+            return None
+
+        try:
+            stock_data = data.get('data', {}).get(symbol, {})
+            rows = stock_data.get('day') or stock_data.get('qfqday') or []
+            rows = [r for r in rows if r and len(r) >= 5 and r[0] <= dt]
+            if len(rows) < 2:
+                return None
+
+            row = rows[-1]
+            prev_close = float(rows[-2][2])
+            close = float(row[2])
+            if prev_close <= 0:
+                return None
+
+            change_percent = round((close - prev_close) / prev_close * 100, 2)
+            return {
+                'open': float(row[1]),
+                'close': close,
+                'high': float(row[3]),
+                'low': float(row[4]),
+                'volume': int(float(row[5])) if len(row) > 5 and row[5] else 0,
+                'turnover': 0.0,
+                'preclose': prev_close,
+                'change_percent': change_percent,
+            }
+        except (ValueError, IndexError, KeyError, TypeError) as e:
+            logger.warning(f"腾讯日K解析失败 code={code} dt={dt}: {e}")
             return None
 
     def _get_history_tick_details(self, code, dt):

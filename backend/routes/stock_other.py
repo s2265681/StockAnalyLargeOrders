@@ -4,6 +4,7 @@
 """
 import logging
 from datetime import datetime
+from typing import Optional
 from flask import Blueprint, request
 from utils.response import success_response, error_response
 from utils.date_utils import get_next_trading_date, get_valid_trading_date, validate_and_get_trading_date
@@ -12,6 +13,15 @@ from utils.cache import clear_cache
 logger = logging.getLogger(__name__)
 
 stock_other_bp = Blueprint('stock_other', __name__)
+
+# 情绪周期阶段 → 盘面强弱标签（用于个股看板顶部条）
+_STAGE_TO_SENTIMENT = {
+    '高潮期': '强势', '高潮': '强势',
+    '升温期': '偏强', '升温': '偏强',
+    '修复期': '中性', '修复': '中性',
+    '退潮期': '偏弱', '退潮': '偏弱',
+    '冰点期': '偏弱', '冰点': '偏弱',
+}
 
 
 def _normalize_code(code):
@@ -81,23 +91,181 @@ def build_limit_up_theme_summary(limit_up_rows, code):
     }
 
 
-def _enrich_current_stock_info(data, code, ak):
-    if data.get('current_theme'):
-        return data
+def _get_emotion_stage(trade_date_compact: str) -> str:
+    """取当日情绪周期研判阶段（优先盘中分析，否则日终分析）"""
+    from routes.emotion_cycle import (
+        _get_analysis_from_db,
+        _get_intraday_from_db,
+        _is_placeholder_analysis,
+    )
+    from services.auction_grab_recommendation import _infer_stage_from_metrics, _normalize_stage
+
+    today_compact = datetime.now().strftime('%Y%m%d')
+    analysis = None
+    if trade_date_compact == today_compact:
+        analysis = _get_intraday_from_db(trade_date_compact)
+    if not analysis or _is_placeholder_analysis(analysis):
+        analysis = _get_analysis_from_db(trade_date_compact)
+    if analysis and not _is_placeholder_analysis(analysis):
+        return _normalize_stage(analysis.get('stage') or '')
+
+    dt_display = f"{trade_date_compact[:4]}-{trade_date_compact[4:6]}-{trade_date_compact[6:8]}"
     try:
-        info_df = ak.stock_individual_info_em(symbol=_normalize_code(code))
-        info = dict(zip(info_df['item'], info_df['value']))
-        theme = info.get('行业') or info.get('所属行业') or ''
-        name = info.get('股票简称') or info.get('简称') or data['current_stock'].get('name', '')
-        data['current_stock'] = {
-            **data['current_stock'],
-            'name': name,
-            'theme': theme,
-            'reason': f'当前股票属于{theme}行业，但未在当日涨停池中' if theme else data['current_stock']['reason'],
-        }
-        data['current_theme'] = theme
+        from routes.limit_up_echelon import _get_emotion_record
+        record = _get_emotion_record(trade_date_compact)
+        if record:
+            return _normalize_stage(_infer_stage_from_metrics(record))
     except Exception as e:
-        logger.warning(f"补充当前股票题材失败: {e}")
+        logger.debug("情绪指标粗判阶段失败: %s", e)
+    return ''
+
+
+def _sentiment_label_from_counts(limit_up: int, limit_down: int, stage: str = '') -> str:
+    for key, label in _STAGE_TO_SENTIMENT.items():
+        if key in (stage or ''):
+            return label
+    if limit_up > limit_down * 5:
+        return '强势'
+    if limit_up > limit_down * 2:
+        return '偏强'
+    if limit_up > limit_down:
+        return '中性'
+    return '偏弱'
+
+
+def _build_market_sentiment_from_emotion(
+    trade_date_compact: str,
+    lone_wolves=None,
+    limit_up_fallback: int = 0,
+) -> dict:
+    """涨跌停家数与强弱标签：优先情绪周期 StockAPI，缺失时 akshare 兜底"""
+    from routes.limit_up_echelon import _akshare_sentiment_counts, _get_emotion_record
+
+    record = _get_emotion_record(trade_date_compact) or {}
+    ak_fb = _akshare_sentiment_counts(trade_date_compact)
+
+    limit_up = record.get('limit_up_count')
+    if limit_up is None:
+        limit_up = limit_up_fallback or 0
+    limit_up = int(limit_up)
+
+    limit_down = record.get('limit_down_count')
+    if limit_down is None:
+        limit_down = ak_fb.get('limit_down_count') or 0
+    limit_down = int(limit_down)
+
+    stage = _get_emotion_stage(trade_date_compact)
+    return {
+        'limit_up_count': limit_up,
+        'limit_down_count': limit_down,
+        'sentiment_label': _sentiment_label_from_counts(limit_up, limit_down, stage),
+        'emotion_stage': stage,
+        'lone_wolf_stocks': lone_wolves or [],
+        'sentiment_source': 'emotion_cycle' if record else 'akshare_fallback',
+    }
+
+
+def _resolve_echelon_theme(code: str, trade_date_compact: str, industry: str = '') -> Optional[dict]:
+    """解析个股在涨停梯队中的题材归属及该题材涨停家数"""
+    from services.theme_service import load_echelon_from_db
+    from routes.limit_up_echelon import BROAD_TAG_ALIASES, _coerce_general_broad_label
+
+    db_data = load_echelon_from_db(trade_date_compact)
+    if not db_data:
+        return None
+
+    normalized = _normalize_code(code)
+    ranking = {
+        t['theme']: int(t.get('count') or 0)
+        for t in (db_data.get('theme_ranking') or [])
+        if t.get('theme')
+    }
+
+    for s in db_data.get('stocks') or []:
+        if _normalize_code(s.get('code', '')) != normalized:
+            continue
+        tag = (s.get('tag_name') or '').strip()
+        if not tag:
+            continue
+        return {
+            'echelon_theme': tag,
+            'echelon_theme_count': ranking.get(tag, 0),
+            'in_limit_up_pool': True,
+        }
+
+    industry = (industry or '').strip()
+    if not industry:
+        return None
+
+    broad = _coerce_general_broad_label(industry) or BROAD_TAG_ALIASES.get(industry, '')
+    if broad and broad in ranking:
+        return {
+            'echelon_theme': broad,
+            'echelon_theme_count': ranking[broad],
+            'in_limit_up_pool': False,
+        }
+    if industry in ranking:
+        return {
+            'echelon_theme': industry,
+            'echelon_theme_count': ranking[industry],
+            'in_limit_up_pool': False,
+        }
+    for theme, count in ranking.items():
+        if industry in theme or theme in industry:
+            return {
+                'echelon_theme': theme,
+                'echelon_theme_count': count,
+                'in_limit_up_pool': False,
+            }
+    return None
+
+
+def _apply_echelon_theme_to_data(data: dict, code: str, trade_date_compact: str, industry: str = '') -> dict:
+    """写入涨停梯队题材字段，并同步到 current_theme 展示"""
+    resolved = _resolve_echelon_theme(code, trade_date_compact, industry)
+    if not resolved:
+        return data
+
+    theme = resolved['echelon_theme']
+    count = resolved['echelon_theme_count']
+    data['echelon_theme'] = theme
+    data['echelon_theme_count'] = count
+    data['current_theme'] = theme
+    data['current_theme_count'] = count
+
+    pool_hint = '' if resolved.get('in_limit_up_pool') else '（未涨停，按行业/概念匹配梯队题材）'
+    data['current_stock'] = {
+        **(data.get('current_stock') or {}),
+        'theme': theme,
+        'reason': f'涨停梯队归类：{theme}，当日该题材 {count} 家涨停{pool_hint}',
+    }
+    data['note'] = data.get('note') or '题材与涨停家数来自当日涨停梯队分组'
+    return data
+
+
+def _enrich_current_stock_info(data, code, ak, trade_date_compact: str = ''):
+    industry = (data.get('current_theme') or '').strip()
+    if not industry:
+        try:
+            info_df = ak.stock_individual_info_em(symbol=_normalize_code(code))
+            info = dict(zip(info_df['item'], info_df['value']))
+            industry = info.get('行业') or info.get('所属行业') or ''
+            name = info.get('股票简称') or info.get('简称') or data['current_stock'].get('name', '')
+            data['current_stock'] = {
+                **data['current_stock'],
+                'name': name,
+                'theme': industry,
+                'reason': (
+                    f'当前股票属于{industry}行业，但未在当日涨停池中'
+                    if industry else data['current_stock']['reason']
+                ),
+            }
+            data['current_theme'] = industry
+        except Exception as e:
+            logger.warning(f"补充当前股票题材失败: {e}")
+
+    if trade_date_compact:
+        data = _apply_echelon_theme_to_data(data, code, trade_date_compact, industry)
     return data
 
 
@@ -124,38 +292,26 @@ def get_limit_up_themes():
             db_tags = []
 
         if db_stocks and db_tags:
-            # 数据库有数据，使用 AI 标签
+            # 数据库有数据，使用 AI 标签（与涨停梯队 tag_name 一致）
             data = _build_theme_summary_from_db(db_stocks, db_tags, code)
         else:
             # fallback: 用 akshare 原始行业分类
             df = ak.stock_zt_pool_em(date=trade_date)
             rows = df.to_dict('records') if df is not None else []
             data = build_limit_up_theme_summary(rows, code)
-            data = _enrich_current_stock_info(data, code, ak)
+            data = _enrich_current_stock_info(data, code, ak, trade_date)
 
-        limit_down_count = 0
-        try:
-            dt_df = ak.stock_zt_pool_dtgc_em(date=trade_date)
-            limit_down_count = len(dt_df) if dt_df is not None else 0
-        except Exception:
-            pass
+        industry = (data.get('current_stock') or {}).get('theme') or data.get('current_theme') or ''
+        data = _apply_echelon_theme_to_data(data, code, trade_date, industry)
 
-        limit_up_count = sum(t['count'] for t in data.get('themes', []))
-        if limit_up_count > limit_down_count * 5:
-            sentiment_label = '强势'
-        elif limit_up_count > limit_down_count * 2:
-            sentiment_label = '偏强'
-        elif limit_up_count > limit_down_count:
-            sentiment_label = '中性'
-        else:
-            sentiment_label = '偏弱'
-
-        data['market_sentiment'] = {
-            'limit_up_count': limit_up_count,
-            'limit_down_count': limit_down_count,
-            'sentiment_label': sentiment_label,
-            'lone_wolf_stocks': data.get('lone_wolf_stocks', []),
-        }
+        pool_limit_up = data.get('total_limit_up_count') or sum(
+            t.get('count', 0) for t in data.get('themes', [])
+        )
+        data['market_sentiment'] = _build_market_sentiment_from_emotion(
+            trade_date,
+            lone_wolves=data.get('lone_wolf_stocks', []),
+            limit_up_fallback=pool_limit_up,
+        )
         data['trade_date'] = dt
         data['data_source'] = 'database' if (db_stocks and db_tags) else 'akshare.stock_zt_pool_em'
         return success_response(data=data)

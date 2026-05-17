@@ -368,6 +368,18 @@ def sync_dragon_tiger_for_date(date: str, force: bool = False) -> dict:
     }
 
 
+def is_dragon_tiger_ai_complete(date: str) -> bool:
+    """当日上榜股是否均已具备有效 AI 解读。"""
+    date = (date or "").replace("-", "")
+    stocks = get_daily_stocks(date)
+    if not stocks:
+        return False
+    return all(
+        _has_valid_ai_cache(get_ai_analysis(date, s.get("code", "")))
+        for s in stocks
+    )
+
+
 def run_dragon_tiger_ai_for_date(date: str, force: bool = False) -> dict:
     """为指定交易日全部上榜股批量生成 AI 解读（离线任务入口）。"""
     date = (date or "").replace("-", "")

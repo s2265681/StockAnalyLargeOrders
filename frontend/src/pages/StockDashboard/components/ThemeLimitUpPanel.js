@@ -27,8 +27,10 @@ const ThemeLimitUpPanel = () => {
 
   const currentStock = data.current_stock || {};
   const themes = data.themes || [];
-  const currentThemeText = data.current_theme
-    ? `当前股票属于${data.current_theme}题材，当天该题材有${data.current_theme_count || 0}家涨停`
+  const echelonTheme = data.echelon_theme || data.current_theme;
+  const echelonCount = data.echelon_theme_count ?? data.current_theme_count;
+  const currentThemeText = echelonTheme
+    ? `当前股票属于涨停梯队【${echelonTheme}】题材，当天该题材有 ${echelonCount || 0} 家涨停`
     : currentStock.reason || '当前股票未在当日涨停池中，暂无涨停原因';
 
   const sentiment = data.market_sentiment || {};
@@ -54,6 +56,9 @@ const ThemeLimitUpPanel = () => {
           background: 'rgba(255,255,255,0.04)', borderRadius: 4,
         }}>
           <Tag color={sentimentColor}>{sentiment.sentiment_label}</Tag>
+          {sentiment.emotion_stage && (
+            <span style={{ color: '#999', fontSize: 12 }}>情绪 {sentiment.emotion_stage}</span>
+          )}
           <span style={{ color: '#ff4d4f' }}>涨停 {sentiment.limit_up_count}</span>
           <span style={{ color: '#52c41a' }}>跌停 {sentiment.limit_down_count}</span>
           {(sentiment.lone_wolf_stocks || []).length > 0 && (
@@ -66,7 +71,7 @@ const ThemeLimitUpPanel = () => {
       <div className="theme-current-box">
         <div className="theme-current-title">
           {currentStock.name || currentStock.code || '当前股票'}
-          {data.current_theme && <Tag color="red">{data.current_theme}</Tag>}
+          {echelonTheme && <Tag color="red">{echelonTheme}</Tag>}
         </div>
         <div className="theme-current-reason">{currentThemeText}</div>
         <div className="theme-current-note">{data.note}</div>

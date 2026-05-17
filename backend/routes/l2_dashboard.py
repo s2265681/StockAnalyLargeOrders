@@ -4,7 +4,6 @@ L2大单看板统一API路由
 """
 import logging
 from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from flask import Blueprint, request, jsonify
 
 from services.data_source_adapter import DataSourceAdapter
@@ -154,27 +153,10 @@ def l2_timeshare():
         return jsonify({'success': False, 'message': f'无效的股票代码: {code}'}), 400
 
     try:
-        # 并行请求分时数据和资金流向数据
-        from routes.stock_timeshare import get_eastmoney_money_flow_data
-
-        executor = ThreadPoolExecutor(max_workers=2)
-        try:
-            ts_future = executor.submit(adapter.get_timeshare_data, code, dt)
-            mf_future = executor.submit(get_eastmoney_money_flow_data, code)
-            result = ts_future.result(timeout=30)
-
-            try:
-                mf = mf_future.result(timeout=8)
-                if mf and result.get('success') and result.get('data'):
-                    result['data']['money_flow'] = mf
-            except TimeoutError:
-                mf_future.cancel()
-                logger.warning("获取大单净量数据超时，先返回分时数据")
-            except Exception as e:
-                logger.warning(f"获取大单净量数据失败: {e}")
-        finally:
-            executor.shutdown(wait=False, cancel_futures=True)
-
+        # 资金流（主力/散户线）单独走 /api/v1/l2_money_flow（同花顺，含分钟净额 delta）。
+        # 此处不再内嵌东财 fflow：东财常不可达会拖满 8s，且其数据缺 chaoda_delta，
+        # 与同花顺形状不一致，前端二选一时会“时有时无”。本接口只管分时，保持单一数据源。
+        result = adapter.get_timeshare_data(code, dt)
         return jsonify(result)
     except Exception as e:
         logger.error(f"l2_timeshare 接口异常: {e}", exc_info=True)

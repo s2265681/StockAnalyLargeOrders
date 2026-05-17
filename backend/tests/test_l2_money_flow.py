@@ -70,5 +70,13 @@ class L2MoneyFlowRouteTest(unittest.TestCase):
         get_orders_data.assert_not_called()
 
 
+class ThsMoneyflowSessionTest(unittest.TestCase):
+    def test_session_ignores_env_proxy(self):
+        """后端常被从带失效代理的 shell 启动，资金流 session 必须绕过环境代理，
+        否则主力/散户线会随启动环境时有时无。"""
+        import services.ths_moneyflow as m
+        self.assertFalse(m._SESSION.trust_env)
+
+
 if __name__ == '__main__':
     unittest.main()

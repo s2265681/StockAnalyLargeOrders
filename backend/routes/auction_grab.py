@@ -1,6 +1,6 @@
 """
 竞价抢筹 API
-数据来源: stockapi.com.cn 竞价抢筹接口
+数据来源: stockapi.com.cn 竞价抢筹接口；日快照入库 auction_grab_stocks
 """
 import logging
 import time
@@ -8,6 +8,8 @@ from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from flask import Blueprint, request
 from services.eastmoney_free import EastMoneyFreeSource
+from services import auction_grab_service as ag_store
+from utils.date_utils import get_valid_trading_date
 from utils.response import v1_success_response, v1_error_response
 
 logger = logging.getLogger(__name__)
@@ -17,19 +19,24 @@ auction_grab_bp = Blueprint('auction_grab', __name__)
 _STOCKAPI_TOKEN = 'c6b042b0bc7178103985337e72c31b976264e6f85ce93b0e'
 _STOCKAPI_BASE = 'http://user.stockapi.com.cn/v1/base/jjqcUser'
 
-# 缓存
+# 内存热缓存（当日频繁刷新）
 _cache = {}
 _CACHE_TTL = 120
+# 加工后缓存：含收盘/次日涨幅 + 推荐度（避免每次请求重复打 K 线与题材库）
+_processed_cache = {}
+_PROCESSED_TTL_TODAY = 120
+_PROCESSED_TTL_HISTORY = 86400
 _kline_cache = {}
 _KLINE_CACHE_TTL = 1800
 
-# type 映射：前端排序key -> stockapi type 参数
+# type 映射：前端排序key -> stockapi type 参数（入库统一按委托金额 type=1 拉全量）
 _SORT_TYPE_MAP = {
-    'wtje': 1,   # 委托金额
-    'cjje': 2,   # 成交金额
-    'kpje': 3,   # 开盘金额
-    'zf': 1,     # 涨幅（API 无涨幅排序，默认用委托金额，前端再排）
+    'wtje': 1,
+    'cjje': 2,
+    'kpje': 3,
+    'zf': 1,
 }
+_FETCH_API_TYPE = 1
 
 
 def _get_last_trading_day():
@@ -47,6 +54,11 @@ def _format_date(dt_str):
     if len(dt_str) == 8:
         return f"{dt_str[:4]}-{dt_str[4:6]}-{dt_str[6:8]}"
     return dt_str
+
+
+def _is_today_trading_date(date_compact: str) -> bool:
+    today_compact = get_valid_trading_date().replace('-', '')
+    return date_compact == today_compact
 
 
 def _offset_trading_date(date_str, delta):
@@ -111,8 +123,10 @@ def _enrich_close_and_next_change(items, trade_date):
 
     for item in items:
         code = item.get('code')
-        item['close_change_pct'] = result_map.get(code, {}).get('close')
-        item['next_day_change_pct'] = result_map.get(code, {}).get('next')
+        if item.get('close_change_pct') is None:
+            item['close_change_pct'] = result_map.get(code, {}).get('close')
+        if item.get('next_day_change_pct') is None:
+            item['next_day_change_pct'] = result_map.get(code, {}).get('next')
 
 
 def _fetch_from_stockapi(trade_date, period, api_type):
@@ -150,6 +164,104 @@ def _fetch_from_stockapi(trade_date, period, api_type):
         return None
 
 
+def _processed_cache_key(date_compact: str, period_int: int) -> str:
+    return f"{date_compact}_{period_int}"
+
+
+def _processed_cache_ttl(is_today: bool) -> int:
+    return _PROCESSED_TTL_TODAY if is_today else _PROCESSED_TTL_HISTORY
+
+
+def _invalidate_processed_cache(date_compact: str, period_int: int) -> None:
+    _processed_cache.pop(_processed_cache_key(date_compact, period_int), None)
+
+
+def _codes_signature(items: list[dict]) -> frozenset:
+    return frozenset(str(x.get('code', '')).zfill(6) for x in (items or []) if x.get('code'))
+
+
+def _invalidate_processed_if_codes_changed(
+    date_compact: str, period_int: int, new_items: list[dict],
+) -> None:
+    """仅当股票列表变化时清空加工缓存，避免每 120s 刷新原始数据就重算推荐度"""
+    entry = _processed_cache.get(_processed_cache_key(date_compact, period_int))
+    if not entry:
+        return
+    if _codes_signature(entry.get('items')) != _codes_signature(new_items):
+        _invalidate_processed_cache(date_compact, period_int)
+
+
+def _clone_items(items: list[dict]) -> list[dict]:
+    return [dict(x) for x in (items or [])]
+
+
+def _get_processed_payload(date_compact: str, period_int: int, is_today: bool):
+    entry = _processed_cache.get(_processed_cache_key(date_compact, period_int))
+    if not entry:
+        return None, None
+    if (time.time() - entry['ts']) >= _processed_cache_ttl(is_today):
+        _processed_cache.pop(_processed_cache_key(date_compact, period_int), None)
+        return None, None
+    return _clone_items(entry['items']), dict(entry['meta'])
+
+
+def _set_processed_payload(
+    date_compact: str,
+    period_int: int,
+    items: list[dict],
+    rec_meta: dict,
+) -> None:
+    _processed_cache[_processed_cache_key(date_compact, period_int)] = {
+        'ts': time.time(),
+        'items': _clone_items(items),
+        'meta': dict(rec_meta or {}),
+    }
+
+
+def _load_items_for_request(date_compact, period_int, trade_date, is_today):
+    """
+    加载竞价列表：
+    - 当日：内存(120s) -> stockapi -> 入库
+    - 历史：内存 -> 数据库（有则不再打外部接口）
+    """
+    cache_key = f"{date_compact}_{period_int}_{_FETCH_API_TYPE}"
+    now = time.time()
+
+    cached = _cache.get(cache_key)
+    if cached and (now - cached['ts']) < _CACHE_TTL:
+        return cached['items'], 'memory'
+
+    if not is_today:
+        db_items = ag_store.load_items(date_compact, period_int)
+        if db_items:
+            _cache[cache_key] = {'ts': now, 'items': db_items}
+            return db_items, 'db'
+        return None, 'miss'
+
+    return None, 'miss'
+
+
+def fetch_and_cache_day(trade_date_dash: str, period: int = 0) -> list[dict]:
+    """供回测/任务：优先读库，否则拉接口并入库"""
+    date_compact = ag_store.to_compact_date(trade_date_dash)
+    is_today = _is_today_trading_date(date_compact)
+
+    items, source = _load_items_for_request(
+        date_compact, period, trade_date_dash, is_today
+    )
+    if items is not None:
+        return items
+
+    raw_data = _fetch_from_stockapi(trade_date_dash, period, _FETCH_API_TYPE)
+    if not raw_data:
+        return []
+
+    items = ag_store.items_from_raw_api(raw_data, trade_date_dash)
+    if items:
+        ag_store.replace_snapshot(date_compact, period, items)
+    return items
+
+
 @auction_grab_bp.route('/api/v1/auction-grab', methods=['GET'])
 def get_auction_grab():
     """
@@ -163,49 +275,56 @@ def get_auction_grab():
     sort_by = request.args.get('sort', 'wtje')
     dt = request.args.get('dt', _get_last_trading_day())
     trade_date = _format_date(dt)
+    date_compact = ag_store.to_compact_date(dt)
+    period_int = int(period)
+    is_today = _is_today_trading_date(date_compact)
 
-    # 确定 API type 参数
-    api_type = _SORT_TYPE_MAP.get(sort_by, 1)
-
-    cache_key = f"{dt}_{period}_{api_type}"
-    now = time.time()
-
-    cached = _cache.get(cache_key)
-    if cached and (now - cached['ts']) < _CACHE_TTL:
-        raw_data = cached['data']
-    else:
-        raw_data = _fetch_from_stockapi(trade_date, int(period), api_type)
-        if raw_data is None:
-            return v1_error_response('数据源暂不可用，请稍后重试')
-        _cache[cache_key] = {'ts': now, 'data': raw_data}
-
-    # 如果是按涨幅排序，需要前端排
-    if sort_by == 'zf':
-        raw_data = sorted(raw_data, key=lambda x: x.get('qczf', 0) or 0, reverse=True)
-
-    # 格式化输出
-    items = []
-    for r in raw_data:
-        items.append({
-            'code': r.get('code', ''),
-            'name': r.get('name', ''),
-            'open_amount': round(r.get('openAmt', 0) / 10000, 2),
-            'grab_change_pct': r.get('qczf', 0),
-            'grab_turnover': round(r.get('qccje', 0) / 10000, 2),
-            'grab_order_amount': round(r.get('qcwtje', 0) / 10000, 2),
-            'date': r.get('time', trade_date),
+    # 优先返回已加工缓存，避免重复打 stockapi / K 线
+    processed_items, rec_meta = _get_processed_payload(date_compact, period_int, is_today)
+    if processed_items is not None:
+        items = ag_store.sort_items(processed_items, sort_by)
+        return v1_success_response(data={
+            'items': items,
+            'total': len(items),
+            'date': dt,
+            'period': period_int,
+            'sort': sort_by,
+            'emotion_stage': rec_meta.get('stage', ''),
+            'recommend_hint': rec_meta.get('hint', ''),
         })
 
-    _enrich_close_and_next_change(items, trade_date)
+    items, source = _load_items_for_request(
+        date_compact, period_int, trade_date, is_today
+    )
+
+    if items is None:
+        raw_data = _fetch_from_stockapi(trade_date, period_int, _FETCH_API_TYPE)
+        if raw_data is None:
+            return v1_error_response('数据源暂不可用，请稍后重试')
+        items = ag_store.items_from_raw_api(raw_data, trade_date)
+        if items:
+            ag_store.replace_snapshot(date_compact, period_int, items)
+            cache_key = f"{date_compact}_{period_int}_{_FETCH_API_TYPE}"
+            _cache[cache_key] = {'ts': time.time(), 'items': items}
+            _invalidate_processed_if_codes_changed(date_compact, period_int, items)
+        source = 'api'
+
+    items = items or []
+    if ag_store.items_need_return_enrich(items):
+        _enrich_close_and_next_change(items, trade_date)
+        ag_store.update_return_fields(date_compact, period_int, items)
 
     from services.auction_grab_recommendation import enrich_auction_recommendations
-    rec_meta = enrich_auction_recommendations(items, trade_date, int(period))
+    rec_meta = enrich_auction_recommendations(items, trade_date, period_int)
+    _set_processed_payload(date_compact, period_int, items, rec_meta)
+
+    items = ag_store.sort_items(list(items), sort_by)
 
     return v1_success_response(data={
         'items': items,
         'total': len(items),
         'date': dt,
-        'period': int(period),
+        'period': period_int,
         'sort': sort_by,
         'emotion_stage': rec_meta.get('stage', ''),
         'recommend_hint': rec_meta.get('hint', ''),

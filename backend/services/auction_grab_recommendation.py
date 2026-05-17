@@ -311,6 +311,119 @@ def _build_reason(
     return label[:48]
 
 
+def _prev_trading_date(trade_date_dash: str) -> str:
+    from utils.date_utils import get_next_trading_date
+
+    return get_next_trading_date(trade_date_dash, forward=False)["date"]
+
+
+def _score_items(
+    items: list[dict],
+    trade_date_dash: str,
+    period: int,
+    *,
+    context_date_dash: str | None = None,
+    use_same_day_bonus: bool = True,
+    weights: dict | None = None,
+) -> tuple[list[dict], dict]:
+    """
+    内部打分。context_date_dash 默认等于 trade_date_dash；
+    v2 传入 T-1 日期，且 use_same_day_bonus=False。
+    weights 键: emotion, theme, auction, market（相对满分缩放系数）。
+    返回 (scored_rows, emotion_ctx)
+    """
+    ctx_date = context_date_dash or trade_date_dash
+    ctx_compact = ctx_date.replace("-", "")
+    trade_date_compact = trade_date_dash.replace("-", "")
+
+    w = weights or {
+        "emotion": 1.0,
+        "theme": 1.0,
+        "auction": 1.0,
+        "market": 1.0,
+    }
+
+    emotion = _get_emotion_context(ctx_compact, ctx_date)
+    hot_themes = _build_hot_themes(ctx_compact)
+    stock_themes = _build_stock_theme_map(ctx_compact)
+    metrics = emotion.get("metrics") or {}
+    market_base = _market_score(metrics, hot_themes) * w["market"]
+
+    order_amounts = [float(x.get("grab_order_amount") or 0) for x in items]
+    period_factor = 0.92 if period == 1 else 1.0
+
+    scored = []
+    for item in items:
+        code = str(item.get("code", "")).zfill(6)
+        name = item.get("name") or ""
+        profile = stock_themes.get(
+            code,
+            {
+                "theme": "",
+                "industry": "",
+                "position": "待观察",
+                "in_pool": False,
+                "theme_count": 0,
+            },
+        )
+
+        emotion_part = emotion["stage_score"] * w["emotion"]
+        theme_part = _theme_score(profile, hot_themes) * w["theme"]
+        auction_part = _auction_strength_score(item, order_amounts) * w["auction"]
+        market_part_score = market_base
+
+        bonus = 0.0
+        if use_same_day_bonus:
+            if _name_in_emotion_recos(name, emotion["recommended_names"]):
+                bonus += 6.0
+            if profile.get("in_pool") and profile.get("boards", 0) >= 2:
+                bonus += 3.0
+
+        composite = (
+            emotion_part + theme_part + auction_part + market_part_score + bonus
+        ) * period_factor
+
+        scored.append(
+            {
+                "code": code,
+                "composite_score": round(composite, 2),
+                "profile": profile,
+            }
+        )
+
+    _assign_stars(scored)
+    return scored, emotion
+
+
+def score_items_v2(
+    items: list[dict],
+    trade_date_dash: str,
+    period: int = 0,
+) -> list[dict]:
+    """
+    纯竞价版（T-1 情绪/题材/大盘 + 当日抢筹），仅供回测对比，不写入 API 响应。
+    不含当日涨停池加分、当日情绪推荐名单加分。
+    """
+    if not items:
+        return []
+
+    prev_date = _prev_trading_date(trade_date_dash)
+    scored, _ = _score_items(
+        items,
+        trade_date_dash,
+        period,
+        context_date_dash=prev_date,
+        use_same_day_bonus=False,
+        weights={
+            "emotion": 20.0 / 30.0,
+            "theme": 25.0 / 30.0,
+            "auction": 40.0 / 15.0,
+            "market": 15.0 / 25.0,
+        },
+    )
+    return scored
+
+
 def _assign_stars(scored: list[dict]) -> None:
     """按分数排序后分配 1–3 星，最多 2 只三星、4 只一星以上"""
     if not scored:
@@ -375,12 +488,11 @@ def enrich_auction_recommendations(
         return {"stage": "", "hint": ""}
 
     trade_date_compact = trade_date_dash.replace("-", "")
-    emotion = _get_emotion_context(trade_date_compact, trade_date_dash)
-    hot_themes = _build_hot_themes(trade_date_compact)
-    stock_themes = _build_stock_theme_map(trade_date_compact)
-    metrics = emotion.get("metrics") or {}
-    market_base = _market_score(metrics, hot_themes)
+    scored, emotion = _score_items(
+        items, trade_date_dash, period, use_same_day_bonus=True
+    )
 
+    metrics = emotion.get("metrics") or {}
     limit_up = int(metrics.get("limit_up_count") or 0)
     if limit_up >= 50:
         market_part = f"涨停{limit_up}家偏强"
@@ -391,48 +503,7 @@ def enrich_auction_recommendations(
     else:
         market_part = ""
 
-    order_amounts = [
-        float(x.get("grab_order_amount") or 0) for x in items
-    ]
-    period_factor = 0.92 if period == 1 else 1.0
-
-    scored = []
-    for item in items:
-        code = str(item.get("code", "")).zfill(6)
-        name = item.get("name") or ""
-        profile = stock_themes.get(code, {
-            "theme": "",
-            "industry": "",
-            "position": "待观察",
-            "in_pool": False,
-            "theme_count": 0,
-        })
-
-        emotion_part = emotion["stage_score"]
-        theme_part = _theme_score(profile, hot_themes)
-        auction_part = _auction_strength_score(item, order_amounts)
-        market_part_score = market_base
-
-        bonus = 0.0
-        if _name_in_emotion_recos(name, emotion["recommended_names"]):
-            bonus += 6.0
-        if profile.get("in_pool") and profile.get("boards", 0) >= 2:
-            bonus += 3.0
-
-        composite = (
-            emotion_part + theme_part + auction_part + market_part_score + bonus
-        ) * period_factor
-
-        scored.append({
-            "code": code,
-            "composite_score": round(composite, 2),
-            "profile": profile,
-            "market_part": market_part,
-        })
-
-    _assign_stars(scored)
     score_by_code = {r["code"]: r for r in scored}
-
     stage = emotion.get("stage") or ""
     for item in items:
         code = str(item.get("code", "")).zfill(6)
@@ -441,7 +512,7 @@ def enrich_auction_recommendations(
         profile = row.get("profile", {})
         item["recommend_stars"] = stars
         item["recommend_reason"] = _build_reason(
-            stars, stage, profile, row.get("market_part", market_part)
+            stars, stage, profile, market_part
         )
         item["recommend_score"] = row.get("composite_score", 0)
 

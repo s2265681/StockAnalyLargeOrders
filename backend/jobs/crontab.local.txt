@@ -1,0 +1,20 @@
+# NiuNIuNiu 本地定时任务（仅交易日由 job_guard 判断）
+# 文档: docs/local-cron-jobs.md
+# 安装: bash backend/jobs/install_local_crontab.sh
+
+# --- 1. 盘中：梯队 + 情绪周期 + 买卖指导（5 次/日，强制覆盖）---
+45 9 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
+30 10 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
+30 11 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
+0 14 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
+45 14 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
+
+# --- 2. 龙虎榜 AI：15:30–18:30 每小时，齐全则跳过 ---
+30 15 * * 1-5 ${NIU_ROOT}/backend/jobs/run_dragon_tiger.sh >> ${NIU_LOG}/dragon_tiger_job.log 2>&1
+30 16 * * 1-5 ${NIU_ROOT}/backend/jobs/run_dragon_tiger.sh >> ${NIU_LOG}/dragon_tiger_job.log 2>&1
+30 17 * * 1-5 ${NIU_ROOT}/backend/jobs/run_dragon_tiger.sh >> ${NIU_LOG}/dragon_tiger_job.log 2>&1
+30 18 * * 1-5 ${NIU_ROOT}/backend/jobs/run_dragon_tiger.sh >> ${NIU_LOG}/dragon_tiger_job.log 2>&1
+
+# --- 3. 竞价抢筹：9:25/9:30 早盘；15:20/15:40 尾盘 ---
+25,30 9 * * 1-5 ${NIU_ROOT}/backend/jobs/run_auction_grab.sh morning >> ${NIU_LOG}/auction_grab_job.log 2>&1
+20,40 15 * * 1-5 ${NIU_ROOT}/backend/jobs/run_auction_grab.sh tail >> ${NIU_LOG}/auction_grab_job.log 2>&1

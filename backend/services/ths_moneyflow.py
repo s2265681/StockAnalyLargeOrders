@@ -15,6 +15,9 @@ _CACHE_TTL_TRADING = 60     # 交易时间 60 秒
 _CACHE_TTL_CLOSED = 300     # 非交易时间 5 分钟
 
 _SESSION = requests.Session()
+# 同花顺 d.10jqka.com.cn 可直连。后端常被从带（已失效）代理的 shell 启动，
+# trust_env=True 会让请求走死代理导致资金流“时有时无”，必须显式禁用环境代理。
+_SESSION.trust_env = False
 _SESSION.headers.update({
     'User-Agent': (
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
@@ -98,16 +101,58 @@ def get_moneyflow(code: str) -> dict:
     return result
 
 
+def _fetch_jsonp_text(url: str) -> str:
+    """取 JSONP 原始文本。
+
+    eventlet.monkey_patch() 下，整进程内 requests/SSL 会偶发
+    `maximum recursion depth exceeded`，导致资金流“时有时无”。
+    与 eastmoney_free 同策略：requests 包在 eventlet 超时里，失败
+    回退 curl 子进程，彻底绕过 monkey_patch 对 SSL 的干扰。
+    """
+    def _do():
+        resp = _SESSION.get(url, timeout=8)
+        resp.raise_for_status()
+        return resp.text
+
+    try:
+        import eventlet
+        with eventlet.Timeout(10):
+            return _do()
+    except ImportError:
+        try:
+            return _do()
+        except Exception:
+            pass
+    except Exception as e:
+        logger.info(f"同花顺 requests 失败，回退 curl: {e}")
+
+    import subprocess
+    try:
+        result = subprocess.run(
+            ['curl', '-s', '--max-time', '8',
+             '-A', _SESSION.headers.get('User-Agent', 'Mozilla/5.0'),
+             '-e', 'https://stockpage.10jqka.com.cn/', url],
+            capture_output=True, text=True, timeout=12,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout
+        logger.warning(f"同花顺 curl 兜底失败 rc={result.returncode}")
+    except Exception as e:
+        logger.warning(f"同花顺 curl 兜底异常: {e}")
+    return ''
+
+
 def _fetch_moneyflow(code: str) -> dict:
     """实际请求同花顺资金分时接口"""
     ths_code = _ths_code(code)
     url = f'https://d.10jqka.com.cn/v2/moneyflow/{ths_code}/last.js'
 
     try:
-        resp = _SESSION.get(url, timeout=8)
-        resp.raise_for_status()
+        text = _fetch_jsonp_text(url)
+        if not text:
+            return {'success': False, 'items': [], 'summary': {}, 'source': 'ths'}
 
-        data = _parse_jsonp(resp.text)
+        data = _parse_jsonp(text)
         info = data.get(ths_code, {})
         raw = info.get('data', '')
 

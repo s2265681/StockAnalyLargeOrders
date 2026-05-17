@@ -119,6 +119,22 @@ def get_recent_trading_dates(count: int = 5) -> list[str]:
     return collected
 
 
+def is_trading_day(date_str: str | None = None) -> bool:
+    """判断指定日期是否为 A 股交易日（含节假日校验）。默认今天。"""
+    if date_str is None:
+        dt = datetime.now()
+    else:
+        normalized = date_str.replace("-", "")[:8]
+        dt = datetime.strptime(normalized, "%Y%m%d")
+    if dt.weekday() >= 5:
+        return False
+    return _is_trading_day_eastmoney(dt.strftime("%Y-%m-%d"))
+
+
+def is_today_trading_day() -> bool:
+    return is_trading_day(None)
+
+
 def validate_and_get_trading_date(date_param: str | None) -> str:
     """验证并返回有效交易日（不传则返回最近交易日）"""
     if not date_param:

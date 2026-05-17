@@ -1,0 +1,19 @@
+# NiuNIuNiu 服务器定时任务（路径 /www/StockAnalyLargeOrders）
+# 安装: bash backend/jobs/install_server_crontab.sh
+
+# --- 1. 盘中（5 次/日）---
+45 9 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
+30 10 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
+30 11 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
+0 14 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
+45 14 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
+
+# --- 2. 龙虎榜 AI ---
+30 15 * * 1-5 ${NIU_ROOT}/backend/jobs/run_dragon_tiger.sh >> ${NIU_LOG}/dragon_tiger_job.log 2>&1
+30 16 * * 1-5 ${NIU_ROOT}/backend/jobs/run_dragon_tiger.sh >> ${NIU_LOG}/dragon_tiger_job.log 2>&1
+30 17 * * 1-5 ${NIU_ROOT}/backend/jobs/run_dragon_tiger.sh >> ${NIU_LOG}/dragon_tiger_job.log 2>&1
+30 18 * * 1-5 ${NIU_ROOT}/backend/jobs/run_dragon_tiger.sh >> ${NIU_LOG}/dragon_tiger_job.log 2>&1
+
+# --- 3. 竞价抢筹 ---
+25,30 9 * * 1-5 ${NIU_ROOT}/backend/jobs/run_auction_grab.sh morning >> ${NIU_LOG}/auction_grab_job.log 2>&1
+20,40 15 * * 1-5 ${NIU_ROOT}/backend/jobs/run_auction_grab.sh tail >> ${NIU_LOG}/auction_grab_job.log 2>&1

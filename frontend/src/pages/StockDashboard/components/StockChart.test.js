@@ -48,6 +48,19 @@ describe('StockChart helpers', () => {
     )).toBe(11.03);
   });
 
+  test('keeps backend prev close on limit-up day instead of falling back to first fenshi', () => {
+    // 涨停板：昨收 6.37，全天最高/收盘 7.01（+10%），首个分时价 6.57。
+    // 一致性校验因 >5% 振幅判 false，但绝不能回退到首分时价 6.57，
+    // 否则分时图基准错位，涨停被画成 +6.7% 而非 +10%。
+    const fenshi = [6.57, 6.62, 5.9, 6.8, 7.01];
+    expect(isPrevCloseConsistentWithFenshi(6.37, fenshi)).toBe(false);
+    expect(resolvePrevClosePrice(
+      { prevClosePrice: 6.37, code: '600578' },
+      { yesterday_close: 6.37, code: '600578' },
+      fenshi,
+    )).toBe(6.37);
+  });
+
   test('ignores stale stockBasic limits when code does not match', () => {
     const bounds = getLimitPercentBounds({
       stockBasicData: {

@@ -6,7 +6,13 @@ from flask import Flask
 
 from services.data_source_adapter import DataSourceAdapter
 from services.eastmoney_free import EastMoneyFreeSource
-from routes.stock_other import build_limit_up_theme_summary, stock_other_bp
+from routes.stock_other import (
+    build_limit_up_theme_summary,
+    stock_other_bp,
+    _build_market_sentiment_from_emotion,
+    _resolve_echelon_theme,
+    _apply_echelon_theme_to_data,
+)
 
 
 class FakeSource:
@@ -269,6 +275,41 @@ class EastMoneyFreeSourceParseTest(unittest.TestCase):
         eastmoney_request.assert_not_called()
         self.assertEqual(rows, expected_rows)
 
+    def test_daily_kline_falls_back_to_tencent_and_resolves_latest_trading_day(self):
+        """东财日K不可达 + 请求日为周末时，用腾讯日K回退并取≤dt的最近交易日，
+        昨收必须是上一交易日收盘价（修复涨停板被画成 0% 的根因）。"""
+        source = EastMoneyFreeSource()
+        tencent_payload = {
+            'code': 0,
+            'data': {
+                'sh600578': {
+                    'day': [
+                        ['2026-05-13', '5.45', '5.79', '5.79', '5.41', '100'],
+                        ['2026-05-14', '6.37', '6.37', '6.37', '6.10', '100'],
+                        ['2026-05-15', '6.50', '7.01', '7.01', '5.88', '100'],
+                    ]
+                }
+            },
+        }
+
+        def fake_fetch(url, headers=None, cookies=None, timeout=10):
+            if 'gtimg.cn' in url:
+                return tencent_payload
+            return None  # 东财 push2his 不可达
+
+        with patch('services.eastmoney_free._safe_request', return_value=None), \
+             patch('services.eastmoney_free._subprocess_fetch_json', side_effect=fake_fetch):
+            # 2026-05-17 是周日，必须回退到最近交易日 2026-05-15
+            kline = source.get_daily_kline('600578', '2026-05-17')
+
+        self.assertIsNotNone(kline)
+        self.assertEqual(kline['preclose'], 6.37)
+        self.assertEqual(kline['close'], 7.01)
+        self.assertEqual(kline['open'], 6.50)
+        self.assertEqual(kline['high'], 7.01)
+        self.assertEqual(kline['low'], 5.88)
+        self.assertAlmostEqual(kline['change_percent'], 10.05, places=1)
+
 
 class LimitUpThemeSummaryTest(unittest.TestCase):
     def test_groups_limit_up_stocks_by_theme_and_marks_current_stock(self):
@@ -305,6 +346,55 @@ class LimitUpThemeSummaryTest(unittest.TestCase):
         self.assertEqual(payload['code'], 200)
         self.assertEqual(payload['data']['data_source'], 'akshare.stock_zt_pool_em')
         self.assertEqual(payload['data']['current_theme'], '银行')
+
+
+class MarketSentimentFromEmotionTest(unittest.TestCase):
+    @patch('routes.stock_other._get_emotion_stage', return_value='升温期')
+    @patch('routes.limit_up_echelon._get_emotion_record')
+    def test_uses_emotion_cycle_limit_counts(self, mock_record, _mock_stage):
+        mock_record.return_value = {'limit_up_count': 54, 'limit_down_count': 0}
+        sentiment = _build_market_sentiment_from_emotion('20260515')
+        self.assertEqual(sentiment['limit_up_count'], 54)
+        self.assertEqual(sentiment['limit_down_count'], 0)
+        self.assertEqual(sentiment['sentiment_label'], '偏强')
+        self.assertEqual(sentiment['emotion_stage'], '升温期')
+
+
+class EchelonThemeResolveTest(unittest.TestCase):
+    @patch('services.theme_service.load_echelon_from_db')
+    def test_in_pool_stock_gets_echelon_tag(self, mock_load):
+        mock_load.return_value = {
+            'stocks': [{'code': '600578', 'tag_name': '电力', 'name': '京能电力'}],
+            'theme_ranking': [{'theme': '电力', 'count': 4}],
+        }
+        resolved = _resolve_echelon_theme('600578', '20260515')
+        self.assertEqual(resolved['echelon_theme'], '电力')
+        self.assertEqual(resolved['echelon_theme_count'], 4)
+        self.assertTrue(resolved['in_limit_up_pool'])
+
+    @patch('services.theme_service.load_echelon_from_db')
+    def test_off_pool_stock_matches_industry_to_echelon(self, mock_load):
+        mock_load.return_value = {
+            'stocks': [{'code': '601991', 'tag_name': '电力', 'name': '大唐发电'}],
+            'theme_ranking': [{'theme': '电力', 'count': 4}],
+        }
+        resolved = _resolve_echelon_theme('600578', '20260515', industry='电力')
+        self.assertEqual(resolved['echelon_theme'], '电力')
+        self.assertEqual(resolved['echelon_theme_count'], 4)
+        self.assertFalse(resolved['in_limit_up_pool'])
+
+    @patch('routes.stock_other._resolve_echelon_theme')
+    def test_apply_updates_current_theme_fields(self, mock_resolve):
+        mock_resolve.return_value = {
+            'echelon_theme': '电力',
+            'echelon_theme_count': 4,
+            'in_limit_up_pool': False,
+        }
+        data = {'current_stock': {'code': '600578', 'name': '京能电力'}, 'current_theme': '', 'current_theme_count': 0}
+        out = _apply_echelon_theme_to_data(data, '600578', '20260515', '电力')
+        self.assertEqual(out['current_theme'], '电力')
+        self.assertEqual(out['current_theme_count'], 4)
+        self.assertIn('涨停梯队', out['current_stock']['reason'])
 
 
 class FakeDataFrame:

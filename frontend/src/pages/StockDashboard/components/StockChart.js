@@ -84,13 +84,12 @@ export const resolvePrevClosePrice = (baseInfo, stockBasicData, fenshi) => {
     if (fromBasic && isPrevCloseConsistentWithFenshi(fromBasic, fenshi)) {
       return fromBasic;
     }
+    // 一致性校验对涨跌停（振幅>5%）必然判 false，此时仍应优先用后端同源昨收，
+    // 首个分时价只是当日首分钟成交价，绝不能当昨收（否则涨停被画成 0% 基准错位）。
     const prices = (fenshi || [])
       .map((p) => parseFloat(p))
       .filter((p) => Number.isFinite(p) && p > 0);
-    if (prices.length) {
-      return prices[0];
-    }
-    return fromTimeshare ?? fromBasic ?? null;
+    return fromTimeshare ?? fromBasic ?? (prices.length ? prices[0] : null);
   }
 
   if (fromTimeshare) {

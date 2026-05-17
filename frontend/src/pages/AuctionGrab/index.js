@@ -41,6 +41,27 @@ const SORT_OPTIONS = [
   { key: 'zf', label: '涨幅' },
 ];
 
+const sortAuctionItems = (items, sortKey) => {
+  const list = [...(items || [])];
+  const num = (v) => {
+    const n = parseFloat(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+  const star = (x) => parseInt(x.recommend_stars, 10) || 0;
+  const byField = {
+    wtje: (a, b) => num(b.grab_order_amount) - num(a.grab_order_amount),
+    cjje: (a, b) => num(b.grab_turnover) - num(a.grab_turnover),
+    kpje: (a, b) => num(b.open_amount) - num(a.open_amount),
+    zf: (a, b) => num(b.grab_change_pct) - num(a.grab_change_pct),
+  };
+  const cmpField = byField[sortKey] || byField.wtje;
+  return list.sort((a, b) => {
+    const starDiff = star(b) - star(a);
+    if (starDiff !== 0) return starDiff;
+    return cmpField(a, b);
+  });
+};
+
 function RecommendReason({ text }) {
   if (!text) return null;
   return (
@@ -85,9 +106,9 @@ function AuctionGrab() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const fetchData = useCallback(async (dt, tab, sort) => {
+  const fetchData = useCallback(async (dt, tab) => {
     const period = tab === 'tail' ? '1' : '0';
-    const cacheKey = `${dt}_${period}_${sort}`;
+    const cacheKey = `${dt}_${period}`;
 
     if (dataCache.current[cacheKey]) {
       setData(dataCache.current[cacheKey]);
@@ -97,7 +118,9 @@ function AuctionGrab() {
 
     setLoading(true);
     try {
-      const res = await apiRequest(`/api/v1/auction-grab?dt=${dt}&period=${period}&sort=${sort}`);
+      const res = await apiRequest(`/api/v1/auction-grab?dt=${dt}&period=${period}`, {
+        timeout: 120000,
+      });
       if (res?.data) {
         dataCache.current[cacheKey] = res.data;
         setData(res.data);
@@ -110,10 +133,13 @@ function AuctionGrab() {
   }, []);
 
   useEffect(() => {
-    fetchData(currentDate, activeTab, sortBy);
-  }, [fetchData, currentDate, activeTab, sortBy]);
+    fetchData(currentDate, activeTab);
+  }, [fetchData, currentDate, activeTab]);
 
-  const items = data?.items || [];
+  const items = useMemo(
+    () => sortAuctionItems(data?.items || [], sortBy),
+    [data?.items, sortBy]
+  );
   const emotionStage = data?.emotion_stage || '';
   const recommendHint = data?.recommend_hint || '';
 

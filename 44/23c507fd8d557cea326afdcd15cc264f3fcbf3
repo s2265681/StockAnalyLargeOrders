@@ -1,0 +1,19 @@
+backend/jobs/emotion_cycle_daily.py
+  s_8b1898977013c2::t_5ea6aa39040804 86-87
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "4423c507fd8d557cea326afdcd15cc264f3fcbf3",
+  "prompts": {},
+  "sessions": {
+    "s_8b1898977013c2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "093e2884-cc61-465e-8ff1-b3a538af93f5",
+        "model": "claude-haiku-4-5-20251001"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

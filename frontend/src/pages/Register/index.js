@@ -40,7 +40,7 @@ export default function Register() {
     <div className="register-container">
       <div className="register-card">
         <div className="register-title">创建账号</div>
-        <div className="register-subtitle">注册 NiuNiuNiu 股票分析平台</div>
+        <div className="register-subtitle">注册 AI炒股指南</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <Input
             placeholder="用户名（2-20个字符）"

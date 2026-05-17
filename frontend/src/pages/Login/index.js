@@ -32,7 +32,7 @@ export default function Login() {
     <div className="login-container">
       <div className="login-card">
         <div className="login-title">登录</div>
-        <div className="login-subtitle">NiuNiuNiu 股票分析平台</div>
+        <div className="login-subtitle">AI炒股指南</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <Input
             placeholder="用户名"

@@ -1,7 +1,8 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState } from 'react';
 import { AutoComplete, Input, Tooltip } from 'antd';
-import { SearchOutlined, ThunderboltOutlined, LoadingOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
+import { SearchOutlined, ThunderboltOutlined, LoadingOutlined, RobotOutlined } from '@ant-design/icons';
 import { useAtom } from 'jotai';
 import {
   stockCodeAtom,
@@ -13,6 +14,7 @@ import LimitUpMonitorPanel from './LimitUpMonitorPanel';
 import { apiRequest } from '../../../config/api';
 
 const StockBasicInfo = ({ onStockCodeChange }) => {
+  const navigate = useNavigate();
   const [stockCode, setStockCode] = useAtom(stockCodeAtom);
   const [stockBasicData] = useAtom(stockBasicDataAtom);
   const [, fetchStockBasic] = useAtom(fetchStockBasicAtom);
@@ -117,6 +119,17 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
                     </span>
                   </Tooltip>
                 ))}
+                <Tooltip title="跳转 AI 诊股，自动填入当前股票代码">
+                  <button
+                    type="button"
+                    className="smart-theme-btn ai-diagnosis-btn"
+                    onClick={() => stockCode && navigate(`/ai-diagnosis?code=${stockCode}`)}
+                    disabled={!stockCode}
+                  >
+                    <RobotOutlined style={{ marginRight: 4 }} />
+                    AI诊股
+                  </button>
+                </Tooltip>
               </div>
             </div>
 

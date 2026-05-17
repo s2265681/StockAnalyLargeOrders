@@ -77,10 +77,20 @@ const toDtQuery = (dateStr) => `dt=${formatDateDisplay(dateStr)}`;
 const MIN_LOADING_MS = 300;
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/** 复盘图离线数据自 2026-05-11 起可用，此前日期不可选 */
+const MIN_ECHELON_DATE = '20260511';
+
+const clampEchelonDate = (dateStr) => {
+  if (!dateStr || dateStr.length !== 8) return dateStr;
+  if (dateStr < MIN_ECHELON_DATE) return MIN_ECHELON_DATE;
+  const today = getLastTradingDayStr();
+  return dateStr > today ? today : dateStr;
+};
+
 function LimitUpEchelon() {
   const navigate = useNavigate();
   const todayStr = useMemo(() => getLastTradingDayStr(), []);
-  const [currentDate, setCurrentDate] = useState(getLastTradingDayStr);
+  const [currentDate, setCurrentDate] = useState(() => clampEchelonDate(getLastTradingDayStr()));
   const dataCache = useRef({});
   const requestSeq = useRef(0);
   const [data, setData] = useState(null);
@@ -244,7 +254,8 @@ function LimitUpEchelon() {
           <button
             type="button"
             className="date-nav-btn"
-            onClick={() => setCurrentDate(offsetDate(currentDate, -1))}
+            disabled={currentDate <= MIN_ECHELON_DATE}
+            onClick={() => setCurrentDate(clampEchelonDate(offsetDate(currentDate, -1)))}
           >
             <LeftOutlined /> 前一天
           </button>
@@ -253,7 +264,7 @@ function LimitUpEchelon() {
             type="button"
             className="date-nav-btn"
             disabled={currentDate >= todayStr}
-            onClick={() => setCurrentDate(offsetDate(currentDate, 1))}
+            onClick={() => setCurrentDate(clampEchelonDate(offsetDate(currentDate, 1)))}
           >
             后一天 <RightOutlined />
           </button>
@@ -261,7 +272,7 @@ function LimitUpEchelon() {
             <button
               type="button"
               className="date-nav-btn date-nav-today"
-              onClick={() => setCurrentDate(todayStr)}
+              onClick={() => setCurrentDate(clampEchelonDate(todayStr))}
             >
               今天
             </button>

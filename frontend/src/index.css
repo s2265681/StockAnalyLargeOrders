@@ -1344,6 +1344,26 @@ code {
   overflow-x: hidden;
 }
 
+.stock-dashboard-page-loading {
+  min-height: calc(100vh - 64px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stock-dashboard-page-loading .loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.stock-dashboard-page-loading .loading-text {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
 .dashboard-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(260px, 300px) minmax(168px, 200px);
@@ -1734,6 +1754,30 @@ code {
 .smart-theme-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.smart-theme-btn.ai-diagnosis-btn {
+  background: linear-gradient(135deg, #f9f0ff 0%, #efdbff 100%);
+  border-color: #b37feb;
+  color: #722ed1;
+}
+
+.smart-theme-btn.ai-diagnosis-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #722ed1 0%, #9254de 100%);
+  border-color: #722ed1;
+  color: #fff;
+}
+
+[data-theme="dark"] .smart-theme-btn.ai-diagnosis-btn {
+  background: rgba(114, 46, 209, 0.15);
+  border-color: #9254de;
+  color: #d3adf7;
+}
+
+[data-theme="dark"] .smart-theme-btn.ai-diagnosis-btn:hover:not(:disabled) {
+  background: #722ed1;
+  border-color: #9254de;
+  color: #fff;
 }
 
 .smart-theme-tag {

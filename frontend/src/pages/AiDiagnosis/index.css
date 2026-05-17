@@ -44,9 +44,13 @@
 
 .ai-main-grid {
   display: grid;
-  grid-template-columns: minmax(280px, 360px) 1fr;
-  gap: 16px;
+  grid-template-columns: minmax(300px, 380px) 1fr;
+  gap: 12px;
   align-items: start;
+}
+
+.ai-error-alert {
+  margin-bottom: 14px;
 }
 
 @media (max-width: 900px) {
@@ -60,43 +64,74 @@
   background: var(--bg-card);
   border: 1px solid var(--border-secondary);
   border-radius: 10px;
-  padding: 16px;
+  padding: 14px;
+}
+
+.ai-snapshot-panel--compact {
+  padding: 12px;
+}
+
+.ai-snap-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-secondary);
 }
 
 .ai-snapshot-title {
   font-weight: 600;
-  margin-bottom: 12px;
+  font-size: 13px;
   color: var(--text-primary);
+  margin-right: 4px;
 }
 
 .ai-partial-tag {
-  margin-bottom: 10px;
+  margin: 0 !important;
+  font-size: 11px;
+  line-height: 18px;
+  padding: 0 6px;
 }
 
 .ai-snapshot-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
 }
 
 .ai-snap-card {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 10px 12px;
+  gap: 2px;
+  padding: 7px 9px;
   background: var(--bg-secondary);
-  border-radius: 8px;
+  border-radius: 6px;
+  min-height: 0;
+}
+
+.ai-snap-card--tall {
+  grid-column: 1 / -1;
 }
 
 .ai-snap-card .label {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ai-snap-card .label .anticon {
+  font-size: 11px;
 }
 
 .ai-snap-card .value {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-primary);
-  line-height: 1.5;
+  line-height: 1.4;
+  font-weight: 500;
 }
 
 .ai-snap-card .value em.up {
@@ -110,9 +145,10 @@
 }
 
 .ai-snap-time {
-  margin: 12px 0 0;
-  font-size: 12px;
+  margin: 8px 0 0;
+  font-size: 11px;
   color: var(--text-muted);
+  text-align: right;
 }
 
 .ai-report-header {
@@ -164,14 +200,246 @@
   margin-bottom: 16px;
 }
 
-.ai-report-detail {
-  font-size: 13px;
-  line-height: 1.65;
-  color: var(--text-secondary);
+.ai-snap-stock {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
-.ai-md-line {
+.ai-snap-code {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.ai-snap-head .ai-snap-price {
+  margin-left: auto;
+}
+
+.ai-snap-price {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.ai-snap-price em {
+  font-size: 14px;
+  font-style: normal;
+  margin-left: 6px;
+}
+
+.ai-snap-price.up,
+.ai-snap-price em.up {
+  color: #f5222d;
+}
+
+.ai-snap-price.down,
+.ai-snap-price em.down {
+  color: #52c41a;
+}
+
+.ai-snap-sub {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  font-weight: normal;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-snap-card--highlight {
+  border-left: 2px solid var(--color-accent);
+  background: rgba(22, 119, 255, 0.06);
+}
+
+.ai-snap-card--dt {
+  border-left: 3px solid #722ed1;
+}
+
+.ai-report-hero {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.ai-rating-badge {
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 15px;
+  font-weight: 700;
+  border: 1px solid;
+}
+
+.ai-report-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ai-meta-tag {
+  margin: 0;
+}
+
+.ai-report-pills {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.ai-pill {
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+.ai-pill-label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.ai-report-trade-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 640px) {
+  .ai-report-trade-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ai-trade-col-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 10px;
+  color: var(--text-primary);
+}
+
+.ai-trade-col--buy .ai-trade-col-title {
+  color: #cf1322;
+}
+
+.ai-trade-col--sell .ai-trade-col-title {
+  color: #389e0d;
+}
+
+.ai-trade-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ai-trade-item {
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border-left: 3px solid var(--border-secondary);
+}
+
+.ai-trade-col--buy .ai-trade-item {
+  border-left-color: #ff4d4f;
+}
+
+.ai-trade-col--sell .ai-trade-item {
+  border-left-color: #52c41a;
+}
+
+.ai-trade-price {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.ai-trade-reason {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.ai-stop-box {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  background: rgba(250, 140, 22, 0.08);
+  border: 1px solid rgba(250, 140, 22, 0.35);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.ai-stop-box .anticon {
+  color: #fa8c16;
+  margin-top: 2px;
+}
+
+.ai-stop-reason {
+  color: var(--text-muted);
+}
+
+.ai-risk-tag {
+  margin: 0;
+}
+
+.ai-sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-secondary);
+}
+
+.ai-section-card {
+  padding: 14px;
+  background: var(--bg-secondary);
+  border-radius: 10px;
+  border: 1px solid var(--border-secondary);
+}
+
+.ai-section-title {
   margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-accent);
+}
+
+.ai-section-body {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text-primary);
+}
+
+.ai-section-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.ai-highlight-tag {
+  margin: 0;
+  font-size: 11px;
 }
 
 .ai-chat-section {

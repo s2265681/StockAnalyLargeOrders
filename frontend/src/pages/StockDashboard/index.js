@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useRef, useCallback, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Radio, Switch } from 'antd';
+import { Radio, Switch, Spin } from 'antd';
 import { useAtom } from 'jotai';
 import StockBasicInfo from './components/StockBasicInfo';
 import StockChart from './components/StockChart';
@@ -24,9 +24,19 @@ import {
   limitUpMonitorAtom,
   applySimulatedDataAtom,
   selectedDateAtom,
+  loadingAtom,
+  errorAtom,
 } from '../../store/atoms';
 
 const L2_POLL_INTERVAL = 10000;
+const MIN_PAGE_LOADING_MS = 300;
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const scrollPageToTop = () => {
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+};
 const THEME_POLL_INTERVAL = 90000;
 const SIMULATION_SPEED_OPTIONS = [
   { label: '3s', value: 3000 },
@@ -58,6 +68,20 @@ const StockDashboard = () => {
   const [, fetchL2Dashboard] = useAtom(fetchL2DashboardAtom);
   const [, fetchLimitUpThemes] = useAtom(fetchLimitUpThemesAtom);
   const [selectedDate] = useAtom(selectedDateAtom);
+  const [loading] = useAtom(loadingAtom);
+  const [error] = useAtom(errorAtom);
+
+  const [pageLoading, setPageLoading] = useState(true);
+  const pageLoadSeqRef = useRef(0);
+  const pageLoadStartedRef = useRef(Date.now());
+  const fetchStartedRef = useRef(false);
+
+  const triggerPageLoad = useCallback(() => {
+    pageLoadSeqRef.current += 1;
+    pageLoadStartedRef.current = Date.now();
+    fetchStartedRef.current = false;
+    setPageLoading(true);
+  }, []);
 
   // URL 参数变化时同步 stockCode，同时清空旧分时数据触发 loading
   useEffect(() => {
@@ -65,8 +89,37 @@ const StockDashboard = () => {
     if (urlCode && urlCode !== stockCode) {
       setTimeshareData(null);
       setStockCode(urlCode);
+      triggerPageLoad();
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (loading) {
+      fetchStartedRef.current = true;
+    }
+  }, [loading]);
+
+  useEffect(() => {
+    if (!pageLoading || loading || !fetchStartedRef.current) return undefined;
+
+    const requestId = pageLoadSeqRef.current;
+    let cancelled = false;
+
+    const finishPageLoad = async () => {
+      const elapsed = Date.now() - pageLoadStartedRef.current;
+      if (elapsed < MIN_PAGE_LOADING_MS) {
+        await wait(MIN_PAGE_LOADING_MS - elapsed);
+      }
+      if (cancelled || pageLoadSeqRef.current !== requestId) return;
+      setPageLoading(false);
+      scrollPageToTop();
+    };
+
+    finishPageLoad();
+    return () => {
+      cancelled = true;
+    };
+  }, [pageLoading, loading, error]);
   const l2TimerRef = useRef(null);
   const themeTimerRef = useRef(null);
   const simulationTimerRef = useRef(null);
@@ -108,6 +161,7 @@ const StockDashboard = () => {
     setSearchParams({ code: newCode }, { replace: true });
     simulationIndexRef.current = 1;
     setSimulationIndex(1);
+    triggerPageLoad();
   };
 
   const handleSimulationToggle = (checked) => {
@@ -370,6 +424,17 @@ const StockDashboard = () => {
       removeDisconnect();
     };
   }, [stockCode, simulationEnabled]);
+
+  if (pageLoading) {
+    return (
+      <div className="stock-dashboard-container stock-dashboard-page-loading">
+        <div className="loading-container">
+          <Spin size="large" />
+          <div className="loading-text">个股数据加载中...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className='stock-dashboard-container' style={{ minHeight: '100vh' }}>

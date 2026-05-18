@@ -1,0 +1,31 @@
+backend/routes/emotion_cycle.py
+  s_f376d0c6a85971::t_00f782980f7ec0 279
+  s_f376d0c6a85971::t_33aa1a42c22b59 1263-1348,1354,1373-1375,1377-1380
+  s_f376d0c6a85971::t_6083d67d050e41 153-154,163-174
+  s_f376d0c6a85971::t_5342d7e8800294 1014
+  s_f376d0c6a85971::t_aec2fa58f2e00d 542,550
+  s_f376d0c6a85971::t_f419ca4261e17c 9-10
+  s_f376d0c6a85971::t_c8ddea67cd4fef 97-130
+backend/jobs/echelon_intraday.py
+  s_f376d0c6a85971::t_08fef9c32ff9fe 1-39
+backend/jobs/run_echelon_intraday.sh
+  s_f376d0c6a85971::t_ae3dfb4731999a 1-11
+backend/jobs/crontab.server.txt
+  s_f376d0c6a85971::t_52b41ec715eae2 4,18-28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.9",
+  "base_commit_sha": "4a9761532ba02eac30ca3fdbe373a3e25029b922",
+  "prompts": {},
+  "sessions": {
+    "s_f376d0c6a85971": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8c6bd4d5-1b32-4dd3-968f-1df813d52b6f",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

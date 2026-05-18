@@ -15,5 +15,5 @@
 30 18 * * 1-5 ${NIU_ROOT}/backend/jobs/run_dragon_tiger.sh >> ${NIU_LOG}/dragon_tiger_job.log 2>&1
 
 # --- 3. 竞价抢筹 ---
-25,30 9 * * 1-5 ${NIU_ROOT}/backend/jobs/run_auction_grab.sh morning >> ${NIU_LOG}/auction_grab_job.log 2>&1
-20,40 15 * * 1-5 ${NIU_ROOT}/backend/jobs/run_auction_grab.sh tail >> ${NIU_LOG}/auction_grab_job.log 2>&1
+26 9 * * 1-5 ${NIU_ROOT}/backend/jobs/run_auction_grab.sh morning >> ${NIU_LOG}/auction_grab_job.log 2>&1
+5 15 * * 1-5 ${NIU_ROOT}/backend/jobs/run_auction_grab.sh tail >> ${NIU_LOG}/auction_grab_job.log 2>&1

@@ -1,0 +1,19 @@
+backend/jobs/crontab.server.txt
+  s_2339e776206c10::t_09ec222b471a55 18-19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.9",
+  "base_commit_sha": "869a6bfd84f663975df304bc34a59048ecbd2238",
+  "prompts": {},
+  "sessions": {
+    "s_2339e776206c10": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8921c397-10dd-410b-8113-0c6f0ab7821c",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

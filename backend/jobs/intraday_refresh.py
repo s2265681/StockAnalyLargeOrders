@@ -14,6 +14,7 @@ from routes.emotion_cycle import (
     _fetch_emotion_records,
     analyze_daily_one_date,
     analyze_one_date,
+    inject_fallback_if_missing,
 )
 from routes.limit_up_echelon import build_echelon_one_date
 from utils.date_utils import get_valid_trading_date
@@ -42,6 +43,8 @@ def main() -> int:
     if not records:
         logger.error("未获取到情绪周期数据")
         return 1
+
+    records = inject_fallback_if_missing(records, dt)
 
     cycle = analyze_one_date(dt, records, force=True)
     logger.info("情绪周期研判: %s", cycle)

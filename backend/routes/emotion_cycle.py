@@ -135,6 +135,95 @@ def _fetch_emotion_records():
     return [_transform_row(col_names, row) for row in data["contentList"]]
 
 
+def _build_fallback_record(dt_str: str) -> dict:
+    """StockAPI 无当日数据时，用 akshare + 梯队库构造兜底记录"""
+    dt_clean = dt_str.replace("-", "")
+    dt_display = f"{dt_clean[:4]}-{dt_clean[4:6]}-{dt_clean[6:8]}"
+
+    record = {
+        "date": dt_display,
+        "rise_pct": None,
+        "consec_limit": None,
+        "pressure_height": None,
+        "latest_height": None,
+        "big_loss_mood": None,
+        "big_profit_mood": None,
+        "limit_up_count": None,
+        "board_hit_rate": None,
+        "limit_down_count": None,
+        "monster_stock": None,
+        "broken_board_count": None,
+    }
+
+    # 1. akshare 涨停/跌停/炸板池
+    try:
+        import akshare as ak
+        zt_df = ak.stock_zt_pool_em(date=dt_clean)
+        if zt_df is not None and len(zt_df) > 0:
+            record["limit_up_count"] = len(zt_df)
+    except Exception as e:
+        logger.debug("akshare 涨停池失败 %s: %s", dt_clean, e)
+
+    try:
+        import akshare as ak
+        dt_df = ak.stock_zt_pool_dtgc_em(date=dt_clean)
+        if dt_df is not None:
+            record["limit_down_count"] = len(dt_df)
+    except Exception as e:
+        logger.debug("akshare 跌停池失败 %s: %s", dt_clean, e)
+
+    try:
+        import akshare as ak
+        zb_df = ak.stock_zt_pool_zbgc_em(date=dt_clean)
+        if zb_df is not None:
+            record["broken_board_count"] = len(zb_df)
+    except Exception as e:
+        logger.debug("akshare 炸板池失败 %s: %s", dt_clean, e)
+
+    lu = record["limit_up_count"]
+    zb = record["broken_board_count"]
+    if lu is not None and zb is not None and (lu + zb) > 0:
+        record["board_hit_rate"] = round(lu / (lu + zb) * 100, 2)
+
+    # 2. 梯队库：连板家数、最高板高、妖股名称
+    try:
+        from services.theme_service import load_echelon_from_db
+        echelon_data = load_echelon_from_db(dt_clean)
+        if echelon_data and echelon_data.get("stocks"):
+            stocks = echelon_data["stocks"]
+            boards_list = [s.get("boards", 1) for s in stocks if s.get("boards")]
+            if boards_list:
+                record["consec_limit"] = sum(1 for b in boards_list if b >= 2)
+                max_b = max(boards_list)
+                record["pressure_height"] = max_b
+                record["latest_height"] = max_b
+                top = next((s for s in stocks if s.get("boards") == max_b), None)
+                if top:
+                    record["monster_stock"] = top.get("name", "")
+    except Exception as e:
+        logger.debug("梯队库读取失败 %s: %s", dt_clean, e)
+
+    logger.info("兜底情绪记录 %s: zt=%s dt=%s zb=%s consec=%s",
+                dt_display,
+                record["limit_up_count"], record["limit_down_count"],
+                record["broken_board_count"], record["consec_limit"])
+    return record
+
+
+def inject_fallback_if_missing(records: list, dt_str: str) -> list:
+    """若 dt_str 不在 records 中，构造兜底记录并追加。返回新列表。"""
+    dt_clean = dt_str.replace("-", "")
+    exists = any(
+        (r.get("date") or "").replace("-", "") == dt_clean
+        for r in records
+    )
+    if exists:
+        return records
+    logger.warning("%s 不在 StockAPI 记录中，注入兜底数据", dt_clean)
+    fallback = _build_fallback_record(dt_str)
+    return list(records) + [fallback]
+
+
 @emotion_cycle_bp.route('/api/v1/emotion-cycle', methods=['GET'])
 def get_emotion_cycle():
     """代理 StockAPI 情绪周期数据并转换格式"""

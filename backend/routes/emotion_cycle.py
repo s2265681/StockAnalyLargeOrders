@@ -228,7 +228,14 @@ def inject_fallback_if_missing(records: list, dt_str: str) -> list:
 def get_emotion_cycle():
     """代理 StockAPI 情绪周期数据并转换格式"""
     try:
+        from utils.date_utils import get_valid_trading_date
         records = _fetch_emotion_records()
+        today = get_valid_trading_date().replace("-", "")
+        today_in_records = any(
+            (r.get("date") or "").replace("-", "") == today for r in records
+        )
+        if not today_in_records and _get_analysis_from_db(today):
+            records = inject_fallback_if_missing(records, today)
         return v1_success_response(data={"records": records})
     except requests.RequestException as e:
         logger.error(f"请求 StockAPI 情绪周期失败: {e}")

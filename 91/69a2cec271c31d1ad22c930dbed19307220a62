@@ -1,0 +1,19 @@
+backend/routes/auction_grab.py
+  s_2339e776206c10::t_6951356031d899 106-108,118-119,132
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.9",
+  "base_commit_sha": "9169a2cec271c31d1ad22c930dbed19307220a62",
+  "prompts": {},
+  "sessions": {
+    "s_2339e776206c10": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8921c397-10dd-410b-8113-0c6f0ab7821c",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

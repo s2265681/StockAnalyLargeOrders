@@ -1,7 +1,7 @@
 # NiuNIuNiu 服务器定时任务（路径 /www/StockAnalyLargeOrders）
 # 安装: bash backend/jobs/install_server_crontab.sh
 
-# --- 1. 盘中（12 次/日）---
+# --- 1. 盘中全量（12 次/日：梯队 + 情绪周期 + 买卖指导）---
 33 9  * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
 53 9  * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
 20 10 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
@@ -14,6 +14,18 @@
 0  15 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
 0  17 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
 0  18 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
+
+# --- 1b. 涨停梯队高频（填补空档，约每 20 分钟刷新一次）---
+# 上午：9:43 / 10:05 / 10:35 / 11:05
+43 9  * * 1-5 ${NIU_ROOT}/backend/jobs/run_echelon_intraday.sh >> ${NIU_LOG}/echelon_intraday_job.log 2>&1
+5  10 * * 1-5 ${NIU_ROOT}/backend/jobs/run_echelon_intraday.sh >> ${NIU_LOG}/echelon_intraday_job.log 2>&1
+35 10 * * 1-5 ${NIU_ROOT}/backend/jobs/run_echelon_intraday.sh >> ${NIU_LOG}/echelon_intraday_job.log 2>&1
+5  11 * * 1-5 ${NIU_ROOT}/backend/jobs/run_echelon_intraday.sh >> ${NIU_LOG}/echelon_intraday_job.log 2>&1
+# 午后：13:05 / 13:20 / 14:15 / 14:45
+5  13 * * 1-5 ${NIU_ROOT}/backend/jobs/run_echelon_intraday.sh >> ${NIU_LOG}/echelon_intraday_job.log 2>&1
+20 13 * * 1-5 ${NIU_ROOT}/backend/jobs/run_echelon_intraday.sh >> ${NIU_LOG}/echelon_intraday_job.log 2>&1
+15 14 * * 1-5 ${NIU_ROOT}/backend/jobs/run_echelon_intraday.sh >> ${NIU_LOG}/echelon_intraday_job.log 2>&1
+45 14 * * 1-5 ${NIU_ROOT}/backend/jobs/run_echelon_intraday.sh >> ${NIU_LOG}/echelon_intraday_job.log 2>&1
 
 # --- 2. 龙虎榜 AI ---
 30 15 * * 1-5 ${NIU_ROOT}/backend/jobs/run_dragon_tiger.sh >> ${NIU_LOG}/dragon_tiger_job.log 2>&1

@@ -6,16 +6,13 @@
 """
 import json
 import logging
-import requests
-import urllib3
+import os
+import subprocess
 from typing import Optional
 from flask import Blueprint, request
 
 from utils.response import v1_success_response, v1_error_response
 from utils.auth_middleware import login_required, admin_required
-
-# 抑制 StockAPI 的 SSL 警告
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 logger = logging.getLogger(__name__)
 
@@ -97,6 +94,40 @@ COL_KEY_MAP = {
 }
 
 
+def _curl_get_json(url: str, *, headers: dict = None, timeout: int = 15) -> dict:
+    """curl 子进程发 GET 请求，避免 eventlet 下 requests 递归崩溃"""
+    cmd = ["curl", "-s", "-k", "--noproxy", "*", "--max-time", str(timeout), url]
+    if headers:
+        for k, v in headers.items():
+            cmd += ["-H", f"{k}: {v}"]
+    env = {**os.environ, "no_proxy": "*", "NO_PROXY": "*"}
+    try:
+        proc = subprocess.run(
+            cmd, capture_output=True, text=True,
+            timeout=timeout + 5, env=env,
+        )
+        if proc.returncode != 0:
+            raise IOError(f"curl 失败 exit={proc.returncode}: {(proc.stderr or '')[:200]}")
+        return json.loads(proc.stdout)
+    except subprocess.TimeoutExpired:
+        raise TimeoutError(f"curl 超时 {timeout}s")
+
+
+def _compute_rise_pct_from_akshare() -> Optional[float]:
+    """当第三方 API szbl 为 None 时，用 akshare 全市场行情计算上涨比例"""
+    try:
+        import akshare as ak
+        df = ak.stock_zh_a_spot_em()
+        total = len(df)
+        if total == 0:
+            return None
+        rising = len(df[df["涨跌幅"] > 0])
+        return round(rising / total * 100, 2)
+    except Exception as e:
+        logger.warning("akshare 计算上涨比例失败: %s", e)
+        return None
+
+
 def _format_date(date_int: int) -> str:
     """将 20260515 转为 '2026-05-15'"""
     s = str(date_int)
@@ -119,20 +150,28 @@ def _transform_row(col_names: list, row: list) -> dict:
 # ---------- 1. 情绪周期数据 ----------
 
 def _fetch_emotion_records():
-    """从 StockAPI 拉取情绪周期原始记录列表"""
-    resp = requests.get(
+    """从 StockAPI 拉取情绪周期原始记录列表；szbl 为 None 时用 akshare 补算"""
+    body = _curl_get_json(
         STOCKAPI_EMOTION_URL,
         headers={"User-Agent": "Mozilla/5.0"},
-        verify=False,
         timeout=15,
     )
-    resp.raise_for_status()
-    body = resp.json()
     if body.get("code") != 20000:
         raise ValueError(f"StockAPI 返回异常: code={body.get('code')}")
     data = body["data"]
     col_names = data["colNameList"]
-    return [_transform_row(col_names, row) for row in data["contentList"]]
+    records = [_transform_row(col_names, row) for row in data["contentList"]]
+
+    # 如果最新一条 rise_pct 为 None（第三方当天未更新），从 akshare 补算
+    if records and records[-1].get("rise_pct") is None:
+        computed = _compute_rise_pct_from_akshare()
+        if computed is not None:
+            records[-1]["rise_pct"] = computed
+            logger.info("rise_pct 已从 akshare 补算: %s → %.2f%%", records[-1].get("date"), computed)
+        else:
+            logger.warning("rise_pct 补算失败，%s 上涨比例仍为 None", records[-1].get("date"))
+
+    return records
 
 
 def _build_fallback_record(dt_str: str) -> dict:
@@ -237,7 +276,7 @@ def get_emotion_cycle():
         if not today_in_records and _get_analysis_from_db(today):
             records = inject_fallback_if_missing(records, today)
         return v1_success_response(data={"records": records})
-    except requests.RequestException as e:
+    except (IOError, TimeoutError) as e:
         logger.error(f"请求 StockAPI 情绪周期失败: {e}")
         return v1_error_response(message=f"请求 StockAPI 失败: {str(e)}")
     except ValueError as e:
@@ -500,7 +539,7 @@ def _summarize_echelon_context(dt: str) -> str:
 def _fetch_hot_sectors() -> str:
     """获取当日热门板块题材，用于丰富分析"""
     try:
-        resp = requests.get(
+        body = _curl_get_json(
             STOCKAPI_GN_URL,
             headers={
                 "User-Agent": "Mozilla/5.0",
@@ -508,8 +547,7 @@ def _fetch_hot_sectors() -> str:
             },
             timeout=10,
         )
-        resp.raise_for_status()
-        return json.dumps(resp.json(), ensure_ascii=False)[:2000]
+        return json.dumps(body, ensure_ascii=False)[:2000]
     except Exception as e:
         logger.warning(f"获取热门板块失败: {e}")
         return "（热门板块数据暂不可用）"
@@ -580,12 +618,6 @@ def post_emotion_analysis():
 
         return v1_success_response(data=result)
 
-    except requests.Timeout:
-        logger.error("调用 Claude API 超时")
-        return v1_error_response(message="AI 分析超时，请稍后重试")
-    except requests.RequestException as e:
-        logger.error(f"调用 Claude API 失败: {e}")
-        return v1_error_response(message=f"AI 分析请求失败: {str(e)}")
     except Exception as e:
         logger.error(f"情绪分析异常: {e}")
         return v1_error_response(message=f"情绪分析异常: {str(e)}")
@@ -979,7 +1011,7 @@ def refresh_emotion_intraday():
             },
             message=f"已刷新 {current_dt} 当天分析",
         )
-    except requests.RequestException as e:
+    except (IOError, TimeoutError) as e:
         logger.error(f"当天分析拉取行情失败: {e}")
         return v1_error_response(message=f"请求 StockAPI 失败: {str(e)}")
     except ValueError as e:
@@ -1031,12 +1063,6 @@ def refresh_current_emotion_analysis():
             message=f"已刷新 {current_dt} 情绪分析"
         )
 
-    except requests.Timeout:
-        logger.error("调用 Claude API 超时")
-        return v1_error_response(message="AI 分析超时，请稍后重试")
-    except requests.RequestException as e:
-        logger.error(f"调用 Claude API 失败: {e}")
-        return v1_error_response(message=f"AI 分析请求失败: {str(e)}")
     except Exception as e:
         logger.error(f"刷新最新交易日情绪分析异常: {e}")
         return v1_error_response(message=f"情绪分析异常: {str(e)}")
@@ -1234,13 +1260,98 @@ def _call_claude_batch(records_batch):
     return results
 
 
+SINGLE_DATE_ANALYSIS_PROMPT = """你是短线情绪博弈的高手，能通过多维数据综合研判A股市场情绪周期。
+下面提供了【历史上下文记录】和【目标日期记录】。
+历史记录仅供参考趋势，请只对【目标日期】做情绪分析，不要分析历史日期。
+
+## 数据字段说明
+- date: 日期
+- rise_pct: 上涨比例(%)
+- consec_limit: 连板家数
+- pressure_height: 压力高度(历史最高连板高度)
+- latest_height: 最新高度(当前市场最高连板)
+- big_loss_mood: 大面情绪(越高=亏钱效应越强)
+- big_profit_mood: 大肉情绪(越高=赚钱效应越强)
+- limit_up_count: 涨停家数
+- board_hit_rate: 打板成功率(%)
+- limit_down_count: 跌停家数
+- monster_stock: 妖股名称
+- broken_board_count: 炸板家数
+
+{FIELD_GUIDE}
+
+请严格按以下JSON格式返回【单个对象，不是数组】：
+{{
+  "date": "目标日期",
+  "stage": "冰点期/修复期/升温期/高潮期/退潮期",
+  "analysis": "详细分析（300字以内）",
+  "advice": "操作建议（150字以内）",
+  "recommendations": [
+    {{"stock": "股票名称", "reason": "推荐理由", "position": "建议仓位"}}
+  ]
+}}
+重要：JSON字符串值中不得包含英文双引号，请用中文引号（""）或书名号（《》）代替。"""
+
+
+def _call_claude_single(context_records: list, target_record: dict) -> dict:
+    """用上下文 + 目标日期调用 Claude，只返回目标日期的单条分析结果"""
+    import re
+
+    ctx_text = json.dumps(context_records, ensure_ascii=False, indent=2)
+    tgt_text = json.dumps(target_record, ensure_ascii=False, indent=2)
+    user_prompt = (
+        f"【历史上下文（仅供参考趋势，共{len(context_records)}条）】\n{ctx_text}\n\n"
+        f"【目标日期（只分析这一天）】\n{tgt_text}"
+    )
+
+    # 把字段说明从 BATCH_ANALYSIS_PROMPT 复用
+    field_guide = "\n".join(
+        BATCH_ANALYSIS_PROMPT.split("## 六大情绪指标")[0].split("## 数据字段说明")[1].strip().splitlines()
+    ) if "## 数据字段说明" in BATCH_ANALYSIS_PROMPT else ""
+
+    prompt = SINGLE_DATE_ANALYSIS_PROMPT.replace("{FIELD_GUIDE}", field_guide)
+
+    content = call_claude(
+        prompt + "\n\n" + user_prompt,
+        max_tokens=4096,
+        curl_timeout=120,
+        raise_on_error=True,
+    )
+    logger.info(f"单日分析返回 (前200字): {content[:200]}")
+
+    clean = content.strip()
+    if clean.startswith("```"):
+        clean = clean.split("\n", 1)[-1]
+        clean = clean.rsplit("```", 1)[0].strip()
+
+    # 兼容 AI 误返回数组的情况
+    try:
+        result = json.loads(clean)
+        if isinstance(result, list) and result:
+            result = result[-1]
+    except json.JSONDecodeError:
+        try:
+            result = json.loads(_fix_json_quotes(clean))
+            if isinstance(result, list) and result:
+                result = result[-1]
+        except json.JSONDecodeError:
+            match = re.search(r'\{[\s\S]*\}', content)
+            if match:
+                result = json.loads(match.group())
+            else:
+                raise Exception("AI 返回格式异常")
+
+    if not isinstance(result, dict):
+        raise Exception("AI 返回格式异常")
+    return result
+
+
 def analyze_one_date(target_dt: str, all_records: list, force: bool = False) -> str:
     """为单个交易日生成周期研判并存库（幂等、不依赖 HTTP）。
 
     返回 'skipped' | 'saved' | 'failed'。
     - force=False 且 DB 已有该日 → 'skipped'
-    - 取 target 当日 + 之前 5 个交易日作趋势上下文
-    - 调 _call_claude_batch，从返回中取 target 当日结果并存库
+    - 取 target 当日前 5 个交易日作趋势上下文，只让 Claude 分析 target 当日
     """
     target_dt = str(target_dt).replace("-", "")
     if not force:
@@ -1259,21 +1370,14 @@ def analyze_one_date(target_dt: str, all_records: list, force: bool = False) -> 
         logger.error(f"{target_dt} 不在记录列表中，无法分析")
         return "failed"
 
-    ctx_start = max(0, idx - 5)
-    batch = ordered[ctx_start:idx + 1]
-    logger.info(f"分析 {target_dt}，上下文 {len(batch)} 条")
+    ctx_records = ordered[max(0, idx - 5):idx]
+    target_record = ordered[idx]
+    logger.info(f"分析 {target_dt}，上下文 {len(ctx_records)} 条")
 
-    results = _call_claude_batch(batch)
-    item = next(
-        (
-            x for x in results
-            if isinstance(x, dict) and _record_date_key(x) == target_dt
-        ),
-        None,
-    )
-    if item is None:
-        logger.error(f"AI 返回未包含 {target_dt}")
-        return "failed"
+    item = _call_claude_single(ctx_records, target_record)
+    if _record_date_key(item) != target_dt:
+        logger.warning(f"AI 返回日期 {item.get('date')} 与目标 {target_dt} 不符，强制修正")
+        item["date"] = f"{target_dt[:4]}-{target_dt[4:6]}-{target_dt[6:8]}"
 
     if not _save_analysis_to_db(target_dt, item):
         logger.error(f"{target_dt} 存库失败")
@@ -1397,12 +1501,6 @@ def post_emotion_analysis_with_storage():
 
     except ValueError as e:
         return v1_error_response(message=str(e))
-    except requests.Timeout:
-        logger.error("调用 Claude API 超时")
-        return v1_error_response(message="AI 分析超时，请稍后重试")
-    except requests.RequestException as e:
-        logger.error(f"调用 Claude API 失败: {e}")
-        return v1_error_response(message=f"AI 分析请求失败: {str(e)}")
     except Exception as e:
         logger.error(f"情绪分析存储异常: {e}")
         return v1_error_response(message=f"情绪分析异常: {str(e)}")

@@ -1,0 +1,19 @@
+backend/routes/emotion_cycle.py
+  s_2339e776206c10::t_fc87a9096e2852 231,233-238
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.9",
+  "base_commit_sha": "dcafccbdb3377a95819a0e6ef2f5093038c6db81",
+  "prompts": {},
+  "sessions": {
+    "s_2339e776206c10": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8921c397-10dd-410b-8113-0c6f0ab7821c",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

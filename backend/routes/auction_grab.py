@@ -103,6 +103,9 @@ def _enrich_close_and_next_change(items, trade_date):
         return
 
     next_trade_date = _offset_trading_date(trade_date, 1)
+    today_str = datetime.now().strftime('%Y-%m-%d')
+    next_day_available = next_trade_date <= today_str
+
     code_set = {item.get('code') for item in items if item.get('code')}
     if not code_set:
         return
@@ -112,7 +115,8 @@ def _enrich_close_and_next_change(items, trade_date):
     with ThreadPoolExecutor(max_workers=8) as executor:
         for code in code_set:
             futures[executor.submit(_get_daily_change_pct, code, trade_date)] = (code, 'close')
-            futures[executor.submit(_get_daily_change_pct, code, next_trade_date)] = (code, 'next')
+            if next_day_available:
+                futures[executor.submit(_get_daily_change_pct, code, next_trade_date)] = (code, 'next')
 
         for future in as_completed(futures):
             code, field = futures[future]
@@ -125,7 +129,7 @@ def _enrich_close_and_next_change(items, trade_date):
         code = item.get('code')
         if item.get('close_change_pct') is None:
             item['close_change_pct'] = result_map.get(code, {}).get('close')
-        if item.get('next_day_change_pct') is None:
+        if item.get('next_day_change_pct') is None and next_day_available:
             item['next_day_change_pct'] = result_map.get(code, {}).get('next')
 
 

@@ -1,0 +1,29 @@
+backend/app.py
+  s_8aa11394fd11d0::t_07b7d84fe41626 62-71
+backend/utils/claude_client.py
+  s_8aa11394fd11d0::t_c979e866a3aafb 8,12-22,45-46,48-53,62,72-75,79-80,83-87,92,99,107-110,123-124,130-131,138-141,146-155,157-158,164-165,177-202,208,214,217-219,223-224
+  s_8aa11394fd11d0::t_bbcf537eba4835 211,215-216,226
+backend/services/ai_diagnosis_service.py
+  s_8aa11394fd11d0::t_c5819430920bd4 875-877
+  s_8aa11394fd11d0::t_0625104b18e8c0 670-700
+backend/config/ai_config.py
+  s_8aa11394fd11d0::t_c00780b2e66584 41
+frontend/src/pages/AiDiagnosis/index.js
+  s_8aa11394fd11d0::t_255b83ffbc25fc 23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "ab34ea68a1d3196405b32178db4118d50ebd0433",
+  "prompts": {},
+  "sessions": {
+    "s_8aa11394fd11d0": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "146f2da4-a659-43f0-8f69-dac4789d33de",
+        "model": "composer-2.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

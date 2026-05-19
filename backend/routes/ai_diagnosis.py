@@ -3,6 +3,7 @@ AI 诊股接口
 - POST /api/v1/ai-diagnosis
 - GET  /api/v1/ai-diagnosis/cache
 - POST /api/v1/ai-diagnosis/chat
+- GET  /api/v1/ai-diagnosis/hot-stocks
 """
 import logging
 

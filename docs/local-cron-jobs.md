@@ -17,7 +17,7 @@
 
 - **休市日跳过**：`job_guard.py` 调东方财富校验，节假日/周末直接 exit 0。
 - **任务锁**：`logs/.{name}.lock`，上一轮未结束则跳过，避免 AI 重叠。
-- **邮件提醒**：成功/失败均发信至 `JOB_ALERT_EMAIL`（默认 `s2265681@163.com`）；成功信含日志摘要。设 `JOB_NOTIFY_ON_SUCCESS=0` 可只保留失败告警。需配置 SMTP，见 `backend/.env.example`。
+- **邮件提醒**：成功/失败均发信至 `JOB_ALERT_EMAIL`。正文两行：首行含状态/耗时/任务/时间，次行将核心结果提炼合并（如 `梯队✓；情绪✓；AI共8只/新2/跳5/败1`）。设 `JOB_NOTIFY_ON_SUCCESS=0` 可只保留失败告警。
 - **日志轮转**：服务器安装 `deploy/logrotate-niuniuniu.conf`（保留 14 天）。
 
 ---

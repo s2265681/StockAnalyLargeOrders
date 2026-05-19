@@ -55,37 +55,42 @@ job_acquire_lock() {
 job_on_failure() {
   local rc="${1:-1}"
   local detail="${2:-}"
+  export JOB_DURATION_SECS="${JOB_DURATION_SECS:-0}"
   set +e
   if [ -n "$detail" ]; then
-    "$PYTHON" -c "
+    JOB_DURATION_SECS="$JOB_DURATION_SECS" "$PYTHON" -c "
 from utils.job_notify import send_job_alert
 send_job_alert('${JOB_NAME}', exit_code=${rc}, detail='''${detail}''')
 "
   else
-    "$PYTHON" jobs/job_notify_failure.py "$JOB_NAME" "$rc" "$JOB_LOG_FILE"
+    JOB_DURATION_SECS="$JOB_DURATION_SECS" "$PYTHON" jobs/job_notify_failure.py "$JOB_NAME" "$rc" "$JOB_LOG_FILE"
   fi
   set -e
 }
 
 job_on_success() {
-  local detail="${1:-执行成功}"
+  local detail="${1:-}"
   if [ "${JOB_NOTIFY_ON_SUCCESS:-1}" = "0" ]; then
     return 0
   fi
+  export JOB_DURATION_SECS="${JOB_DURATION_SECS:-0}"
   set +e
-  "$PYTHON" jobs/job_notify_success.py "$JOB_NAME" "$detail" "$JOB_LOG_FILE"
+  JOB_DURATION_SECS="$JOB_DURATION_SECS" "$PYTHON" jobs/job_notify_success.py "$JOB_NAME" "$detail" "$JOB_LOG_FILE"
   set -e
 }
 
 job_run() {
+  local start_ts
+  start_ts=$(date +%s)
   set +e
   "$@"
   local rc=$?
   set -e
+  export JOB_DURATION_SECS=$(( $(date +%s) - start_ts ))
   if [ "$rc" -ne 0 ]; then
-    echo "$(date '+%F %T') [$JOB_NAME] 失败 exit=$rc" >&2
+    echo "$(date '+%F %T') [$JOB_NAME] 失败 exit=$rc 耗时=${JOB_DURATION_SECS}s" >&2
     job_on_failure "$rc"
     exit "$rc"
   fi
-  job_on_success "执行成功"
+  job_on_success ""
 }

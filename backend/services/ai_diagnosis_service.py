@@ -93,11 +93,12 @@ def _fetch_ths_hot_top5() -> list:
         "https://dq.10jqka.com.cn/fuyao/hot_list_data/out/hot_list/v1/stock?stock_type=a&type=hour&list_type=normal",
         "https://eq.10jqka.com.cn/open/api/hot_list/v1/hot_stock/a/hour/data.txt",
     ]
+    _env = {**os.environ, "no_proxy": "*", "NO_PROXY": "*"}
     for url in urls:
         try:
             proc = subprocess.run(
-                ["curl", "-s", "--max-time", "10", url, "-H", "User-Agent: Mozilla/5.0"],
-                capture_output=True, text=True, timeout=15,
+                ["curl", "-s", "-k", "--noproxy", "*", "--max-time", "10", url, "-H", "User-Agent: Mozilla/5.0"],
+                capture_output=True, text=True, timeout=15, env=_env,
             )
             if proc.returncode != 0 or not proc.stdout.strip():
                 continue
@@ -132,7 +133,7 @@ def get_hot_stocks_for_diagnosis() -> dict:
     try:
         rows = execute_query(
             "SELECT code, snapshot_json, report_json FROM ai_diagnosis_cache "
-            "WHERE date=%s ORDER BY updated_at DESC",
+            "WHERE date=%s ORDER BY updated_at DESC LIMIT 10",
             (trade_date,),
         )
         for row in rows:

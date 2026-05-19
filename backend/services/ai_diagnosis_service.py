@@ -7,6 +7,7 @@ import os
 import re
 import subprocess
 import tempfile
+import time as _time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
@@ -14,6 +15,7 @@ from services.data_source_adapter import DataSourceAdapter
 from services.dragon_tiger_service import get_ai_analysis, get_daily_stocks
 from services.theme_service import get_limit_up_stocks_by_date, get_tags_by_date
 from services.ths_moneyflow import get_moneyflow
+from utils.claude_client import CLAUDE_API_KEY, call_claude
 from utils.date_utils import get_next_trading_date, get_recent_trading_dates, get_valid_trading_date
 from utils.db import execute_query, execute_write
 from utils.json_safe import dumps_json, json_safe
@@ -22,12 +24,8 @@ logger = logging.getLogger(__name__)
 
 _adapter = DataSourceAdapter(use_l2=False)
 
-import time as _time
-
 _HOT_STOCKS_CACHE: dict = {"data": None, "ts": 0.0}
 _HOT_STOCKS_TTL = 600  # 10 分钟
-
-from utils.claude_client import CLAUDE_API_KEY, call_claude
 
 _STOCKAPI_TOKEN = "c6b042b0bc7178103985337e72c31b976264e6f85ce93b0e"
 _STOCKAPI_JJQC = "http://user.stockapi.com.cn/v1/base/jjqcUser"
@@ -123,7 +121,6 @@ def get_hot_stocks_for_diagnosis() -> dict:
     返回当日已诊股票列表（searched）和同花顺热股 Top5（hot）。
     hot 结果内存缓存 10 分钟。
     """
-    global _HOT_STOCKS_CACHE
     now = _time.time()
     if _HOT_STOCKS_CACHE["data"] is None or now - _HOT_STOCKS_CACHE["ts"] > _HOT_STOCKS_TTL:
         _HOT_STOCKS_CACHE["data"] = _fetch_ths_hot_top5()

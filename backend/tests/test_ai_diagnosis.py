@@ -1,4 +1,5 @@
 import json
+import time
 import unittest
 from unittest.mock import patch
 
@@ -68,6 +69,27 @@ class AiDiagnosisRouteTest(unittest.TestCase):
         body = resp.get_json()
         self.assertTrue(body["success"])
         self.assertEqual(body["data"]["reply"], "建议观望")
+
+    @patch("routes.ai_diagnosis.get_hot_stocks_for_diagnosis")
+    def test_hot_stocks_route(self, mock_fn):
+        mock_fn.return_value = {
+            "searched": [{"code": "000001", "name": "平安银行", "rating": "偏多"}],
+            "hot": [{"code": "300750", "name": "宁德时代"}],
+        }
+        resp = self.client.get("/api/v1/ai-diagnosis/hot-stocks")
+        body = resp.get_json()
+        self.assertTrue(body["success"])
+        self.assertEqual(len(body["data"]["searched"]), 1)
+        self.assertEqual(len(body["data"]["hot"]), 1)
+
+    @patch("routes.ai_diagnosis.get_hot_stocks_for_diagnosis")
+    def test_hot_stocks_route_error_returns_empty(self, mock_fn):
+        mock_fn.side_effect = Exception("unexpected")
+        resp = self.client.get("/api/v1/ai-diagnosis/hot-stocks")
+        body = resp.get_json()
+        self.assertTrue(body["success"])
+        self.assertEqual(body["data"]["searched"], [])
+        self.assertEqual(body["data"]["hot"], [])
 
 
 class AiDiagnosisServiceTest(unittest.TestCase):
@@ -192,6 +214,52 @@ class AiDiagnosisServiceTest(unittest.TestCase):
         self.assertTrue(result["cached"])
         purge_mock.assert_not_called()
         snap_mock.assert_not_called()
+
+
+class TestGetHotStocksForDiagnosis(unittest.TestCase):
+    def setUp(self):
+        # 每次测试前清空热股缓存
+        import services.ai_diagnosis_service as svc
+        svc._HOT_STOCKS_CACHE["data"] = None
+        svc._HOT_STOCKS_CACHE["ts"] = 0.0
+
+    @patch("services.ai_diagnosis_service._fetch_ths_hot_top5")
+    @patch("services.ai_diagnosis_service.execute_query")
+    def test_returns_searched_and_hot(self, mock_query, mock_hot):
+        mock_hot.return_value = [{"code": "300750", "name": "宁德时代"}]
+        mock_query.return_value = [
+            {
+                "code": "000001",
+                "snapshot_json": '{"quote": {"name": "平安银行"}, "basic": {}}',
+                "report_json": '{"rating": "偏多"}',
+            }
+        ]
+        from services.ai_diagnosis_service import get_hot_stocks_for_diagnosis
+        result = get_hot_stocks_for_diagnosis()
+        self.assertEqual(result["hot"], [{"code": "300750", "name": "宁德时代"}])
+        self.assertEqual(len(result["searched"]), 1)
+        self.assertEqual(result["searched"][0]["code"], "000001")
+        self.assertEqual(result["searched"][0]["name"], "平安银行")
+        self.assertEqual(result["searched"][0]["rating"], "偏多")
+
+    @patch("services.ai_diagnosis_service._fetch_ths_hot_top5")
+    @patch("services.ai_diagnosis_service.execute_query")
+    def test_hot_cache_not_refetched_within_ttl(self, mock_query, mock_hot):
+        mock_hot.return_value = [{"code": "600519", "name": "贵州茅台"}]
+        mock_query.return_value = []
+        from services.ai_diagnosis_service import get_hot_stocks_for_diagnosis
+        get_hot_stocks_for_diagnosis()
+        get_hot_stocks_for_diagnosis()
+        self.assertEqual(mock_hot.call_count, 1)
+
+    @patch("services.ai_diagnosis_service._fetch_ths_hot_top5")
+    @patch("services.ai_diagnosis_service.execute_query")
+    def test_db_error_returns_empty_searched(self, mock_query, mock_hot):
+        mock_hot.return_value = []
+        mock_query.side_effect = Exception("DB down")
+        from services.ai_diagnosis_service import get_hot_stocks_for_diagnosis
+        result = get_hot_stocks_for_diagnosis()
+        self.assertEqual(result["searched"], [])
 
 
 if __name__ == "__main__":

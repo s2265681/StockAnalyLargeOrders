@@ -1,0 +1,36 @@
+backend/migrations/20260519_auction_grab_score_fields.sql
+  s_a6561094e3e0f5::t_af3a11a669276a 1-18
+docs/superpowers/plans/2026-05-19-ai-diagnosis-hot-stocks.md
+  s_96fce0d17515a3::t_7380d763bd5cb0 1-598
+backend/services/auction_grab_service.py
+  s_a6561094e3e0f5::t_f79a8c5a81ab38 188-299
+backend/routes/auction_grab.py
+  s_a6561094e3e0f5::t_eacdfda0ef2b3f 4-7,10,13,28,31-32,36,40-42,111,147,191,194,197,202-205,224-229,238-244,246,248-249,271-273,275-280,286,303,308,318,333-334,337,342-392
+  s_a6561094e3e0f5::t_4d54171fb9af38 245,247,250-262,265-270,274
+  s_a6561094e3e0f5::t_4d299adf54a8b2 263-264
+  s_a6561094e3e0f5::t_70f8c35b7b04dd 230-237
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "9eed8f287131f6cadf2c5d501086b14c3b6bbbfb",
+  "prompts": {},
+  "sessions": {
+    "s_96fce0d17515a3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "754f4364-3dea-4b54-bda1-c8e8d4206cc1",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_a6561094e3e0f5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6d14157e-fb1a-4c18-b70b-08ed7d5888fc",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

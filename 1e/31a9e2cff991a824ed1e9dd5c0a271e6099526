@@ -1,0 +1,20 @@
+backend/routes/ai_diagnosis.py
+  s_96fce0d17515a3::t_5a09f9da508cbb 13
+  s_96fce0d17515a3::t_e8d157aef76f8b 87-96
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "1e31a9e2cff991a824ed1e9dd5c0a271e6099526",
+  "prompts": {},
+  "sessions": {
+    "s_96fce0d17515a3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "754f4364-3dea-4b54-bda1-c8e8d4206cc1",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

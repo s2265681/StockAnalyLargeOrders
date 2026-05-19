@@ -1,0 +1,19 @@
+docs/superpowers/specs/2026-05-19-ai-diagnosis-hot-stocks-design.md
+  s_96fce0d17515a3::t_e58e6f4660d1e0 1-116
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "d6762b70c724ebe8b3ddf8fdd44af3551d9f0a94",
+  "prompts": {},
+  "sessions": {
+    "s_96fce0d17515a3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "754f4364-3dea-4b54-bda1-c8e8d4206cc1",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

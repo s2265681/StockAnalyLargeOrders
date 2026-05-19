@@ -22,6 +22,11 @@ logger = logging.getLogger(__name__)
 
 _adapter = DataSourceAdapter(use_l2=False)
 
+import time as _time
+
+_HOT_STOCKS_CACHE: dict = {"data": None, "ts": 0.0}
+_HOT_STOCKS_TTL = 600  # 10 分钟
+
 from utils.claude_client import CLAUDE_API_KEY, call_claude
 
 _STOCKAPI_TOKEN = "c6b042b0bc7178103985337e72c31b976264e6f85ce93b0e"
@@ -82,6 +87,75 @@ def get_diagnosis_session_date(now: datetime | None = None) -> str:
 def get_trading_date_str() -> str:
     """兼容旧调用，等同 get_diagnosis_session_date。"""
     return get_diagnosis_session_date()
+
+
+def _fetch_ths_hot_top5() -> list:
+    """用 curl 子进程抓取同花顺热股，返回前5条 [{code, name}]。"""
+    urls = [
+        "https://dq.10jqka.com.cn/fuyao/hot_list_data/out/hot_list/v1/stock?stock_type=a&type=hour&list_type=normal",
+        "https://eq.10jqka.com.cn/open/api/hot_list/v1/hot_stock/a/hour/data.txt",
+    ]
+    for url in urls:
+        try:
+            proc = subprocess.run(
+                ["curl", "-s", "--max-time", "10", url, "-H", "User-Agent: Mozilla/5.0"],
+                capture_output=True, text=True, timeout=15,
+            )
+            if proc.returncode != 0 or not proc.stdout.strip():
+                continue
+            data = json.loads(proc.stdout)
+            if data.get("status_code") == 0:
+                stock_list = data.get("data", {}).get("stock_list", [])
+                result = []
+                for item in stock_list[:5]:
+                    code = str(item.get("code", "")).zfill(6)
+                    name = item.get("name", "")
+                    if code and name:
+                        result.append({"code": code, "name": name})
+                return result
+        except Exception as e:
+            logger.warning(f"同花顺热股抓取失败 {url}: {e}")
+    return []
+
+
+def get_hot_stocks_for_diagnosis() -> dict:
+    """
+    返回当日已诊股票列表（searched）和同花顺热股 Top5（hot）。
+    hot 结果内存缓存 10 分钟。
+    """
+    global _HOT_STOCKS_CACHE
+    now = _time.time()
+    if _HOT_STOCKS_CACHE["data"] is None or now - _HOT_STOCKS_CACHE["ts"] > _HOT_STOCKS_TTL:
+        _HOT_STOCKS_CACHE["data"] = _fetch_ths_hot_top5()
+        _HOT_STOCKS_CACHE["ts"] = now
+    hot = _HOT_STOCKS_CACHE["data"]
+
+    trade_date = get_trading_date_str()
+    searched = []
+    try:
+        rows = execute_query(
+            "SELECT code, snapshot_json, report_json FROM ai_diagnosis_cache "
+            "WHERE date=%s ORDER BY updated_at DESC",
+            (trade_date,),
+        )
+        for row in rows:
+            code = row["code"]
+            try:
+                snap = json.loads(row["snapshot_json"])
+                rep = json.loads(row["report_json"])
+                name = (
+                    (snap.get("quote") or {}).get("name")
+                    or (snap.get("basic") or {}).get("name")
+                    or code
+                )
+                rating = rep.get("rating", "")
+                searched.append({"code": code, "name": name, "rating": rating})
+            except Exception:
+                searched.append({"code": code, "name": code, "rating": ""})
+    except Exception as e:
+        logger.warning(f"查询已诊缓存失败: {e}")
+
+    return {"searched": searched, "hot": hot}
 
 
 def purge_stale_cache(code: str, session_date: str) -> None:

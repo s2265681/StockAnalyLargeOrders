@@ -114,7 +114,12 @@ def _curl_get_json(url: str, *, headers: dict = None, timeout: int = 15) -> dict
 
 
 def _compute_rise_pct_from_akshare() -> Optional[float]:
-    """当第三方 API szbl 为 None 时，用 akshare 全市场行情计算上涨比例"""
+    """收盘后（>=15:05）才补算上涨比例，盘中不调用，避免拉 5000 只股票打满 CPU"""
+    from datetime import datetime
+    now = datetime.now()
+    # 仅在收盘后执行，盘中直接返回 None 保持 "--"
+    if now.hour < 15 or (now.hour == 15 and now.minute < 5):
+        return None
     try:
         import akshare as ak
         df = ak.stock_zh_a_spot_em()

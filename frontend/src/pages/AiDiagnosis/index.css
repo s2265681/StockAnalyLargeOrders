@@ -735,14 +735,14 @@
 }
 
 .ai-hot-tag--searched {
+  border: 1px solid #1677ff;
   background: rgba(22, 119, 255, 0.08);
-  border-color: #1677ff;
   color: #1677ff;
 }
 
 .ai-hot-tag--hot {
+  border: 1px solid #fa8c16;
   background: rgba(250, 140, 22, 0.1);
-  border-color: #fa8c16;
   color: #fa8c16;
 }
 

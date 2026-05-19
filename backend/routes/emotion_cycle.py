@@ -157,6 +157,39 @@ def _fetch_rise_pct() -> Optional[float]:
         return None
 
 
+def _fetch_zt_counts() -> dict:
+    """用 akshare 涨停/跌停/炸板池获取当日家数，盘中实时可用。返回可能为空 dict。"""
+    from utils.date_utils import get_valid_trading_date
+    dt = get_valid_trading_date().replace("-", "")
+    result = {}
+    try:
+        import akshare as ak
+        df = ak.stock_zt_pool_em(date=dt)
+        if df is not None:
+            result["limit_up_count"] = len(df)
+    except Exception as e:
+        logger.debug("akshare 涨停池失败 %s: %s", dt, e)
+    try:
+        import akshare as ak
+        df = ak.stock_zt_pool_dtgc_em(date=dt)
+        if df is not None:
+            result["limit_down_count"] = len(df)
+    except Exception as e:
+        logger.debug("akshare 跌停池失败 %s: %s", dt, e)
+    try:
+        import akshare as ak
+        df = ak.stock_zt_pool_zbgc_em(date=dt)
+        if df is not None:
+            result["broken_board_count"] = len(df)
+    except Exception as e:
+        logger.debug("akshare 炸板池失败 %s: %s", dt, e)
+    lu = result.get("limit_up_count")
+    zb = result.get("broken_board_count")
+    if lu is not None and zb is not None and (lu + zb) > 0:
+        result["board_hit_rate"] = round(lu / (lu + zb) * 100, 2)
+    return result
+
+
 def _format_date(date_int: int) -> str:
     """将 20260515 转为 '2026-05-15'"""
     s = str(date_int)
@@ -179,7 +212,7 @@ def _transform_row(col_names: list, row: list) -> dict:
 # ---------- 1. 情绪周期数据 ----------
 
 def _fetch_emotion_records():
-    """从 StockAPI 拉取情绪周期原始记录列表；szbl 为 None 时用 akshare 补算"""
+    """从 StockAPI 拉取情绪周期原始记录列表；当日字段为 None 时用自有接口实时补填。"""
     body = _curl_get_json(
         STOCKAPI_EMOTION_URL,
         headers={"User-Agent": "Mozilla/5.0"},
@@ -191,12 +224,31 @@ def _fetch_emotion_records():
     col_names = data["colNameList"]
     records = [_transform_row(col_names, row) for row in data["contentList"]]
 
-    # 如果最新一条 rise_pct 为 None（第三方当天未更新），尝试从专用接口补取
-    if records and records[-1].get("rise_pct") is None:
+    if not records:
+        return records
+    last = records[-1]
+
+    # 上涨比例：StockAPI 当日未更新时用东财行业板块接口补取
+    if last.get("rise_pct") is None:
         computed = _fetch_rise_pct()
         if computed is not None:
-            records[-1]["rise_pct"] = computed
-            logger.info("rise_pct 已补取: %s → %.2f%%", records[-1].get("date"), computed)
+            last["rise_pct"] = computed
+            logger.info("rise_pct 补取: %s → %.2f%%", last.get("date"), computed)
+
+    # 涨停/跌停/炸板家数：有任一字段为 None 时用 akshare 涨停池补取
+    zt_fields = ("limit_up_count", "limit_down_count", "broken_board_count", "board_hit_rate")
+    if any(last.get(f) is None for f in zt_fields):
+        zt = _fetch_zt_counts()
+        if zt:
+            for field in zt_fields:
+                if last.get(field) is None and field in zt:
+                    last[field] = zt[field]
+            logger.info(
+                "涨停池补取: %s zt=%s dt=%s zb=%s rate=%s",
+                last.get("date"),
+                last.get("limit_up_count"), last.get("limit_down_count"),
+                last.get("broken_board_count"), last.get("board_hit_rate"),
+            )
 
     return records
 

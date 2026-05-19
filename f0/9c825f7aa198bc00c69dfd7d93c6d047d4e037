@@ -1,0 +1,54 @@
+backend/utils/claude_client.py
+  s_8aa11394fd11d0::t_a0c14835da38e0 1,8-9,12,18,36-37,69,73-78,96-97,111,118,125,131,150
+  s_8aa11394fd11d0::t_c2c81d45d6cadb 13-15,19-20
+backend/routes/__init__.py
+  s_8aa11394fd11d0::t_600510ddc4ae8c 33
+  s_8aa11394fd11d0::t_3cce6d8491e2c2 16
+backend/services/ai_diagnosis_service.py
+  s_8aa11394fd11d0::t_2551b5ff104e63 23
+backend/routes/limit_up_echelon.py
+  s_8aa11394fd11d0::t_e58b71d2b252f1 1770
+  s_8aa11394fd11d0::t_b1cca39ce6b7f2 53
+  s_8aa11394fd11d0::t_8481f9fd30fa56 949
+backend/scripts/switch_ai_account.sh
+  s_8aa11394fd11d0::t_e7d309138baf27 1-13
+.gitignore
+  s_8aa11394fd11d0::t_a05d17897dd33e 64
+backend/config/ai_accounts.py
+  s_8aa11394fd11d0::t_d9c2b49e8756b3 1-25,27-43,45-90,96,98-99,101-160
+  s_8aa11394fd11d0::t_cda56871d90b3b 26
+  s_8aa11394fd11d0::t_6e42d95f4bb2cd 44
+  s_8aa11394fd11d0::t_7019c4fb94292d 91-95,97,100
+backend/config/ai_config.py
+  s_8aa11394fd11d0::t_4b3391bb758266 22,32-45,60-64,66
+  s_8aa11394fd11d0::t_eac9024c1542b8 2-3
+  s_8aa11394fd11d0::t_d6e4d4d688b6c4 4-15
+backend/.env.example
+  s_8aa11394fd11d0::t_65d0d6d685a14d 8,11-19,23-28,30,33,35
+  s_8aa11394fd11d0::t_ef7729e19e3f97 9-10
+  s_8aa11394fd11d0::t_c485604dde8ac8 20-22
+backend/routes/ai_account.py
+  s_8aa11394fd11d0::t_1296f52beba198 46-48
+  s_8aa11394fd11d0::t_308fc096bbcbff 1-45,49-60
+backend/app.py
+  s_8aa11394fd11d0::t_01b332e329da7d 31
+  s_8aa11394fd11d0::t_5b75c136e11529 57
+backend/config/__init__.py
+  s_8aa11394fd11d0::t_bc38b982884fdf 2-9,12-16,18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "f09c825f7aa198bc00c69dfd7d93c6d047d4e037",
+  "prompts": {},
+  "sessions": {
+    "s_8aa11394fd11d0": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "146f2da4-a659-43f0-8f69-dac4789d33de",
+        "model": "composer-2.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

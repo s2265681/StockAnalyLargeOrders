@@ -203,6 +203,32 @@ def _codes_signature(items):
     return frozenset(str(x.get('code', '')).zfill(6) for x in (items or []) if x.get('code'))
 
 
+def _enrichment_from_item(item: dict) -> dict:
+    """单条 item -> 可合并到前端的富化字段"""
+    out = {}
+    if item.get('close_change_pct') is not None:
+        out['close_change_pct'] = item.get('close_change_pct')
+    if item.get('next_day_change_pct') is not None:
+        out['next_day_change_pct'] = item.get('next_day_change_pct')
+    if item.get('recommend_score') is not None:
+        out['recommend_stars'] = int(item.get('recommend_stars') or 0)
+        out['recommend_reason'] = item.get('recommend_reason') or ''
+        out['recommend_score'] = float(item.get('recommend_score') or 0)
+    return out
+
+
+def _build_enrichments_map(items: list) -> dict:
+    result = {}
+    for item in items or []:
+        code = str(item.get('code', '')).zfill(6)
+        if not code:
+            continue
+        enrichment = _enrichment_from_item(item)
+        if enrichment:
+            result[code] = enrichment
+    return result
+
+
 def _load_items_for_request(date_compact, period_int, trade_date, is_today):
     cache_key = f"{date_compact}_{period_int}_{_FETCH_API_TYPE}"
     now = time.time()
@@ -359,35 +385,28 @@ def get_auction_grab_score():
     # 优先读内存缓存（后台线程写入，最新鲜）
     processed_items, rec_meta = _get_processed_payload(date_compact, period_int, is_today)
     if processed_items is not None:
-        scores = {
-            str(item.get('code', '')).zfill(6): {
-                'recommend_stars': item.get('recommend_stars', 0),
-                'recommend_reason': item.get('recommend_reason', ''),
-                'recommend_score': item.get('recommend_score', 0),
-            }
-            for item in processed_items
-            if item.get('recommend_score') is not None
-        }
+        enrichments = _build_enrichments_map(processed_items)
+        has_scores = any(e.get('recommend_score') is not None for e in enrichments.values())
         return v1_success_response(data={
-            'scores': scores,
+            'enrichments': enrichments,
             'emotion_stage': rec_meta.get('stage', ''),
             'recommend_hint': rec_meta.get('hint', ''),
-            'ready': bool(scores),
+            'ready': has_scores,
         })
 
     # 回退读库
-    scores = ag_store.load_score_fields(date_compact, period_int)
+    enrichments = ag_store.load_enrichment_fields(date_compact, period_int)
     meta = ag_store.load_score_meta(date_compact, period_int)
 
-    # 若仍无评分，尝试用已缓存的原始数据触发后台计算
-    if not scores:
+    # 若仍无富化数据，尝试用已缓存的原始数据触发后台计算
+    if not enrichments:
         raw_items, _ = _load_items_for_request(date_compact, period_int, trade_date, is_today)
         if raw_items:
             _trigger_background_enrich(date_compact, period_int, raw_items, trade_date, is_today)
 
     return v1_success_response(data={
-        'scores': scores,
+        'enrichments': enrichments,
         'emotion_stage': meta.get('stage', ''),
         'recommend_hint': meta.get('hint', ''),
-        'ready': meta.get('ready', False),
+        'ready': meta.get('ready', False) or ag_store.scores_exist(date_compact, period_int),
     })

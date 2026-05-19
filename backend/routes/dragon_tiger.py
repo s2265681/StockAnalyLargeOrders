@@ -28,7 +28,8 @@ logger = logging.getLogger(__name__)
 
 dragon_tiger_bp = Blueprint("dragon_tiger", __name__)
 
-from utils.claude_client import call_claude as _call_claude
+from config.ai_prompts import build_dragon_tiger_prompt
+from utils.claude_client import call_claude_for_scenario
 
 # 游资席位名称关键词
 HOT_MONEY_KEYWORDS = [
@@ -220,57 +221,6 @@ def _build_theme_profile(date: str, code: str) -> dict:
     return profile
 
 
-def _build_ai_prompt(stock: dict, theme_profile: dict) -> str:
-    """构建AI分析prompt"""
-    def fmt(val):
-        v = float(val or 0)
-        if abs(v) >= 1e8:
-            return f"{v/1e8:.2f}亿"
-        if abs(v) >= 1e4:
-            return f"{v/1e4:.0f}万"
-        return f"{v:.0f}元"
-
-    def seat_lines(seats, label):
-        if not seats:
-            return f"{label}：无数据\n"
-        lines = [f"{label}："]
-        for s in seats:
-            hm = "【游资】" if s.get("is_hot_money") else ""
-            lines.append(
-                f"  {s['rank_no']}. {s['seat_name']}{hm}"
-                f"  买入{fmt(s['buy_amount'])} 卖出{fmt(s['sell_amount'])} 净额{fmt(s['net_amount'])}"
-            )
-        return "\n".join(lines) + "\n"
-
-    return f"""你是A股龙虎榜资深分析师，请对以下龙虎榜数据进行专业解读。
-
-股票：{stock['name']}（{stock['code']}）
-涨跌幅：{stock['change_pct']}%
-上榜原因：{stock['reason']}
-龙虎榜净买额：{fmt(stock['net_buy'])}
-龙虎榜买入额：{fmt(stock['buy_amount'])}
-龙虎榜卖出额：{fmt(stock['sell_amount'])}
-
-题材标签分析：
-- 所属题材：{theme_profile.get('theme', '暂无明确题材')}
-- 所属行业：{theme_profile.get('industry', '未知')}
-- 题材地位：{theme_profile.get('position', '待观察')}
-- 同题材涨停家数：{theme_profile.get('theme_count', 0)}
-- 题材驱动：{theme_profile.get('theme_reason', '暂无题材驱动描述')}
-
-{seat_lines(stock.get('buy_seats', []), '买入席位')}
-{seat_lines(stock.get('sell_seats', []), '卖出席位')}
-
-请从以下角度分析（350字以内，简洁明了）：
-1. 资金性质：各席位属于游资/机构/北向，主要资金属性是什么
-2. 操作意图：主力是净买入还是净卖出，对倒可能性如何
-3. 游资行为：游资席位的操作特征和意图
-4. 题材定位：结合题材标签分析，说明该股所属板块/行业，以及在题材中的地位（龙头/中军/跟风）
-5. 综合判断：当前筹码结构和后市参考
-
-直接输出分析内容，不要分点列表，用自然段落。禁止输出markdown符号（如##、**）。"""
-
-
 @dragon_tiger_bp.route("/api/v1/dragon-tiger", methods=["GET"])
 def get_dragon_tiger():
     """获取龙虎榜列表（含席位），有DB缓存则直接返回"""
@@ -329,8 +279,8 @@ def analyze_dragon_tiger_stock(date: str, code: str, force: bool = False) -> str
             return "no_data"
 
         theme_profile = _build_theme_profile(date, code)
-        prompt = _build_ai_prompt(stock, theme_profile)
-        analysis = _call_claude(prompt)
+        prompt = build_dragon_tiger_prompt(stock, theme_profile)
+        analysis = call_claude_for_scenario("dragon_tiger", prompt)
         if not analysis:
             return "failed"
 

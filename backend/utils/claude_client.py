@@ -57,6 +57,7 @@ def call_claude(
     user_content: str,
     *,
     max_tokens: int = 4096,
+    model: str | None = None,
     curl_timeout: int = 90,
     proc_timeout=None,
     raise_on_error: bool = False,
@@ -64,6 +65,7 @@ def call_claude(
     """调用 Claude API，返回助手回复文本"""
     if proc_timeout is None:
         proc_timeout = curl_timeout + 5
+    use_model = model or CLAUDE_MODEL
 
     if not CLAUDE_API_KEY:
         msg = "CLAUDE_API_KEY 未配置"
@@ -73,7 +75,7 @@ def call_claude(
         return ""
 
     payload = json.dumps({
-        "model": CLAUDE_MODEL,
+        "model": use_model,
         "messages": [{"role": "user", "content": user_content}],
         "max_tokens": max_tokens,
     })
@@ -129,3 +131,24 @@ def call_claude(
             os.unlink(payload_file)
         except OSError:
             pass
+
+
+def call_claude_for_scenario(
+    scenario: str,
+    user_content: str,
+    *,
+    raise_on_error: bool = False,
+    **kwargs,
+) -> str:
+    """按 config/ai_config.py 中的场景配置调用 Claude"""
+    from config.ai_config import get_scenario
+
+    cfg = get_scenario(scenario)
+    return call_claude(
+        user_content,
+        max_tokens=kwargs.get("max_tokens", cfg.max_tokens),
+        model=kwargs.get("model", cfg.model),
+        curl_timeout=kwargs.get("curl_timeout", cfg.curl_timeout),
+        proc_timeout=kwargs.get("proc_timeout", cfg.proc_timeout_resolved),
+        raise_on_error=raise_on_error,
+    )

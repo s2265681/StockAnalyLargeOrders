@@ -43,7 +43,14 @@ def _default_echelon_dt() -> str:
         d -= timedelta(days=2)
     return d.strftime('%Y%m%d')
 
-from utils.claude_client import CLAUDE_API_KEY, call_claude as _call_claude
+from config.ai_config import GENERAL_BROAD_TAGS_ORDERED
+from config.ai_prompts import (
+    STOCK_THEME_PROMPT,
+    build_group_prompt,
+    build_regroup_prompt,
+    build_split_oversized_prompt,
+)
+from utils.claude_client import CLAUDE_API_KEY, call_claude_for_scenario
 
 # (date, codes_tuple) -> (unix_ts, {"labels": code -> group_label, "reasons": label -> reason, "leaders": label -> [leader]})
 _echelon_ai_cache = {}
@@ -62,14 +69,6 @@ OTHER_LABEL_SET = frozenset({"其他概念", "其他", "其他行业"})
 CONCEPT_MATCH_WEIGHT = 4
 CONCEPT_TEXT_REPEAT = 3
 
-# 复盘「通用大类」白名单（标签名必须落在此集合，禁止长句标签；顺序用于 prompt 展示）
-GENERAL_BROAD_TAGS_ORDERED = (
-    "合成生物", "机器人", "低空经济", "算力/服务器", "算力/半导体产业化",
-    "半导体产业链", "第三代半导体", "光通信", "PCB", "电力", "光伏",
-    "锂电池", "医药", "房地产", "大消费", "教育", "文化传媒", "AI应用",
-    "军工", "油气", "稀土永磁", "充电桩", "电子特气/化工", "氟化工",
-    "猪肉", "并购重组", "体育产业", "其他概念",
-)
 GENERAL_BROAD_TAG_SET = frozenset(GENERAL_BROAD_TAGS_ORDERED)
 
 
@@ -262,43 +261,6 @@ DEFAULT_THEME_REASONS = {
     "体育产业": "体育赛事相关催化",
     "其他概念": "未能归入当日主线",
 }
-
-# ---------- Claude 分组（相近概念合并为同一 group_label）----------
-
-GROUP_PROMPT = (
-    "你是A股超短题材复盘专家。把涨停股归入**通用大类**（复盘图顶部短标签），禁止长句题材名。\n\n"
-    "**label 只能使用以下名称之一：**\n"
-    + _broad_tags_prompt_list()
-    + "\n\n禁止：「电子特气产业链景气」「光伏系统集成」等长句。\n\n"
-    "归类权重：①所属概念 ②涨停标题/统计 ③同花顺概念 ④行业。可参考每行「规则参考」。\n"
-    "当日选 6-12 个大类即可；「其他概念」≤5；单类≥2只且≤总数30%。\n\n"
-    "近期标签：{known_tags}\n\n"
-    "股票列表：\n{stock_list}\n\n"
-    "只输出 JSON，groups 按数量降序，「其他概念」最后：\n"
-    '{{"groups":[{{"label":"电力","reason":"…","leaders":[…],"stocks":[…]}}],'
-    '"stock_groups":{{"000000":"电力"}}}}'
-)
-
-THEME_PROMPT = GROUP_PROMPT
-
-SPLIT_OVERSIZED_PROMPT = (
-    "下列股票过多归入「{tag_name}」，请按涨停原因拆到**其他通用大类**（只能从下列名称中选）：\n"
-    + _broad_tags_prompt_list()
-    + "\n\n已有大类：{existing_labels}\n"
-    "每新类≥2只；禁止长句标签名。\n\n"
-    "股票列表：\n{stock_list}\n\n"
-    "只输出 JSON。"
-)
-
-REGROUP_PROMPT = (
-    "下列涨停股在「其他概念」，请并入已有**通用大类**（只能选下列名称）：\n"
-    + _broad_tags_prompt_list()
-    + "\n\n当日已有：{existing_labels}\n"
-    "「其他概念」全市场≤5只。禁止长句标签。\n\n"
-    "{stock_list}\n\n"
-    "只输出 JSON。"
-)
-
 
 def _fetch_ths_hot_stocks() -> tuple:
     """获取同花顺最强风口热股数据，返回 (list, dict_by_code)"""
@@ -837,13 +799,9 @@ def _split_oversized_tag(
         t for t in set(labels.values()) if t != tag_name and not _is_other_label(t)
     ) or "（无）"
     lines = [_format_stock_prompt_line(s) for s in subset]
-    prompt = (
-        SPLIT_OVERSIZED_PROMPT.replace("{tag_name}", tag_name)
-        .replace("{existing_labels}", existing)
-        .replace("{stock_list}", "\n".join(lines))
-    )
+    prompt = build_split_oversized_prompt(tag_name, existing, "\n".join(lines))
     try:
-        content = _call_claude(prompt, max_tokens=8192)
+        content = call_claude_for_scenario("limit_up_split", prompt)
         parsed = _parse_grouping_json(content)
         if not parsed.get("labels"):
             return
@@ -1003,12 +961,10 @@ def _claude_group_labels_for_stocks(stocks: list) -> dict:
         logger.warning(f"获取历史标签失败，跳过: {e}")
 
     lines = [_format_stock_prompt_line(s) for s in stocks]
-    prompt = GROUP_PROMPT.replace("{stock_list}", "\n".join(lines)).replace(
-        "{known_tags}", known_tags_text
-    )
+    prompt = build_group_prompt(known_tags_text, "\n".join(lines))
     parsed = {}
     for attempt in range(2):
-        content = _call_claude(prompt, max_tokens=8192)
+        content = call_claude_for_scenario("limit_up_group", prompt)
         try:
             parsed = _parse_grouping_json(content)
         except Exception as e:
@@ -1224,13 +1180,11 @@ def _smart_group_stocks(stocks: list, dt: str, *, fresh: bool = False) -> dict:
         )
 
         lines = [_format_stock_prompt_line(s) for s in other_stocks]
-        regroup_prompt = (
-            REGROUP_PROMPT
-            .replace("{existing_labels}", existing_labels_text or "（无）")
-            .replace("{stock_list}", "\n".join(lines))
+        regroup_prompt = build_regroup_prompt(
+            existing_labels_text or "（无）", "\n".join(lines)
         )
         try:
-            content = _call_claude(regroup_prompt, max_tokens=4096)
+            content = call_claude_for_scenario("limit_up_regroup", regroup_prompt)
             regroup = _parse_grouping_json(content)
             if regroup.get("labels"):
                 for code, new_label in regroup["labels"].items():
@@ -1751,26 +1705,6 @@ def analyze_themes():
 # GET /api/v1/stock-theme-tags?code=000001&dt=20260515
 # ──────────────────────────────────────────────────────────────────────────────
 
-_STOCK_THEME_PROMPT = """你是A股超短题材复盘专家。根据以下这只股票的信息，判断它属于哪个涨停题材大标签（2-8字，市场常用语言）。
-
-股票信息：
-- 代码：{code}
-- 名称：{name}
-- 所属行业：{industry}
-- 同花顺热度：{ths_rank}
-- 同花顺标题：{ths_title}
-- 同花顺概念：{ths_tags}
-- 同花顺分析：{ths_analyse}
-- 今日涨停原因：{reason}
-
-当天已有涨停大标签（优先归入已有标签）：
-{existing_labels}
-
-只输出一个 JSON 对象，格式为：
-{{"label": "机器人", "reason": "归类依据一句话"}}
-如果无法确定，输出 {{"label": "", "reason": ""}}"""
-
-
 @limit_up_echelon_bp.route('/api/v1/stock-theme-tags', methods=['GET'])
 def get_stock_theme_tags():
     """智能分析单只股票的题材归属，返回最多2个标签+各自涨停家数（不存库）"""
@@ -1838,7 +1772,7 @@ def get_stock_theme_tags():
                     info = ths_info or {}
                     existing_text = '、'.join(db_tag_names[:20]) if db_tag_names else '（今日暂无题材标签）'
                     prompt = (
-                        _STOCK_THEME_PROMPT
+                        STOCK_THEME_PROMPT
                         .replace('{code}', code)
                         .replace('{name}', stock_name)
                         .replace('{industry}', target_industry or '未知')
@@ -1849,7 +1783,7 @@ def get_stock_theme_tags():
                         .replace('{reason}', str(info.get('ths_analyse_title') or target_industry or ''))
                         .replace('{existing_labels}', existing_text)
                     )
-                    content = _call_claude(prompt, max_tokens=256)
+                    content = call_claude_for_scenario("limit_up_stock_theme", prompt)
                     import json as _json
                     # 容错：提取 JSON 部分
                     content = content.strip()

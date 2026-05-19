@@ -1,8 +1,11 @@
 import {
+  alignMoneyFlowToTradingAxis,
   alignTimeshareToTradingAxis,
   buildAnalysisCards,
+  buildFlowLineSeriesData,
   buildHandicapLanguage,
   buildTimeshareBaseInfo,
+  buildTradingTimeAxis,
   getFlowTone,
   isPrevCloseConsistentWithFenshi,
   isSameStockCode,
@@ -84,6 +87,45 @@ describe('l2Analysis helpers', () => {
     ]);
 
     expect(aligned.fenshi[1]).toBe(12.15);
+  });
+
+  test('aligns money flow series by minute key instead of array index', () => {
+    const aligned = alignMoneyFlowToTradingAxis({
+      time: ['0930', '0931', '1300'],
+      chaoda: ['0.10', '0.20', '0.99'],
+      sanhu: ['-0.10', '-0.20', '-0.99'],
+      chaoda_delta: ['100', '50', '0'],
+      sanhu_delta: ['-100', '-50', '0'],
+    });
+
+    const axis = buildTradingTimeAxis();
+    const idx1300 = axis.indexOf('13:00');
+    expect(aligned.chaoda[idx1300]).toBe('0.99');
+    expect(aligned.chaoda[axis.indexOf('09:31')]).toBe('0.20');
+  });
+
+  test('holds flow line y when minute delta is zero (no THS update)', () => {
+    const axis = ['10:00', '10:01', '10:02'];
+    const fenshi = [10, 10, 10];
+    const scores = ['-0.50', '-0.30', '0.80'];
+    const minuteDeltas = ['-200', '0', '0'];
+    const yMid = 0;
+    const yRange = 10;
+    const maxAbsFlow = 1;
+
+    const points = buildFlowLineSeriesData({
+      axis,
+      fenshi,
+      scores,
+      minuteDeltas,
+      yMid,
+      yRange,
+      maxAbsFlow,
+    });
+
+    expect(points[0][1]).toBe(-5);
+    expect(points[1][1]).toBe(-5);
+    expect(points[2][1]).toBe(-5);
   });
 
   test('returns waiting state before timeshare data is loaded', () => {

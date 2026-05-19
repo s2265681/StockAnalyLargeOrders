@@ -15,7 +15,12 @@ from services.data_source_adapter import DataSourceAdapter
 from services.dragon_tiger_service import get_ai_analysis, get_daily_stocks
 from services.theme_service import get_limit_up_stocks_by_date, get_tags_by_date
 from services.ths_moneyflow import get_moneyflow
-from utils.claude_client import CLAUDE_API_KEY, call_claude
+from config.ai_prompts import (
+    DIAGNOSIS_JSON_RETRY_SUFFIX,
+    build_diagnosis_chat_prompt,
+    build_diagnosis_prompt,
+)
+from utils.claude_client import CLAUDE_API_KEY, call_claude_for_scenario
 from utils.date_utils import get_next_trading_date, get_recent_trading_dates, get_valid_trading_date
 from utils.db import execute_query, execute_write
 from utils.json_safe import dumps_json, json_safe
@@ -661,8 +666,8 @@ def save_cache(trade_date: str, code: str, snapshot: dict, report: dict) -> bool
         return False
 
 
-def _call_claude(prompt: str, max_tokens: int = 4096) -> str:
-    text = call_claude(prompt, max_tokens=max_tokens)
+def _call_claude(prompt: str, scenario: str = "ai_diagnosis") -> str:
+    text = call_claude_for_scenario(scenario, prompt)
     if text:
         logger.info(f"Claude 返回长度: {len(text)}")
     return text
@@ -819,56 +824,6 @@ def _parse_report_json(text: str):
     return None
 
 
-def _build_diagnosis_prompt(snapshot: dict) -> str:
-    return f"""你是一位 A 股超短线交易分析师。请根据以下**真实数据快照**对股票 {snapshot.get('code')} 做全面诊股。
-
-分析维度（必须覆盖，数据缺失则在 risk_warnings 说明，禁止编造数字）：
-1. **情绪周期**：结合 emotion 字段，说明当前阶段及对该股打法适配度
-2. **大盘环境**：结合 market_ecology、涨停家数、连板高度，判断短线赚钱效应
-3. **短线生态**：首板/连板结构、打板成功率隐含环境、资金风险偏好
-4. **龙虎榜**：dragon_tiger 字段，游资态度（进攻/撤退/分歧）
-5. **板块与近3日热点**：theme、hot_themes_3d、limit_up，个股题材地位与持续性
-6. **个股基本面**：basic、quote、l2、large_orders、timeshare、auction
-7. **涨停连板与溢价**：limit_up 连板数、封板质量、题材内地位、次日溢价预期
-8. **买卖点位**：给出具体价格区间或技术位 + 依据；sell_points 含止盈/减仓逻辑
-
-输出要求：
-- 只输出一个 JSON 对象，不要 markdown 代码块，不要 ``` 包裹，不要任何前后说明
-- 正文用纯中文，不要用 **加粗**、# 标题、列表符号等 Markdown 语法
-- buy_points/sell_points 每项为 {{"price":"价位或条件","reason":"依据"}}
-
-快照数据：
-{dumps_json(snapshot, indent=2)}
-
-JSON 结构（字段名必须一致）：
-{{
-  "rating": "偏多|中性|偏空",
-  "theme_position": "龙头|前排核心|中军跟随|补涨|无题材",
-  "position_advice": "重仓|轻仓试错|观望|不参与",
-  "summary": "150字内一句话结论",
-  "emotion_fit": "情绪周期适配（80字内）",
-  "market_env": "大盘与赚钱效应（80字内）",
-  "short_term_ecology": "短线生态（80字内）",
-  "dragon_tiger_view": "龙虎榜资金态度（80字内，无榜则说明）",
-  "sector_hot_themes": "板块及近3日热点（100字内）",
-  "stock_technical": "分时走势+大单净额+资金面（100字内）",
-  "limit_up_view": "连板数/涨停溢价/封板质量（80字内，非涨停股说明趋势地位）",
-  "buy_points": [{{"price":"买点1","reason":"依据"}}],
-  "sell_points": [{{"price":"卖点1","reason":"依据"}}],
-  "stop_loss": "止损价位或条件",
-  "stop_loss_reason": "止损逻辑",
-  "risk_warnings": ["风险1","风险2"],
-  "sections": [
-    {{"title":"情绪周期","content":"...","highlights":["关键词1"]}},
-    {{"title":"大盘环境","content":"..."}},
-    {{"title":"短线生态","content":"..."}},
-    {{"title":"龙虎榜解读","content":"..."}},
-    {{"title":"板块热点","content":"..."}},
-    {{"title":"个股研判","content":"..."}}
-  ]
-}}"""
-
-
 def run_diagnosis(code: str, force_refresh: bool = False) -> dict:
     code = normalize_code(code)
     trade_date = get_diagnosis_session_date()
@@ -887,7 +842,7 @@ def run_diagnosis(code: str, force_refresh: bool = False) -> dict:
     purge_stale_cache(code, trade_date)
 
     snapshot = build_snapshot(code, trade_date)
-    prompt = _build_diagnosis_prompt(snapshot)
+    prompt = build_diagnosis_prompt(snapshot)
     raw = _call_claude(prompt)
     if not raw:
         raise RuntimeError("AI 暂时不可用，请检查 Claude 配置或稍后重试")
@@ -895,10 +850,7 @@ def run_diagnosis(code: str, force_refresh: bool = False) -> dict:
     report = _parse_report_json(raw)
     if not report:
         logger.warning(f"诊股 JSON 解析失败，重试。原始前500字: {raw[:500]}")
-        raw2 = _call_claude(
-            prompt + "\n\n上次输出无法解析为 JSON。请只输出一个合法 JSON 对象，"
-            "不要用 markdown 代码块，不要有任何前后说明文字。"
-        )
+        raw2 = _call_claude(prompt + DIAGNOSIS_JSON_RETRY_SUFFIX)
         report = _parse_report_json(raw2) if raw2 else None
 
     if not report and raw.strip():
@@ -921,19 +873,8 @@ def run_chat(code: str, message: str, context: dict) -> dict:
     code = normalize_code(code)
     snapshot = (context or {}).get("snapshot") or {}
     report = (context or {}).get("report") or {}
-    prompt = f"""你是 A 股诊股助手。用户正在分析股票 {code}。
-
-【已生成的诊股报告】
-{dumps_json(report, indent=2)}
-
-【数据快照】
-{dumps_json(snapshot, indent=2)}
-
-【用户追问】
-{message}
-
-请结合以上信息简洁回答（300字内），可操作、有风险提示。使用纯中文，不要用 Markdown 格式符号。"""
-    reply = _call_claude(prompt, max_tokens=1024)
+    prompt = build_diagnosis_chat_prompt(code, report, snapshot, message)
+    reply = _call_claude(prompt, scenario="ai_diagnosis_chat")
     if not reply:
         raise RuntimeError("AI 暂时不可用，请稍后重试")
     return {"reply": reply}

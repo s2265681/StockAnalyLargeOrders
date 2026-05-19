@@ -40,7 +40,7 @@ class DragonTigerAiCacheTest(unittest.TestCase):
 
     @patch("routes.dragon_tiger.get_ai_analysis", return_value="太短")
     def test_post_compat_readonly_no_generation(self, mock_get):
-        with patch("routes.dragon_tiger._call_claude") as mock_claude:
+        with patch("routes.dragon_tiger.call_claude_for_scenario") as mock_claude:
             res = self.client.post(
                 "/api/v1/dragon-tiger/ai-analysis",
                 json={"date": "20260515", "code": "000001"},

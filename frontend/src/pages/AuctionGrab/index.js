@@ -41,6 +41,22 @@ const SORT_OPTIONS = [
   { key: 'zf', label: '涨幅' },
 ];
 
+const mergeEnrichments = (items, enrichments) => {
+  if (!items?.length || !enrichments) return items;
+  return items.map((item) => {
+    const extra = enrichments[item.code];
+    return extra ? { ...item, ...extra } : item;
+  });
+};
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const needsScorePoll = (payload) => {
+  if (!payload?.items?.length) return false;
+  if (payload.score_ready) return false;
+  return payload.items.some((it) => it.recommend_score == null);
+};
+
 const sortAuctionItems = (items, sortKey) => {
   const list = [...(items || [])];
   const num = (v) => {
@@ -93,6 +109,7 @@ function AuctionGrab() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const dataCache = useRef({});
+  const fetchIdRef = useRef(0);
   const dropdownRef = useRef(null);
 
   // 点击外部关闭下拉
@@ -106,13 +123,57 @@ function AuctionGrab() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  const pollScoreEnrichments = useCallback(async (dt, tab, fetchId) => {
+    const period = tab === 'tail' ? '1' : '0';
+    const cacheKey = `${dt}_${period}`;
+    const maxAttempts = 25;
+    const intervalMs = 2000;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      if (fetchId !== fetchIdRef.current) return;
+      if (attempt > 0) await sleep(intervalMs);
+      if (fetchId !== fetchIdRef.current) return;
+
+      try {
+        const res = await apiRequest(`/api/v1/auction-grab/score?dt=${dt}&period=${period}`, {
+          timeout: 60000,
+        });
+        if (fetchId !== fetchIdRef.current) return;
+
+        const payload = res?.data;
+        const enrichments = payload?.enrichments;
+        if (enrichments && Object.keys(enrichments).length > 0) {
+          const cached = dataCache.current[cacheKey];
+          if (cached?.items) {
+            const merged = {
+              ...cached,
+              items: mergeEnrichments(cached.items, enrichments),
+              emotion_stage: payload.emotion_stage || cached.emotion_stage || '',
+              recommend_hint: payload.recommend_hint || cached.recommend_hint || '',
+              score_ready: Boolean(payload.ready),
+            };
+            dataCache.current[cacheKey] = merged;
+            setData(merged);
+          }
+        }
+        if (payload?.ready) return;
+      } catch (err) {
+        console.error('Failed to fetch auction grab enrichments:', err);
+      }
+    }
+  }, []);
+
   const fetchData = useCallback(async (dt, tab) => {
     const period = tab === 'tail' ? '1' : '0';
     const cacheKey = `${dt}_${period}`;
+    const fetchId = ++fetchIdRef.current;
 
     if (dataCache.current[cacheKey]) {
       setData(dataCache.current[cacheKey]);
       setLoading(false);
+      if (needsScorePoll(dataCache.current[cacheKey])) {
+        pollScoreEnrichments(dt, tab, fetchId);
+      }
       return;
     }
 
@@ -121,16 +182,20 @@ function AuctionGrab() {
       const res = await apiRequest(`/api/v1/auction-grab?dt=${dt}&period=${period}`, {
         timeout: 120000,
       });
+      if (fetchId !== fetchIdRef.current) return;
       if (res?.data) {
         dataCache.current[cacheKey] = res.data;
         setData(res.data);
+        pollScoreEnrichments(dt, tab, fetchId);
       }
     } catch (err) {
       console.error('Failed to fetch auction grab data:', err);
     } finally {
-      setLoading(false);
+      if (fetchId === fetchIdRef.current) {
+        setLoading(false);
+      }
     }
-  }, []);
+  }, [pollScoreEnrichments]);
 
   useEffect(() => {
     fetchData(currentDate, activeTab);

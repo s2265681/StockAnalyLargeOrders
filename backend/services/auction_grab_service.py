@@ -240,29 +240,58 @@ def save_score_meta(date_compact: str, period: int, rec_meta: dict) -> int:
         return 0
 
 
-def load_score_fields(date_compact: str, period: int) -> dict:
-    """读取个股评分字段，返回 {code: {recommend_stars, recommend_reason, recommend_score}}"""
+def _row_to_enrichment(row: dict) -> dict:
+    """单行快照 -> 前端可合并的富化字段（有值才包含）"""
+    out: dict[str, Any] = {}
+    close_pct = _float_or_none(row.get("close_change_pct"))
+    next_pct = _float_or_none(row.get("next_day_change_pct"))
+    if close_pct is not None:
+        out["close_change_pct"] = close_pct
+    if next_pct is not None:
+        out["next_day_change_pct"] = next_pct
+    if row.get("recommend_score") is not None:
+        out["recommend_stars"] = int(row.get("recommend_stars") or 0)
+        out["recommend_reason"] = row.get("recommend_reason") or ""
+        out["recommend_score"] = float(row.get("recommend_score") or 0)
+    return out
+
+
+def load_enrichment_fields(date_compact: str, period: int) -> dict:
+    """读取涨幅+推荐度，返回 {code: enrichment}"""
     try:
         rows = execute_query(
             f"""
-            SELECT code, recommend_stars, recommend_reason, recommend_score
+            SELECT code, close_change_pct, next_day_change_pct,
+                   recommend_stars, recommend_reason, recommend_score
             FROM {_TABLE}
-            WHERE date = %s AND period = %s AND recommend_score IS NOT NULL
+            WHERE date = %s AND period = %s
             """,
             (date_compact, int(period)),
         )
     except Exception as e:
-        logger.warning(f"读取竞价抢筹评分失败: {e}")
+        logger.warning(f"读取竞价抢筹富化字段失败: {e}")
         return {}
     result = {}
     for r in rows or []:
         code = str(r.get("code", "")).zfill(6)
-        result[code] = {
-            "recommend_stars": int(r.get("recommend_stars") or 0),
-            "recommend_reason": r.get("recommend_reason") or "",
-            "recommend_score": float(r.get("recommend_score") or 0),
-        }
+        enrichment = _row_to_enrichment(r)
+        if enrichment:
+            result[code] = enrichment
     return result
+
+
+def load_score_fields(date_compact: str, period: int) -> dict:
+    """读取个股评分字段，返回 {code: {recommend_stars, recommend_reason, recommend_score}}"""
+    all_fields = load_enrichment_fields(date_compact, period)
+    return {
+        code: {
+            "recommend_stars": fields.get("recommend_stars", 0),
+            "recommend_reason": fields.get("recommend_reason", ""),
+            "recommend_score": fields.get("recommend_score", 0),
+        }
+        for code, fields in all_fields.items()
+        if fields.get("recommend_score") is not None
+    }
 
 
 def load_score_meta(date_compact: str, period: int) -> dict:

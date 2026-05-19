@@ -129,6 +129,86 @@ export const alignTimeshareToTradingAxis = (timeshare = []) => {
   };
 };
 
+/** 同花顺 time 可能是 "0930" 或 "09:30"，统一为交易轴格式 */
+export const normalizeFlowTimeKey = (time) => {
+  const text = String(time || '').trim();
+  if (!text) return '';
+  if (text.includes(':')) return text;
+  if (text.length === 4) return `${text.slice(0, 2)}:${text.slice(2)}`;
+  return text;
+};
+
+/** 把 money_flow 各序列按分钟对齐到 buildTradingTimeAxis() */
+export const alignMoneyFlowToTradingAxis = (moneyFlow) => {
+  if (!moneyFlow) return null;
+
+  const axis = buildTradingTimeAxis();
+  const sourceTimes = moneyFlow.time || [];
+  const indexByTime = new Map();
+  sourceTimes.forEach((rawTime, index) => {
+    indexByTime.set(normalizeFlowTimeKey(rawTime), index);
+  });
+
+  const alignSeries = (series = []) => axis.map((time) => {
+    const index = indexByTime.get(time);
+    if (index === undefined || index >= series.length) return null;
+    const value = series[index];
+    return value == null || value === '' ? null : value;
+  });
+
+  return {
+    ...moneyFlow,
+    time: axis,
+    chaoda: alignSeries(moneyFlow.chaoda),
+    sanhu: alignSeries(moneyFlow.sanhu),
+    dadan: alignSeries(moneyFlow.dadan),
+    zhongdan: alignSeries(moneyFlow.zhongdan),
+    chaoda_delta: alignSeries(moneyFlow.chaoda_delta),
+    sanhu_delta: alignSeries(moneyFlow.sanhu_delta),
+  };
+};
+
+/**
+ * 资金博弈线 Y 值：分钟净额为 0（同花顺无更新）时沿用上一有效点，避免午后拐头。
+ */
+export const buildFlowLineSeriesData = ({
+  axis,
+  fenshi,
+  scores = [],
+  minuteDeltas = [],
+  yMid,
+  yRange,
+  maxAbsFlow,
+  holdEpsilon = 0.5,
+}) => {
+  const points = [];
+  let lastY = null;
+
+  for (let i = 0; i < axis.length; i++) {
+    const timePoint = axis[i];
+    if (!timePoint || fenshi[i] == null || fenshi[i] === '') {
+      points.push([timePoint || '', null]);
+      continue;
+    }
+
+    const delta = parseFloat(minuteDeltas[i]);
+    const hasMinuteUpdate = Number.isFinite(delta) && Math.abs(delta) >= holdEpsilon;
+    const raw = parseFloat(scores[i]);
+
+    if (!hasMinuteUpdate && lastY != null) {
+      points.push([timePoint, lastY]);
+      continue;
+    }
+
+    const safeRaw = Number.isFinite(raw) ? raw : 0;
+    const y = yMid + (safeRaw / maxAbsFlow) * yRange;
+    lastY = y;
+    points.push([timePoint, y]);
+  }
+
+  return points;
+};
+
 const sumOrderAmount = (orders, type) => orders
   .filter(order => order.type === type)
   .reduce((sum, order) => sum + Number(order.amount || 0), 0);

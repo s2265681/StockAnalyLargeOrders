@@ -26,7 +26,11 @@ import {
   timeshareLoadingAtom,
   errorAtom,
 } from '../../../store/atoms';
-import { isPrevCloseConsistentWithFenshi } from '../utils/l2Analysis';
+import {
+  alignMoneyFlowToTradingAxis,
+  buildFlowLineSeriesData,
+  isPrevCloseConsistentWithFenshi,
+} from '../utils/l2Analysis';
 
 // 注册ECharts组件
 echarts.use([
@@ -583,26 +587,20 @@ const StockChart = () => {
         : `${Math.round(amount)}万`;
     };
 
-    const bigFlowData = [];
-    const smallFlowData = [];
+    let bigFlowData = [];
+    let smallFlowData = [];
     let bigFlowMarkers = [];
-    const moneyFlow = timeshareData.money_flow;
+    const alignedMoneyFlow = alignMoneyFlowToTradingAxis(timeshareData.money_flow);
     let chaodaDeltaArr = [];
     let sanhuDeltaArr = [];
-    if (moneyFlow && moneyFlow.chaoda && moneyFlow.chaoda.length > 0) {
-      const chaodaArr = moneyFlow.chaoda;
-      const xiaoArr = moneyFlow.sanhu || [];
-      chaodaDeltaArr = moneyFlow.chaoda_delta || [];
-      sanhuDeltaArr = moneyFlow.sanhu_delta || [];
-      const len = chaodaArr.length;
+    if (alignedMoneyFlow?.chaoda?.length > 0) {
+      const chaodaArr = alignedMoneyFlow.chaoda;
+      const xiaoArr = alignedMoneyFlow.sanhu || [];
+      chaodaDeltaArr = alignedMoneyFlow.chaoda_delta || [];
+      sanhuDeltaArr = alignedMoneyFlow.sanhu_delta || [];
 
-      const bigRaw = [];
-      const smallRaw = [];
-      for (let i = 0; i < len; i++) {
-        bigRaw.push(parseFloat(chaodaArr[i]) || 0);
-        smallRaw.push(parseFloat(xiaoArr[i]) || 0);
-      }
-
+      const bigRaw = chaodaArr.map((value) => parseFloat(value) || 0);
+      const smallRaw = xiaoArr.map((value) => parseFloat(value) || 0);
       const maxAbsFlow = Math.max(
         ...bigRaw.map(Math.abs),
         ...smallRaw.map(Math.abs),
@@ -610,23 +608,30 @@ const StockChart = () => {
       );
       const yRange = (yAxisMax - yAxisMin) * 0.3;
       const yMid = (yAxisMax + yAxisMin) / 2;
+      const flowLineParams = {
+        axis: fullTimeAxis,
+        fenshi,
+        yMid,
+        yRange,
+        maxAbsFlow,
+      };
 
-      for (let i = 0; i < len; i++) {
-        const timePoint = fullTimeAxis[i];
-        if (!timePoint || !fenshi[i]) {
-          bigFlowData.push([fullTimeAxis[i] || '', null]);
-          smallFlowData.push([fullTimeAxis[i] || '', null]);
-          continue;
-        }
-        bigFlowData.push([timePoint, yMid + (bigRaw[i] / maxAbsFlow) * yRange]);
-        smallFlowData.push([timePoint, yMid + (smallRaw[i] / maxAbsFlow) * yRange]);
-      }
+      bigFlowData = buildFlowLineSeriesData({
+        ...flowLineParams,
+        scores: chaodaArr,
+        minuteDeltas: chaodaDeltaArr,
+      });
+      smallFlowData = buildFlowLineSeriesData({
+        ...flowLineParams,
+        scores: xiaoArr,
+        minuteDeltas: sanhuDeltaArr,
+      });
 
       const markerTimes = ['09:30', '10:00', '10:30', '11:00', '11:30', '13:00', '13:30', '14:00', '14:30', '15:00'];
       const timeToIndex = {};
-      for (let i = 0; i < len; i++) {
-        if (fullTimeAxis[i]) timeToIndex[fullTimeAxis[i]] = i;
-      }
+      fullTimeAxis.forEach((time, index) => {
+        if (time) timeToIndex[time] = index;
+      });
       for (const t of markerTimes) {
         const idx = timeToIndex[t];
         if (idx !== undefined && bigFlowData[idx] && bigFlowData[idx][1] !== null) {
@@ -639,7 +644,7 @@ const StockChart = () => {
           });
         }
       }
-      for (let i = len - 1; i >= 0; i--) {
+      for (let i = fullTimeAxis.length - 1; i >= 0; i--) {
         if (bigFlowData[i] && bigFlowData[i][1] !== null) {
           const t = fullTimeAxis[i];
           if (!markerTimes.includes(t)) {
@@ -864,8 +869,8 @@ const StockChart = () => {
           name: '主力',
           type: 'line',
           data: bigFlowData,
-          smooth: true,
-          connectNulls: true,
+          smooth: false,
+          connectNulls: false,
           lineStyle: {
             width: 2,
             color: '#ff4500',
@@ -896,8 +901,8 @@ const StockChart = () => {
           name: '散户',
           type: 'line',
           data: smallFlowData,
-          smooth: true,
-          connectNulls: true,
+          smooth: false,
+          connectNulls: false,
           lineStyle: {
             width: 1.5,
             color: '#22c55e',

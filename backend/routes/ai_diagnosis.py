@@ -10,6 +10,7 @@ from flask import Blueprint, request
 
 from services.ai_diagnosis_service import (
     get_cache,
+    get_hot_stocks_for_diagnosis,
     get_trading_date_str,
     normalize_code,
     run_chat,
@@ -83,3 +84,13 @@ def post_diagnosis_chat():
     except Exception as e:
         logger.error(f"追问失败: {e}", exc_info=True)
         return v1_error_response(message=f"追问失败: {str(e)}")
+
+
+@ai_diagnosis_bp.route("/api/v1/ai-diagnosis/hot-stocks", methods=["GET"])
+def get_hot_stocks():
+    try:
+        data = get_hot_stocks_for_diagnosis()
+        return v1_success_response(data=data)
+    except Exception as e:
+        logger.error(f"热股标签失败: {e}", exc_info=True)
+        return v1_success_response(data={"searched": [], "hot": []})

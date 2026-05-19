@@ -114,10 +114,47 @@ def _curl_get_json(url: str, *, headers: dict = None, timeout: int = 15) -> dict
 
 
 def _fetch_rise_pct() -> Optional[float]:
-    """拉取全市场上涨比例。当第三方 API szbl 当日未更新时调用。
-    TODO: 接入专用聚合接口（直接返回上涨/下跌家数，无需自己统计）
+    """用东财行业板块接口聚合全市场涨跌家数，计算上涨比例。
+
+    东财行业分类里每只股只属于一个板块，f136/f115 加总不会重复计算。
+    非交易时段字段返回 "-"，此时 total==0，返回 None。
     """
-    return None
+    try:
+        url = (
+            "https://17.push2.eastmoney.com/api/qt/clist/get"
+            "?pn=1&pz=200&po=1&np=1&fltt=2&invt=2&fid=f3"
+            "&fs=m%3A90%2Bt%3A2%2Bf%3A%2150"
+            "&fields=f14%2Cf104%2Cf105"
+            "&ut=bd1d9ddb04089700cf9c27f6f7426281"
+        )
+        body = _curl_get_json(
+            url,
+            headers={"Referer": "https://quote.eastmoney.com/"},
+            timeout=10,
+        )
+        items = (body.get("data") or {}).get("diff") or []
+        if not items:
+            return None
+
+        def _safe_int(v) -> int:
+            if v in (None, "-", "--", ""):
+                return 0
+            try:
+                return int(v)
+            except (ValueError, TypeError):
+                return 0
+
+        up = sum(_safe_int(item.get("f104")) for item in items)
+        down = sum(_safe_int(item.get("f105")) for item in items)
+        total = up + down
+        if total == 0:
+            return None  # 非交易时间或无数据
+        pct = round(up / total * 100, 2)
+        logger.info("东财行业板块: 上涨=%d 下跌=%d 上涨比例=%.2f%%", up, down, pct)
+        return pct
+    except Exception as e:
+        logger.warning("获取上涨比例失败: %s", e)
+        return None
 
 
 def _format_date(date_int: int) -> str:

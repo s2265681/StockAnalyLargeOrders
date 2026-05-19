@@ -1,0 +1,21 @@
+backend/tests/test_ai_diagnosis.py
+  s_96fce0d17515a3::t_0a53a34b0b3538 2
+  s_96fce0d17515a3::t_83d4bc903abd2c 73-93
+  s_96fce0d17515a3::t_9d400c3c2ff205 219-264
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "551300a5ac7cba2b0f6dd41693633e0737c7e644",
+  "prompts": {},
+  "sessions": {
+    "s_96fce0d17515a3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "754f4364-3dea-4b54-bda1-c8e8d4206cc1",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

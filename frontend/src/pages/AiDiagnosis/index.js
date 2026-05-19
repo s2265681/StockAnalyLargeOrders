@@ -12,6 +12,7 @@ import {
   FundOutlined,
   FireOutlined,
   StockOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import { apiRequest } from '../../config/api';
 import './index.css';
@@ -21,6 +22,7 @@ const { TextArea } = Input;
 /** 诊股含数据聚合 + Claude，需长于默认 30s */
 const DIAGNOSIS_TIMEOUT = 120000;
 const CHAT_TIMEOUT = 60000;
+const LS_CODE_KEY = 'ai_diagnosis_last_code';
 
 const RATING_STYLE = {
   偏多: { color: '#cf1322', bg: 'rgba(255, 77, 79, 0.1)', border: '#ff4d4f' },
@@ -287,6 +289,51 @@ function ReportPanel({ report }) {
   );
 }
 
+function HotSearchTags({ onSearchedClick, onHotClick }) {
+  const [hotData, setHotData] = useState({ searched: [], hot: [] });
+
+  useEffect(() => {
+    apiRequest('/api/v1/ai-diagnosis/hot-stocks', { timeout: 10000 })
+      .then((res) => {
+        if (res.success && res.data) setHotData(res.data);
+      })
+      .catch(() => {});
+  }, []);
+
+  const { searched, hot } = hotData;
+  const hotVisible = hot.slice(0, Math.max(0, 10 - searched.length));
+
+  if (!searched.length && !hotVisible.length) return null;
+
+  return (
+    <div className="ai-hot-tags">
+      {searched.map((s) => (
+        <Tag
+          key={`s-${s.code}`}
+          className="ai-hot-tag ai-hot-tag--searched"
+          icon={<SearchOutlined />}
+          onClick={() => onSearchedClick(s.code)}
+        >
+          {s.name || s.code}
+        </Tag>
+      ))}
+      {searched.length > 0 && hotVisible.length > 0 && (
+        <span className="ai-hot-divider" />
+      )}
+      {hotVisible.map((h) => (
+        <Tag
+          key={`h-${h.code}`}
+          className="ai-hot-tag ai-hot-tag--hot"
+          icon={<FireOutlined />}
+          onClick={() => onHotClick(h.code)}
+        >
+          {h.name || h.code}
+        </Tag>
+      ))}
+    </div>
+  );
+}
+
 function AiDiagnosis() {
   const [searchParams] = useSearchParams();
   const [code, setCode] = useState('');
@@ -301,6 +348,12 @@ function AiDiagnosis() {
   const chatEndRef = useRef(null);
   const lastAutoCodeRef = useRef('');
   const cacheRetryTimerRef = useRef(null);
+
+  // 页面 mount 时恢复上次输入的代码（不自动查询）
+  useEffect(() => {
+    const saved = localStorage.getItem(LS_CODE_KEY);
+    if (saved && /^\d{1,6}$/.test(saved)) setCode(saved);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const contextRef = useRef({ snapshot: null, report: null });
   useEffect(() => {
@@ -357,6 +410,7 @@ function AiDiagnosis() {
       cacheRetryTimerRef.current = null;
     }
     setLoading(true);
+    message.info('AI 分析较慢，可先去看其他模块，回来后可继续查看', 6);
     setError(null);
     setMessages([]);
     try {
@@ -457,7 +511,10 @@ function AiDiagnosis() {
           className="ai-code-input"
           placeholder="股票代码，如 000001"
           value={code}
-          onChange={(e) => setCode(e.target.value)}
+          onChange={(e) => {
+            setCode(e.target.value);
+            localStorage.setItem(LS_CODE_KEY, e.target.value);
+          }}
           onPressEnter={() => runDiagnosis(code, false)}
           maxLength={12}
         />
@@ -476,6 +533,17 @@ function AiDiagnosis() {
           {cached && <Tag color="cyan" className="ai-cache-tag">缓存</Tag>}
         </div>
       </div>
+
+      <HotSearchTags
+        onSearchedClick={(c) => {
+          setCode(c);
+          tryLoadCache(c);
+        }}
+        onHotClick={(c) => {
+          setCode(c);
+          runDiagnosis(c, false);
+        }}
+      />
 
       {error && (
         <Alert

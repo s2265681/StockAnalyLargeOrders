@@ -667,10 +667,37 @@ def save_cache(trade_date: str, code: str, snapshot: dict, report: dict) -> bool
 
 
 def _call_claude(prompt: str, scenario: str = "ai_diagnosis") -> str:
-    text = call_claude_for_scenario(scenario, prompt)
-    if text:
-        logger.info(f"Claude 返回长度: {len(text)}")
-    return text
+    """诊股 AI 调用：主账号失败时自动降级"""
+    from config.ai_accounts import get_active_account_id
+    from utils.claude_client import call_claude, call_claude_for_scenario, get_last_api_error
+
+    attempts: list[tuple[str, str | None, str | None]] = [
+        ("primary", None, None),
+    ]
+    active = get_active_account_id()
+    if active == "kalowave":
+        attempts.extend([
+            ("kalowave-gpt54", "kalowave", "gpt-5.4"),
+            ("anyrouter-haiku", "anyrouter", "claude-haiku-4-5-20251001"),
+        ])
+    elif active == "anyrouter":
+        attempts.append(("anyrouter-haiku", "anyrouter", "claude-haiku-4-5-20251001"))
+
+    for label, account_id, model in attempts:
+        if account_id:
+            text = call_claude_for_scenario(
+                scenario, prompt, account_id=account_id, model=model,
+            )
+        else:
+            text = call_claude_for_scenario(scenario, prompt)
+        if text:
+            if label != "primary":
+                logger.warning("诊股 AI 降级成功: %s", label)
+            logger.info("Claude 返回长度: %s (%s)", len(text), label)
+            return text
+        logger.warning("诊股 AI 尝试失败: %s — %s", label, get_last_api_error())
+
+    return ""
 
 
 def _strip_json_fence(text: str) -> str:
@@ -845,7 +872,9 @@ def run_diagnosis(code: str, force_refresh: bool = False) -> dict:
     prompt = build_diagnosis_prompt(snapshot)
     raw = _call_claude(prompt)
     if not raw:
-        raise RuntimeError("AI 暂时不可用，请检查 Claude 配置或稍后重试")
+        from utils.claude_client import get_last_api_error
+        detail = get_last_api_error() or "请检查 backend/.env 中的 AI 密钥配置"
+        raise RuntimeError(f"AI 暂时不可用：{detail}")
 
     report = _parse_report_json(raw)
     if not report:

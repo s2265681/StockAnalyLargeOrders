@@ -38,7 +38,7 @@ _SCENARIO_TEMPLATES: dict[str, tuple[str, int, int, str]] = {
     "limit_up_regroup": ("haiku", 4096, 90, "其他概念重分组"),
     "limit_up_split": ("haiku", 8192, 90, "过大标签拆分"),
     "limit_up_stock_theme": ("haiku", 256, 60, "单股题材"),
-    "ai_diagnosis": ("opus", 4096, 120, "诊股报告"),
+    "ai_diagnosis": ("opus", 4096, 180, "诊股报告"),
     "ai_diagnosis_chat": ("sonnet", 1024, 60, "诊股追问"),
     "dragon_tiger": ("sonnet", 2048, 90, "龙虎榜解读"),
 }

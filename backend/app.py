@@ -59,6 +59,16 @@ def register_blueprints(app):
 
 register_blueprints(app)
 
+from config.ai_accounts import get_active_account
+from utils.claude_client import get_claude_api_key
+
+_ai_acc = get_active_account()
+logger.info(
+    "AI 账号: %s (%s) url=%s key=%s",
+    _ai_acc.id, _ai_acc.label, _ai_acc.api_url,
+    "已配置" if get_claude_api_key() else "未配置",
+)
+
 from websocket_manager import register_websocket_events, start_push_loop
 register_websocket_events(socketio)
 start_push_loop(socketio)

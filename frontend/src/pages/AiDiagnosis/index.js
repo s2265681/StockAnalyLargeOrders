@@ -20,7 +20,7 @@ import './index.css';
 const { TextArea } = Input;
 
 /** 诊股含数据聚合 + Claude，需长于默认 30s */
-const DIAGNOSIS_TIMEOUT = 120000;
+const DIAGNOSIS_TIMEOUT = 180000;
 const CHAT_TIMEOUT = 60000;
 const LS_CODE_KEY = 'ai_diagnosis_last_code';
 

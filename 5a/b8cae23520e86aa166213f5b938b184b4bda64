@@ -1,0 +1,25 @@
+frontend/src/pages/AiDiagnosis/index.js
+  s_96fce0d17515a3::t_4ff6e801f4f33a 25
+  s_96fce0d17515a3::t_256495120aec73 352-357
+  s_96fce0d17515a3::t_a5b0d376cdf2f7 292-336
+  s_96fce0d17515a3::t_7aa86a4ebd75ac 15
+  s_96fce0d17515a3::t_487dea62831eac 413
+  s_96fce0d17515a3::t_2b02b747bb7483 514-517
+  s_96fce0d17515a3::t_05d5ae11a330c8 537-547
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "5ab8cae23520e86aa166213f5b938b184b4bda64",
+  "prompts": {},
+  "sessions": {
+    "s_96fce0d17515a3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "754f4364-3dea-4b54-bda1-c8e8d4206cc1",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

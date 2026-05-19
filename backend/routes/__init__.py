@@ -13,6 +13,7 @@ from .auth import auth_bp
 from .user import user_bp
 from .orders import orders_bp
 from .ai_diagnosis import ai_diagnosis_bp
+from .ai_account import ai_account_bp
 
 __all__ = [
     'stock_basic_bp',
@@ -29,4 +30,5 @@ __all__ = [
     'user_bp',
     'orders_bp',
     'ai_diagnosis_bp',
+    'ai_account_bp',
 ]

@@ -50,7 +50,7 @@ from config.ai_prompts import (
     build_regroup_prompt,
     build_split_oversized_prompt,
 )
-from utils.claude_client import CLAUDE_API_KEY, call_claude_for_scenario
+from utils.claude_client import get_claude_api_key, call_claude_for_scenario
 
 # (date, codes_tuple) -> (unix_ts, {"labels": code -> group_label, "reasons": label -> reason, "leaders": label -> [leader]})
 _echelon_ai_cache = {}
@@ -946,7 +946,7 @@ def _claude_group_labels_for_stocks(stocks: list) -> dict:
     """对涨停列表调用 Claude，返回 labels/reasons 结构
     优先从数据库获取近期已有标签，注入 prompt 让 AI 复用
     """
-    if not stocks or not CLAUDE_API_KEY:
+    if not stocks or not get_claude_api_key():
         return {}
 
     # 获取最近 1-2 天的已知标签
@@ -1767,7 +1767,7 @@ def get_stock_theme_tags():
             # 用 Claude 分析：给出已有 theme_tags，让 AI 判断归属或建议新标签
             theme_label = ''
             theme_reason = ''
-            if CLAUDE_API_KEY:
+            if get_claude_api_key():
                 try:
                     info = ths_info or {}
                     existing_text = '、'.join(db_tag_names[:20]) if db_tag_names else '（今日暂无题材标签）'

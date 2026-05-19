@@ -20,7 +20,7 @@ from config.ai_prompts import (
     build_diagnosis_chat_prompt,
     build_diagnosis_prompt,
 )
-from utils.claude_client import CLAUDE_API_KEY, call_claude_for_scenario
+from utils.claude_client import get_claude_api_key, call_claude_for_scenario
 from utils.date_utils import get_next_trading_date, get_recent_trading_dates, get_valid_trading_date
 from utils.db import execute_query, execute_write
 from utils.json_safe import dumps_json, json_safe

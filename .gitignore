@@ -61,6 +61,7 @@ logs
 # 环境变量文件
 .env
 .env.local
+backend/data/ai_account.active
 .env.development.local
 .env.test.local
 .env.production.local

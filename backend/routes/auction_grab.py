@@ -1,10 +1,16 @@
 """
 竞价抢筹 API
 数据来源: stockapi.com.cn 竞价抢筹接口；日快照入库 auction_grab_stocks
+
+接口设计（两阶段）：
+  GET /api/v1/auction-grab        — 立即返回原始抢筹数据，同时后台异步计算涨幅+评分
+  GET /api/v1/auction-grab/score  — 返回评分数据（后台就绪后可用）
 """
 import logging
+import threading
 import time
 from datetime import datetime, timedelta
+
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from flask import Blueprint, request
 from services.eastmoney_free import EastMoneyFreeSource
@@ -19,17 +25,21 @@ auction_grab_bp = Blueprint('auction_grab', __name__)
 _STOCKAPI_TOKEN = 'c6b042b0bc7178103985337e72c31b976264e6f85ce93b0e'
 _STOCKAPI_BASE = 'http://user.stockapi.com.cn/v1/base/jjqcUser'
 
-# 内存热缓存（当日频繁刷新）
+# 原始数据内存缓存（当日频繁刷新）
 _cache = {}
 _CACHE_TTL = 120
-# 加工后缓存：含收盘/次日涨幅 + 推荐度（避免每次请求重复打 K 线与题材库）
+
+# 加工后缓存（含评分），后台线程写入，score 接口优先读此处
 _processed_cache = {}
 _PROCESSED_TTL_TODAY = 120
 _PROCESSED_TTL_HISTORY = 86400
+
 _kline_cache = {}
 _KLINE_CACHE_TTL = 1800
 
-# type 映射：前端排序key -> stockapi type 参数（入库统一按委托金额 type=1 拉全量）
+# 正在进行后台富化的 key 集合，防重复触发
+_enrich_in_progress: set = set()
+
 _SORT_TYPE_MAP = {
     'wtje': 1,
     'cjje': 2,
@@ -98,7 +108,7 @@ def _get_daily_change_pct(code, trade_date):
 
 
 def _enrich_close_and_next_change(items, trade_date):
-    """补充当日收盘涨幅与次日涨幅"""
+    """补充当日收盘涨幅与次日涨幅（并发 HTTP，仅在后台线程调用）"""
     if not items:
         return
 
@@ -134,12 +144,7 @@ def _enrich_close_and_next_change(items, trade_date):
 
 
 def _fetch_from_stockapi(trade_date, period, api_type):
-    """
-    从 stockapi 获取竞价抢筹数据
-    trade_date: YYYY-MM-DD
-    period: 0=早盘 1=尾盘
-    api_type: 1=委托金额排 2=成交金额排 3=开盘金额排
-    """
+    """从 stockapi 获取竞价抢筹数据"""
     import subprocess
     import json as _json
 
@@ -176,29 +181,6 @@ def _processed_cache_ttl(is_today: bool) -> int:
     return _PROCESSED_TTL_TODAY if is_today else _PROCESSED_TTL_HISTORY
 
 
-def _invalidate_processed_cache(date_compact: str, period_int: int) -> None:
-    _processed_cache.pop(_processed_cache_key(date_compact, period_int), None)
-
-
-def _codes_signature(items: list[dict]) -> frozenset:
-    return frozenset(str(x.get('code', '')).zfill(6) for x in (items or []) if x.get('code'))
-
-
-def _invalidate_processed_if_codes_changed(
-    date_compact: str, period_int: int, new_items: list[dict],
-) -> None:
-    """仅当股票列表变化时清空加工缓存，避免每 120s 刷新原始数据就重算推荐度"""
-    entry = _processed_cache.get(_processed_cache_key(date_compact, period_int))
-    if not entry:
-        return
-    if _codes_signature(entry.get('items')) != _codes_signature(new_items):
-        _invalidate_processed_cache(date_compact, period_int)
-
-
-def _clone_items(items: list[dict]) -> list[dict]:
-    return [dict(x) for x in (items or [])]
-
-
 def _get_processed_payload(date_compact: str, period_int: int, is_today: bool):
     entry = _processed_cache.get(_processed_cache_key(date_compact, period_int))
     if not entry:
@@ -206,28 +188,22 @@ def _get_processed_payload(date_compact: str, period_int: int, is_today: bool):
     if (time.time() - entry['ts']) >= _processed_cache_ttl(is_today):
         _processed_cache.pop(_processed_cache_key(date_compact, period_int), None)
         return None, None
-    return _clone_items(entry['items']), dict(entry['meta'])
+    return [dict(x) for x in entry['items']], dict(entry['meta'])
 
 
-def _set_processed_payload(
-    date_compact: str,
-    period_int: int,
-    items: list[dict],
-    rec_meta: dict,
-) -> None:
+def _set_processed_payload(date_compact: str, period_int: int, items: list, rec_meta: dict) -> None:
     _processed_cache[_processed_cache_key(date_compact, period_int)] = {
         'ts': time.time(),
-        'items': _clone_items(items),
+        'items': [dict(x) for x in items],
         'meta': dict(rec_meta or {}),
     }
 
 
+def _codes_signature(items):
+    return frozenset(str(x.get('code', '')).zfill(6) for x in (items or []) if x.get('code'))
+
+
 def _load_items_for_request(date_compact, period_int, trade_date, is_today):
-    """
-    加载竞价列表：
-    - 当日：内存(120s) -> stockapi -> 入库
-    - 历史：内存 -> 数据库（有则不再打外部接口）
-    """
     cache_key = f"{date_compact}_{period_int}_{_FETCH_API_TYPE}"
     now = time.time()
 
@@ -245,14 +221,69 @@ def _load_items_for_request(date_compact, period_int, trade_date, is_today):
     return None, 'miss'
 
 
+def _trigger_background_enrich(date_compact: str, period_int: int, items: list, trade_date: str, is_today: bool):
+    """触发后台线程：异步计算涨幅+评分，写库并更新内存缓存"""
+    key = _processed_cache_key(date_compact, period_int)
+    if key in _enrich_in_progress:
+        return
+
+    # 内存缓存仍有效（今日 120s / 历史 86400s）→ 不重算
+    entry = _processed_cache.get(key)
+    ttl = _PROCESSED_TTL_TODAY if is_today else _PROCESSED_TTL_HISTORY
+    if entry and (time.time() - entry['ts']) < ttl:
+        return
+
+    # 历史日：内存过期后再问 DB，有评分则不重算
+    if not is_today:
+        if ag_store.scores_exist(date_compact, period_int):
+            return
+
+    _enrich_in_progress.add(key)
+    items_copy = [dict(x) for x in items]
+
+    def _do_enrich():
+        rec_meta = {"stage": "", "hint": ""}
+        try:
+            # 1. 计算收盘/次日涨幅（失败仅记日志，不阻断后续评分）
+            if ag_store.items_need_return_enrich(items_copy):
+                _enrich_close_and_next_change(items_copy, trade_date)
+                try:
+                    ag_store.update_return_fields(date_compact, period_int, items_copy)
+                except Exception as e:
+                    logger.warning(f"涨幅写库失败（跳过）{date_compact}: {e}")
+
+            # 2. 计算推荐评分（DB 不可用时情绪/题材查询可能失败）
+            try:
+                from services.auction_grab_recommendation import enrich_auction_recommendations
+                rec_meta = enrich_auction_recommendations(items_copy, trade_date, period_int)
+            except Exception as e:
+                logger.warning(f"评分计算失败（跳过）{date_compact}: {e}")
+
+            # 3. 内存缓存必须写（不依赖 DB 是否可用）
+            _set_processed_payload(date_compact, period_int, items_copy, rec_meta)
+
+            # 4. 写库（失败不影响内存缓存）
+            try:
+                ag_store.update_score_fields(date_compact, period_int, items_copy)
+                ag_store.save_score_meta(date_compact, period_int, rec_meta)
+            except Exception as e:
+                logger.warning(f"评分写库失败（跳过）{date_compact}: {e}")
+
+            logger.info(f"后台富化完成 {date_compact} period={period_int}")
+        except Exception as e:
+            logger.error(f"后台富化意外失败 {date_compact}/{period_int}: {e}")
+        finally:
+            _enrich_in_progress.discard(key)
+
+    threading.Thread(target=_do_enrich, daemon=True).start()
+
+
 def fetch_and_cache_day(trade_date_dash: str, period: int = 0) -> list[dict]:
     """供回测/任务：优先读库，否则拉接口并入库"""
     date_compact = ag_store.to_compact_date(trade_date_dash)
     is_today = _is_today_trading_date(date_compact)
 
-    items, source = _load_items_for_request(
-        date_compact, period, trade_date_dash, is_today
-    )
+    items, source = _load_items_for_request(date_compact, period, trade_date_dash, is_today)
     if items is not None:
         return items
 
@@ -269,11 +300,12 @@ def fetch_and_cache_day(trade_date_dash: str, period: int = 0) -> list[dict]:
 @auction_grab_bp.route('/api/v1/auction-grab', methods=['GET'])
 def get_auction_grab():
     """
-    获取竞价抢筹数据
+    获取竞价抢筹数据（快速接口，不含评分）
     参数:
         period: 0=早盘竞价抢筹(默认) 1=尾盘抢筹
         sort: wtje=委托金额(默认) cjje=成交金额 kpje=开盘金额 zf=涨幅
         dt: 日期(YYYYMMDD)，默认当天
+    评分数据通过 /api/v1/auction-grab/score 单独获取
     """
     period = request.args.get('period', '0')
     sort_by = request.args.get('sort', 'wtje')
@@ -283,23 +315,7 @@ def get_auction_grab():
     period_int = int(period)
     is_today = _is_today_trading_date(date_compact)
 
-    # 优先返回已加工缓存，避免重复打 stockapi / K 线
-    processed_items, rec_meta = _get_processed_payload(date_compact, period_int, is_today)
-    if processed_items is not None:
-        items = ag_store.sort_items(processed_items, sort_by)
-        return v1_success_response(data={
-            'items': items,
-            'total': len(items),
-            'date': dt,
-            'period': period_int,
-            'sort': sort_by,
-            'emotion_stage': rec_meta.get('stage', ''),
-            'recommend_hint': rec_meta.get('hint', ''),
-        })
-
-    items, source = _load_items_for_request(
-        date_compact, period_int, trade_date, is_today
-    )
+    items, source = _load_items_for_request(date_compact, period_int, trade_date, is_today)
 
     if items is None:
         raw_data = _fetch_from_stockapi(trade_date, period_int, _FETCH_API_TYPE)
@@ -310,26 +326,68 @@ def get_auction_grab():
             ag_store.replace_snapshot(date_compact, period_int, items)
             cache_key = f"{date_compact}_{period_int}_{_FETCH_API_TYPE}"
             _cache[cache_key] = {'ts': time.time(), 'items': items}
-            _invalidate_processed_if_codes_changed(date_compact, period_int, items)
         source = 'api'
 
     items = items or []
-    if ag_store.items_need_return_enrich(items):
-        _enrich_close_and_next_change(items, trade_date)
-        ag_store.update_return_fields(date_compact, period_int, items)
 
-    from services.auction_grab_recommendation import enrich_auction_recommendations
-    rec_meta = enrich_auction_recommendations(items, trade_date, period_int)
-    _set_processed_payload(date_compact, period_int, items, rec_meta)
-
-    items = ag_store.sort_items(list(items), sort_by)
+    # 非阻塞：后台计算昨日涨幅 + 评分写库
+    _trigger_background_enrich(date_compact, period_int, items, trade_date, is_today)
 
     return v1_success_response(data={
-        'items': items,
+        'items': ag_store.sort_items(list(items), sort_by),
         'total': len(items),
         'date': dt,
         'period': period_int,
         'sort': sort_by,
-        'emotion_stage': rec_meta.get('stage', ''),
-        'recommend_hint': rec_meta.get('hint', ''),
+        'score_ready': ag_store.scores_exist(date_compact, period_int),
+    })
+
+
+@auction_grab_bp.route('/api/v1/auction-grab/score', methods=['GET'])
+def get_auction_grab_score():
+    """
+    获取竞价抢筹评分（后台异步计算，ready=false 时前端可稍后重试）
+    参数同 /api/v1/auction-grab
+    """
+    period = request.args.get('period', '0')
+    dt = request.args.get('dt', _get_last_trading_day())
+    trade_date = _format_date(dt)
+    date_compact = ag_store.to_compact_date(dt)
+    period_int = int(period)
+    is_today = _is_today_trading_date(date_compact)
+
+    # 优先读内存缓存（后台线程写入，最新鲜）
+    processed_items, rec_meta = _get_processed_payload(date_compact, period_int, is_today)
+    if processed_items is not None:
+        scores = {
+            str(item.get('code', '')).zfill(6): {
+                'recommend_stars': item.get('recommend_stars', 0),
+                'recommend_reason': item.get('recommend_reason', ''),
+                'recommend_score': item.get('recommend_score', 0),
+            }
+            for item in processed_items
+            if item.get('recommend_score') is not None
+        }
+        return v1_success_response(data={
+            'scores': scores,
+            'emotion_stage': rec_meta.get('stage', ''),
+            'recommend_hint': rec_meta.get('hint', ''),
+            'ready': bool(scores),
+        })
+
+    # 回退读库
+    scores = ag_store.load_score_fields(date_compact, period_int)
+    meta = ag_store.load_score_meta(date_compact, period_int)
+
+    # 若仍无评分，尝试用已缓存的原始数据触发后台计算
+    if not scores:
+        raw_items, _ = _load_items_for_request(date_compact, period_int, trade_date, is_today)
+        if raw_items:
+            _trigger_background_enrich(date_compact, period_int, raw_items, trade_date, is_today)
+
+    return v1_success_response(data={
+        'scores': scores,
+        'emotion_stage': meta.get('stage', ''),
+        'recommend_hint': meta.get('hint', ''),
+        'ready': meta.get('ready', False),
     })

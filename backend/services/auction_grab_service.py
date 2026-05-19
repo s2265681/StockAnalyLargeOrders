@@ -185,3 +185,115 @@ def _float_or_none(value: Any) -> float | None:
         return float(value)
     except (TypeError, ValueError):
         return None
+
+
+_META_TABLE = "auction_grab_score_meta"
+
+
+def update_score_fields(date_compact: str, period: int, items: list[dict]) -> int:
+    """批量回写推荐评分字段（recommend_score 非 None 才更新）"""
+    updates = []
+    for item in items:
+        if item.get("recommend_score") is None:
+            continue
+        updates.append((
+            int(item.get("recommend_stars") or 0),
+            str(item.get("recommend_reason") or "")[:100],
+            float(item.get("recommend_score") or 0),
+            date_compact,
+            int(period),
+            str(item.get("code", "")).zfill(6),
+        ))
+    if not updates:
+        return 0
+    try:
+        sql = f"""
+            UPDATE {_TABLE}
+            SET recommend_stars = %s, recommend_reason = %s, recommend_score = %s
+            WHERE date = %s AND period = %s AND code = %s
+        """
+        return execute_many(sql, updates)
+    except Exception as e:
+        logger.warning(f"更新竞价抢筹评分失败: {e}")
+        return 0
+
+
+def save_score_meta(date_compact: str, period: int, rec_meta: dict) -> int:
+    """保存/更新情绪阶段与推荐提示，标记评分就绪"""
+    try:
+        sql = f"""
+            INSERT INTO {_META_TABLE} (date, period, emotion_stage, recommend_hint, score_ready)
+            VALUES (%s, %s, %s, %s, 1)
+            ON DUPLICATE KEY UPDATE
+                emotion_stage = VALUES(emotion_stage),
+                recommend_hint = VALUES(recommend_hint),
+                score_ready = 1
+        """
+        return execute_write(sql, (
+            date_compact,
+            int(period),
+            str(rec_meta.get("stage") or "")[:20],
+            str(rec_meta.get("hint") or "")[:200],
+        ))
+    except Exception as e:
+        logger.warning(f"保存评分元数据失败: {e}")
+        return 0
+
+
+def load_score_fields(date_compact: str, period: int) -> dict:
+    """读取个股评分字段，返回 {code: {recommend_stars, recommend_reason, recommend_score}}"""
+    try:
+        rows = execute_query(
+            f"""
+            SELECT code, recommend_stars, recommend_reason, recommend_score
+            FROM {_TABLE}
+            WHERE date = %s AND period = %s AND recommend_score IS NOT NULL
+            """,
+            (date_compact, int(period)),
+        )
+    except Exception as e:
+        logger.warning(f"读取竞价抢筹评分失败: {e}")
+        return {}
+    result = {}
+    for r in rows or []:
+        code = str(r.get("code", "")).zfill(6)
+        result[code] = {
+            "recommend_stars": int(r.get("recommend_stars") or 0),
+            "recommend_reason": r.get("recommend_reason") or "",
+            "recommend_score": float(r.get("recommend_score") or 0),
+        }
+    return result
+
+
+def load_score_meta(date_compact: str, period: int) -> dict:
+    """读取情绪阶段与推荐提示"""
+    try:
+        rows = execute_query(
+            f"SELECT emotion_stage, recommend_hint, score_ready FROM {_META_TABLE} "
+            f"WHERE date = %s AND period = %s LIMIT 1",
+            (date_compact, int(period)),
+        )
+    except Exception as e:
+        logger.warning(f"读取评分元数据失败: {e}")
+        return {}
+    if not rows:
+        return {}
+    r = rows[0]
+    return {
+        "stage": r.get("emotion_stage") or "",
+        "hint": r.get("recommend_hint") or "",
+        "ready": bool(r.get("score_ready")),
+    }
+
+
+def scores_exist(date_compact: str, period: int) -> bool:
+    """检查指定日期/时段是否已有评分数据"""
+    try:
+        rows = execute_query(
+            f"SELECT 1 FROM {_META_TABLE} WHERE date = %s AND period = %s AND score_ready = 1 LIMIT 1",
+            (date_compact, int(period)),
+        )
+        return bool(rows)
+    except Exception as e:
+        logger.warning(f"查询评分就绪状态失败: {e}")
+        return False

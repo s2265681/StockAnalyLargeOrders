@@ -1,0 +1,49 @@
+backend/utils/job_notify.py
+  s_5aee4ab35f469b::t_565ab150bdc9ca 60
+  s_5aee4ab35f469b::t_5e8ed0ec846939 187-221,223-228,230-297
+  s_5aee4ab35f469b::t_7acf0351374d1c 222,229
+  s_5aee4ab35f469b::t_81b779f7e30c90 181-186
+  s_5aee4ab35f469b::t_7bb8acb58b95bb 4
+  s_5aee4ab35f469b::t_58970d0260751b 160-161,163
+  s_5aee4ab35f469b::t_d93a70995d1f1f 1,7,19-59,114-159,162,164-180,298-315,319,322,365-399,406,409-418,424,426,429-437
+  s_5aee4ab35f469b::t_77ed0870a097b5 316-318,320-321,323-328
+backend/jobs/job_lib.sh
+  s_5aee4ab35f469b::t_a9ae61fb400213 58,61,66,72,76,78,83-84,89,91,95
+docs/local-cron-jobs.md
+  s_5aee4ab35f469b::t_861ae9c86a75ef 20
+backend/services/ai_diagnosis_service.py
+  s_96fce0d17515a3::t_2c9a869220fcb8 136
+  s_96fce0d17515a3::t_86c2cdb342b52b 96,100-101
+backend/jobs/job_notify_success.py
+  s_5aee4ab35f469b::t_7f9cd8bb0143a2 16,18
+backend/tests/test_job_notify.py
+  s_5aee4ab35f469b::t_4995b256c407ff 7
+  s_5aee4ab35f469b::t_66d5f86287b8c4 41-49,59-61
+  s_5aee4ab35f469b::t_576d205e7372a8 5-6,8-13,17-33,35,50-58,62,70,76,86,92-97
+  s_5aee4ab35f469b::t_5c95dd829eb533 34
+  s_5aee4ab35f469b::t_7d7b5670971108 36-40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "2cd0d5b57166daeca06f4143a70153c6163a3822",
+  "prompts": {},
+  "sessions": {
+    "s_5aee4ab35f469b": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "cf76d8df-68be-4746-b45d-14664765380a",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_96fce0d17515a3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "754f4364-3dea-4b54-bda1-c8e8d4206cc1",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

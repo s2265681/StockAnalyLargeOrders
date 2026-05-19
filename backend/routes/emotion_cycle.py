@@ -113,24 +113,11 @@ def _curl_get_json(url: str, *, headers: dict = None, timeout: int = 15) -> dict
         raise TimeoutError(f"curl 超时 {timeout}s")
 
 
-def _compute_rise_pct_from_akshare() -> Optional[float]:
-    """收盘后（>=15:05）才补算上涨比例，盘中不调用，避免拉 5000 只股票打满 CPU"""
-    from datetime import datetime
-    now = datetime.now()
-    # 仅在收盘后执行，盘中直接返回 None 保持 "--"
-    if now.hour < 15 or (now.hour == 15 and now.minute < 5):
-        return None
-    try:
-        import akshare as ak
-        df = ak.stock_zh_a_spot_em()
-        total = len(df)
-        if total == 0:
-            return None
-        rising = len(df[df["涨跌幅"] > 0])
-        return round(rising / total * 100, 2)
-    except Exception as e:
-        logger.warning("akshare 计算上涨比例失败: %s", e)
-        return None
+def _fetch_rise_pct() -> Optional[float]:
+    """拉取全市场上涨比例。当第三方 API szbl 当日未更新时调用。
+    TODO: 接入专用聚合接口（直接返回上涨/下跌家数，无需自己统计）
+    """
+    return None
 
 
 def _format_date(date_int: int) -> str:
@@ -167,14 +154,12 @@ def _fetch_emotion_records():
     col_names = data["colNameList"]
     records = [_transform_row(col_names, row) for row in data["contentList"]]
 
-    # 如果最新一条 rise_pct 为 None（第三方当天未更新），从 akshare 补算
+    # 如果最新一条 rise_pct 为 None（第三方当天未更新），尝试从专用接口补取
     if records and records[-1].get("rise_pct") is None:
-        computed = _compute_rise_pct_from_akshare()
+        computed = _fetch_rise_pct()
         if computed is not None:
             records[-1]["rise_pct"] = computed
-            logger.info("rise_pct 已从 akshare 补算: %s → %.2f%%", records[-1].get("date"), computed)
-        else:
-            logger.warning("rise_pct 补算失败，%s 上涨比例仍为 None", records[-1].get("date"))
+            logger.info("rise_pct 已补取: %s → %.2f%%", records[-1].get("date"), computed)
 
     return records
 

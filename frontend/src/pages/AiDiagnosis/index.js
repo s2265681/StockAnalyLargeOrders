@@ -293,11 +293,13 @@ function HotSearchTags({ onSearchedClick, onHotClick }) {
   const [hotData, setHotData] = useState({ searched: [], hot: [] });
 
   useEffect(() => {
+    let cancelled = false;
     apiRequest('/api/v1/ai-diagnosis/hot-stocks', { timeout: 10000 })
       .then((res) => {
-        if (res.success && res.data) setHotData(res.data);
+        if (!cancelled && res.success && res.data) setHotData(res.data);
       })
       .catch(() => {});
+    return () => { cancelled = true; };
   }, []);
 
   const { searched, hot } = hotData;
@@ -513,7 +515,11 @@ function AiDiagnosis() {
           value={code}
           onChange={(e) => {
             setCode(e.target.value);
-            localStorage.setItem(LS_CODE_KEY, e.target.value);
+            if (e.target.value) {
+              localStorage.setItem(LS_CODE_KEY, e.target.value);
+            } else {
+              localStorage.removeItem(LS_CODE_KEY);
+            }
           }}
           onPressEnter={() => runDiagnosis(code, false)}
           maxLength={12}

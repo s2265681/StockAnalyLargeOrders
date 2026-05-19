@@ -1,0 +1,114 @@
+frontend/src/pages/AuctionGrab/index.js
+  s_babc1026007a98::t_84d45d96c3f661 44-53
+  s_babc1026007a98::t_dcd846be809e09 126-152,154-165,169,175-176,185,189,194-196,198
+  s_babc1026007a98::t_7c142b516d560a 57
+  s_babc1026007a98::t_21486cd0eaa5cf 112
+  s_babc1026007a98::t_29a7b3af013de0 153
+  s_babc1026007a98::t_7e27a6b22c5aa5 174
+  s_babc1026007a98::t_dba0a4a0191d16 54-56,58-59
+backend/config/ai_config.py
+  s_8aa11394fd11d0::t_b3f248da3c0c9e 1-11,13,16-18,22-27,31-81,83,85-88,92-98
+  s_8aa11394fd11d0::t_3facb2c8f73d17 82,89-91
+  s_8aa11394fd11d0::t_0221d435114fda 12,14-15,19-21
+  s_8aa11394fd11d0::t_6b0ee5d464642b 84
+  s_8aa11394fd11d0::t_7dfdde93df01a2 28-30
+backend/routes/emotion_cycle.py
+  s_8aa11394fd11d0::t_367d134d87625d 78-87,557,560-561,714,717-718,1053-1054
+  s_8aa11394fd11d0::t_faf1058c9cb6b0 1107-1108
+backend/routes/auction_grab.py
+  s_babc1026007a98::t_75d9df8405e6bb 206-231
+  s_babc1026007a98::t_e93321bc69d680 388-389,391,394,398,401-402,408,411
+backend/services/ai_diagnosis_service.py
+  s_8aa11394fd11d0::t_474a60bf73ddd7 876-877
+  s_8aa11394fd11d0::t_a5bab17c1f5271 669-670
+  s_8aa11394fd11d0::t_5033639086da8f 18-23
+  s_8aa11394fd11d0::t_7372957ace90d9 845
+  s_8aa11394fd11d0::t_b1703fb5d790dd 853
+backend/routes/dragon_tiger.py
+  s_8aa11394fd11d0::t_9d3825dcc841d2 31-32
+  s_8aa11394fd11d0::t_899415608a98ab 282-283
+backend/services/auction_grab_service.py
+  s_babc1026007a98::t_22b5640b93feb8 243-260,264-265,267,272,277-279,283-294
+frontend/src/pages/StockDashboard/utils/l2Analysis.test.js
+  s_d20d52577117a0::t_8032de8f0ea12e 2,5,8
+  s_d20d52577117a0::t_30a690a62beb31 92-130
+backend/config/sync_skills.py
+  s_8aa11394fd11d0::t_1bdf1d744d4047 1-26
+backend/jobs/job_notify_test.py
+  s_5aee4ab35f469b::t_d87821b05863b6 1-48
+backend/config/ai_prompts.py
+  s_8aa11394fd11d0::t_e46d890be0829c 1-1020
+frontend/src/store/atoms.js
+  s_d20d52577117a0::t_ed47755c0dbb8a 500
+  s_d20d52577117a0::t_c12e13625d3977 554
+  s_d20d52577117a0::t_08040362755035 286
+  s_d20d52577117a0::t_3a37fd1f368100 540,542-553,555-570,572,589-591,593-594,596,602
+  s_d20d52577117a0::t_141189214ead11 247-285,287-329
+backend/utils/claude_client.py
+  s_8aa11394fd11d0::t_ccba51ed1abceb 60,68
+  s_8aa11394fd11d0::t_736824389d94ab 78
+  s_8aa11394fd11d0::t_2089b31247880c 134-154
+backend/routes/limit_up_echelon.py
+  s_8aa11394fd11d0::t_b7fd9a331dd1de 802,804
+  s_8aa11394fd11d0::t_9d4ec31a825f7d 964
+  s_8aa11394fd11d0::t_6c7c046136b20d 46-53,967,1187,1775,1786
+  s_8aa11394fd11d0::t_f5773f299c2632 1183-1184
+frontend/src/pages/StockDashboard/components/StockChart.js
+  s_d20d52577117a0::t_32587942342c7b 29-33
+  s_d20d52577117a0::t_f09bd1f8259ab3 872-873
+  s_d20d52577117a0::t_99f5733e6ca745 904-905
+  s_d20d52577117a0::t_3a5b2f5f8ff06a 590-591,593,596-603,611-617,619-628,632-634
+  s_d20d52577117a0::t_c649f17ca5d159 647
+backend/config/__init__.py
+  s_8aa11394fd11d0::t_e331064f737cc4 1-10
+backend/tests/test_dragon_tiger_ai.py
+  s_8aa11394fd11d0::t_1a88f55ac1b14e 43
+frontend/src/pages/StockDashboard/utils/l2Analysis.js
+  s_d20d52577117a0::t_e7b453a48f02ea 132-211
+backend/config/_gen_helpers.txt
+  s_8aa11394fd11d0::t_e2d01b81292180 1
+frontend/src/pages/StockDashboard/index.js
+  s_d20d52577117a0::t_3fd824d46df27b 133
+  s_d20d52577117a0::t_4912c88fb401e9 4
+  s_d20d52577117a0::t_ffaaba97cbf41f 75,84
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "a2fe0719a3e3e95c2fa0799f8326a85d1551500d",
+  "prompts": {},
+  "sessions": {
+    "s_5aee4ab35f469b": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "cf76d8df-68be-4746-b45d-14664765380a",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_8aa11394fd11d0": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "146f2da4-a659-43f0-8f69-dac4789d33de",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_babc1026007a98": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "f8255989-d419-4343-9314-43bcd0abc243",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_d20d52577117a0": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "c6c51743-025d-4e5f-87f5-2e79a7e9c7f7",
+        "model": "default"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

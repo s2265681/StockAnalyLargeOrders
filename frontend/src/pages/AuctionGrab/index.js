@@ -43,11 +43,32 @@ const SORT_OPTIONS = [
 
 const normalizeCode = (code) => String(code || '').padStart(6, '0');
 
+const limitUpThreshold = (code) => {
+  const c = normalizeCode(code);
+  if (c.startsWith('30') || c.startsWith('68')) return 19.5;
+  if (c.startsWith('4') || c.startsWith('8')) return 29.5;
+  return 9.5;
+};
+
+const isAtLimitUp = (item) => {
+  const vals = [item.today_change_pct, item.close_change_pct, item.grab_change_pct]
+    .map((v) => parseFloat(v))
+    .filter((v) => Number.isFinite(v));
+  if (!vals.length) return false;
+  const pct = Math.max(...vals);
+  return pct >= limitUpThreshold(item.code);
+};
+
 const mergeEnrichments = (items, enrichments) => {
   if (!items?.length || !enrichments) return items;
   return items.map((item) => {
     const extra = enrichments[normalizeCode(item.code)] || enrichments[item.code];
-    return extra ? { ...item, ...extra } : item;
+    const merged = extra ? { ...item, ...extra } : { ...item };
+    if (isAtLimitUp(merged)) {
+      merged.recommend_stars = 0;
+      merged.recommend_reason = '当日已涨停，不参与推荐';
+    }
+    return merged;
   });
 };
 

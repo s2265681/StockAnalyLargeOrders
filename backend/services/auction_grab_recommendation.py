@@ -303,6 +303,49 @@ def _is_at_limit_up(code: str, change_pct) -> bool:
     return pct >= 9.5
 
 
+def _eligible_for_stars(item: dict, live_map: dict | None = None) -> bool:
+    return not _is_item_at_limit_up(item, live_map)
+
+
+def _current_change_pct(item: dict, live_map: dict | None = None) -> float | None:
+    """取盘中/竞价/收盘涨幅中可用的最大值（用于涨停判定）"""
+    code = str(item.get("code", "")).zfill(6)
+    candidates = [
+        (live_map or {}).get(code),
+        item.get("today_change_pct"),
+        item.get("close_change_pct"),
+        item.get("grab_change_pct"),
+    ]
+    values = []
+    for pct in candidates:
+        if pct is None:
+            continue
+        try:
+            values.append(float(pct))
+        except (TypeError, ValueError):
+            continue
+    return max(values) if values else None
+
+
+def _is_item_at_limit_up(item: dict, live_map: dict | None = None) -> bool:
+    code = str(item.get("code", "")).zfill(6)
+    pct = _current_change_pct(item, live_map)
+    return _is_at_limit_up(code, pct)
+
+
+def strip_limit_up_recommendations(
+    items: list[dict],
+    live_change_by_code: dict | None = None,
+) -> None:
+    """已涨停标的清除推荐星（盘中每次返回 score 前调用）"""
+    live_map = live_change_by_code or {}
+    for item in items:
+        if not _is_item_at_limit_up(item, live_map):
+            continue
+        item["recommend_stars"] = 0
+        item["recommend_reason"] = "当日已涨停，不参与推荐"
+
+
 def _build_reason(
     stars: int,
     stage: str,
@@ -340,6 +383,7 @@ def _score_items(
     context_date_dash: str | None = None,
     use_same_day_bonus: bool = True,
     weights: dict | None = None,
+    assign_stars: bool = True,
 ) -> tuple[list[dict], dict]:
     """
     内部打分。context_date_dash 默认等于 trade_date_dash；
@@ -406,7 +450,8 @@ def _score_items(
             }
         )
 
-    _assign_stars(scored)
+    if assign_stars:
+        _assign_stars(scored)
     return scored, emotion
 
 
@@ -439,54 +484,60 @@ def score_items_v2(
     return scored
 
 
-def _assign_stars(scored: list[dict]) -> None:
-    """按分数排序后分配 1–3 星，最多 2 只三星、4 只一星以上"""
+def _assign_stars(scored: list[dict], eligible_codes: set[str] | None = None) -> None:
+    """按分数排序后分配 1–3 星，最多 2 只三星、4 只一星以上（仅对 eligible_codes）"""
     if not scored:
         return
 
-    scored.sort(key=lambda x: -x["composite_score"])
+    pool = scored
+    if eligible_codes is not None:
+        pool = [r for r in scored if r["code"] in eligible_codes]
+    if not pool:
+        for row in scored:
+            row["recommend_stars"] = 0
+        return
 
-    for i, row in enumerate(scored):
-        row["rank"] = i + 1
+    pool.sort(key=lambda x: -x["composite_score"])
+    for row in scored:
+        row["rank"] = 0
         row["recommend_stars"] = 0
 
     # 三星：前1–2名且分数达标
-    top_score = scored[0]["composite_score"]
+    top_score = pool[0]["composite_score"]
     min_three_star = max(55.0, top_score * 0.82)
     three_star_count = 0
-    for row in scored:
+    for row in pool:
         if three_star_count >= 2:
-            continue
+            break
         if row["composite_score"] >= min_three_star:
             row["recommend_stars"] = 3
             three_star_count += 1
 
     # 一至三星：第3–6名（尚未标星的靠前标的）
-    secondary = [r for r in scored if r["recommend_stars"] == 0][:4]
-    if not secondary:
-        return
+    secondary = [r for r in pool if r["recommend_stars"] == 0][:4]
+    if secondary:
+        thresholds = [
+            top_score * 0.72,
+            top_score * 0.58,
+            top_score * 0.45,
+        ]
+        for row in secondary:
+            s = row["composite_score"]
+            if s >= thresholds[0]:
+                row["recommend_stars"] = 3
+            elif s >= thresholds[1]:
+                row["recommend_stars"] = 2
+            elif s >= thresholds[2]:
+                row["recommend_stars"] = 1
 
-    thresholds = [
-        top_score * 0.72,
-        top_score * 0.58,
-        top_score * 0.45,
-    ]
-    for row in secondary:
-        s = row["composite_score"]
-        if s >= thresholds[0]:
-            row["recommend_stars"] = 3
-        elif s >= thresholds[1]:
+    # 全表最多 2 只三星
+    starred = [r for r in pool if r["recommend_stars"] == 3]
+    if len(starred) > 2:
+        for row in starred[2:]:
             row["recommend_stars"] = 2
-        elif s >= thresholds[2]:
-            row["recommend_stars"] = 1
-        else:
-            row["recommend_stars"] = 0
 
-    # 全表最多 2 只三星（若 secondary 也给了3星，降为2星）
-    three_stars = [r for r in scored if r["recommend_stars"] == 3]
-    if len(three_stars) > 2:
-        for row in three_stars[2:]:
-            row["recommend_stars"] = 2
+    for i, row in enumerate(sorted(scored, key=lambda x: -x["composite_score"])):
+        row["rank"] = i + 1
 
 
 def enrich_auction_recommendations(
@@ -504,10 +555,16 @@ def enrich_auction_recommendations(
     if not items:
         return {"stage": "", "hint": ""}
 
-    trade_date_compact = trade_date_dash.replace("-", "")
+    live_map = live_change_by_code or {}
     scored, emotion = _score_items(
-        items, trade_date_dash, period, use_same_day_bonus=True
+        items, trade_date_dash, period, use_same_day_bonus=True, assign_stars=False,
     )
+    eligible = {
+        str(it.get("code", "")).zfill(6)
+        for it in items
+        if _eligible_for_stars(it, live_map)
+    }
+    _assign_stars(scored, eligible)
 
     metrics = emotion.get("metrics") or {}
     limit_up = int(metrics.get("limit_up_count") or 0)
@@ -522,31 +579,23 @@ def enrich_auction_recommendations(
 
     score_by_code = {r["code"]: r for r in scored}
     stage = emotion.get("stage") or ""
-    live_map = live_change_by_code or {}
     for item in items:
         code = str(item.get("code", "")).zfill(6)
         row = score_by_code.get(code, {})
-        stars = row.get("recommend_stars", 0)
-        profile = row.get("profile", {})
-
-        # 盘中已涨停 → 不推荐（用实时涨幅，fallback 竞价涨幅）
-        live_pct = live_map.get(code)
-        if live_pct is None:
-            live_pct = item.get("today_change_pct")
-        if live_pct is None:
-            live_pct = item.get("grab_change_pct")
-        if _is_at_limit_up(code, live_pct):
-            stars = 0
-            item["recommend_reason"] = "当日已涨停，不参与推荐"
+        if _is_item_at_limit_up(item, live_map):
             item["recommend_stars"] = 0
+            item["recommend_reason"] = "当日已涨停，不参与推荐"
             item["recommend_score"] = row.get("composite_score", 0)
             continue
-
+        stars = row.get("recommend_stars", 0)
+        profile = row.get("profile", {})
         item["recommend_stars"] = stars
         item["recommend_reason"] = _build_reason(
             stars, stage, profile, market_part
         )
         item["recommend_score"] = row.get("composite_score", 0)
+
+    strip_limit_up_recommendations(items, live_map)
 
     hint = emotion.get("advice") or ""
     if stage and not hint:

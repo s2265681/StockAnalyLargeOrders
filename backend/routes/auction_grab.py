@@ -405,6 +405,11 @@ def _trigger_background_enrich(date_compact: str, period_int: int, items: list, 
                     str(x.get('code', '')).zfill(6): x.get('today_change_pct')
                     for x in items_copy if x.get('code')
                 }
+                # 同步 close/grab 供涨停判定
+                for x in items_copy:
+                    c = str(x.get('code', '')).zfill(6)
+                    if live_changes.get(c) is None:
+                        live_changes[c] = x.get('close_change_pct') or x.get('grab_change_pct')
                 rec_meta = enrich_auction_recommendations(
                     items_copy, trade_date, period_int, live_change_by_code=live_changes,
                 )
@@ -532,6 +537,9 @@ def get_auction_grab_score():
     # 优先读内存缓存（后台线程写入，最新鲜）
     processed_items, rec_meta = _get_processed_payload(date_compact, period_int, is_today)
     if processed_items is not None:
+        if is_today:
+            from services.auction_grab_recommendation import strip_limit_up_recommendations
+            strip_limit_up_recommendations(processed_items)
         enrichments = _build_enrichments_map(processed_items)
         has_scores = any(e.get('recommend_score') is not None for e in enrichments.values())
         return v1_success_response(data={

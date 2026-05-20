@@ -1,0 +1,158 @@
+<h2>条件预警页面 — 布局方案</h2>
+<p class="subtitle">选择你偏好的整体布局方式</p>
+
+<div class="cards">
+
+  <!-- 方案 A -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="padding:16px;font-family:sans-serif;font-size:12px">
+        <!-- 顶部操作栏 -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <span style="font-weight:600;font-size:13px">📋 我的预警规则</span>
+          <div style="background:#1677ff;color:#fff;padding:4px 10px;border-radius:4px;font-size:11px">+ 新增预警</div>
+        </div>
+        <!-- 规则列表 -->
+        <div style="border:1px solid #e8e8e8;border-radius:6px;overflow:hidden">
+          <div style="background:#fafafa;padding:6px 10px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr 60px;gap:8px;font-size:10px;color:#888;border-bottom:1px solid #e8e8e8">
+            <span>股票</span><span>预警类型</span><span>阈值</span><span>收件邮箱</span><span>操作</span>
+          </div>
+          <div style="padding:6px 10px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr 60px;gap:8px;font-size:10px;border-bottom:1px solid #f0f0f0;align-items:center">
+            <span>600519</span><span style="color:#f5222d">涨停封单</span><span>&lt; 5000手</span><span style="color:#888">xxx@163.com</span><span style="color:#1677ff">编辑</span>
+          </div>
+          <div style="padding:6px 10px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr 60px;gap:8px;font-size:10px;align-items:center">
+            <span>000001</span><span style="color:#52c41a">涨跌幅</span><span>&gt; 5%</span><span style="color:#888">yyy@qq.com</span><span style="color:#1677ff">编辑</span>
+          </div>
+        </div>
+        <!-- 弹窗新增（下方展示） -->
+        <div style="margin-top:10px;border:1px dashed #1677ff;border-radius:6px;padding:10px;background:#f0f7ff">
+          <div style="font-size:10px;font-weight:600;margin-bottom:8px;color:#1677ff">新增预警（最多同时添加3条）</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px">
+            <div style="background:#fff;border:1px solid #d9d9d9;border-radius:4px;padding:4px 6px;font-size:10px;color:#bbb">股票代码</div>
+            <div style="background:#fff;border:1px solid #d9d9d9;border-radius:4px;padding:4px 6px;font-size:10px;color:#bbb">预警类型 ▾</div>
+            <div style="background:#fff;border:1px solid #d9d9d9;border-radius:4px;padding:4px 6px;font-size:10px;color:#bbb">阈值</div>
+            <div style="background:#fff;border:1px solid #d9d9d9;border-radius:4px;padding:4px 6px;font-size:10px;color:#bbb">邮箱</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-top:4px">
+            <div style="background:#fff;border:1px solid #d9d9d9;border-radius:4px;padding:4px 6px;font-size:10px;color:#bbb">股票代码</div>
+            <div style="background:#fff;border:1px solid #d9d9d9;border-radius:4px;padding:4px 6px;font-size:10px;color:#bbb">预警类型 ▾</div>
+            <div style="background:#fff;border:1px solid #d9d9d9;border-radius:4px;padding:4px 6px;font-size:10px;color:#bbb">阈值</div>
+            <div style="background:#fff;border:1px solid #d9d9d9;border-radius:4px;padding:4px 6px;font-size:10px;color:#bbb">邮箱</div>
+          </div>
+          <div style="text-align:right;margin-top:8px">
+            <span style="background:#1677ff;color:#fff;padding:4px 12px;border-radius:4px;font-size:10px">保存</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A · 列表 + 内嵌新增区</h3>
+      <p>顶部是规则列表，点"新增"展开底部表单区，最多同时填3行，一键批量保存。页面不跳转，操作流畅。</p>
+    </div>
+  </div>
+
+  <!-- 方案 B -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="padding:16px;font-family:sans-serif;font-size:12px">
+        <!-- 两栏布局 -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <!-- 左：规则列表 -->
+          <div>
+            <div style="font-weight:600;font-size:12px;margin-bottom:8px">我的预警</div>
+            <div style="background:#fff5f5;border-left:3px solid #f5222d;padding:8px;border-radius:4px;margin-bottom:6px;font-size:10px">
+              <div style="font-weight:600">贵州茅台 600519</div>
+              <div style="color:#888;margin-top:2px">涨停封单 &lt; 5000手</div>
+              <div style="color:#aaa;margin-top:1px">xxx@163.com · <span style="color:#52c41a">监控中</span></div>
+            </div>
+            <div style="background:#f6fff6;border-left:3px solid #52c41a;padding:8px;border-radius:4px;margin-bottom:6px;font-size:10px">
+              <div style="font-weight:600">平安银行 000001</div>
+              <div style="color:#888;margin-top:2px">涨幅 &gt; 5%</div>
+              <div style="color:#aaa;margin-top:1px">yyy@qq.com · <span style="color:#52c41a">监控中</span></div>
+            </div>
+            <div style="background:#f0f7ff;border-left:3px solid #1677ff;padding:8px;border-radius:4px;font-size:10px;color:#aaa">
+              + 点右侧添加新规则
+            </div>
+          </div>
+          <!-- 右：新增表单 -->
+          <div>
+            <div style="font-weight:600;font-size:12px;margin-bottom:8px">批量新增（最多3条）</div>
+            <div style="background:#fafafa;border:1px solid #e8e8e8;border-radius:6px;padding:8px">
+              <div style="font-size:10px;color:#888;margin-bottom:4px">第 1 条</div>
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <div style="background:#fff;border:1px solid #d9d9d9;border-radius:4px;padding:3px 6px;font-size:10px;color:#bbb">股票代码或名称</div>
+                <div style="background:#fff;border:1px solid #d9d9d9;border-radius:4px;padding:3px 6px;font-size:10px;color:#bbb">预警类型 ▾</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+                  <div style="background:#fff;border:1px solid #d9d9d9;border-radius:4px;padding:3px 6px;font-size:10px;color:#bbb">阈值</div>
+                  <div style="background:#fff;border:1px solid #d9d9d9;border-radius:4px;padding:3px 6px;font-size:10px;color:#bbb">邮箱</div>
+                </div>
+              </div>
+              <div style="border-top:1px dashed #e8e8e8;margin:6px 0;padding-top:6px;font-size:10px;color:#888">第 2 条（选填）</div>
+              <div style="display:flex;flex-direction:column;gap:4px;opacity:0.5">
+                <div style="background:#fff;border:1px solid #d9d9d9;border-radius:4px;padding:3px 6px;font-size:10px;color:#bbb">股票代码或名称</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px">
+                  <div style="background:#fff;border:1px solid #d9d9d9;border-radius:4px;padding:3px 6px;font-size:10px;color:#bbb">类型 ▾</div>
+                  <div style="background:#fff;border:1px solid #d9d9d9;border-radius:4px;padding:3px 6px;font-size:10px;color:#bbb">阈值</div>
+                  <div style="background:#fff;border:1px solid #d9d9d9;border-radius:4px;padding:3px 6px;font-size:10px;color:#bbb">邮箱</div>
+                </div>
+              </div>
+              <div style="text-align:right;margin-top:8px">
+                <span style="background:#1677ff;color:#fff;padding:4px 12px;border-radius:4px;font-size:10px">提交</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B · 左右分栏</h3>
+      <p>左侧卡片展示已有规则，右侧常驻新增表单。列表和表单并排可见，适合频繁操作。</p>
+    </div>
+  </div>
+
+  <!-- 方案 C -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="padding:16px;font-family:sans-serif;font-size:12px">
+        <!-- Tab切换 -->
+        <div style="display:flex;gap:0;margin-bottom:12px;border-bottom:2px solid #e8e8e8">
+          <div style="padding:5px 14px;border-bottom:2px solid #1677ff;color:#1677ff;font-size:11px;margin-bottom:-2px;cursor:pointer">预警列表</div>
+          <div style="padding:5px 14px;color:#888;font-size:11px">+ 添加预警</div>
+        </div>
+        <!-- 列表内容 -->
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid #e8e8e8;border-radius:6px;font-size:10px">
+            <div>
+              <span style="font-weight:600">600519</span>
+              <span style="margin-left:6px;background:#fff1f0;color:#f5222d;padding:1px 5px;border-radius:3px">涨停封单</span>
+              <span style="margin-left:4px;color:#888">&lt; 5000手</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="color:#aaa">xxx@163.com</span>
+              <span style="width:28px;height:14px;background:#52c41a;border-radius:7px;display:inline-block"></span>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid #e8e8e8;border-radius:6px;font-size:10px">
+            <div>
+              <span style="font-weight:600">000001</span>
+              <span style="margin-left:6px;background:#f6fff6;color:#52c41a;padding:1px 5px;border-radius:3px">涨跌幅</span>
+              <span style="margin-left:4px;color:#888">&gt; 5%</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="color:#aaa">yyy@qq.com</span>
+              <span style="width:28px;height:14px;background:#d9d9d9;border-radius:7px;display:inline-block"></span>
+            </div>
+          </div>
+          <div style="text-align:center;padding:10px;color:#aaa;font-size:10px;border:1px dashed #d9d9d9;border-radius:6px">
+            点击上方「添加预警」Tab 新增规则
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C · Tab 切换</h3>
+      <p>列表和新增表单用 Tab 切换，界面最简洁。适合规则较多时浏览，但新增需要切换页面。</p>
+    </div>
+  </div>
+
+</div>

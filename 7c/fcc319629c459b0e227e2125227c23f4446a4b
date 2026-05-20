@@ -1,0 +1,21 @@
+backend/utils/alert_notify.py
+  s_db052642ae2cf3::t_990ee809c0fc2f 1-91
+backend/tests/test_alert_notify.py
+  s_db052642ae2cf3::t_7fb51a64fd1c45 1-75
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "7cfcc319629c459b0e227e2125227c23f4446a4b",
+  "prompts": {},
+  "sessions": {
+    "s_db052642ae2cf3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ecca274-307f-4080-86ed-7a49509ede6a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

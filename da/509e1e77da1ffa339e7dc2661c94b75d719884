@@ -1,0 +1,22 @@
+backend/services/alert_monitor.py
+  s_db052642ae2cf3::t_ee44449078a25f 24
+  s_db052642ae2cf3::t_5f47edcf327eac 1-23,25-119
+backend/tests/test_alert_monitor.py
+  s_db052642ae2cf3::t_a60e1e99bfcace 1-70
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "da509e1e77da1ffa339e7dc2661c94b75d719884",
+  "prompts": {},
+  "sessions": {
+    "s_db052642ae2cf3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ecca274-307f-4080-86ed-7a49509ede6a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

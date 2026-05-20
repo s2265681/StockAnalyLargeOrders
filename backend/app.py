@@ -75,9 +75,13 @@ from websocket_manager import register_websocket_events, start_push_loop
 register_websocket_events(socketio)
 start_push_loop(socketio)
 
-from services.alert_monitor import start_alert_monitor
-from websocket_manager import adapter as _ws_adapter
-start_alert_monitor(socketio, _ws_adapter)
+try:
+    from services.alert_monitor import start_alert_monitor
+    from websocket_manager import adapter as _ws_adapter
+    start_alert_monitor(socketio, _ws_adapter)
+    logger.info("预警监控服务已启动")
+except Exception as _e:
+    logger.error("预警监控启动失败: %s", _e)
 
 
 @app.route('/health')

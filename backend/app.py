@@ -31,6 +31,7 @@ from routes import (
     ai_account_bp,
     alert_rules_bp,
     analytics_bp,
+    market_brief_bp,
 )
 
 app = Flask(__name__)
@@ -59,6 +60,7 @@ def register_blueprints(app):
     app.register_blueprint(ai_account_bp)
     app.register_blueprint(alert_rules_bp)
     app.register_blueprint(analytics_bp)
+    app.register_blueprint(market_brief_bp)
 
 
 register_blueprints(app)

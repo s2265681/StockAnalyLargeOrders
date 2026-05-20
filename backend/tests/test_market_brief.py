@@ -75,5 +75,51 @@ class TestFetchOverseasIndices(unittest.TestCase):
                 fetch_overseas_indices()
 
 
+def _make_app():
+    from utils.env import load_env
+    load_env()
+    import eventlet
+    eventlet.monkey_patch()
+    from flask import Flask
+    from flask_cors import CORS
+    app = Flask(__name__)
+    CORS(app)
+    from routes.market_brief import market_brief_bp
+    app.register_blueprint(market_brief_bp)
+    return app
+
+
+class TestMarketBriefAPI(unittest.TestCase):
+
+    def setUp(self):
+        self.app = _make_app()
+        self.client = self.app.test_client()
+
+    def test_today_returns_unavailable_when_no_data(self):
+        with patch('services.market_brief_service.execute_query', return_value=[]):
+            resp = self.client.get('/api/market-brief/today')
+        self.assertEqual(resp.status_code, 200)
+        body = json.loads(resp.data)
+        self.assertTrue(body['success'])
+        self.assertFalse(body['data']['available'])
+
+    def test_today_returns_data_when_available(self):
+        overseas = [{"symbol": "b_INDEXDOW", "name": "道指", "close": 34061.32, "change_pct": 0.35}]
+        fake_row = {
+            'brief_date': '2026-05-20',
+            'overseas_json': json.dumps(overseas),
+            'ai_summary': '美股上涨。',
+            'generated_at': '2026-05-20 08:30:00',
+        }
+        with patch('services.market_brief_service.execute_query', return_value=[fake_row]):
+            resp = self.client.get('/api/market-brief/today')
+        self.assertEqual(resp.status_code, 200)
+        body = json.loads(resp.data)
+        self.assertTrue(body['data']['available'])
+        self.assertEqual(body['data']['brief_date'], '2026-05-20')
+        self.assertEqual(len(body['data']['overseas']), 1)
+        self.assertEqual(body['data']['ai_summary'], '美股上涨。')
+
+
 if __name__ == '__main__':
     unittest.main()

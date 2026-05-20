@@ -1,0 +1,19 @@
+backend/utils/db.py
+  s_db052642ae2cf3::t_5ced02adb1cac0 56-70
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "aee301752beb9ec1ab9785d23be27993756c411e",
+  "prompts": {},
+  "sessions": {
+    "s_db052642ae2cf3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ecca274-307f-4080-86ed-7a49509ede6a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

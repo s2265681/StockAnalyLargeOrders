@@ -1,0 +1,27 @@
+backend/routes/__init__.py
+  s_db052642ae2cf3::t_dc7bec98a7e026 39
+  s_db052642ae2cf3::t_d082c792381d3a 19
+backend/app.py
+  s_db052642ae2cf3::t_5fc372dae32065 34
+  s_db052642ae2cf3::t_4453a672f53d5a 63
+backend/tests/test_market_brief.py
+  s_db052642ae2cf3::t_b21ea490d1ca2b 78-123
+backend/routes/market_brief.py
+  s_db052642ae2cf3::t_8d6b466a820f12 1-17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "d99436432f21f5d8321ac15451d7a0792809f795",
+  "prompts": {},
+  "sessions": {
+    "s_db052642ae2cf3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ecca274-307f-4080-86ed-7a49509ede6a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

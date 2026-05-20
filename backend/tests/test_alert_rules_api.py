@@ -109,6 +109,42 @@ class TestAlertRulesAPI(unittest.TestCase):
         self.assertFalse(data['success'])
         self.assertIn('权限', data['message'])
 
+    @patch('routes.alert_rules.execute_write', return_value=1)
+    @patch('routes.alert_rules.execute_query', return_value=[{'user_id': 1}])
+    def test_disable_rule(self, _mock_q, _mock_w):
+        with self._mock_auth():
+            resp = self.client.post('/api/alert-rules/1/disable', headers=self.auth_header)
+        data = resp.get_json()
+        self.assertTrue(data['success'])
+
+    @patch('routes.alert_rules.execute_query', return_value=[{'user_id': 99}])
+    def test_disable_other_users_rule_rejected(self, _mock_q):
+        with self._mock_auth(user_id=1):
+            resp = self.client.post('/api/alert-rules/1/disable', headers=self.auth_header)
+        data = resp.get_json()
+        self.assertFalse(data['success'])
+        self.assertIn('权限', data['message'])
+
+    @patch('routes.alert_rules.execute_write', return_value=1)
+    @patch('routes.alert_rules.execute_query', return_value=[{'user_id': 1}])
+    def test_update_rule(self, _mock_q, _mock_w):
+        with self._mock_auth():
+            resp = self.client.put('/api/alert-rules/1',
+                                   json={'threshold': 6.0, 'direction': 'above', 'email': 'new@qq.com'},
+                                   headers=self.auth_header)
+        data = resp.get_json()
+        self.assertTrue(data['success'])
+
+    @patch('routes.alert_rules.execute_query', return_value=[{'user_id': 99}])
+    def test_update_other_users_rule_rejected(self, _mock_q):
+        with self._mock_auth(user_id=1):
+            resp = self.client.put('/api/alert-rules/1',
+                                   json={'email': 'new@qq.com'},
+                                   headers=self.auth_header)
+        data = resp.get_json()
+        self.assertFalse(data['success'])
+        self.assertIn('权限', data['message'])
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,0 +1,20 @@
+frontend/src/components/MarketBriefBar/index.js
+  s_db052642ae2cf3::t_8ed4b8b5e1c038 29
+  s_db052642ae2cf3::t_b07736b1afe0bd 19,22,25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "370525691cea397f146b93a39676c6b36afa5bfc",
+  "prompts": {},
+  "sessions": {
+    "s_db052642ae2cf3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ecca274-307f-4080-86ed-7a49509ede6a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

@@ -69,7 +69,7 @@ class TestFetchOverseasIndices(unittest.TestCase):
         from services.market_brief_service import fetch_overseas_indices
         mock_result = MagicMock()
         mock_result.returncode = 1
-        mock_result.stderr = 'connect failed'
+        mock_result.stderr = b'connect failed'
         with patch('subprocess.run', return_value=mock_result):
             with self.assertRaises(RuntimeError):
                 fetch_overseas_indices()

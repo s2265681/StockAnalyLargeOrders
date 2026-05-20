@@ -54,11 +54,16 @@ def fetch_overseas_indices() -> list[dict]:
     result = subprocess.run(
         ['curl', '-s', '--max-time', '15',
          '-H', 'Referer: https://finance.sina.com.cn', url],
-        capture_output=True, text=True, timeout=20, env=_env,
+        capture_output=True, timeout=20, env=_env,
     )
     if result.returncode != 0:
-        raise RuntimeError(f'curl 拉取指数失败: {result.stderr.strip()}')
-    return _parse_sina_response(result.stdout)
+        raise RuntimeError(f'curl 拉取指数失败: {result.stderr.decode("utf-8", errors="replace").strip()}')
+    # 新浪财经返回 GBK 编码
+    try:
+        stdout = result.stdout.decode('gbk')
+    except UnicodeDecodeError:
+        stdout = result.stdout.decode('utf-8', errors='replace')
+    return _parse_sina_response(stdout)
 
 
 def generate_ai_summary(overseas: list[dict]) -> str:

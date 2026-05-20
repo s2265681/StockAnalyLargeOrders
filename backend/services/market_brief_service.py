@@ -10,6 +10,7 @@ from services.market_brief_fetchers import (
 )
 from utils.claude_client import call_claude_for_scenario
 from utils.db import execute_query, execute_write
+from utils.job_notify import send_plain_email
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +81,53 @@ def save_brief(
             (brief_date, overseas_json, ai_summary, overseas_json, ai_summary),
         )
     logger.info('已保存 market_brief date=%s', brief_date)
+
+
+def build_market_brief_email_body(
+    brief_date: str,
+    overseas: list[dict],
+    news: list[dict],
+    ai_summary: str,
+) -> str:
+    """组装盘前资讯邮件正文（纯文本）。"""
+    lines = [f'【NiuNIuNiu 盘前资讯】{brief_date}', '']
+
+    lines.append('【海外指数（昨夜）】')
+    for idx in overseas:
+        sign = '+' if idx['change_pct'] >= 0 else ''
+        lines.append(f"  {idx['name']} {sign}{idx['change_pct']}%")
+
+    lines.append('')
+    lines.append(f'【资讯摘录】共 {len(news)} 条')
+    for it in news[:15]:
+        t = f" [{it['time']}]" if it.get('time') else ''
+        lines.append(f"  · [{it['source']}]{t} {it['title']}")
+    if len(news) > 15:
+        lines.append(f'  … 另有 {len(news) - 15} 条未列出')
+
+    lines.append('')
+    lines.append('【AI 盘前摘要】')
+    lines.append(ai_summary.strip())
+    lines.append('')
+    lines.append('— 自动生成于每日 8:30 · 网页「情绪周期」顶部可查看')
+    return '\n'.join(lines)
+
+
+def send_market_brief_email(
+    brief_date: str,
+    overseas: list[dict],
+    news: list[dict],
+    ai_summary: str,
+) -> bool:
+    """任务成功后把盘前资讯发到配置的邮箱。"""
+    subject = f'[盘前资讯] {brief_date} A股开盘参考'
+    body = build_market_brief_email_body(brief_date, overseas, news, ai_summary)
+    ok = send_plain_email(subject, body, tag='盘前资讯')
+    if ok:
+        logger.info('盘前资讯邮件已发送 date=%s', brief_date)
+    else:
+        logger.warning('盘前资讯邮件未发送（请检查 SMTP 与 JOB_ALERT_EMAIL）')
+    return ok
 
 
 def get_today_brief() -> dict | None:

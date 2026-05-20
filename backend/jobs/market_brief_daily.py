@@ -21,6 +21,7 @@ from services.market_brief_service import (
     generate_ai_summary,
     save_brief,
     get_today_brief,
+    send_market_brief_email,
 )
 
 logging.basicConfig(
@@ -54,6 +55,10 @@ def main():
     logger.info('摘要（前50字）: %s', summary[:50])
 
     save_brief(today, overseas, summary, news)
+
+    logger.info('发送盘前资讯邮件...')
+    send_market_brief_email(today, overseas, news, summary)
+
     logger.info('===== 任务完成 date=%s =====', today)
 
 

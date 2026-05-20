@@ -22,6 +22,7 @@ JOB_LABELS: dict[str, str] = {
     "dragon_tiger": "龙虎榜 AI 补全",
     "auction_grab": "竞价抢筹同步",
     "echelon_intraday": "涨停梯队盘中刷新",
+    "market_brief": "盘前资讯（海外指数 + 多源快讯 + AI 摘要）",
     "unknown": "未知任务",
 }
 
@@ -452,6 +453,51 @@ def send_job_alert(
         detail=detail,
         log_tail=log_tail,
     )
+
+
+def alert_email_recipients() -> str:
+    """任务/盘前邮件收件人，逗号分隔的 JOB_ALERT_EMAIL 或 MARKET_BRIEF_EMAIL。"""
+    _load_backend_env()
+    return (
+        os.getenv("MARKET_BRIEF_EMAIL", "").strip()
+        or os.getenv("JOB_ALERT_EMAIL", DEFAULT_ALERT_EMAIL).strip()
+    )
+
+
+def send_plain_email(subject: str, body: str, *, tag: str = "通知") -> bool:
+    """发送自定义正文邮件（盘前资讯等）。"""
+    cfg = _smtp_config()
+    to_raw = alert_email_recipients()
+    if not cfg:
+        logger.warning("未配置 SMTP，跳过邮件: %s", subject)
+        return False
+    if not to_raw:
+        logger.warning("未配置收件邮箱 JOB_ALERT_EMAIL / MARKET_BRIEF_EMAIL")
+        return False
+
+    to_addrs = [a.strip() for a in to_raw.split(",") if a.strip()]
+    msg = MIMEMultipart()
+    msg["From"] = cfg["sender"]
+    msg["To"] = ", ".join(to_addrs)
+    msg["Subject"] = subject
+    msg.attach(MIMEText(body, "plain", "utf-8"))
+
+    try:
+        if cfg["use_ssl"]:
+            context = ssl.create_default_context()
+            with smtplib.SMTP_SSL(cfg["host"], cfg["port"], context=context) as smtp:
+                smtp.login(cfg["user"], cfg["password"])
+                smtp.sendmail(cfg["sender"], to_addrs, msg.as_string())
+        else:
+            with smtplib.SMTP(cfg["host"], cfg["port"]) as smtp:
+                smtp.starttls(context=ssl.create_default_context())
+                smtp.login(cfg["user"], cfg["password"])
+                smtp.sendmail(cfg["sender"], to_addrs, msg.as_string())
+        logger.info("已发送%s邮件 -> %s", tag, ", ".join(to_addrs))
+        return True
+    except Exception as e:
+        logger.error("发送邮件异常: %s", e)
+        return False
 
 
 def send_job_success(

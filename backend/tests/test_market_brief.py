@@ -57,6 +57,21 @@ class TestMarketBriefFetchers(unittest.TestCase):
         self.assertEqual(len(rows), 5)
 
 
+class TestMarketBriefEmail(unittest.TestCase):
+    def test_build_email_body(self):
+        from services.market_brief_service import build_market_brief_email_body
+        body = build_market_brief_email_body(
+            '2026-05-20',
+            [{'name': '道指', 'change_pct': 0.5}],
+            [{'source': '同花顺', 'title': '测试新闻', 'time': ''}],
+            '【海外】美股偏强\n【关注】科技',
+        )
+        self.assertIn('盘前资讯', body)
+        self.assertIn('道指', body)
+        self.assertIn('同花顺', body)
+        self.assertIn('AI 盘前摘要', body)
+
+
 class TestGetTodayBrief(unittest.TestCase):
     def test_returns_none_when_no_row(self):
         with patch('services.market_brief_service.execute_query', return_value=[]):

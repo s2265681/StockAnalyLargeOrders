@@ -1,0 +1,23 @@
+backend/services/market_brief_service.py
+  s_db052642ae2cf3::t_b4a75095cdf501 1-112
+backend/config/ai_config.py
+  s_db052642ae2cf3::t_27ccc5fed56eff 44
+backend/tests/test_market_brief.py
+  s_db052642ae2cf3::t_e215b803966ade 1-67
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "b718c57b8d737ce2c3ee023de2caada28ce2d3d3",
+  "prompts": {},
+  "sessions": {
+    "s_db052642ae2cf3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ecca274-307f-4080-86ed-7a49509ede6a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

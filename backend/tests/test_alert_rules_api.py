@@ -38,7 +38,7 @@ class TestAlertRulesAPI(unittest.TestCase):
         self.assertTrue(data['success'])
         self.assertEqual(data['data']['items'], [])
 
-    @patch('routes.alert_rules.execute_query', return_value=[])
+    @patch('routes.alert_rules.execute_query', return_value=[{'cnt': 0}])
     @patch('routes.alert_rules.execute_insert', return_value=42)
     @patch('routes.alert_rules.get_stock_name_by_code', return_value='贵州茅台')
     def test_batch_create_single_rule(self, _mock_name, _mock_insert, _mock_q):
@@ -144,6 +144,29 @@ class TestAlertRulesAPI(unittest.TestCase):
         data = resp.get_json()
         self.assertFalse(data['success'])
         self.assertIn('权限', data['message'])
+
+    @patch('routes.alert_rules.execute_query', return_value=[{'cnt': 20}])
+    def test_batch_create_exceeds_user_limit(self, _mock_q):
+        with self._mock_auth():
+            resp = self.client.post('/api/alert-rules/batch',
+                                    json={'rules': [{'code': '600519', 'alert_type': 'limit_up',
+                                                     'email': 'a@b.com'}]},
+                                    headers=self.auth_header)
+        data = resp.get_json()
+        self.assertFalse(data['success'])
+        self.assertIn('上限', data['message'])
+
+    @patch('routes.alert_rules.execute_query', return_value=[{'cnt': 19}])
+    @patch('routes.alert_rules.execute_insert', return_value=10)
+    @patch('routes.alert_rules.get_stock_name_by_code', return_value='贵州茅台')
+    def test_batch_create_at_limit_boundary_allowed(self, _mock_name, _mock_insert, _mock_q):
+        with self._mock_auth():
+            resp = self.client.post('/api/alert-rules/batch',
+                                    json={'rules': [{'code': '600519', 'alert_type': 'limit_up',
+                                                     'email': 'a@b.com'}]},
+                                    headers=self.auth_header)
+        data = resp.get_json()
+        self.assertTrue(data['success'])
 
 
 if __name__ == '__main__':

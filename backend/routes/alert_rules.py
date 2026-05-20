@@ -13,6 +13,8 @@ alert_rules_bp = Blueprint('alert_rules', __name__)
 VALID_ALERT_TYPES = {'change_pct', 'limit_up', 'limit_down', 'seal_order'}
 TYPES_WITH_THRESHOLD = {'change_pct', 'seal_order'}
 
+MAX_ACTIVE_RULES_PER_USER = 20  # 每用户最多同时 active 的规则数
+
 
 @alert_rules_bp.route('/api/alert-rules', methods=['GET'])
 @login_required
@@ -52,6 +54,17 @@ def batch_create_rules():
         return v1_error_response('规则列表不能为空')
     if len(rules) > 3:
         return v1_error_response('一次最多添加3条规则')
+
+    active_count = execute_query(
+        "SELECT COUNT(*) AS cnt FROM alert_rules WHERE user_id = %s AND status = 'active'",
+        (user_id,)
+    )[0]['cnt']
+    if active_count + len(rules) > MAX_ACTIVE_RULES_PER_USER:
+        remaining = MAX_ACTIVE_RULES_PER_USER - active_count
+        return v1_error_response(
+            f"监控中规则已达上限（{MAX_ACTIVE_RULES_PER_USER} 条），"
+            f"当前还可新增 {max(remaining, 0)} 条，请先停用或删除部分规则"
+        )
 
     for rule in rules:
         if not rule.get('code', '').strip():

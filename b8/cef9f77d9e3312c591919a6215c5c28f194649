@@ -1,0 +1,61 @@
+frontend/src/pages/EmotionCycle/index.js
+  s_523e06fdd99d52::t_2c808a7f32119f 394
+  s_523e06fdd99d52::t_c86a349623cf5b 46
+.gitignore
+  s_523e06fdd99d52::t_e3e79efba8f473 65
+backend/config/ai_prompts.py
+  s_523e06fdd99d52::t_71e98caa9f00f6 15,165,267
+frontend/src/pages/LimitUpEchelon/index.js
+  s_523e06fdd99d52::t_8966a396fc4a00 318-320
+  s_523e06fdd99d52::t_a4902bc4ace0e4 82,85-86
+backend/tests/test_limit_up_echelon.py
+  s_523e06fdd99d52::t_9bc8ce2b474fa2 244,258
+backend/routes/limit_up_echelon.py
+  s_523e06fdd99d52::t_aea74714de2997 1391
+  s_523e06fdd99d52::t_8148836c710aad 1412,1415
+  s_523e06fdd99d52::t_943b1930f0232c 1393
+backend/tests/test_rise_count.py
+  s_523e06fdd99d52::t_a1e8128524504f 27,30,32
+  s_523e06fdd99d52::t_868bc6da73b3a4 1-26,28-29,31,33-50
+backend/tests/test_auction_grab_backtest.py
+  s_523e06fdd99d52::t_a4d322c0e16c17 37
+backend/services/auction_grab_recommendation.py
+  s_523e06fdd99d52::t_2739a00cbe9459 202,220,222
+backend/tests/test_auction_grab_recommendation.py
+  s_523e06fdd99d52::t_ce13bd114d4ca5 24
+backend/routes/emotion_cycle.py
+  s_523e06fdd99d52::t_377463582cac3d 344
+  s_523e06fdd99d52::t_037fda14b4babb 125-132,134,136,140-141,156,158-160,162-166,169,171-182,186-189,191-192
+  s_523e06fdd99d52::t_b115bb9a1a5479 334
+  s_523e06fdd99d52::t_b0bdac750d3b92 92
+  s_523e06fdd99d52::t_6aaddeb83d48ff 317
+  s_523e06fdd99d52::t_a7799f2df00853 157,161,167-168,170
+  s_523e06fdd99d52::t_6dbc5c650056bc 135,137-138,142,145-146,149-155
+  s_523e06fdd99d52::t_74d78739619172 311-313,315-316
+backend/migrations/20260520_alter_market_brief_news.sql
+  s_65fd62722fe2e3::t_51119584492174 1-16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "b8cef9f77d9e3312c591919a6215c5c28f194649",
+  "prompts": {},
+  "sessions": {
+    "s_523e06fdd99d52": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "667419c1-edfd-4088-8bd2-8dd4afc233e3",
+        "model": "composer-2.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_65fd62722fe2e3": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "0798e2a0-93ea-43af-a4ac-bbe90616eb35",
+        "model": "composer-2.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

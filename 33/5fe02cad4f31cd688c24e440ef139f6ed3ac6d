@@ -1,0 +1,21 @@
+frontend/src/components/MarketBriefBar/index.js
+  s_7a99352c7affae::t_8364448bdf785b 3,14-19,81-87,95-111,116-117,121-126,128-138,140-151,159-162,164-165,167,169
+frontend/src/components/MarketBriefBar/index.css
+  s_7a99352c7affae::t_bdd9c9bdd12281 1-15,19-36,39-51,53-57,61-63,67-73,75-86,89-107,109-118,120-148,151-152,155-159,161,165-169,172-249
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "335fe02cad4f31cd688c24e440ef139f6ed3ac6d",
+  "prompts": {},
+  "sessions": {
+    "s_7a99352c7affae": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "d0e44f5f-9228-4b9e-9dec-bb9c8a5c6f2c",
+        "model": "composer-2.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+backend/migrations/20260520_create_market_brief.sql
+  s_db052642ae2cf3::t_b889fffad9b82c 1-8
+.github/workflows/deploy.yml
+  s_db052642ae2cf3::t_2df6aa6c093942 92
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "ab96b3ded14e989b635c56d38801edf3dd5e92f4",
+  "prompts": {},
+  "sessions": {
+    "s_db052642ae2cf3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ecca274-307f-4080-86ed-7a49509ede6a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

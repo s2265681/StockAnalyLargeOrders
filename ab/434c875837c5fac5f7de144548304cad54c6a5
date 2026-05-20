@@ -1,0 +1,23 @@
+backend/routes/alert_rules.py
+  s_db052642ae2cf3::t_a0952f6ca03104 58-68
+  s_db052642ae2cf3::t_c313a1c0ee3702 16-17
+backend/tests/test_alert_rules_api.py
+  s_db052642ae2cf3::t_a090c9601491b5 148-170
+  s_db052642ae2cf3::t_6c91e53a998945 41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "ab434c875837c5fac5f7de144548304cad54c6a5",
+  "prompts": {},
+  "sessions": {
+    "s_db052642ae2cf3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ecca274-307f-4080-86ed-7a49509ede6a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

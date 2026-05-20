@@ -41,26 +41,17 @@ const SORT_OPTIONS = [
   { key: 'zf', label: '涨幅' },
 ];
 
+const normalizeCode = (code) => String(code || '').padStart(6, '0');
+
 const mergeEnrichments = (items, enrichments) => {
   if (!items?.length || !enrichments) return items;
   return items.map((item) => {
-    const extra = enrichments[item.code];
+    const extra = enrichments[normalizeCode(item.code)] || enrichments[item.code];
     return extra ? { ...item, ...extra } : item;
   });
 };
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const needsScorePoll = (payload, isTodayView) => {
-  if (!payload?.items?.length) return false;
-  const missingRec = payload.items.some(
-    (it) => it.recommend_score == null && (it.recommend_stars == null || it.recommend_stars === undefined)
-  );
-  if (missingRec) return true;
-  // 当日盘中：持续拉取实时涨幅与推荐度
-  if (isTodayView && payload.live_refresh) return true;
-  return false;
-};
 
 const sortAuctionItems = (items, sortKey) => {
   const list = [...(items || [])];
@@ -134,16 +125,23 @@ function AuctionGrab() {
     const period = tab === 'tail' ? '1' : '0';
     const cacheKey = `${dt}_${period}`;
     const isTodayView = dt === todayStr;
-    const maxAttempts = continuous ? 9999 : 25;
-    const intervalMs = isTodayView && live ? 45000 : 2000;
+    const maxBootstrapAttempts = 30;
+    let mergedOnce = false;
 
-    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    for (let attempt = 0; attempt < 9999; attempt += 1) {
       if (fetchId !== fetchIdRef.current) return;
-      if (attempt > 0) await sleep(intervalMs);
+
+      // 首次立即请求；未拿到数据前每 2s 重试，拿到后再按 45s 刷新
+      if (attempt > 0) {
+        const intervalMs = (!mergedOnce || !continuous)
+          ? 2000
+          : (isTodayView && live ? 45000 : 2000);
+        await sleep(intervalMs);
+      }
       if (fetchId !== fetchIdRef.current) return;
 
       try {
-        const liveParam = live || isTodayView ? '&live=1' : '';
+        const liveParam = (live || isTodayView) ? '&live=1' : '';
         const res = await apiRequest(
           `/api/v1/auction-grab/score?dt=${dt}&period=${period}${liveParam}`,
           { timeout: 60000 },
@@ -152,7 +150,9 @@ function AuctionGrab() {
 
         const payload = res?.data;
         const enrichments = payload?.enrichments;
-        if (enrichments && Object.keys(enrichments).length > 0) {
+        const hasEnrichments = enrichments && Object.keys(enrichments).length > 0;
+
+        if (hasEnrichments) {
           const cached = dataCache.current[cacheKey];
           if (cached?.items) {
             const merged = {
@@ -164,14 +164,20 @@ function AuctionGrab() {
               live_refresh: Boolean(payload.live_refresh),
             };
             dataCache.current[cacheKey] = merged;
-            setData(merged);
+            setData({ ...merged, items: [...merged.items] });
+            mergedOnce = true;
           }
         }
-        if (!continuous && payload?.ready && !payload?.live_refresh) return;
-        if (!continuous && attempt >= 24) return;
+
+        if (!continuous) {
+          if (payload?.ready || mergedOnce) return;
+          if (attempt >= maxBootstrapAttempts - 1) return;
+        } else if (mergedOnce && !(isTodayView && live)) {
+          return;
+        }
       } catch (err) {
         console.error('Failed to fetch auction grab enrichments:', err);
-        if (!continuous) break;
+        if (!continuous && attempt >= maxBootstrapAttempts - 1) return;
       }
     }
   }, [todayStr]);
@@ -185,9 +191,15 @@ function AuctionGrab() {
     if (dataCache.current[cacheKey] && !isTodayView) {
       setData(dataCache.current[cacheKey]);
       setLoading(false);
-      if (needsScorePoll(dataCache.current[cacheKey], isTodayView)) {
-        pollScoreEnrichments(dt, tab, fetchId);
-      }
+      pollScoreEnrichments(dt, tab, fetchId);
+      return;
+    }
+
+    // 当日：跳过 stale 缓存，确保重新拉 score
+    if (dataCache.current[cacheKey] && isTodayView) {
+      setData(dataCache.current[cacheKey]);
+      setLoading(false);
+      pollScoreEnrichments(dt, tab, fetchId, { live: true, continuous: true });
       return;
     }
 
@@ -200,9 +212,10 @@ function AuctionGrab() {
       if (res?.data) {
         dataCache.current[cacheKey] = res.data;
         setData(res.data);
+        const isLive = isTodayView || Boolean(res.data.live_refresh);
         pollScoreEnrichments(dt, tab, fetchId, {
-          live: Boolean(res.data.live_refresh),
-          continuous: Boolean(res.data.live_refresh),
+          live: isLive,
+          continuous: isLive,
         });
       }
     } catch (err) {

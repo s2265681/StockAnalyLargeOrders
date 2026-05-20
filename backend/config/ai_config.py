@@ -41,6 +41,7 @@ _SCENARIO_TEMPLATES: dict[str, tuple[str, int, int, str]] = {
     "ai_diagnosis": ("opus", 4096, 180, "诊股报告"),
     "ai_diagnosis_chat": ("sonnet", 1024, 60, "诊股追问"),
     "dragon_tiger": ("sonnet", 2048, 90, "龙虎榜解读"),
+    "market_brief": ("sonnet", 1024, 90, "盘前摘要"),
 }
 
 

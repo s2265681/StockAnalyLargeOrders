@@ -48,9 +48,10 @@ def build_alert_email(rule: dict, quote: dict, limit_up_data: dict) -> tuple:
                 f"当前价：{price}  涨幅：{pct:+.2f}%  触发时间：{now}")
     elif alert_type == 'seal_order':
         seal = limit_up_data.get('seal_amount', 0) or 0
-        subject = f"[预警] {name}({code}) 涨停封单不足"
+        direction_label = '超过' if direction == 'above' else '低于'
+        subject = f"[预警] {name}({code}) 涨停封单{direction_label}阈值"
         body = (f"【NiuNIuNiu 预警】\n"
-                f"{name}({code}) 涨停封单 {seal:.1f} 万元，低于设定阈值 {threshold} 万元\n"
+                f"{name}({code}) 涨停封单 {seal:.1f} 万元，{direction_label}设定阈值 {threshold} 万元\n"
                 f"当前价：{price}  触发时间：{now}")
     else:
         subject = f"[预警] {name}({code}) {label}触发"

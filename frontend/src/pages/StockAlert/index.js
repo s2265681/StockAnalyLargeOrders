@@ -85,8 +85,14 @@ export default function StockAlert() {
       </Space.Compact>
     );
     if (row.alert_type === 'seal_order') return (
-      <InputNumber value={row.threshold} onChange={v => updateRow(idx, 'threshold', v)}
-        min={1} placeholder="封单万元" addonAfter="万元" style={{ width: '100%' }} />
+      <Space.Compact style={{ width: '100%' }}>
+        <Select value={row.direction} onChange={v => updateRow(idx, 'direction', v)} style={{ width: 80 }}>
+          <Option value="above">超过</Option>
+          <Option value="below">低于</Option>
+        </Select>
+        <InputNumber value={row.threshold} onChange={v => updateRow(idx, 'threshold', v)}
+          min={1} placeholder="万元" addonAfter="万元" style={{ width: 110 }} />
+      </Space.Compact>
     );
     return <span style={{ color: '#bbb', fontSize: 12, paddingLeft: 4 }}>无需设置</span>;
   };
@@ -94,7 +100,8 @@ export default function StockAlert() {
   const thresholdText = (r) => {
     if (r.alert_type === 'change_pct')
       return `${r.direction === 'above' ? '涨超' : '跌超'}${r.threshold ?? '?'}%`;
-    if (r.alert_type === 'seal_order') return `低于 ${r.threshold} 万元`;
+    if (r.alert_type === 'seal_order')
+      return `${r.direction === 'above' ? '超过' : '低于'} ${r.threshold ?? '?'} 万元`;
     return '—';
   };
 

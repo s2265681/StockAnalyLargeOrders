@@ -48,8 +48,12 @@ def check_rule_condition(rule: dict, quote, limit_up_data: dict) -> bool:
     if alert_type == 'seal_order':
         if not limit_up_data.get('is_limit_up', False):
             return False
+        if threshold is None:
+            return False
         seal_amount = limit_up_data.get('seal_amount', 0) or 0
-        return threshold is not None and seal_amount < threshold
+        if direction == 'above':
+            return seal_amount >= threshold
+        return seal_amount < threshold  # below（默认）
 
     return False
 

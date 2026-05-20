@@ -1,0 +1,21 @@
+backend/app.py
+  s_db052642ae2cf3::t_6b430311b3ec99 59
+  s_db052642ae2cf3::t_4c523fec9ac0f0 78-81
+  s_db052642ae2cf3::t_336046197eca51 32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "8204efb5133e9b65e2f90b6da62fc681eda191fe",
+  "prompts": {},
+  "sessions": {
+    "s_db052642ae2cf3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ecca274-307f-4080-86ed-7a49509ede6a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

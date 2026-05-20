@@ -36,3 +36,6 @@
 # --- 3. 竞价抢筹 ---
 26 9 * * 1-5 ${NIU_ROOT}/backend/jobs/run_auction_grab.sh morning >> ${NIU_LOG}/auction_grab_job.log 2>&1
 5 15 * * 1-5 ${NIU_ROOT}/backend/jobs/run_auction_grab.sh tail >> ${NIU_LOG}/auction_grab_job.log 2>&1
+
+# --- 4. 盘前资讯 ---
+30 8 * * 1-5 ${NIU_ROOT}/backend/jobs/run_market_brief.sh >> ${NIU_LOG}/market_brief_job.log 2>&1

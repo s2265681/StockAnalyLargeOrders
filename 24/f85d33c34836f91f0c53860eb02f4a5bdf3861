@@ -1,0 +1,22 @@
+frontend/src/pages/StockAlert/index.js
+  s_db052642ae2cf3::t_999bfbc36099f7 96
+  s_db052642ae2cf3::t_ffaadbaa778268 19
+  s_db052642ae2cf3::t_ba7a496356be3f 43
+  s_db052642ae2cf3::t_0564b6b81941f0 158
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "24f85d33c34836f91f0c53860eb02f4a5bdf3861",
+  "prompts": {},
+  "sessions": {
+    "s_db052642ae2cf3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ecca274-307f-4080-86ed-7a49509ede6a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

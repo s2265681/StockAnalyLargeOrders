@@ -1,0 +1,26 @@
+backend/services/alert_monitor.py
+  s_db052642ae2cf3::t_8d3247e7777c3a 123-124,129,131-133,136,139-140
+  s_db052642ae2cf3::t_2672363675deea 13-25
+frontend/src/pages/StockAlert/index.js
+  s_db052642ae2cf3::t_cf670b24c42e3c 59-65,68-72
+  s_db052642ae2cf3::t_3df1c9aaebe8ab 21-41,43-48
+  s_db052642ae2cf3::t_474b8e246ac368 182-186
+backend/routes/alert_rules.py
+  s_db052642ae2cf3::t_efe9c3f105b306 155-189
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "d889ad855514f96926537acd8b90b69435e1aed3",
+  "prompts": {},
+  "sessions": {
+    "s_db052642ae2cf3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ecca274-307f-4080-86ed-7a49509ede6a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

@@ -1,0 +1,47 @@
+.superpowers/brainstorm/69904-1779258401/content/layout.html
+  s_db052642ae2cf3::t_e68362c60501f2 1-158
+frontend/src/pages/AuctionGrab/index.js
+  s_8aa11394fd11d0::t_69467e1f9938ab 46-61,66-71
+docs/superpowers/specs/2026-05-20-stock-alert-design.md
+  s_db052642ae2cf3::t_422cd25545a65b 1-19,21-22,24-153
+  s_db052642ae2cf3::t_7830fa4ce68091 23
+  s_db052642ae2cf3::t_17d2a75edd9ac9 20
+backend/services/auction_grab_recommendation.py
+  s_8aa11394fd11d0::t_78019764f26be6 585
+  s_8aa11394fd11d0::t_85df57d13629d7 310-346
+  s_8aa11394fd11d0::t_a360129d7db973 306-309
+  s_8aa11394fd11d0::t_fed69dfaa8029d 453-454
+  s_8aa11394fd11d0::t_9b593470be1a81 558,560,562-567
+  s_8aa11394fd11d0::t_92e3044dc3f8c7 487-488,492-498,500-502,506,509,511,517-536,539-540
+  s_8aa11394fd11d0::t_cabc701036a7a0 587,590-591,598
+  s_8aa11394fd11d0::t_55b40055ebc24a 386
+.superpowers/brainstorm/69904-1779258401/content/waiting-1.html
+  s_db052642ae2cf3::t_8dad2a568714c5 1-3
+backend/routes/auction_grab.py
+  s_8aa11394fd11d0::t_3456ec2a58ec28 540-542
+  s_8aa11394fd11d0::t_e01ec8142af803 408-412
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "0dbc7fbbb404591074d251eaf906c026a39e8467",
+  "prompts": {},
+  "sessions": {
+    "s_8aa11394fd11d0": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "146f2da4-a659-43f0-8f69-dac4789d33de",
+        "model": "composer-2.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_db052642ae2cf3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ecca274-307f-4080-86ed-7a49509ede6a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

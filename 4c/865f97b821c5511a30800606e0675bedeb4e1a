@@ -1,0 +1,29 @@
+.github/workflows/deploy.yml
+  s_7a99352c7affae::t_62cc053713f567 257
+  s_7a99352c7affae::t_18138c937e1087 110
+  s_7a99352c7affae::t_d1da39e4da401c 111-112
+  s_7a99352c7affae::t_82a851d2eb55c1 258-259,264-273,275,277-283
+backend/scripts/ensure_single_backend.sh
+  s_7a99352c7affae::t_2365bfb6d0801b 1,3-12,32,35,41,51,85,92
+  s_7a99352c7affae::t_eccb14ef177c23 2,13-31,33-34,36-40,42-50,52-84,86-91,93-106
+deploy-server.sh
+  s_7a99352c7affae::t_7592b1d735394a 90,92-95
+backend/scripts/check_public_backend_consistency.sh
+  s_7a99352c7affae::t_8111e1cb9d50fc 1-37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "4c865f97b821c5511a30800606e0675bedeb4e1a",
+  "prompts": {},
+  "sessions": {
+    "s_7a99352c7affae": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "d0e44f5f-9228-4b9e-9dec-bb9c8a5c6f2c",
+        "model": "composer-2.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+backend/migrations/20260520_create_alert_rules.sql
+  s_db052642ae2cf3::t_c5eb1af07da1d5 1-15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "86dcf35fe8faf24c471c6b7605cfe65c5e8dffe9",
+  "prompts": {},
+  "sessions": {
+    "s_db052642ae2cf3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ecca274-307f-4080-86ed-7a49509ede6a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

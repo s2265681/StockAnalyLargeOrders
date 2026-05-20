@@ -29,6 +29,7 @@ from routes import (
     orders_bp,
     ai_diagnosis_bp,
     ai_account_bp,
+    alert_rules_bp,
 )
 
 app = Flask(__name__)
@@ -55,6 +56,7 @@ def register_blueprints(app):
     app.register_blueprint(orders_bp)
     app.register_blueprint(ai_diagnosis_bp)
     app.register_blueprint(ai_account_bp)
+    app.register_blueprint(alert_rules_bp)
 
 
 register_blueprints(app)
@@ -72,6 +74,10 @@ logger.info(
 from websocket_manager import register_websocket_events, start_push_loop
 register_websocket_events(socketio)
 start_push_loop(socketio)
+
+from services.alert_monitor import start_alert_monitor
+from websocket_manager import adapter as _ws_adapter
+start_alert_monitor(socketio, _ws_adapter)
 
 
 @app.route('/health')

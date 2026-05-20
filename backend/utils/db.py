@@ -53,6 +53,21 @@ def execute_write(sql, params=None):
         conn.close()
 
 
+def execute_insert(sql, params=None):
+    """执行 INSERT，返回 lastrowid"""
+    conn = get_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(sql, params)
+            conn.commit()
+            return cursor.lastrowid
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
 def execute_many(sql, params_list):
     """批量写入"""
     if not params_list:

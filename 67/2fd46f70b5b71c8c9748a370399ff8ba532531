@@ -1,0 +1,41 @@
+backend/routes/alert_rules.py
+  s_916e738ce402f5::t_e4d0a3420cfdc3 95-127
+.github/workflows/deploy.yml
+  s_916e738ce402f5::t_d0c54877eee8f7 109-122
+  s_916e738ce402f5::t_2c1d0415356baa 275-276
+frontend/src/pages/StockAlert/index.js
+  s_916e738ce402f5::t_c4fdab0ebc2599 59
+  s_916e738ce402f5::t_6c25178a33384b 68,71,73,79,81,86-89,92,96
+  s_916e738ce402f5::t_c89e1bad0134b7 4-5
+docs/superpowers/plans/2026-05-20-market-brief.md
+  s_db052642ae2cf3::t_1bd0c368a5bbd9 1-791
+frontend/src/config/api.js
+  s_916e738ce402f5::t_4d2aea3bc1316f 46-65
+  s_916e738ce402f5::t_ef246bb4822eeb 98-100
+backend/app.py
+  s_916e738ce402f5::t_e0f9c5472005a5 91-93,98-100
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "672fd46f70b5b71c8c9748a370399ff8ba532531",
+  "prompts": {},
+  "sessions": {
+    "s_916e738ce402f5": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "d8b667ee-50bb-495c-a0ff-6ad13f2d6941",
+        "model": "composer-2.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_db052642ae2cf3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ecca274-307f-4080-86ed-7a49509ede6a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

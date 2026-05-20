@@ -54,10 +54,37 @@ _USEFUL_KEYWORDS = (
     "跳过",
 )
 
+_RUN_START_RE = re.compile(r"=====\s*.+\s+开始\s*=====")
+_SHELL_RUN_RE = re.compile(r"^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\s+\[(\w+)\]")
+_FAILURE_HINTS = ("失败", "failed", "构建失败", "未返回有效", "异常", "ERROR")
 _LOG_MSG_RE = re.compile(
     r"^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}(?:,\d+)?\s+\[\w+\]\s+\S+:\s*(.+)$"
 )
 _BANNER_RE = re.compile(r"^=+\s*.+\s*=+$")
+
+
+def extract_current_run_log(log_text: str, job_name: str = "") -> str:
+    """从追加式日志中只取最近一次任务运行的行（避免成功邮件混入历史失败）。"""
+    if not log_text or not log_text.strip():
+        return ""
+
+    lines = log_text.splitlines()
+    start_idx = 0
+    for i, line in enumerate(lines):
+        if _RUN_START_RE.search(line):
+            start_idx = i
+            continue
+        if job_name:
+            m = _SHELL_RUN_RE.match(line.strip())
+            if m and m.group(1) == job_name and "跳过本次" not in line:
+                start_idx = i
+
+    return "\n".join(lines[start_idx:])
+
+
+def _is_failure_point(text: str) -> bool:
+    lower = text.lower()
+    return any(h in text or h.lower() in lower for h in _FAILURE_HINTS)
 
 
 def _load_backend_env() -> None:
@@ -275,13 +302,17 @@ def distill_summary_points(
     detail: str = "",
     log_tail: str = "",
     max_points: int = 8,
+    *,
+    success: bool = True,
+    job_name: str = "",
 ) -> list[str]:
     """提炼核心要点列表（去重、压缩）。"""
     raw_lines: list[str] = []
     if detail and detail.strip() not in ("执行成功", ""):
         raw_lines.append(detail.strip())
 
-    core = extract_core_log_lines(log_tail, max_lines=20)
+    scoped_log = extract_current_run_log(log_tail, job_name=job_name)
+    core = extract_core_log_lines(scoped_log, max_lines=20)
     if core:
         raw_lines.extend(core.splitlines())
 
@@ -289,9 +320,12 @@ def distill_summary_points(
     seen: set[str] = set()
     for line in raw_lines:
         p = _condense_point(line)
-        if p and p not in seen:
-            seen.add(p)
-            points.append(p)
+        if not p or p in seen:
+            continue
+        if success and _is_failure_point(p):
+            continue
+        seen.add(p)
+        points.append(p)
     return points[-max_points:]
 
 
@@ -313,7 +347,9 @@ def build_job_email(
 
     subject = f"[NiuNIuNiu] {status_tag} {job_name} {status_icon} · {duration_str}"
 
-    points = distill_summary_points(detail=detail, log_tail=log_tail)
+    points = distill_summary_points(
+        detail=detail, log_tail=log_tail, success=success, job_name=job_name,
+    )
     if not points:
         points = ["无业务摘要，详见服务器日志"]
 

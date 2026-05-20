@@ -6,6 +6,7 @@ from utils.job_notify import (
     build_job_email,
     distill_summary_points,
     extract_core_log_lines,
+    extract_current_run_log,
     format_duration,
     send_job_alert,
     send_job_success,
@@ -47,7 +48,40 @@ class TestJobNotify(unittest.TestCase):
         points = distill_summary_points(log_tail=log)
         self.assertEqual(points, ["梯队✓", "情绪✓", "买卖✓"])
 
-    def test_build_job_email_structure(self):
+    def test_extract_current_run_log(self):
+        log = """\
+2026-05-20 10:37:18 [echelon_intraday] 失败 exit=1 耗时=135s
+2026-05-20 11:07:18 [echelon_intraday] 失败 exit=1 耗时=134s
+2026-05-20 12:23:01 [INFO] echelon_intraday: ===== 梯队盘中刷新开始 date=20260520 =====
+2026-05-20 12:23:29 [INFO] echelon_intraday: 涨停梯队: saved
+2026-05-20 12:23:29 [INFO] echelon_intraday: ===== 梯队盘中刷新完成 date=20260520 =====
+"""
+        current = extract_current_run_log(log, job_name="echelon_intraday")
+        self.assertIn("梯队盘中刷新开始", current)
+        self.assertIn("涨停梯队: saved", current)
+        self.assertNotIn("10:37:18", current)
+        self.assertNotIn("AI 分组未返回有效标签", current)
+
+    def test_success_email_excludes_old_failures(self):
+        log = """\
+2026-05-20 10:37:18 [echelon_intraday] 失败 exit=1 耗时=135s
+2026-05-20 11:07:18 [INFO] routes.limit_up_echelon: 离线生成涨停梯队失败: AI 分组未返回有效标签
+2026-05-20 12:23:01 [INFO] echelon_intraday: ===== 梯队盘中刷新开始 date=20260520 =====
+2026-05-20 12:23:29 [INFO] echelon_intraday: 涨停梯队: saved
+2026-05-20 12:23:29 [INFO] echelon_intraday: ===== 梯队盘中刷新完成 date=20260520 =====
+"""
+        subject, body = build_job_email(
+            "echelon_intraday",
+            success=True,
+            duration_secs=29,
+            log_tail=log,
+        )
+        self.assertIn("成功", subject)
+        self.assertIn("梯队✓", body)
+        self.assertNotIn("未返回有效标签", body)
+        self.assertNotIn("构建失败", body)
+        self.assertNotIn("exit=1", body)
+
         subject, body = build_job_email(
             "intraday",
             success=True,

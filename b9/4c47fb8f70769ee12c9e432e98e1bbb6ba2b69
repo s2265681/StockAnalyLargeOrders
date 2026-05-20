@@ -1,0 +1,19 @@
+docs/superpowers/plans/2026-05-20-stock-alert.md
+  s_db052642ae2cf3::t_3e1418a4256eef 1-1289
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "b94c47fb8f70769ee12c9e432e98e1bbb6ba2b69",
+  "prompts": {},
+  "sessions": {
+    "s_db052642ae2cf3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ecca274-307f-4080-86ed-7a49509ede6a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+frontend/src/components/MarketBriefBar/index.css
+  s_db052642ae2cf3::t_418f486060490e 1-50
+frontend/src/components/MarketBriefBar/index.js
+  s_db052642ae2cf3::t_e5d36caf0a91f6 1-73
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "9a919cb8edae91da51795cb0efafa9ee2fcacb26",
+  "prompts": {},
+  "sessions": {
+    "s_db052642ae2cf3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ecca274-307f-4080-86ed-7a49509ede6a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

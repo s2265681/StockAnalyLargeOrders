@@ -4,11 +4,10 @@ import { apiRequest } from '../../config/api';
 import './index.css';
 
 const FLAG_MAP = {
-  b_INDEXDOW:    '🇺🇸',
-  b_INDEXNASDAQ: '🇺🇸',
-  b_INDEXSP:     '🇺🇸',
-  b_INDEXHK:     '🇭🇰',
-  b_INDEXNK225:  '🇯🇵',
+  gb_dji: '🇺🇸', gb_ixic: '🇺🇸', gb_inx: '🇺🇸',
+  rt_hkHSI: '🇭🇰', gb_nikkei: '🇯🇵', N225: '🇯🇵',
+  b_INDEXDOW: '🇺🇸', b_INDEXNASDAQ: '🇺🇸', b_INDEXSP: '🇺🇸',
+  b_INDEXHK: '🇭🇰', b_INDEXNK225: '🇯🇵',
 };
 
 export default function MarketBriefBar() {

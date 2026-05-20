@@ -90,6 +90,7 @@ jobs:
               migrations/20260517_create_auction_grab_tables.sql \
               migrations/20260520_create_alert_rules.sql \
               migrations/20260520_create_market_brief.sql \
+              migrations/20260520_alter_market_brief_news.sql \
               migrations/20260520_create_page_daily_activity.sql
             do
               if [ -f "$migration" ]; then

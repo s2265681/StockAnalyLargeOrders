@@ -16,8 +16,8 @@ from datetime import date
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
+from services.market_brief_fetchers import fetch_all_news, fetch_overseas_indices
 from services.market_brief_service import (
-    fetch_overseas_indices,
     generate_ai_summary,
     save_brief,
     get_today_brief,
@@ -45,11 +45,15 @@ def main():
     summary_parts = [f"{i['name']} {'+' if i['change_pct'] >= 0 else ''}{i['change_pct']}%" for i in overseas]
     logger.info('指数: %s', ', '.join(summary_parts))
 
+    logger.info('拉取多源资讯（东财/同花顺/金十/财联社等）...')
+    news = fetch_all_news(limit_per_source=6)
+    logger.info('资讯合计 %d 条', len(news))
+
     logger.info('生成 AI 摘要...')
-    summary = generate_ai_summary(overseas)
+    summary = generate_ai_summary(overseas, news)
     logger.info('摘要（前50字）: %s', summary[:50])
 
-    save_brief(today, overseas, summary)
+    save_brief(today, overseas, summary, news)
     logger.info('===== 任务完成 date=%s =====', today)
 
 

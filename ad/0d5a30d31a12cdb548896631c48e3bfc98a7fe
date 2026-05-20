@@ -1,0 +1,22 @@
+frontend/src/App.js
+  s_db052642ae2cf3::t_aec14a23ae1d4d 16
+  s_db052642ae2cf3::t_4a060409558123 30
+  s_db052642ae2cf3::t_1171c6ee12bdc2 58
+  s_db052642ae2cf3::t_9a16c1b51d4bf9 334
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "ad0d5a30d31a12cdb548896631c48e3bfc98a7fe",
+  "prompts": {},
+  "sessions": {
+    "s_db052642ae2cf3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ecca274-307f-4080-86ed-7a49509ede6a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

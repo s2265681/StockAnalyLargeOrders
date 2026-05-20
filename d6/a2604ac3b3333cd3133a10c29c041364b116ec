@@ -1,0 +1,22 @@
+backend/config/ai_accounts.py
+  s_8aa11394fd11d0::t_c8e4dabe0ae125 91,93
+backend/config/ai_config.py
+  s_8aa11394fd11d0::t_7f10ee1b2cd486 37-40
+  s_8aa11394fd11d0::t_802735a7511da3 14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "d6a2604ac3b3333cd3133a10c29c041364b116ec",
+  "prompts": {},
+  "sessions": {
+    "s_8aa11394fd11d0": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "146f2da4-a659-43f0-8f69-dac4789d33de",
+        "model": "composer-2.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

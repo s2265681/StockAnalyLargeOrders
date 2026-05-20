@@ -1,0 +1,25 @@
+backend/services/market_brief_service.py
+  s_db052642ae2cf3::t_bea779af5b5b85 53,57
+  s_db052642ae2cf3::t_80df222df953e8 4,9
+  s_db052642ae2cf3::t_69d5b7f6ff12f2 29
+  s_db052642ae2cf3::t_990a140888f5e1 66-67
+backend/tests/test_market_brief.py
+  s_db052642ae2cf3::t_f2a1026ee3157a 66-77
+  s_db052642ae2cf3::t_cd591d34f7ca3e 2-3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "71330f46f3ea53f66244abfbfd40277929214b1c",
+  "prompts": {},
+  "sessions": {
+    "s_db052642ae2cf3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ecca274-307f-4080-86ed-7a49509ede6a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

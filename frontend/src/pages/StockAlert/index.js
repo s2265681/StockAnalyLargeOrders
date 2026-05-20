@@ -16,7 +16,7 @@ const ALERT_TYPE_OPTIONS = [
 const TYPE_LABELS   = { limit_up: '涨停', limit_down: '跌停', change_pct: '涨跌幅', seal_order: '涨停封单' };
 const STATUS_LABELS = { active: '监控中', triggered: '已触发', disabled: '已停用' };
 
-const EMPTY_ROW = () => ({ code: '', alert_type: 'limit_up', threshold: null, direction: 'above', email: '' });
+const EMPTY_ROW = () => ({ _key: Date.now() + Math.random(), code: '', alert_type: 'limit_up', threshold: null, direction: 'above', email: '' });
 
 export default function StockAlert() {
   const [rules, setRules]     = useState([]);
@@ -40,7 +40,7 @@ export default function StockAlert() {
     try {
       const res = await apiRequest(url, { method });
       if (res.success) { message.success(successMsg); fetchRules(); }
-      else message.error(res.message);
+      else message.error(res.message || '操作失败');
     } catch { message.error('操作失败'); }
   };
 
@@ -93,7 +93,7 @@ export default function StockAlert() {
 
   const thresholdText = (r) => {
     if (r.alert_type === 'change_pct')
-      return `${r.direction === 'above' ? '涨超' : '跌超'}${r.threshold}%`;
+      return `${r.direction === 'above' ? '涨超' : '跌超'}${r.threshold ?? '?'}%`;
     if (r.alert_type === 'seal_order') return `低于 ${r.threshold} 万元`;
     return '—';
   };
@@ -155,7 +155,7 @@ export default function StockAlert() {
           <div className="alert-add-title">新增预警规则（最多同时添加 3 条）</div>
           <div className="alert-add-rows">
             {addRows.map((row, idx) => (
-              <div className="alert-add-row" key={idx}>
+              <div className="alert-add-row" key={row._key}>
                 <Input placeholder="股票代码" value={row.code} maxLength={6}
                   onChange={e => updateRow(idx, 'code', e.target.value.trim())} />
                 <Select value={row.alert_type} onChange={v => updateRow(idx, 'alert_type', v)} style={{ width: '100%' }}>

@@ -130,6 +130,23 @@ def send_market_brief_email(
     return ok
 
 
+def generate_today_brief(*, force: bool = False, send_email: bool = True) -> dict:
+    """生成并保存今日盘前资讯，返回完整 brief 数据。"""
+    today = date.today().isoformat()
+    if not force and get_today_brief() is not None:
+        logger.info('今日 %s 已有盘前资讯，跳过生成', today)
+        return get_today_brief()
+
+    logger.info('生成盘前资讯 date=%s force=%s', today, force)
+    overseas = fetch_overseas_indices()
+    news = fetch_all_news(limit_per_source=6)
+    summary = generate_ai_summary(overseas, news)
+    save_brief(today, overseas, summary, news)
+    if send_email:
+        send_market_brief_email(today, overseas, news, summary)
+    return get_today_brief()
+
+
 def get_today_brief() -> dict | None:
     """读取今日盘前资讯，无数据时返回 None。"""
     today = date.today().isoformat()

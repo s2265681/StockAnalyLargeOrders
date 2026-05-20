@@ -49,3 +49,14 @@
   color: #bbb;
   white-space: nowrap;
 }
+
+.market-brief-bar--loading,
+.market-brief-bar--empty {
+  gap: 8px;
+  color: #888;
+}
+
+.market-brief-empty-hint {
+  font-size: 12px;
+  color: #999;
+}

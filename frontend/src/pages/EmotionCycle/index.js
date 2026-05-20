@@ -14,6 +14,7 @@ import {
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import { apiRequest } from '../../config/api';
+import MarketBriefBar from '../../components/MarketBriefBar';
 import './index.css';
 
 
@@ -431,6 +432,7 @@ function EmotionCycle() {
 
   return (
     <div className="emotion-cycle-container">
+      <MarketBriefBar />
       <div className="page-date-nav">
         <button
           type="button"

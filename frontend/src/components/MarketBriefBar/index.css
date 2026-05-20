@@ -9,6 +9,7 @@
   min-height: 36px;
   font-size: 12px;
   overflow: hidden;
+  margin: -16px -16px 0 -16px;
 }
 
 .market-brief-label {

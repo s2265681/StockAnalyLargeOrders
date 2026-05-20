@@ -51,10 +51,15 @@ const mergeEnrichments = (items, enrichments) => {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const needsScorePoll = (payload) => {
+const needsScorePoll = (payload, isTodayView) => {
   if (!payload?.items?.length) return false;
-  if (payload.score_ready) return false;
-  return payload.items.some((it) => it.recommend_score == null);
+  const missingRec = payload.items.some(
+    (it) => it.recommend_score == null && (it.recommend_stars == null || it.recommend_stars === undefined)
+  );
+  if (missingRec) return true;
+  // 当日盘中：持续拉取实时涨幅与推荐度
+  if (isTodayView && payload.live_refresh) return true;
+  return false;
 };
 
 const sortAuctionItems = (items, sortKey) => {
@@ -78,23 +83,25 @@ const sortAuctionItems = (items, sortKey) => {
   });
 };
 
-function RecommendReason({ text }) {
-  if (!text) return null;
+function RecommendStars({ stars, reason }) {
+  const n = Math.min(3, Math.max(0, parseInt(stars, 10) || 0));
+  if (n === 0) return <span className="ag-stars-empty">—</span>;
+  const starEl = (
+    <span className="ag-stars ag-stars-hover">
+      {Array.from({ length: n }).map((_, i) => (
+        <span key={i} className="ag-star">★</span>
+      ))}
+    </span>
+  );
+  if (!reason) return starEl;
   return (
     <Popover
-      content={<div className="ag-rec-popover-content">{text}</div>}
+      content={<div className="ag-rec-popover-content">{reason}</div>}
       trigger={['hover', 'click']}
       placement="topLeft"
       overlayClassName="ag-rec-popover"
     >
-      <span
-        className="ag-rec-reason"
-        role="button"
-        tabIndex={0}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {text}
-      </span>
+      {starEl}
     </Popover>
   );
 }
@@ -123,11 +130,12 @@ function AuctionGrab() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const pollScoreEnrichments = useCallback(async (dt, tab, fetchId) => {
+  const pollScoreEnrichments = useCallback(async (dt, tab, fetchId, { live = false, continuous = false } = {}) => {
     const period = tab === 'tail' ? '1' : '0';
     const cacheKey = `${dt}_${period}`;
-    const maxAttempts = 25;
-    const intervalMs = 2000;
+    const isTodayView = dt === todayStr;
+    const maxAttempts = continuous ? 9999 : 25;
+    const intervalMs = isTodayView && live ? 45000 : 2000;
 
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
       if (fetchId !== fetchIdRef.current) return;
@@ -135,9 +143,11 @@ function AuctionGrab() {
       if (fetchId !== fetchIdRef.current) return;
 
       try {
-        const res = await apiRequest(`/api/v1/auction-grab/score?dt=${dt}&period=${period}`, {
-          timeout: 60000,
-        });
+        const liveParam = live || isTodayView ? '&live=1' : '';
+        const res = await apiRequest(
+          `/api/v1/auction-grab/score?dt=${dt}&period=${period}${liveParam}`,
+          { timeout: 60000 },
+        );
         if (fetchId !== fetchIdRef.current) return;
 
         const payload = res?.data;
@@ -151,27 +161,31 @@ function AuctionGrab() {
               emotion_stage: payload.emotion_stage || cached.emotion_stage || '',
               recommend_hint: payload.recommend_hint || cached.recommend_hint || '',
               score_ready: Boolean(payload.ready),
+              live_refresh: Boolean(payload.live_refresh),
             };
             dataCache.current[cacheKey] = merged;
             setData(merged);
           }
         }
-        if (payload?.ready) return;
+        if (!continuous && payload?.ready && !payload?.live_refresh) return;
+        if (!continuous && attempt >= 24) return;
       } catch (err) {
         console.error('Failed to fetch auction grab enrichments:', err);
+        if (!continuous) break;
       }
     }
-  }, []);
+  }, [todayStr]);
 
   const fetchData = useCallback(async (dt, tab) => {
     const period = tab === 'tail' ? '1' : '0';
     const cacheKey = `${dt}_${period}`;
     const fetchId = ++fetchIdRef.current;
+    const isTodayView = dt === todayStr;
 
-    if (dataCache.current[cacheKey]) {
+    if (dataCache.current[cacheKey] && !isTodayView) {
       setData(dataCache.current[cacheKey]);
       setLoading(false);
-      if (needsScorePoll(dataCache.current[cacheKey])) {
+      if (needsScorePoll(dataCache.current[cacheKey], isTodayView)) {
         pollScoreEnrichments(dt, tab, fetchId);
       }
       return;
@@ -186,7 +200,10 @@ function AuctionGrab() {
       if (res?.data) {
         dataCache.current[cacheKey] = res.data;
         setData(res.data);
-        pollScoreEnrichments(dt, tab, fetchId);
+        pollScoreEnrichments(dt, tab, fetchId, {
+          live: Boolean(res.data.live_refresh),
+          continuous: Boolean(res.data.live_refresh),
+        });
       }
     } catch (err) {
       console.error('Failed to fetch auction grab data:', err);
@@ -195,7 +212,7 @@ function AuctionGrab() {
         setLoading(false);
       }
     }
-  }, [pollScoreEnrichments]);
+  }, [pollScoreEnrichments, todayStr]);
 
   useEffect(() => {
     fetchData(currentDate, activeTab);
@@ -208,17 +225,16 @@ function AuctionGrab() {
   const emotionStage = data?.emotion_stage || '';
   const recommendHint = data?.recommend_hint || '';
 
-  const renderStars = (stars, reason) => {
-    const n = Math.min(3, Math.max(0, parseInt(stars, 10) || 0));
-    if (n === 0) return <span className="ag-stars-empty">—</span>;
-    return (
-      <span className="ag-stars" title={reason || ''}>
-        {Array.from({ length: n }).map((_, i) => (
-          <span key={i} className="ag-star">★</span>
-        ))}
-      </span>
-    );
+  const isTodayView = currentDate === todayStr;
+
+  const displayTodayChange = (item) => {
+    if (isTodayView && item.today_change_pct != null) return item.today_change_pct;
+    return item.close_change_pct;
   };
+
+  const renderStars = (stars, reason) => (
+    <RecommendStars stars={stars} reason={reason} />
+  );
 
   const getChangeColor = (val) => {
     const num = parseFloat(val);
@@ -323,7 +339,8 @@ function AuctionGrab() {
           <div className="ag-col ag-col-name">股票名称</div>
           <div className="ag-col ag-col-amount">开盘金额</div>
           <div className="ag-col ag-col-change">竞价涨幅</div>
-          <div className="ag-col ag-col-close-change">当日收盘涨幅</div>
+          <div className="ag-col ag-col-close-change">{isTodayView ? '今日涨幅' : '收盘涨幅'}</div>
+          <div className="ag-col ag-col-prev-change">昨日涨幅</div>
           <div className="ag-col ag-col-next-change">次日涨幅</div>
           <div className="ag-col ag-col-turnover">抢筹成交额</div>
           <div className="ag-col ag-col-order">抢筹委托金额</div>
@@ -359,9 +376,15 @@ function AuctionGrab() {
               </div>
               <div
                 className="ag-col ag-col-close-change"
-                style={{ color: getChangeColor(item.close_change_pct) }}
+                style={{ color: getChangeColor(displayTodayChange(item)) }}
               >
-                {formatPct(item.close_change_pct)}
+                {formatPct(displayTodayChange(item))}
+              </div>
+              <div
+                className="ag-col ag-col-prev-change"
+                style={{ color: getChangeColor(item.prev_day_change_pct) }}
+              >
+                {formatPct(item.prev_day_change_pct)}
               </div>
               <div
                 className="ag-col ag-col-next-change"
@@ -383,7 +406,6 @@ function AuctionGrab() {
                 onClick={(e) => e.stopPropagation()}
               >
                 {renderStars(item.recommend_stars, item.recommend_reason)}
-                <RecommendReason text={item.recommend_reason} />
               </div>
             </div>
           ))

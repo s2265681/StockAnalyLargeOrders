@@ -265,12 +265,17 @@
 }
 
 .ag-col-close-change {
-  flex: 0 0 130px;
+  flex: 0 0 100px;
+  font-weight: 500;
+}
+
+.ag-col-prev-change {
+  flex: 0 0 100px;
   font-weight: 500;
 }
 
 .ag-col-next-change {
-  flex: 0 0 110px;
+  flex: 0 0 100px;
   font-weight: 500;
 }
 
@@ -301,6 +306,10 @@
   display: inline-flex;
   gap: 2px;
   line-height: 1;
+}
+
+.ag-stars-hover {
+  cursor: help;
 }
 
 .ag-star {

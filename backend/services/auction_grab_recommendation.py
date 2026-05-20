@@ -288,6 +288,21 @@ def _name_in_emotion_recos(name: str, rec_names: set) -> bool:
     return any(name in n or n in name for n in rec_names)
 
 
+def _is_at_limit_up(code: str, change_pct) -> bool:
+    if change_pct is None:
+        return False
+    try:
+        pct = float(change_pct)
+    except (TypeError, ValueError):
+        return False
+    code = str(code).zfill(6)
+    if code.startswith(("30", "68")):
+        return pct >= 19.5
+    if code.startswith(("4", "8")):
+        return pct >= 29.5
+    return pct >= 9.5
+
+
 def _build_reason(
     stars: int,
     stage: str,
@@ -478,6 +493,8 @@ def enrich_auction_recommendations(
     items: list[dict],
     trade_date_dash: str,
     period: int = 0,
+    *,
+    live_change_by_code: dict | None = None,
 ) -> dict:
     """
     为竞价抢筹列表写入 recommend_stars / recommend_reason / recommend_hint
@@ -505,11 +522,26 @@ def enrich_auction_recommendations(
 
     score_by_code = {r["code"]: r for r in scored}
     stage = emotion.get("stage") or ""
+    live_map = live_change_by_code or {}
     for item in items:
         code = str(item.get("code", "")).zfill(6)
         row = score_by_code.get(code, {})
         stars = row.get("recommend_stars", 0)
         profile = row.get("profile", {})
+
+        # 盘中已涨停 → 不推荐（用实时涨幅，fallback 竞价涨幅）
+        live_pct = live_map.get(code)
+        if live_pct is None:
+            live_pct = item.get("today_change_pct")
+        if live_pct is None:
+            live_pct = item.get("grab_change_pct")
+        if _is_at_limit_up(code, live_pct):
+            stars = 0
+            item["recommend_reason"] = "当日已涨停，不参与推荐"
+            item["recommend_stars"] = 0
+            item["recommend_score"] = row.get("composite_score", 0)
+            continue
+
         item["recommend_stars"] = stars
         item["recommend_reason"] = _build_reason(
             stars, stage, profile, market_part

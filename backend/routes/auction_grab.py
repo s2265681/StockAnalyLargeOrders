@@ -32,6 +32,7 @@ _CACHE_TTL = 120
 # 加工后缓存（含评分），后台线程写入，score 接口优先读此处
 _processed_cache = {}
 _PROCESSED_TTL_TODAY = 120
+_PROCESSED_TTL_LIVE = 45  # 当日盘中：涨幅/推荐度刷新间隔
 _PROCESSED_TTL_HISTORY = 86400
 
 _kline_cache = {}
@@ -177,10 +178,6 @@ def _processed_cache_key(date_compact: str, period_int: int) -> str:
     return f"{date_compact}_{period_int}"
 
 
-def _processed_cache_ttl(is_today: bool) -> int:
-    return _PROCESSED_TTL_TODAY if is_today else _PROCESSED_TTL_HISTORY
-
-
 def _get_processed_payload(date_compact: str, period_int: int, is_today: bool):
     entry = _processed_cache.get(_processed_cache_key(date_compact, period_int))
     if not entry:
@@ -203,13 +200,118 @@ def _codes_signature(items):
     return frozenset(str(x.get('code', '')).zfill(6) for x in (items or []) if x.get('code'))
 
 
+def _is_market_hours() -> bool:
+    """简易 A 股交易时段（含集合竞价后至收盘）"""
+    now = datetime.now()
+    if now.weekday() >= 5:
+        return False
+    t = now.hour * 100 + now.minute
+    return (925 <= t <= 1135) or (1300 <= t <= 1505)
+
+
+def _limit_up_threshold(code: str) -> float:
+    code = str(code).zfill(6)
+    if code.startswith(('30', '68')):
+        return 19.5
+    if code.startswith(('4', '8')):
+        return 29.5
+    return 9.5
+
+
+def _is_at_limit_up(code: str, change_pct) -> bool:
+    if change_pct is None:
+        return False
+    try:
+        return float(change_pct) >= _limit_up_threshold(code)
+    except (TypeError, ValueError):
+        return False
+
+
+def _enrich_prev_day_change(items, trade_date: str):
+    """补充昨日（上一交易日）涨跌幅"""
+    if not items:
+        return
+    prev_trade_date = _offset_trading_date(trade_date, -1)
+    code_set = {item.get('code') for item in items if item.get('code')}
+    futures = {}
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        for code in code_set:
+            futures[executor.submit(_get_daily_change_pct, code, prev_trade_date)] = code
+        for future in as_completed(futures):
+            code = futures[future]
+            try:
+                pct = future.result()
+            except Exception:
+                pct = None
+            if pct is None:
+                continue
+            for item in items:
+                if item.get('code') == code and item.get('prev_day_change_pct') is None:
+                    item['prev_day_change_pct'] = pct
+
+
+def _enrich_live_quotes(items, trade_date: str, is_today: bool):
+    """盘中实时：今日涨幅 + 昨日涨幅（并发 EastMoney）"""
+    if not items or not is_today:
+        return
+
+    prev_trade_date = _offset_trading_date(trade_date, -1)
+    code_set = {item.get('code') for item in items if item.get('code')}
+    if not code_set:
+        return
+
+    live_map = {code: {'today': None, 'prev': None} for code in code_set}
+    futures = {}
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        for code in code_set:
+            futures[executor.submit(_get_realtime_change_pct, code)] = (code, 'today')
+            futures[executor.submit(_get_daily_change_pct, code, prev_trade_date)] = (code, 'prev')
+        for future in as_completed(futures):
+            code, field = futures[future]
+            try:
+                live_map[code][field] = future.result()
+            except Exception as e:
+                logger.warning(f"实时涨幅查询失败 code={code} field={field}: {e}")
+
+    for item in items:
+        code = item.get('code')
+        live = live_map.get(code, {})
+        today_pct = live.get('today')
+        prev_pct = live.get('prev')
+        if today_pct is not None:
+            item['today_change_pct'] = today_pct
+            if _is_market_hours():
+                item['close_change_pct'] = today_pct
+        if prev_pct is not None:
+            item['prev_day_change_pct'] = prev_pct
+
+
+def _get_realtime_change_pct(code: str):
+    """EastMoney 实时涨跌幅 %"""
+    cache_key = f"rt_{code}"
+    now = time.time()
+    cached = _kline_cache.get(cache_key)
+    if cached and (now - cached['ts']) < 30:
+        return cached['value']
+    try:
+        source = EastMoneyFreeSource()
+        quote = source.get_realtime_quote(code)
+        value = None
+        if quote and quote.get('change_percent') is not None:
+            value = round(float(quote['change_percent']), 2)
+    except Exception as e:
+        logger.warning(f"实时行情失败 code={code}: {e}")
+        value = None
+    _kline_cache[cache_key] = {'ts': now, 'value': value}
+    return value
+
+
 def _enrichment_from_item(item: dict) -> dict:
     """单条 item -> 可合并到前端的富化字段"""
     out = {}
-    if item.get('close_change_pct') is not None:
-        out['close_change_pct'] = item.get('close_change_pct')
-    if item.get('next_day_change_pct') is not None:
-        out['next_day_change_pct'] = item.get('next_day_change_pct')
+    for key in ('close_change_pct', 'next_day_change_pct', 'today_change_pct', 'prev_day_change_pct'):
+        if item.get(key) is not None:
+            out[key] = item.get(key)
     if item.get('recommend_score') is not None:
         out['recommend_stars'] = int(item.get('recommend_stars') or 0)
         out['recommend_reason'] = item.get('recommend_reason') or ''
@@ -247,22 +349,33 @@ def _load_items_for_request(date_compact, period_int, trade_date, is_today):
     return None, 'miss'
 
 
-def _trigger_background_enrich(date_compact: str, period_int: int, items: list, trade_date: str, is_today: bool):
+def _processed_cache_ttl(is_today: bool) -> int:
+    if is_today and _is_market_hours():
+        return _PROCESSED_TTL_LIVE
+    return _PROCESSED_TTL_TODAY if is_today else _PROCESSED_TTL_HISTORY
+
+
+def _should_skip_enrich(date_compact: str, period_int: int, is_today: bool) -> bool:
+    """是否跳过本次后台富化"""
+    key = _processed_cache_key(date_compact, period_int)
+    entry = _processed_cache.get(key)
+    ttl = _processed_cache_ttl(is_today)
+    if entry and (time.time() - entry['ts']) < ttl:
+        return True
+    # 历史日：DB 已有评分且非盘中实时场景 → 不重算
+    if not is_today and ag_store.scores_exist(date_compact, period_int):
+        return True
+    return False
+
+
+def _trigger_background_enrich(date_compact: str, period_int: int, items: list, trade_date: str, is_today: bool, *, force: bool = False):
     """触发后台线程：异步计算涨幅+评分，写库并更新内存缓存"""
     key = _processed_cache_key(date_compact, period_int)
     if key in _enrich_in_progress:
         return
 
-    # 内存缓存仍有效（今日 120s / 历史 86400s）→ 不重算
-    entry = _processed_cache.get(key)
-    ttl = _PROCESSED_TTL_TODAY if is_today else _PROCESSED_TTL_HISTORY
-    if entry and (time.time() - entry['ts']) < ttl:
+    if not force and _should_skip_enrich(date_compact, period_int, is_today):
         return
-
-    # 历史日：内存过期后再问 DB，有评分则不重算
-    if not is_today:
-        if ag_store.scores_exist(date_compact, period_int):
-            return
 
     _enrich_in_progress.add(key)
     items_copy = [dict(x) for x in items]
@@ -270,27 +383,40 @@ def _trigger_background_enrich(date_compact: str, period_int: int, items: list, 
     def _do_enrich():
         rec_meta = {"stage": "", "hint": ""}
         try:
-            # 1. 计算收盘/次日涨幅（失败仅记日志，不阻断后续评分）
-            if ag_store.items_need_return_enrich(items_copy):
-                _enrich_close_and_next_change(items_copy, trade_date)
-                try:
-                    ag_store.update_return_fields(date_compact, period_int, items_copy)
-                except Exception as e:
-                    logger.warning(f"涨幅写库失败（跳过）{date_compact}: {e}")
+            # 1. 盘中实时涨幅（今日/昨日）
+            if is_today:
+                _enrich_live_quotes(items_copy, trade_date, is_today)
+            else:
+                _enrich_prev_day_change(items_copy, trade_date)
 
-            # 2. 计算推荐评分（DB 不可用时情绪/题材查询可能失败）
+            # 2. 收盘/次日涨幅（历史日或收盘后补全）
+            if not is_today or not _is_market_hours():
+                if ag_store.items_need_return_enrich(items_copy):
+                    _enrich_close_and_next_change(items_copy, trade_date)
+                    try:
+                        ag_store.update_return_fields(date_compact, period_int, items_copy)
+                    except Exception as e:
+                        logger.warning(f"涨幅写库失败（跳过）{date_compact}: {e}")
+
+            # 3. 推荐评分（情绪+题材+抢筹；排除当日已涨停）
             try:
                 from services.auction_grab_recommendation import enrich_auction_recommendations
-                rec_meta = enrich_auction_recommendations(items_copy, trade_date, period_int)
+                live_changes = {
+                    str(x.get('code', '')).zfill(6): x.get('today_change_pct')
+                    for x in items_copy if x.get('code')
+                }
+                rec_meta = enrich_auction_recommendations(
+                    items_copy, trade_date, period_int, live_change_by_code=live_changes,
+                )
             except Exception as e:
                 logger.warning(f"评分计算失败（跳过）{date_compact}: {e}")
 
-            # 3. 内存缓存必须写（不依赖 DB 是否可用）
             _set_processed_payload(date_compact, period_int, items_copy, rec_meta)
 
-            # 4. 写库（失败不影响内存缓存）
             try:
                 ag_store.update_score_fields(date_compact, period_int, items_copy)
+                if not is_today or not _is_market_hours():
+                    ag_store.update_return_fields(date_compact, period_int, items_copy)
                 ag_store.save_score_meta(date_compact, period_int, rec_meta)
             except Exception as e:
                 logger.warning(f"评分写库失败（跳过）{date_compact}: {e}")
@@ -356,8 +482,15 @@ def get_auction_grab():
 
     items = items or []
 
-    # 非阻塞：后台计算昨日涨幅 + 评分写库
+    # 非阻塞：后台计算涨幅+评分
     _trigger_background_enrich(date_compact, period_int, items, trade_date, is_today)
+
+    processed_items, rec_meta = _get_processed_payload(date_compact, period_int, is_today)
+    score_ready = False
+    if processed_items:
+        score_ready = any(x.get('recommend_score') is not None for x in processed_items)
+    if not score_ready:
+        score_ready = ag_store.scores_exist(date_compact, period_int)
 
     return v1_success_response(data={
         'items': ag_store.sort_items(list(items), sort_by),
@@ -365,7 +498,9 @@ def get_auction_grab():
         'date': dt,
         'period': period_int,
         'sort': sort_by,
-        'score_ready': ag_store.scores_exist(date_compact, period_int),
+        'score_ready': score_ready,
+        'is_today': is_today,
+        'live_refresh': is_today and _is_market_hours(),
     })
 
 
@@ -381,6 +516,18 @@ def get_auction_grab_score():
     date_compact = ag_store.to_compact_date(dt)
     period_int = int(period)
     is_today = _is_today_trading_date(date_compact)
+    force_live = request.args.get('live', '0') == '1'
+
+    if force_live and is_today:
+        raw_items, _ = _load_items_for_request(date_compact, period_int, trade_date, is_today)
+        if raw_items is None:
+            raw_data = _fetch_from_stockapi(trade_date, period_int, _FETCH_API_TYPE)
+            if raw_data:
+                raw_items = ag_store.items_from_raw_api(raw_data, trade_date)
+        if raw_items:
+            _trigger_background_enrich(
+                date_compact, period_int, raw_items, trade_date, is_today, force=True,
+            )
 
     # 优先读内存缓存（后台线程写入，最新鲜）
     processed_items, rec_meta = _get_processed_payload(date_compact, period_int, is_today)
@@ -391,7 +538,8 @@ def get_auction_grab_score():
             'enrichments': enrichments,
             'emotion_stage': rec_meta.get('stage', ''),
             'recommend_hint': rec_meta.get('hint', ''),
-            'ready': has_scores,
+            'ready': has_scores or bool(enrichments),
+            'live_refresh': is_today and _is_market_hours(),
         })
 
     # 回退读库
@@ -404,9 +552,13 @@ def get_auction_grab_score():
         if raw_items:
             _trigger_background_enrich(date_compact, period_int, raw_items, trade_date, is_today)
 
+    has_scores = any(
+        e.get('recommend_score') is not None for e in enrichments.values()
+    )
     return v1_success_response(data={
         'enrichments': enrichments,
         'emotion_stage': meta.get('stage', ''),
         'recommend_hint': meta.get('hint', ''),
-        'ready': meta.get('ready', False) or ag_store.scores_exist(date_compact, period_int),
+        'ready': has_scores or bool(enrichments),
+        'live_refresh': is_today and _is_market_hours(),
     })

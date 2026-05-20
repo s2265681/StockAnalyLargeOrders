@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Modal, Button, Spin, message } from 'antd';
-import { ReloadOutlined } from '@ant-design/icons';
+import { ReloadOutlined, RightOutlined } from '@ant-design/icons';
 import { apiRequest } from '../../config/api';
 import './index.css';
 
@@ -10,6 +10,12 @@ const FLAG_MAP = {
   b_INDEXDOW: '🇺🇸', b_INDEXNASDAQ: '🇺🇸', b_INDEXSP: '🇺🇸',
   b_INDEXHK: '🇭🇰', b_INDEXNK225: '🇯🇵',
 };
+
+function formatTime(iso) {
+  if (!iso) return '';
+  const s = String(iso);
+  return s.length >= 16 ? s.slice(11, 16) : s;
+}
 
 export default function MarketBriefBar() {
   const [brief, setBrief] = useState(null);
@@ -72,9 +78,13 @@ export default function MarketBriefBar() {
 
   if (loading || generating) {
     return (
-      <div className="market-brief-bar market-brief-bar--loading">
-        <Spin size="small" />
-        <span>{generating ? '正在生成今日盘前资讯（约 30–90 秒）…' : '加载盘前资讯…'}</span>
+      <div className="market-brief-wrap">
+        <div className="market-brief-card market-brief-card--state">
+          <Spin size="small" />
+          <span className="market-brief-state-text">
+            {generating ? '正在生成今日盘前资讯（约 30–90 秒）…' : '加载盘前资讯…'}
+          </span>
+        </div>
       </div>
     );
   }
@@ -82,51 +92,63 @@ export default function MarketBriefBar() {
   if (!brief?.overseas?.length || !brief?.ai_summary) {
     const hasToken = !!localStorage.getItem('niuniu_token');
     return (
-      <div className="market-brief-bar market-brief-bar--empty">
-        <span className="market-brief-label">盘前参考</span>
-        <span className="market-brief-empty-hint">今日尚未生成</span>
-        {hasToken && (
-          <Button
-            type="link"
-            size="small"
-            icon={<ReloadOutlined />}
-            onClick={() => generateBrief(true)}
-            loading={generating}
-          >
-            立即生成
-          </Button>
-        )}
+      <div className="market-brief-wrap">
+        <div className="market-brief-card market-brief-card--state market-brief-card--empty">
+          <span className="market-brief-badge">盘前参考</span>
+          <span className="market-brief-state-text">今日尚未生成</span>
+          {hasToken && (
+            <Button
+              type="link"
+              size="small"
+              icon={<ReloadOutlined />}
+              onClick={() => generateBrief(true)}
+              loading={generating}
+              className="market-brief-gen-btn"
+            >
+              立即生成
+            </Button>
+          )}
+        </div>
       </div>
     );
   }
 
-  const preview = brief.ai_summary.length > 40
-    ? brief.ai_summary.slice(0, 40) + '…'
+  const preview = brief.ai_summary.length > 56
+    ? `${brief.ai_summary.slice(0, 56)}…`
     : brief.ai_summary;
 
   return (
-    <>
-      <div className="market-brief-bar">
-        <span className="market-brief-label">盘前参考</span>
+    <div className="market-brief-wrap">
+      <div className="market-brief-card">
+        <div className="market-brief-head">
+          <span className="market-brief-badge">盘前参考</span>
+          <span className="market-brief-time">{formatTime(brief.generated_at)} 更新</span>
+        </div>
 
-        {brief.overseas.map(idx => (
-          <span key={idx.symbol} className="market-brief-index">
-            {FLAG_MAP[idx.symbol] || ''} {idx.name}{' '}
-            <b className={idx.change_pct >= 0 ? 'up' : 'down'}>
-              {idx.change_pct >= 0 ? '+' : ''}{idx.change_pct}%
-            </b>
+        <div className="market-brief-indices" role="list" aria-label="海外指数">
+          {brief.overseas.map(idx => (
+            <span key={idx.symbol} className="market-brief-chip" role="listitem">
+              <span className="market-brief-chip-flag">{FLAG_MAP[idx.symbol] || '🌐'}</span>
+              <span className="market-brief-chip-name">{idx.name}</span>
+              <span className={`market-brief-chip-pct ${idx.change_pct >= 0 ? 'up' : 'down'}`}>
+                {idx.change_pct >= 0 ? '+' : ''}{idx.change_pct}%
+              </span>
+            </span>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          className="market-brief-summary"
+          onClick={() => setModalOpen(true)}
+          aria-label="查看今日盘前 AI 摘要"
+        >
+          <span className="market-brief-summary-tag">AI 摘要</span>
+          <span className="market-brief-summary-text">{preview}</span>
+          <span className="market-brief-summary-action">
+            查看全文 <RightOutlined />
           </span>
-        ))}
-
-        <span className="market-brief-divider">|</span>
-
-        <span className="market-brief-summary" onClick={() => setModalOpen(true)}>
-          📰 AI摘要：{preview} →
-        </span>
-
-        <span className="market-brief-time">
-          {brief.generated_at?.slice(11, 16)} 更新
-        </span>
+        </button>
       </div>
 
       <Modal
@@ -134,15 +156,16 @@ export default function MarketBriefBar() {
         onCancel={() => setModalOpen(false)}
         footer={null}
         title="今日盘前 AI 摘要"
-        width={560}
+        width="min(560px, 92vw)"
+        centered
+        className="market-brief-modal"
+        styles={{ body: { maxHeight: 'min(70vh, 520px)', overflow: 'auto' } }}
       >
-        <p style={{ fontSize: 12, color: '#aaa', marginTop: 0, marginBottom: 16 }}>
-          {brief.brief_date} {brief.generated_at?.slice(11, 16)} 生成
+        <p className="market-brief-modal-meta">
+          {brief.brief_date} · {formatTime(brief.generated_at)} 生成
         </p>
-        <div style={{ fontSize: 13, lineHeight: 2, color: '#333', whiteSpace: 'pre-wrap' }}>
-          {brief.ai_summary}
-        </div>
+        <div className="market-brief-modal-body">{brief.ai_summary}</div>
       </Modal>
-    </>
+    </div>
   );
 }

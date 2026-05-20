@@ -1,62 +1,250 @@
-.market-brief-bar {
+/* 与 emotion-cycle-container padding 对齐的外扩 */
+.market-brief-wrap {
+  margin: -16px -16px 12px -16px;
+  flex-shrink: 0;
+}
+
+.market-brief-card {
+  background: linear-gradient(135deg, rgba(22, 119, 255, 0.06) 0%, var(--bg-card) 42%, var(--bg-card) 100%);
+  border: 1px solid var(--border-secondary);
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.market-brief-card--state {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  background: #fff;
-  border-bottom: 1px solid #f0f0f0;
-  padding: 0 16px;
-  height: 36px;
-  min-height: 36px;
-  font-size: 12px;
-  overflow: hidden;
-  margin: -16px -16px 0 -16px;
+  gap: 8px 12px;
+  min-height: 44px;
+  padding: 12px 14px;
 }
 
-.market-brief-label {
+.market-brief-card--empty .market-brief-state-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.market-brief-state-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.market-brief-gen-btn {
+  padding: 0 !important;
+  height: auto !important;
+}
+
+/* 标题行 */
+.market-brief-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.market-brief-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
   font-size: 11px;
-  color: #999;
-  margin-right: 12px;
-  white-space: nowrap;
-}
-
-.market-brief-index {
-  margin-right: 16px;
-  white-space: nowrap;
-}
-
-.market-brief-index b.up   { color: #f5222d; }
-.market-brief-index b.down { color: #52c41a; }
-
-.market-brief-divider {
-  color: #e0e0e0;
-  margin-right: 16px;
-}
-
-.market-brief-summary {
+  font-weight: 600;
+  letter-spacing: 0.02em;
   color: #1677ff;
-  cursor: pointer;
+  background: rgba(22, 119, 255, 0.1);
+  border-radius: 4px;
   white-space: nowrap;
-  max-width: 320px;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
-
-.market-brief-summary:hover { text-decoration: underline; }
 
 .market-brief-time {
-  margin-left: auto;
   font-size: 11px;
-  color: #bbb;
+  color: var(--text-muted);
   white-space: nowrap;
 }
 
-.market-brief-bar--loading,
-.market-brief-bar--empty {
-  gap: 8px;
-  color: #888;
+/* 指数芯片：桌面横排，移动端横向滑动 */
+.market-brief-indices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
 }
 
-.market-brief-empty-hint {
+.market-brief-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 20px;
   font-size: 12px;
-  color: #999;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.market-brief-chip-flag {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.market-brief-chip-name {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.market-brief-chip-pct {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.market-brief-chip-pct.up { color: #f5222d; }
+.market-brief-chip-pct.down { color: #52c41a; }
+
+/* AI 摘要条 */
+.market-brief-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 8px 10px;
+  text-align: left;
+  background: rgba(22, 119, 255, 0.05);
+  border: 1px solid rgba(22, 119, 255, 0.12);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-primary);
+}
+
+.market-brief-summary:hover {
+  background: rgba(22, 119, 255, 0.1);
+  border-color: rgba(22, 119, 255, 0.22);
+}
+
+.market-brief-summary:active {
+  transform: scale(0.995);
+}
+
+.market-brief-summary-tag {
+  flex-shrink: 0;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #1677ff, #4096ff);
+  border-radius: 4px;
+}
+
+.market-brief-summary-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-medium);
+}
+
+.market-brief-summary-action {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  color: #1677ff;
+  white-space: nowrap;
+}
+
+/* 弹窗 */
+.market-brief-modal-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+}
+
+.market-brief-modal-body {
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ── 移动端 ── */
+@media (max-width: 768px) {
+  .market-brief-wrap {
+    margin: -10px -10px 10px -10px;
+  }
+
+  .market-brief-card {
+    padding: 10px;
+    border-radius: 8px;
+  }
+
+  .market-brief-head {
+    margin-bottom: 6px;
+  }
+
+  .market-brief-indices {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    margin: 0 -2px 8px;
+    padding: 0 2px 4px;
+  }
+
+  .market-brief-indices::-webkit-scrollbar {
+    display: none;
+  }
+
+  .market-brief-chip {
+    flex-shrink: 0;
+  }
+
+  .market-brief-summary {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .market-brief-summary-text {
+    flex: 1 1 100%;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .market-brief-summary-action {
+    margin-left: auto;
+  }
+
+  .market-brief-card--state {
+    min-height: 40px;
+    padding: 10px 12px;
+  }
+}
+
+/* 超窄屏 */
+@media (max-width: 380px) {
+  .market-brief-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+
+  .market-brief-chip {
+    padding: 3px 8px;
+    font-size: 11px;
+  }
 }

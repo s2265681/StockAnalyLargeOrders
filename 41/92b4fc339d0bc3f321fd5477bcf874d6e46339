@@ -1,0 +1,19 @@
+docs/superpowers/specs/2026-05-20-market-brief-design.md
+  s_db052642ae2cf3::t_030aec4a893b41 1-169
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "4192b4fc339d0bc3f321fd5477bcf874d6e46339",
+  "prompts": {},
+  "sessions": {
+    "s_db052642ae2cf3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ecca274-307f-4080-86ed-7a49509ede6a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

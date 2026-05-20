@@ -1,0 +1,22 @@
+frontend/src/pages/AuctionGrab/index.js
+  s_8aa11394fd11d0::t_d091f29ef3bd93 128-129,131,133-140,144,153-155,167-168,171-177,180
+  s_8aa11394fd11d0::t_a444b130cf606e 215,217-218
+  s_8aa11394fd11d0::t_b61f519f0dcb31 44-45,49
+  s_8aa11394fd11d0::t_5b51dc3dfbbfc4 194-202
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "0f1169c3eb495f1564f00db223839c1bd29ed230",
+  "prompts": {},
+  "sessions": {
+    "s_8aa11394fd11d0": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "146f2da4-a659-43f0-8f69-dac4789d33de",
+        "model": "composer-2.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

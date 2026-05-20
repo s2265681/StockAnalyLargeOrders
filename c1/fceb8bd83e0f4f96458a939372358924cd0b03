@@ -1,0 +1,40 @@
+backend/jobs/run_market_brief.sh
+  s_7a99352c7affae::t_0f95bcabfa7f56 10-11
+backend/services/market_brief_service.py
+  s_7a99352c7affae::t_e4cdd608f353e2 13
+  s_7a99352c7affae::t_12c2a7ee5b902a 86-132
+backend/jobs/market_brief_daily.py
+  s_7a99352c7affae::t_1c09abe92be4bd 58-61
+  s_7a99352c7affae::t_55038e34eb6d71 24
+backend/tests/test_market_brief.py
+  s_7a99352c7affae::t_f0fa189ab02b6a 60-74
+backend/utils/job_notify.py
+  s_7a99352c7affae::t_42f369c940b53a 25
+  s_7a99352c7affae::t_605d92c92a5b3e 458-502
+backend/.env.example
+  s_523e06fdd99d52::t_3cab7e71129ad7 27,29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "c1fceb8bd83e0f4f96458a939372358924cd0b03",
+  "prompts": {},
+  "sessions": {
+    "s_523e06fdd99d52": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "667419c1-edfd-4088-8bd2-8dd4afc233e3",
+        "model": "composer-2.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_7a99352c7affae": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "d0e44f5f-9228-4b9e-9dec-bb9c8a5c6f2c",
+        "model": "composer-2.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

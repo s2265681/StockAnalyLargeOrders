@@ -1,0 +1,73 @@
+frontend/src/pages/StockAlert/index.js
+  s_8aa11394fd11d0::t_e009a021f77a6e 244,250-259,268-288
+  s_8aa11394fd11d0::t_391307b6478697 197,200-231
+  s_8aa11394fd11d0::t_9fb5eb47f48a27 128-137,140-149,151
+  s_8aa11394fd11d0::t_2f9d8751685266 162-184
+  s_8aa11394fd11d0::t_2e1dd4ef2cc99a 9-23
+backend/routes/analytics.py
+  s_916e738ce402f5::t_eeb54cc8a70429 1-6,8-49,51,53-73
+  s_916e738ce402f5::t_65baa7e8cb2d3f 7
+  s_916e738ce402f5::t_75e1f9fe7b89b1 50,52
+frontend/src/pages/UserCenter/index.css
+  s_916e738ce402f5::t_207d5c6c3986fe 143-150
+.superpowers/brainstorm/62058-1779274227/state/server-info
+  s_db052642ae2cf3::t_e8bcc09c0044bc 1
+.superpowers/brainstorm/62058-1779274227/content/layout.html
+  s_db052642ae2cf3::t_03b8cceddc0902 1-76
+frontend/src/pages/UserCenter/index.js
+  s_916e738ce402f5::t_edece19496aacb 149-153
+  s_916e738ce402f5::t_99aa172415d3f3 17-18,26,29-38
+frontend/src/pages/StockDashboard/index.js
+  s_916e738ce402f5::t_89cacc40e85c9b 101-108
+backend/app.py
+  s_916e738ce402f5::t_4d18fd8f793cb0 33
+  s_916e738ce402f5::t_961b55cff406e6 61
+.superpowers/brainstorm/62058-1779274227/content/design-preview.html
+  s_db052642ae2cf3::t_c04642c07cf425 1-84
+backend/migrations/20260520_create_page_daily_activity.sql
+  s_916e738ce402f5::t_a7c131abad5db0 1-10
+backend/tests/test_analytics.py
+  s_916e738ce402f5::t_99548954eb1833 1-60,63-74
+  s_916e738ce402f5::t_e438330523592b 61-62
+frontend/src/pages/StockAlert/index.css
+  s_8aa11394fd11d0::t_e78d674003cbde 12,20-23,34-35,37,42-126,154-183,208,214,216-261,263-328
+.github/workflows/deploy.yml
+  s_916e738ce402f5::t_e47002867e6a04 91-92
+.superpowers/brainstorm/62058-1779274227/content/waiting-1.html
+  s_db052642ae2cf3::t_7a7a87628c59f6 1-3
+backend/routes/__init__.py
+  s_916e738ce402f5::t_6a543e44f4b1f9 37
+  s_916e738ce402f5::t_2d070bbcd01662 18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "36a67dea6f8c543ec12e1f2c2f8f08d4832da9d1",
+  "prompts": {},
+  "sessions": {
+    "s_8aa11394fd11d0": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "146f2da4-a659-43f0-8f69-dac4789d33de",
+        "model": "composer-2.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_916e738ce402f5": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "d8b667ee-50bb-495c-a0ff-6ad13f2d6941",
+        "model": "composer-2.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_db052642ae2cf3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4ecca274-307f-4080-86ed-7a49509ede6a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

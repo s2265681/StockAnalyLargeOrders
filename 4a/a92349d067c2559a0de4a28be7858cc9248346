@@ -1,0 +1,37 @@
+backend/services/market_brief_fetchers.py
+  s_7a99352c7affae::t_cc517e70936240 138-144
+  s_7a99352c7affae::t_09cfd2775f99e2 213-216
+  s_7a99352c7affae::t_5aeb684fec8734 1-103,106-137,145-212,217-314
+  s_7a99352c7affae::t_3b03291f645243 104-105
+backend/jobs/market_brief_daily.py
+  s_7a99352c7affae::t_d6be07ca79490f 19
+  s_7a99352c7affae::t_b8b590a82dea62 48-51,53,56
+.github/workflows/deploy.yml
+  s_7a99352c7affae::t_43647c7d84a28c 93
+backend/migrations/20260520_alter_market_brief_news.sql
+  s_7a99352c7affae::t_611dc28abd3ad8 1
+  s_7a99352c7affae::t_57020f4ddea454 2
+backend/tests/test_market_brief.py
+  s_7a99352c7affae::t_c0da5a49f19184 44-45
+backend/services/market_brief_service.py
+  s_7a99352c7affae::t_7529c505f0d417 16,18-19,37
+  s_7a99352c7affae::t_4da5ec65adcf32 1,6-10,25-26,29-30,33,35,38-47,53,56-61,64-81,88-99,103,107
+frontend/src/components/MarketBriefBar/index.js
+  s_7a99352c7affae::t_f6bcca0a7167e3 7-10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "4aa92349d067c2559a0de4a28be7858cc9248346",
+  "prompts": {},
+  "sessions": {
+    "s_7a99352c7affae": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "d0e44f5f-9228-4b9e-9dec-bb9c8a5c6f2c",
+        "model": "composer-2.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

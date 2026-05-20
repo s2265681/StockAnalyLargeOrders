@@ -241,7 +241,7 @@ class MarketStatsTest(unittest.TestCase):
         from routes.limit_up_echelon import _build_market_stats
 
         mock_emotion.return_value = {
-            "rise_pct": 62.35,
+            "rise_count": 3200,
             "board_hit_rate": 58.6,
             "limit_down_count": 12,
             "broken_board_count": 8,
@@ -255,7 +255,7 @@ class MarketStatsTest(unittest.TestCase):
         }
 
         stats = _build_market_stats("20260515", echelon_total=54)
-        self.assertEqual(stats["rise_pct"], 62.35)
+        self.assertEqual(stats["rise_count"], 3200)
         self.assertEqual(stats["board_hit_rate"], 58.6)
         self.assertEqual(stats["limit_down_count"], 12)
         self.assertEqual(stats["broken_board_count"], 8)

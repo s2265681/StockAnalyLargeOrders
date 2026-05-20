@@ -21,7 +21,7 @@ class AuctionGrabRecommendationTest(unittest.TestCase):
             "metrics": {
                 "limit_up_count": 65,
                 "board_hit_rate": 55,
-                "rise_pct": 58,
+                "rise_count": 58,
                 "limit_down_count": 10,
             },
         }

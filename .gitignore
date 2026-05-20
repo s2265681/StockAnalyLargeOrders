@@ -62,6 +62,7 @@ logs
 .env
 .env.local
 backend/data/ai_account.active
+backend/cache/
 .env.development.local
 .env.test.local
 .env.production.local

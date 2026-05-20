@@ -79,11 +79,11 @@ const formatRatePct = (value) => {
   return `${Number(value).toFixed(2)}%`;
 };
 
-const getRisePctClass = (value) => {
+const getRiseCountClass = (value) => {
   if (value == null || Number.isNaN(Number(value))) return '';
   const n = Number(value);
-  if (n >= 50) return 'green';
-  if (n < 50) return 'down';
+  if (n >= 2800) return 'green';
+  if (n < 2300) return 'down';
   return '';
 };
 
@@ -315,9 +315,9 @@ function LimitUpEchelon() {
             </span>
           </div>
           <div className="summary-item">
-            <span className="summary-label">上涨比例</span>
-            <span className={`summary-value ${getRisePctClass(summary?.rise_pct)}`}>
-              {formatRatePct(summary?.rise_pct)}
+            <span className="summary-label">上涨家数</span>
+            <span className={`summary-value ${getRiseCountClass(summary?.rise_count)}`}>
+              {summary?.rise_count != null ? summary.rise_count : '--'}
             </span>
           </div>
           <div className="summary-item">

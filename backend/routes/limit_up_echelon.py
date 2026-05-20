@@ -1388,9 +1388,9 @@ def _akshare_sentiment_counts(dt_clean: str) -> dict:
 
 
 def _build_market_stats(dt_clean: str, echelon_total: int = 0) -> dict:
-    """市场情绪指标：上涨比例、打板成功率、跌停、炸板、炸板率、昨日涨停/连板溢价"""
+    """市场情绪指标：上涨家数、打板成功率、跌停、炸板、炸板率、昨日涨停/连板溢价"""
     stats = {
-        "rise_pct": None,
+        "rise_count": None,
         "board_hit_rate": None,
         "limit_down_count": None,
         "broken_board_count": None,
@@ -1409,10 +1409,10 @@ def _build_market_stats(dt_clean: str, echelon_total: int = 0) -> dict:
             val = record.get(src)
             if val is not None:
                 stats[key] = int(val)
-        rise = record.get("rise_pct")
+        rise = record.get("rise_count")
         if rise is not None:
             try:
-                stats["rise_pct"] = round(float(rise), 2)
+                stats["rise_count"] = int(rise)
             except (TypeError, ValueError):
                 pass
         hit = record.get("board_hit_rate")

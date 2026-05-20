@@ -34,7 +34,7 @@ class AuctionGrabBacktestTest(unittest.TestCase):
             "stage_score": 28,
             "advice": "",
             "recommended_names": set(),
-            "metrics": {"limit_up_count": 60, "board_hit_rate": 50, "rise_pct": 50},
+            "metrics": {"limit_up_count": 60, "board_hit_rate": 50, "rise_count": 2800},
         }
         mock_limit_up.return_value = []
 

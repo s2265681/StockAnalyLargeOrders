@@ -89,7 +89,7 @@ from utils.claude_client import call_claude_for_scenario
 # 列名 → 英文 key 的映射
 COL_KEY_MAP = {
     "date1": "date",
-    "szbl": "rise_pct",
+    # szbl 原映射为上涨比例，但 StockAPI 数据口径不准，不再使用
     "lbjs": "consec_limit",
     "ylgd": "pressure_height",
     "zxgd": "latest_height",
@@ -122,48 +122,119 @@ def _curl_get_json(url: str, *, headers: dict = None, timeout: int = 15) -> dict
         raise TimeoutError(f"curl 超时 {timeout}s")
 
 
-def _fetch_rise_pct() -> Optional[float]:
-    """用东财行业板块接口聚合全市场涨跌家数，计算上涨比例。
-
-    东财行业分类里每只股只属于一个板块，f136/f115 加总不会重复计算。
-    非交易时段字段返回 "-"，此时 total==0，返回 None。
-    """
+def _safe_int(v) -> int:
+    if v in (None, "-", "--", ""):
+        return 0
     try:
-        url = (
-            "https://17.push2.eastmoney.com/api/qt/clist/get"
-            "?pn=1&pz=200&po=1&np=1&fltt=2&invt=2&fid=f3"
-            "&fs=m%3A90%2Bt%3A2%2Bf%3A%2150"
-            "&fields=f14%2Cf104%2Cf105"
-            "&ut=bd1d9ddb04089700cf9c27f6f7426281"
-        )
+        return int(v)
+    except (ValueError, TypeError):
+        return 0
+
+
+def _fetch_rise_count() -> Optional[int]:
+    """获取全市场上涨家数。
+
+    优先同花顺涨跌分布（口径与行情软件一致），备选东财沪/深指数 f104 加总，
+    最后尝试东财全 A 快照统计。
+    """
+    headers = {"Referer": "https://quote.eastmoney.com/"}
+    ut = "ut=bd1d9ddb04089700cf9c27f6f7426281"
+
+    try:
         body = _curl_get_json(
-            url,
-            headers={"Referer": "https://quote.eastmoney.com/"},
+            "https://dq.10jqka.com.cn/fuyao/up_down_distribution/distribution/v2/realtime",
+            headers={"User-Agent": "Mozilla/5.0"},
             timeout=10,
         )
+        up = (body.get("data") or {}).get("up")
+        down = (body.get("data") or {}).get("down")
+        if up is not None and int(up) > 0:
+            logger.info("同花顺涨跌分布: 上涨=%d 下跌=%d", int(up), int(down or 0))
+            return int(up)
+    except Exception as e:
+        logger.debug("同花顺上涨家数失败: %s", e)
+
+    for host in ("82.push2", "push2", "80.push2"):
+        try:
+            url = (
+                f"https://{host}.eastmoney.com/api/qt/ulist.np/get"
+                f"?fltt=2&secids=1.000001,0.399001&fields=f104,f105,f106&{ut}"
+            )
+            body = _curl_get_json(url, headers=headers, timeout=10)
+            diff = (body.get("data") or {}).get("diff") or []
+            if not diff:
+                continue
+            up = sum(_safe_int(item.get("f104")) for item in diff)
+            down = sum(_safe_int(item.get("f105")) for item in diff)
+            if up > 0:
+                logger.info("东财指数统计: 上涨=%d 下跌=%d (沪+深)", up, down)
+                return up
+        except Exception as e:
+            logger.debug("东财指数上涨家数 %s 失败: %s", host, e)
+
+    try:
+        url = (
+            "https://82.push2.eastmoney.com/api/qt/clist/get"
+            "?pn=1&pz=5000&po=1&np=1&fltt=2&invt=2&fid=f3"
+            "&fs=m%3A0+t%3A6%2Cm%3A0+t%3A80%2Cm%3A1+t%3A2%2Cm%3A1+t%3A23%2Cm%3A0+t%3A81+s%3A2048"
+            f"&fields=f3&{ut}"
+        )
+        body = _curl_get_json(url, headers=headers, timeout=15)
         items = (body.get("data") or {}).get("diff") or []
         if not items:
             return None
-
-        def _safe_int(v) -> int:
-            if v in (None, "-", "--", ""):
-                return 0
-            try:
-                return int(v)
-            except (ValueError, TypeError):
-                return 0
-
-        up = sum(_safe_int(item.get("f104")) for item in items)
-        down = sum(_safe_int(item.get("f105")) for item in items)
-        total = up + down
-        if total == 0:
-            return None  # 非交易时间或无数据
-        pct = round(up / total * 100, 2)
-        logger.info("东财行业板块: 上涨=%d 下跌=%d 上涨比例=%.2f%%", up, down, pct)
-        return pct
+        up = sum(1 for item in items if _safe_int(item.get("f3")) > 0)
+        if up > 0:
+            logger.info("东财全A快照: 上涨=%d / %d", up, len(items))
+            return up
     except Exception as e:
-        logger.warning("获取上涨比例失败: %s", e)
-        return None
+        logger.warning("获取上涨家数失败: %s", e)
+    return None
+
+
+def _rise_count_cache_path() -> str:
+    return os.path.join(os.path.dirname(os.path.dirname(__file__)), "cache", "rise_count_history.json")
+
+
+def _load_rise_count_cache() -> dict:
+    path = _rise_count_cache_path()
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return data if isinstance(data, dict) else {}
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def _save_rise_count_cache(cache: dict) -> None:
+    path = _rise_count_cache_path()
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(cache, f, ensure_ascii=False, indent=2)
+
+
+def _merge_rise_count_cache(records: list) -> list:
+    """将本地缓存的历史上涨家数合并进记录（StockAPI 不提供该字段）。"""
+    cache = _load_rise_count_cache()
+    if not cache:
+        return records
+    for record in records:
+        if record.get("rise_count") is not None:
+            continue
+        dt = str(record.get("date", "")).replace("-", "")
+        cached = cache.get(dt)
+        if cached is not None:
+            record["rise_count"] = int(cached)
+    return records
+
+
+def _persist_rise_count(dt_display: str, rise_count: int) -> None:
+    dt = dt_display.replace("-", "")
+    cache = _load_rise_count_cache()
+    if cache.get(dt) == rise_count:
+        return
+    cache[dt] = rise_count
+    _save_rise_count_cache(cache)
 
 
 def _fetch_zt_counts() -> dict:
@@ -237,12 +308,13 @@ def _fetch_emotion_records():
         return records
     last = records[-1]
 
-    # 上涨比例：StockAPI 当日未更新时用东财行业板块接口补取
-    if last.get("rise_pct") is None:
-        computed = _fetch_rise_pct()
+    # 上涨家数：StockAPI 不提供可靠数据，当日用东财实时补取
+    if last.get("rise_count") is None:
+        computed = _fetch_rise_count()
         if computed is not None:
-            last["rise_pct"] = computed
-            logger.info("rise_pct 补取: %s → %.2f%%", last.get("date"), computed)
+            last["rise_count"] = computed
+            logger.info("rise_count 补取: %s → %d", last.get("date"), computed)
+            _persist_rise_count(last.get("date", ""), computed)
 
     # 涨停/跌停/炸板家数：有任一字段为 None 时用 akshare 涨停池补取
     zt_fields = ("limit_up_count", "limit_down_count", "broken_board_count", "board_hit_rate")
@@ -259,7 +331,7 @@ def _fetch_emotion_records():
                 last.get("broken_board_count"), last.get("board_hit_rate"),
             )
 
-    return records
+    return _merge_rise_count_cache(records)
 
 
 def _build_fallback_record(dt_str: str) -> dict:
@@ -269,7 +341,7 @@ def _build_fallback_record(dt_str: str) -> dict:
 
     record = {
         "date": dt_display,
-        "rise_pct": None,
+        "rise_count": None,
         "consec_limit": None,
         "pressure_height": None,
         "latest_height": None,

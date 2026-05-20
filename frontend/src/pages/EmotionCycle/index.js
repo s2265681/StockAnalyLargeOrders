@@ -43,7 +43,7 @@ const stageColorMap = {
 };
 
 const seriesConfig = [
-  { key: 'rise_pct', name: '上涨比例', color: '#faad14', yAxisIndex: 1 },
+  { key: 'rise_count', name: '上涨家数', color: '#faad14', yAxisIndex: 0 },
   { key: 'consec_limit', name: '连板家数', color: '#52c41a', yAxisIndex: 0, showLabel: true },
   { key: 'pressure_height', name: '压力高度', color: '#ff7a45', yAxisIndex: 0 },
   { key: 'latest_height', name: '最新高度', color: '#ff4d4f', yAxisIndex: 0 },
@@ -391,7 +391,7 @@ function EmotionCycle() {
           let html = `<div style="font-weight:bold;margin-bottom:6px;">${params[0].axisValue}</div>`;
           params.forEach((p) => {
             const cfg = seriesConfig.find((s) => s.name === p.seriesName);
-            const suffix = cfg && cfg.yAxisIndex === 1 ? '%' : '';
+            const suffix = cfg && cfg.key === 'board_hit_rate' ? '%' : '';
             html += `<div style="display:flex;justify-content:space-between;gap:16px;">
               <span>${p.marker} ${p.seriesName}</span>
               <span style="font-weight:bold;">${p.value != null ? p.value + suffix : '-'}</span>

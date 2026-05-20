@@ -199,7 +199,7 @@ def _market_score(metrics: dict, hot_themes: dict) -> float:
 
     limit_up = int(metrics.get("limit_up_count") or 0)
     board_hit = float(metrics.get("board_hit_rate") or 0)
-    rise_pct = float(metrics.get("rise_pct") or 0)
+    rise_count = int(metrics.get("rise_count") or 0)
     limit_down = int(metrics.get("limit_down_count") or 0)
 
     score = 8.0
@@ -217,9 +217,9 @@ def _market_score(metrics: dict, hot_themes: dict) -> float:
     elif board_hit >= 45:
         score += 2
 
-    if rise_pct >= 55:
+    if rise_count >= 2800:
         score += 3
-    elif rise_pct >= 45:
+    elif rise_count >= 2300:
         score += 1
 
     if limit_down > 40:

@@ -87,7 +87,8 @@ jobs:
               migrations/20260516_add_more_seat_aliases_from_image.sql \
               migrations/20260516_cleanup_dragon_tiger_seat_duplicates.sql \
               migrations/20260517_create_theme_tables.sql \
-              migrations/20260517_create_auction_grab_tables.sql
+              migrations/20260517_create_auction_grab_tables.sql \
+              migrations/20260520_create_alert_rules.sql
             do
               if [ -f "$migration" ]; then
                 echo "Applying $migration"

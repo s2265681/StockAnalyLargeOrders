@@ -1,0 +1,50 @@
+.market-brief-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 0 16px;
+  height: 36px;
+  min-height: 36px;
+  font-size: 12px;
+  overflow: hidden;
+}
+
+.market-brief-label {
+  font-size: 11px;
+  color: #999;
+  margin-right: 12px;
+  white-space: nowrap;
+}
+
+.market-brief-index {
+  margin-right: 16px;
+  white-space: nowrap;
+}
+
+.market-brief-index b.up   { color: #f5222d; }
+.market-brief-index b.down { color: #52c41a; }
+
+.market-brief-divider {
+  color: #e0e0e0;
+  margin-right: 16px;
+}
+
+.market-brief-summary {
+  color: #1677ff;
+  cursor: pointer;
+  white-space: nowrap;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.market-brief-summary:hover { text-decoration: underline; }
+
+.market-brief-time {
+  margin-left: auto;
+  font-size: 11px;
+  color: #bbb;
+  white-space: nowrap;
+}

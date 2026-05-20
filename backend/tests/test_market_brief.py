@@ -1,8 +1,8 @@
 import json
+import sys
+import os
 import unittest
 from unittest.mock import patch
-import sys, os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 
 SINA_SAMPLE = (
@@ -61,6 +61,18 @@ class TestGetTodayBrief(unittest.TestCase):
         self.assertEqual(result['brief_date'], '2026-05-20')
         self.assertEqual(result['overseas'][0]['name'], '道指')
         self.assertEqual(result['ai_summary'], '美股上涨，关注芯片。')
+
+
+class TestFetchOverseasIndices(unittest.TestCase):
+    def test_curl_nonzero_raises(self):
+        from unittest.mock import MagicMock
+        from services.market_brief_service import fetch_overseas_indices
+        mock_result = MagicMock()
+        mock_result.returncode = 1
+        mock_result.stderr = 'connect failed'
+        with patch('subprocess.run', return_value=mock_result):
+            with self.assertRaises(RuntimeError):
+                fetch_overseas_indices()
 
 
 if __name__ == '__main__':

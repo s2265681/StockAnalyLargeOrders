@@ -1,10 +1,12 @@
 """盘前资讯服务：拉取海外指数、生成 AI 摘要、读写 market_brief 表"""
 import json
 import logging
+import os
 import re
 import subprocess
 from datetime import date
 
+from utils.claude_client import call_claude_for_scenario
 from utils.db import execute_query, execute_write
 
 logger = logging.getLogger(__name__)
@@ -24,6 +26,7 @@ def _parse_sina_response(text: str) -> list[dict]:
     pattern = re.compile(r'var hq_str_(b_INDEX\w+)="([^"]+)"')
     for m in pattern.finditer(text):
         sym = m.group(1)
+        # 字段布局: name, close, open, chg_abs, chg_pct, chg_pct_str, date, time
         fields = m.group(2).split(',')
         if len(fields) < 5:
             continue
@@ -47,10 +50,11 @@ def fetch_overseas_indices() -> list[dict]:
     """用 curl 子进程拉取新浪财经海外指数（eventlet 安全）。"""
     symbols = 'b_INDEXDOW,b_INDEXNASDAQ,b_INDEXSP,b_INDEXHK,b_INDEXNK225'
     url = f'https://hq.sinajs.cn/list={symbols}'
+    _env = {**os.environ, 'no_proxy': '*', 'NO_PROXY': '*'}
     result = subprocess.run(
         ['curl', '-s', '--max-time', '15',
          '-H', 'Referer: https://finance.sina.com.cn', url],
-        capture_output=True, text=True, timeout=20,
+        capture_output=True, text=True, timeout=20, env=_env,
     )
     if result.returncode != 0:
         raise RuntimeError(f'curl 拉取指数失败: {result.stderr.strip()}')
@@ -59,6 +63,8 @@ def fetch_overseas_indices() -> list[dict]:
 
 def generate_ai_summary(overseas: list[dict]) -> str:
     """调用 Claude 生成摘要文本。"""
+    if not overseas:
+        raise ValueError('overseas 列表为空，无法生成摘要')
     lines = []
     for idx in overseas:
         sign = '+' if idx['change_pct'] >= 0 else ''
@@ -74,7 +80,6 @@ def generate_ai_summary(overseas: list[dict]) -> str:
         '\n\n要求：纯中文，总字数不超过200字，不需要任何标题，直接正文。'
     )
 
-    from utils.claude_client import call_claude_for_scenario
     text = call_claude_for_scenario('market_brief', prompt)
     if not text:
         raise RuntimeError('Claude 返回空摘要')

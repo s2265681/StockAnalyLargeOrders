@@ -1,0 +1,26 @@
+backend/tests/test_job_notify.py
+  s_8aa11394fd11d0::t_15442f799b6c2a 9
+  s_8aa11394fd11d0::t_939d3b2cccfc98 51-79,81-84
+  s_8aa11394fd11d0::t_2e5854ab7ffd94 80
+backend/utils/job_notify.py
+  s_8aa11394fd11d0::t_6733d278b2652d 59,66
+  s_8aa11394fd11d0::t_84a7c48c0c84b5 305-307,314-315,323-328
+  s_8aa11394fd11d0::t_4509af28ff3097 57-58,67-87
+  s_8aa11394fd11d0::t_8c2b05e2262c13 350-352
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "472632395747d45bf2db673422bda6f523f0bf4c",
+  "prompts": {},
+  "sessions": {
+    "s_8aa11394fd11d0": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "146f2da4-a659-43f0-8f69-dac4789d33de",
+        "model": "composer-2.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

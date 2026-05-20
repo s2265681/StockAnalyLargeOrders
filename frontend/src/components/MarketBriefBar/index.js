@@ -16,14 +16,17 @@ export default function MarketBriefBar() {
   const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     apiRequest('/api/market-brief/today')
       .then(res => {
-        if (res.success && res.data.available) setBrief(res.data);
+        if (!cancelled && res.success && res.data.available) setBrief(res.data);
       })
       .catch(() => {});
+    return () => { cancelled = true; };
   }, []);
 
   if (!brief) return null;
+  if (!brief.overseas || !brief.ai_summary) return null;
 
   const preview = brief.ai_summary.length > 40
     ? brief.ai_summary.slice(0, 40) + '…'

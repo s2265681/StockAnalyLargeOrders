@@ -63,10 +63,10 @@ def check_rule_condition(rule: dict, quote, limit_up_data: dict) -> bool:
             return False
         if threshold is None:
             return False
-        seal_amount = limit_up_data.get('seal_amount', 0) or 0
+        seal_lots = int(limit_up_data.get('seal_volume_lots', 0) or 0)
         if direction == 'above':
-            return seal_amount >= threshold
-        return seal_amount < threshold  # below（默认）
+            return seal_lots >= threshold
+        return seal_lots < threshold  # below（默认）
 
     return False
 

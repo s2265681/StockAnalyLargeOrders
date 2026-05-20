@@ -153,7 +153,7 @@ export default function StockAlert() {
             <Option value="below">低于</Option>
           </Select>
           <InputNumber value={row.threshold} onChange={v => updateRow(idx, 'threshold', v)}
-            min={1} placeholder="万元" addonAfter="万元" className="alert-threshold-num seal" />
+            min={1} step={100} placeholder="手" addonAfter="手" className="alert-threshold-num seal" />
         </Space.Compact>
       </div>
     );
@@ -164,7 +164,7 @@ export default function StockAlert() {
     if (r.alert_type === 'change_pct')
       return `${r.direction === 'above' ? '涨超' : '跌超'}${r.threshold ?? '?'}%`;
     if (r.alert_type === 'seal_order')
-      return `${r.direction === 'above' ? '超过' : '低于'} ${r.threshold ?? '?'} 万元`;
+      return `${r.direction === 'above' ? '超过' : '低于'} ${r.threshold ?? '?'} 手`;
     return '—';
   };
 

@@ -47,32 +47,32 @@ class TestCheckRuleCondition(unittest.TestCase):
 
     def test_seal_order_below_triggered(self):
         rule = {'alert_type': 'seal_order', 'threshold': 500.0, 'direction': 'below'}
-        self.assertTrue(self._check(rule, {}, {'is_limit_up': True, 'seal_amount': 300.0}))
+        self.assertTrue(self._check(rule, {}, {'is_limit_up': True, 'seal_volume_lots': 300}))
 
     def test_seal_order_below_not_triggered(self):
         rule = {'alert_type': 'seal_order', 'threshold': 500.0, 'direction': 'below'}
-        self.assertFalse(self._check(rule, {}, {'is_limit_up': True, 'seal_amount': 800.0}))
+        self.assertFalse(self._check(rule, {}, {'is_limit_up': True, 'seal_volume_lots': 800}))
 
     def test_seal_order_below_default_triggered(self):
         # direction=None 默认走 below 逻辑
         rule = {'alert_type': 'seal_order', 'threshold': 500.0, 'direction': None}
-        self.assertTrue(self._check(rule, {}, {'is_limit_up': True, 'seal_amount': 300.0}))
+        self.assertTrue(self._check(rule, {}, {'is_limit_up': True, 'seal_volume_lots': 300}))
 
     def test_seal_order_above_triggered(self):
         rule = {'alert_type': 'seal_order', 'threshold': 500.0, 'direction': 'above'}
-        self.assertTrue(self._check(rule, {}, {'is_limit_up': True, 'seal_amount': 800.0}))
+        self.assertTrue(self._check(rule, {}, {'is_limit_up': True, 'seal_volume_lots': 800}))
 
     def test_seal_order_above_not_triggered(self):
         rule = {'alert_type': 'seal_order', 'threshold': 500.0, 'direction': 'above'}
-        self.assertFalse(self._check(rule, {}, {'is_limit_up': True, 'seal_amount': 300.0}))
+        self.assertFalse(self._check(rule, {}, {'is_limit_up': True, 'seal_volume_lots': 300}))
 
     def test_seal_order_above_exact_boundary(self):
         rule = {'alert_type': 'seal_order', 'threshold': 500.0, 'direction': 'above'}
-        self.assertTrue(self._check(rule, {}, {'is_limit_up': True, 'seal_amount': 500.0}))
+        self.assertTrue(self._check(rule, {}, {'is_limit_up': True, 'seal_volume_lots': 500}))
 
     def test_seal_order_not_limit_up(self):
         rule = {'alert_type': 'seal_order', 'threshold': 500.0, 'direction': 'below'}
-        self.assertFalse(self._check(rule, {}, {'is_limit_up': False, 'seal_amount': 300.0}))
+        self.assertFalse(self._check(rule, {}, {'is_limit_up': False, 'seal_volume_lots': 300}))
 
     def test_quote_none_returns_false(self):
         rule = {'alert_type': 'change_pct', 'threshold': 5.0, 'direction': 'above'}

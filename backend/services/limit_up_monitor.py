@@ -84,6 +84,7 @@ class LimitUpMonitor:
             'is_limit_up': False,
             'limit_up_price': 0.0,
             'seal_amount': 0.0,
+            'seal_volume_lots': 0,
             'seal_ratio': 0.0,
             'seal_trend': 0.0,
             'seal_trend_label': '封单平稳',
@@ -131,15 +132,18 @@ class LimitUpMonitor:
             # 获取股票追踪状态
             state = self._get_stock_state(code)
 
-            # 计算封单额（万元）：买一价 == 涨停价时，买一金额
+            # 涨停价买一：封单金额（万元）+ 封单量（手，1手=100股）
             seal_amount = 0.0
+            seal_volume_lots = 0
             bids = order_book.get('bids', [])
             if bids and is_limit_up:
                 bid1 = bids[0]
                 bid1_price = float(bid1.get('price', 0) or 0)
                 bid1_amount = float(bid1.get('amount', 0) or 0)
+                bid1_volume = float(bid1.get('volume', 0) or 0)  # 股
                 if abs(bid1_price - limit_up_price) <= 0.005:
                     seal_amount = round(bid1_amount / 10000, 2)  # 元 -> 万元
+                    seal_volume_lots = int(bid1_volume // 100)  # 股 -> 手
 
             # 获取流通市值（元）
             float_market_cap = _get_float_market_cap(code)
@@ -194,6 +198,7 @@ class LimitUpMonitor:
                 'is_limit_up': is_limit_up,
                 'limit_up_price': limit_up_price,
                 'seal_amount': seal_amount,
+                'seal_volume_lots': seal_volume_lots,
                 'seal_ratio': seal_ratio,
                 'seal_trend': round(seal_trend, 4),
                 'seal_trend_label': seal_trend_label,

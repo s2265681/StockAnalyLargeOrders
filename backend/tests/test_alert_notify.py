@@ -47,10 +47,10 @@ class TestAlertNotify(unittest.TestCase):
         rule = {'code': '300001', 'stock_name': '特锐德', 'alert_type': 'seal_order',
                 'threshold': 500.0, 'direction': None}
         quote = {'change_percent': 10.01, 'price': 5.50}
-        subject, body = build_alert_email(rule, quote, {'is_limit_up': True, 'seal_amount': 300.0})
+        subject, body = build_alert_email(rule, quote, {'is_limit_up': True, 'seal_volume_lots': 300})
         self.assertIn('封单', subject)
-        self.assertIn('300.0', body)
-        self.assertIn('500.0', body)
+        self.assertIn('300 手', body)
+        self.assertIn('500.0 手', body)
 
     @patch('utils.alert_notify._smtp_config')
     @patch('smtplib.SMTP_SSL')

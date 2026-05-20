@@ -107,19 +107,9 @@ jobs:
             echo "===> Ensure PM2 interpreter compatibility"
             ln -sfn backend/venv venv
 
-            echo "===> Restart backend early (avoid new frontend hitting old API during upload)"
-            pm2 restart StockAnalysisLargeOrders --update-env || pm2 start ecosystem.config.js
-            for attempt in $(seq 1 15); do
-              if curl -fsS http://127.0.0.1:9001/health > /dev/null 2>&1; then
-                echo "Backend ready before frontend upload"
-                break
-              fi
-              if [ "$attempt" -eq 15 ]; then
-                echo "Backend not ready before frontend upload"
-                exit 1
-              fi
-              sleep 2
-            done
+            echo "===> Backend: free port 9001 then start (early)"
+            chmod +x backend/scripts/ensure_single_backend.sh
+            bash backend/scripts/ensure_single_backend.sh
 
       - name: Upload frontend build
         uses: appleboy/scp-action@v0.1.7
@@ -264,29 +254,33 @@ jobs:
             rm -f /etc/nginx/sites-enabled/default
             ln -sf /etc/nginx/sites-available/stock-analysis /etc/nginx/sites-enabled/stock-analysis
 
-            echo "===> Restart backend via PM2"
-            pm2 restart StockAnalysisLargeOrders --update-env || pm2 start ecosystem.config.js
-            pm2 save
+            echo "===> Backend: free port 9001 then start (final)"
+            chmod +x backend/scripts/ensure_single_backend.sh
+            bash backend/scripts/ensure_single_backend.sh
 
             echo "===> Reload Nginx (frontend is static, no need to restart)"
             nginx -t && systemctl reload nginx
 
-            echo "===> Health check"
-            for attempt in $(seq 1 30); do
-              if curl -fsS http://127.0.0.1:9001/health | grep -q '"alert_rules":true'; then
-                echo "Backend health check passed (alert_rules ready)"
-                break
+            echo "===> Public endpoint consistency (detect LB / stale nodes)"
+            PUBLIC_BASE="${PUBLIC_HEALTH_BASE:-http://127.0.0.1:9001}"
+            ok=0
+            old=0
+            for i in $(seq 1 12); do
+              body=$(curl -fsS "${PUBLIC_BASE}/health" 2>/dev/null || echo "")
+              if echo "$body" | grep -q '"alert_rules"[[:space:]]*:[[:space:]]*true'; then
+                ok=$((ok + 1))
+              else
+                old=$((old + 1))
               fi
-              if [ "$attempt" -eq 30 ]; then
-                echo "Backend health check failed after ${attempt} attempts"
-                pm2 status || true
-                pm2 logs StockAnalysisLargeOrders --lines 80 --nostream || true
-                (ss -ltnp 2>/dev/null || netstat -ltnp 2>/dev/null || true) | grep ':9001' || true
-                exit 1
-              fi
-              echo "Backend is not ready yet, retrying in 2s... (${attempt}/30)"
-              sleep 2
+              sleep 0.3
             done
+            echo "health sample: new=${ok} old=${old} (base=${PUBLIC_BASE})"
+            if [ "$old" -gt 0 ]; then
+              echo "WARNING: mixed backend versions detected."
+              echo "If ${PUBLIC_BASE} is 127.0.0.1, kill stray processes: lsof -i:9001"
+              echo "If using SLB/domain, deploy or restart ALL backend nodes."
+              exit 1
+            fi
             test -f /www/StockAnalyLargeOrders/frontend/build/index.html
 
             echo "===> Server ops: swap + cron + logrotate"

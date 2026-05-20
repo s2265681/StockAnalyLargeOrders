@@ -87,23 +87,12 @@ create_log_dirs() {
     print_success "日志目录创建完成"
 }
 
-# 启动 PM2 服务
+# 启动 PM2 服务（先释放 9001，再单实例启动）
 start_pm2() {
-    print_info "启动PM2服务..."
-    
-    # 停止现有服务
-    pm2 stop StockAnalysisLargeOrders 2>/dev/null || true
-    pm2 delete StockAnalysisLargeOrders 2>/dev/null || true
-    
-    # 启动新服务
-    pm2 start ecosystem.config.js
-    
-    # 保存PM2配置
-    pm2 save
-    
-    # 设置开机自启
-    pm2 startup
-    
+    print_info "释放 9001 并启动 PM2 服务..."
+    chmod +x backend/scripts/ensure_single_backend.sh
+    bash backend/scripts/ensure_single_backend.sh
+    pm2 startup 2>/dev/null || true
     print_success "PM2服务启动完成"
 }
 

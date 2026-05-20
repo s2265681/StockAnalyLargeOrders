@@ -106,6 +106,20 @@ jobs:
             echo "===> Ensure PM2 interpreter compatibility"
             ln -sfn backend/venv venv
 
+            echo "===> Restart backend early (avoid new frontend hitting old API during upload)"
+            pm2 restart StockAnalysisLargeOrders --update-env || pm2 start ecosystem.config.js
+            for attempt in $(seq 1 15); do
+              if curl -fsS http://127.0.0.1:9001/health > /dev/null 2>&1; then
+                echo "Backend ready before frontend upload"
+                break
+              fi
+              if [ "$attempt" -eq 15 ]; then
+                echo "Backend not ready before frontend upload"
+                exit 1
+              fi
+              sleep 2
+            done
+
       - name: Upload frontend build
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -258,8 +272,8 @@ jobs:
 
             echo "===> Health check"
             for attempt in $(seq 1 30); do
-              if curl -fsS http://127.0.0.1:9001/health > /dev/null 2>&1; then
-                echo "Backend health check passed"
+              if curl -fsS http://127.0.0.1:9001/health | grep -q '"alert_rules":true'; then
+                echo "Backend health check passed (alert_rules ready)"
                 break
               fi
               if [ "$attempt" -eq 30 ]; then

@@ -92,6 +92,39 @@ def batch_create_rules():
                                message=f'成功创建 {len(created_ids)} 条规则')
 
 
+@alert_rules_bp.route('/api/alert-rules/monitor-status', methods=['GET'])
+@login_required
+def monitor_status():
+    from services.alert_monitor import get_monitor_status
+    s = get_monitor_status()
+    now = __import__('datetime').datetime.now()
+
+    seconds_since_check = None
+    if s['last_check_at']:
+        last_dt = __import__('datetime').datetime.strptime(s['last_check_at'], '%Y-%m-%d %H:%M:%S')
+        seconds_since_check = int((now - last_dt).total_seconds())
+
+    if not s['running']:
+        display = 'stopped'
+    elif s['sleeping']:
+        display = 'sleeping'
+    elif not s['healthy']:
+        display = 'error'
+    elif seconds_since_check is not None and seconds_since_check > 120:
+        display = 'error'
+    else:
+        display = 'running'
+
+    return v1_success_response(data={
+        'display': display,
+        'healthy': s['healthy'],
+        'sleeping': s['sleeping'],
+        'last_check_at': s['last_check_at'],
+        'seconds_since_check': seconds_since_check,
+        'last_error': s['last_error'],
+    })
+
+
 @alert_rules_bp.route('/api/alert-rules/<int:rule_id>', methods=['PUT'])
 @login_required
 def update_rule(rule_id):
@@ -152,38 +185,3 @@ def disable_rule(rule_id):
         (rule_id,)
     )
     return v1_success_response(message='已停用')
-
-
-@alert_rules_bp.route('/api/alert-rules/monitor-status', methods=['GET'])
-@login_required
-def monitor_status():
-    from services.alert_monitor import get_monitor_status
-    s = get_monitor_status()
-    now = __import__('datetime').datetime.now()
-
-    # 计算距上次检查的秒数
-    seconds_since_check = None
-    if s['last_check_at']:
-        last_dt = __import__('datetime').datetime.strptime(s['last_check_at'], '%Y-%m-%d %H:%M:%S')
-        seconds_since_check = int((now - last_dt).total_seconds())
-
-    # 推断前端展示状态
-    if not s['running']:
-        display = 'stopped'
-    elif s['sleeping']:
-        display = 'sleeping'
-    elif not s['healthy']:
-        display = 'error'
-    elif seconds_since_check is not None and seconds_since_check > 120:
-        display = 'error'  # 超过 2 分钟没有成功检查，视为异常
-    else:
-        display = 'running'
-
-    return v1_success_response(data={
-        'display': display,            # running / sleeping / error / stopped
-        'healthy': s['healthy'],
-        'sleeping': s['sleeping'],
-        'last_check_at': s['last_check_at'],
-        'seconds_since_check': seconds_since_check,
-        'last_error': s['last_error'],
-    })

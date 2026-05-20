@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Table, Button, Select, Input, InputNumber, Popconfirm, message, Tooltip, Space } from 'antd';
 import { PlusOutlined, DeleteOutlined, ReloadOutlined, BellOutlined, PauseOutlined } from '@ant-design/icons';
-import { apiRequest } from '../../config/api';
+import { apiRequest, apiRequestWithRetry } from '../../config/api';
+import { useAuth } from '../../context/AuthContext';
 import './index.css';
 
 const { Option } = Select;
@@ -55,6 +56,7 @@ function MonitorBadge({ status }) {
 }
 
 export default function StockAlert() {
+  const { user, loading: authLoading } = useAuth();
   const [rules, setRules]         = useState([]);
   const [loading, setLoading]     = useState(false);
   const [showAdd, setShowAdd]     = useState(false);
@@ -63,28 +65,35 @@ export default function StockAlert() {
   const [monitorStatus, setMonitorStatus] = useState(null);
 
   const fetchRules = useCallback(async () => {
+    if (!localStorage.getItem('niuniu_token')) return;
     setLoading(true);
     try {
-      const res = await apiRequest('/api/alert-rules');
+      const res = await apiRequestWithRetry('/api/alert-rules');
       if (res.success) setRules(res.data.items || []);
+      else message.error(res.message || '加载失败');
     } catch { message.error('加载失败'); }
     finally { setLoading(false); }
   }, []);
 
   const fetchMonitorStatus = useCallback(async () => {
+    if (!localStorage.getItem('niuniu_token')) return;
     try {
-      const res = await apiRequest('/api/alert-rules/monitor-status');
+      const res = await apiRequestWithRetry('/api/alert-rules/monitor-status');
       if (res.success) setMonitorStatus(res.data.display);
     } catch { /* 静默失败，不影响主流程 */ }
   }, []);
 
-  useEffect(() => { fetchRules(); }, [fetchRules]);
+  useEffect(() => {
+    if (authLoading || !user) return;
+    fetchRules();
+  }, [authLoading, user, fetchRules]);
 
   useEffect(() => {
+    if (authLoading || !user) return;
     fetchMonitorStatus();
     const timer = setInterval(fetchMonitorStatus, 30000);
     return () => clearInterval(timer);
-  }, [fetchMonitorStatus]);
+  }, [authLoading, user, fetchMonitorStatus]);
 
   const handleAction = async (url, method = 'POST', successMsg = '操作成功') => {
     try {

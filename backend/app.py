@@ -88,10 +88,16 @@ except Exception as _e:
 
 @app.route('/health')
 def health():
+    from flask import current_app
+    rule_paths = sorted({str(r.rule) for r in current_app.url_map.iter_rules()})
+    has_alert = '/api/alert-rules' in rule_paths
     return {
         'status': 'healthy',
         'message': '股票数据API服务运行正常',
         'version': '5.0.0',
+        'features': {
+            'alert_rules': has_alert,
+        },
     }
 
 

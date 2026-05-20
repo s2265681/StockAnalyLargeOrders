@@ -43,6 +43,26 @@ export const buildApiUrl = (endpoint) => {
   return `${apiConfig.baseURL}${endpoint}`;
 };
 
+const RETRYABLE_STATUS = new Set([404, 502, 503, 504]);
+
+/** 对部署重启/短暂不可用导致的 404/5xx 自动重试 */
+export const apiRequestWithRetry = async (endpoint, options = {}, retryOpts = {}) => {
+  const { retries = 3, baseDelayMs = 400 } = retryOpts;
+  let lastError;
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      return await apiRequest(endpoint, options);
+    } catch (err) {
+      lastError = err;
+      const status = err?.status;
+      const retryable = status && RETRYABLE_STATUS.has(status);
+      if (!retryable || attempt >= retries - 1) throw err;
+      await new Promise((r) => setTimeout(r, baseDelayMs * (attempt + 1)));
+    }
+  }
+  throw lastError;
+};
+
 // 通用的fetch封装，包含错误处理和超时
 export const apiRequest = async (endpoint, options = {}) => {
   const url = buildApiUrl(endpoint);
@@ -75,7 +95,9 @@ export const apiRequest = async (endpoint, options = {}) => {
     clearTimeout(timeoutId);
     
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const err = new Error(`HTTP error! status: ${response.status}`);
+      err.status = response.status;
+      throw err;
     }
     
     const data = await response.json();

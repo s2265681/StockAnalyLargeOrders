@@ -11,7 +11,7 @@ AI 配置表 — 场景 → 模型档位 / token / 超时。
 │ emotion_cycle_* (其余)     │ sonnet │ gpt-5.4  情绪周期研判       │
 │ dragon_tiger               │ sonnet │ gpt-5.4  龙虎榜解读         │
 │ ai_diagnosis_chat          │ sonnet │ gpt-5.4  诊股追问           │
-│ limit_up_*                 │ haiku  │ claude-haiku  题材分组      │
+│ limit_up_*                 │ sonnet │ gpt-5.4  题材分组(JSON)     │
 └────────────────────────────┴────────┴─────────────────────────────┘
 """
 from __future__ import annotations
@@ -34,10 +34,10 @@ _SCENARIO_TEMPLATES: dict[str, tuple[str, int, int, str]] = {
     "emotion_cycle_daily": ("opus", 8192, 150, "当天分析含买卖点"),
     "emotion_cycle_batch": ("sonnet", 16000, 180, "历史批量周期研判"),
     "emotion_cycle_single": ("sonnet", 4096, 120, "单日周期研判"),
-    "limit_up_group": ("haiku", 8192, 90, "涨停梯队分组"),
-    "limit_up_regroup": ("haiku", 4096, 90, "其他概念重分组"),
-    "limit_up_split": ("haiku", 8192, 90, "过大标签拆分"),
-    "limit_up_stock_theme": ("haiku", 256, 60, "单股题材"),
+    "limit_up_group": ("sonnet", 8192, 90, "涨停梯队分组"),
+    "limit_up_regroup": ("sonnet", 4096, 90, "其他概念重分组"),
+    "limit_up_split": ("sonnet", 8192, 90, "过大标签拆分"),
+    "limit_up_stock_theme": ("sonnet", 256, 60, "单股题材"),
     "ai_diagnosis": ("opus", 4096, 180, "诊股报告"),
     "ai_diagnosis_chat": ("sonnet", 1024, 60, "诊股追问"),
     "dragon_tiger": ("sonnet", 2048, 90, "龙虎榜解读"),

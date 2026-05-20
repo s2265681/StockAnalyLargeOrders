@@ -88,9 +88,9 @@ ACCOUNTS: dict[str, AiAccount] = {
         ),
         key_env="AI_ACCOUNT_KALOWAVE_KEY",
         models={
-            # 结构化 JSON（涨停分组/题材标签）：Haiku 快且稳
+            # Kalowave Haiku 常返回空 thinking 块，结构化 JSON 任务走 sonnet/gpt-5.4
             "haiku": os.environ.get(
-                "AI_ACCOUNT_KALOWAVE_HAIKU", "claude-haiku-4-5-20251001",
+                "AI_ACCOUNT_KALOWAVE_HAIKU", "gpt-5.4",
             ),
             # 情绪周期、龙虎榜、诊股追问
             "sonnet": os.environ.get("AI_ACCOUNT_KALOWAVE_SONNET", "gpt-5.4"),

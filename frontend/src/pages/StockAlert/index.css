@@ -9,6 +9,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  gap: 12px;
 }
 
 .alert-page-title {
@@ -16,6 +17,10 @@
   font-weight: 600;
   color: var(--text-primary, #1a1a1a);
   margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }
 
 .alert-table-wrap {
@@ -26,13 +31,99 @@
   margin-bottom: 20px;
 }
 
-.alert-empty {
+.alert-empty,
+.alert-loading {
   text-align: center;
-  padding: 40px;
+  padding: 40px 16px;
   color: var(--text-muted, #aaa);
   font-size: 14px;
 }
 
+/* ── 移动端卡片列表 ── */
+.alert-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+}
+
+.alert-rule-card {
+  background: var(--bg-primary, #fafafa);
+  border: 1px solid var(--border-color, #e8e8e8);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.alert-rule-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.alert-rule-card-stock {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.alert-rule-code {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary, #1a1a1a);
+}
+
+.alert-rule-name {
+  font-size: 12px;
+  color: var(--text-muted, #888);
+}
+
+.alert-rule-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.alert-rule-card-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.alert-rule-label {
+  flex: 0 0 40px;
+  color: var(--text-muted, #999);
+  font-size: 12px;
+}
+
+.alert-rule-value {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-secondary, #555);
+  word-break: break-all;
+}
+
+.alert-rule-email {
+  font-size: 12px;
+}
+
+.alert-rule-card-foot {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color, #eee);
+}
+
+.alert-rule-card-foot .alert-rule-actions .ant-btn {
+  min-width: 36px;
+  min-height: 36px;
+}
+
+/* ── 新增表单 ── */
 .alert-add-area {
   background: var(--bg-card, #fff);
   border-radius: 8px;
@@ -60,6 +151,36 @@
   align-items: center;
 }
 
+.alert-field-label {
+  display: none;
+}
+
+.alert-threshold-field {
+  width: 100%;
+}
+
+.alert-threshold-compact {
+  width: 100%;
+}
+
+.alert-threshold-compact .alert-threshold-dir {
+  width: 80px;
+}
+
+.alert-threshold-compact .alert-threshold-num {
+  width: 100px;
+}
+
+.alert-threshold-compact .alert-threshold-num.seal {
+  width: 110px;
+}
+
+.alert-threshold-none {
+  color: #bbb;
+  font-size: 12px;
+  padding-left: 4px;
+}
+
 .alert-add-actions {
   display: flex;
   justify-content: flex-end;
@@ -84,14 +205,126 @@
   padding: 2px 7px;
   border-radius: 4px;
   font-size: 12px;
+  flex-shrink: 0;
 }
 .alert-status-tag.active    { background: #f6ffed; color: #389e0d; }
 .alert-status-tag.triggered { background: #fff7e6; color: #d46b08; }
 .alert-status-tag.disabled  { background: #f5f5f5; color: #999; }
 
+/* ── 移动端适配 ── */
 @media (max-width: 768px) {
+  .alert-page {
+    padding: 12px 10px;
+    min-height: calc(100vh - 56px);
+  }
+
+  .alert-page-header {
+    flex-direction: column;
+    align-items: stretch;
+    margin-bottom: 14px;
+  }
+
+  .alert-page-title {
+    font-size: 18px;
+    justify-content: space-between;
+  }
+
+  .alert-add-btn {
+    width: 100%;
+    height: 40px;
+  }
+
+  .alert-table-wrap {
+    border-radius: 10px;
+    margin-bottom: 14px;
+  }
+
+  .alert-empty,
+  .alert-loading {
+    padding: 32px 16px;
+    font-size: 13px;
+  }
+
+  .alert-add-area {
+    padding: 14px;
+    border-radius: 10px;
+  }
+
+  .alert-add-title {
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+
+  .alert-add-rows {
+    gap: 14px;
+  }
+
   .alert-add-row {
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: 14px;
+    background: var(--bg-primary, #fafafa);
+    border: 1px solid var(--border-color, #e8e8e8);
+    border-radius: 10px;
+    position: relative;
+  }
+
+  .alert-field {
+    margin-bottom: 10px;
+  }
+
+  .alert-field:last-of-type {
+    margin-bottom: 0;
+  }
+
+  .alert-field-label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-muted, #999);
+    margin-bottom: 4px;
+  }
+
+  .alert-field .ant-select,
+  .alert-field .ant-input {
+    width: 100% !important;
+  }
+
+  .alert-field-threshold {
+    margin-bottom: 10px;
+  }
+
+  .alert-threshold-compact {
+    display: flex !important;
+    width: 100% !important;
+  }
+
+  .alert-threshold-compact .alert-threshold-dir {
+    width: 88px !important;
+    flex-shrink: 0;
+  }
+
+  .alert-threshold-compact .alert-threshold-num,
+  .alert-threshold-compact .alert-threshold-num.seal {
+    flex: 1;
+    width: auto !important;
+    min-width: 0;
+  }
+
+  .alert-row-delete {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    min-width: 32px;
+    min-height: 32px;
+  }
+
+  .alert-add-actions {
+    flex-direction: column-reverse;
+    margin-top: 14px;
+  }
+
+  .alert-add-actions .ant-btn {
+    width: 100%;
+    height: 40px;
   }
 }

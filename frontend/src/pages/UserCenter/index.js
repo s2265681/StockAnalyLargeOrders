@@ -14,6 +14,8 @@ export default function UserCenter() {
   const [pwdLoading, setPwdLoading] = useState(false);
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
+  const [todayUserCount, setTodayUserCount] = useState(null);
+  const [dauLoading, setDauLoading] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -21,7 +23,19 @@ export default function UserCenter() {
       return;
     }
     fetchOrders();
+    fetchTodayUserCount();
   }, [user, navigate]);
+
+  const fetchTodayUserCount = async () => {
+    setDauLoading(true);
+    try {
+      const res = await api.get('/api/analytics/dashboard-dau');
+      if (res.success && res.data != null) {
+        setTodayUserCount(res.data.count);
+      }
+    } catch { /* ignore */ }
+    setDauLoading(false);
+  };
 
   const fetchOrders = async () => {
     setOrdersLoading(true);
@@ -131,6 +145,11 @@ export default function UserCenter() {
             </div>
           ))
         )}
+      </div>
+
+      <div className="uc-today-users">
+        今日使用人数：
+        {dauLoading ? '…' : (todayUserCount != null ? todayUserCount : '--')}
       </div>
     </div>
   );

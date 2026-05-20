@@ -98,6 +98,14 @@ const StockDashboard = () => {
   const [trading, setTrading] = useState(isTradeTime());
   const [currentTime, setCurrentTime] = useState(() => new Date().toLocaleTimeString('zh-CN', { hour12: false }));
 
+  // 记录今日看盘日活（幂等，同一天多次进入只算一个账号）
+  useEffect(() => {
+    apiRequest('/api/analytics/page-visit', {
+      method: 'POST',
+      body: JSON.stringify({ page: 'stock-dashboard' }),
+    }).catch(() => {});
+  }, []);
+
   // 每秒刷新时间，每分钟刷新开盘状态
   useEffect(() => {
     const timer = setInterval(() => {

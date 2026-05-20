@@ -6,6 +6,21 @@ import './index.css';
 
 const { Option } = Select;
 
+const MOBILE_QUERY = '(max-width: 768px)';
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia(MOBILE_QUERY).matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(MOBILE_QUERY);
+    const onChange = (e) => setIsMobile(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+  return isMobile;
+}
+
 const ALERT_TYPE_OPTIONS = [
   { value: 'limit_up',   label: '涨停' },
   { value: 'limit_down', label: '跌停' },
@@ -110,26 +125,30 @@ export default function StockAlert() {
 
   const thresholdCell = (row, idx) => {
     if (row.alert_type === 'change_pct') return (
-      <Space.Compact style={{ width: '100%' }}>
-        <Select value={row.direction} onChange={v => updateRow(idx, 'direction', v)} style={{ width: 80 }}>
-          <Option value="above">涨超</Option>
-          <Option value="below">跌超</Option>
-        </Select>
-        <InputNumber value={row.threshold} onChange={v => updateRow(idx, 'threshold', v)}
-          min={0.1} max={20} step={0.5} placeholder="%" addonAfter="%" style={{ width: 100 }} />
-      </Space.Compact>
+      <div className="alert-threshold-field">
+        <Space.Compact className="alert-threshold-compact">
+          <Select value={row.direction} onChange={v => updateRow(idx, 'direction', v)} className="alert-threshold-dir">
+            <Option value="above">涨超</Option>
+            <Option value="below">跌超</Option>
+          </Select>
+          <InputNumber value={row.threshold} onChange={v => updateRow(idx, 'threshold', v)}
+            min={0.1} max={20} step={0.5} placeholder="%" addonAfter="%" className="alert-threshold-num" />
+        </Space.Compact>
+      </div>
     );
     if (row.alert_type === 'seal_order') return (
-      <Space.Compact style={{ width: '100%' }}>
-        <Select value={row.direction} onChange={v => updateRow(idx, 'direction', v)} style={{ width: 80 }}>
-          <Option value="above">超过</Option>
-          <Option value="below">低于</Option>
-        </Select>
-        <InputNumber value={row.threshold} onChange={v => updateRow(idx, 'threshold', v)}
-          min={1} placeholder="万元" addonAfter="万元" style={{ width: 110 }} />
-      </Space.Compact>
+      <div className="alert-threshold-field">
+        <Space.Compact className="alert-threshold-compact">
+          <Select value={row.direction} onChange={v => updateRow(idx, 'direction', v)} className="alert-threshold-dir">
+            <Option value="above">超过</Option>
+            <Option value="below">低于</Option>
+          </Select>
+          <InputNumber value={row.threshold} onChange={v => updateRow(idx, 'threshold', v)}
+            min={1} placeholder="万元" addonAfter="万元" className="alert-threshold-num seal" />
+        </Space.Compact>
+      </div>
     );
-    return <span style={{ color: '#bbb', fontSize: 12, paddingLeft: 4 }}>无需设置</span>;
+    return <span className="alert-threshold-none">无需设置</span>;
   };
 
   const thresholdText = (r) => {
@@ -139,6 +158,29 @@ export default function StockAlert() {
       return `${r.direction === 'above' ? '超过' : '低于'} ${r.threshold ?? '?'} 万元`;
     return '—';
   };
+
+  const renderRuleActions = (r) => (
+    <Space size={4} className="alert-rule-actions">
+      {r.status === 'triggered' && (
+        <Tooltip title="重新激活">
+          <Button size="small" icon={<ReloadOutlined />}
+            onClick={() => handleAction(`/api/alert-rules/${r.id}/reactivate`, 'POST', '已激活')} />
+        </Tooltip>
+      )}
+      {r.status === 'active' && (
+        <Tooltip title="停用">
+          <Button size="small" icon={<PauseOutlined />}
+            onClick={() => handleAction(`/api/alert-rules/${r.id}/disable`, 'POST', '已停用')} />
+        </Tooltip>
+      )}
+      <Popconfirm title="确认删除此预警规则？" onConfirm={() => handleAction(`/api/alert-rules/${r.id}`, 'DELETE', '已删除')}
+        okText="删除" cancelText="取消">
+        <Button size="small" icon={<DeleteOutlined />} danger />
+      </Popconfirm>
+    </Space>
+  );
+
+  const isMobile = useIsMobile();
 
   const columns = [
     { title: '股票', dataIndex: 'code', width: 90,
@@ -152,27 +194,41 @@ export default function StockAlert() {
       render: s => <span className={`alert-status-tag ${s}`}>{STATUS_LABELS[s] || s}</span> },
     { title: '触发时间', dataIndex: 'triggered_at', width: 145,
       render: t => t || <span style={{ color: '#bbb' }}>—</span> },
-    { title: '操作', width: 110, render: (_, r) => (
-      <Space size={4}>
-        {r.status === 'triggered' && (
-          <Tooltip title="重新激活">
-            <Button size="small" icon={<ReloadOutlined />}
-              onClick={() => handleAction(`/api/alert-rules/${r.id}/reactivate`, 'POST', '已激活')} />
-          </Tooltip>
-        )}
-        {r.status === 'active' && (
-          <Tooltip title="停用">
-            <Button size="small" icon={<PauseOutlined />}
-              onClick={() => handleAction(`/api/alert-rules/${r.id}/disable`, 'POST', '已停用')} />
-          </Tooltip>
-        )}
-        <Popconfirm title="确认删除此预警规则？" onConfirm={() => handleAction(`/api/alert-rules/${r.id}`, 'DELETE', '已删除')}
-          okText="删除" cancelText="取消">
-          <Button size="small" icon={<DeleteOutlined />} danger />
-        </Popconfirm>
-      </Space>
-    )},
+    { title: '操作', width: 110, render: (_, r) => renderRuleActions(r) },
   ];
+
+  const renderMobileRuleCard = (r) => (
+    <div className="alert-rule-card" key={r.id}>
+      <div className="alert-rule-card-head">
+        <div className="alert-rule-card-stock">
+          <span className="alert-rule-code">{r.code}</span>
+          {r.stock_name && <span className="alert-rule-name">{r.stock_name}</span>}
+        </div>
+        <span className={`alert-status-tag ${r.status}`}>{STATUS_LABELS[r.status] || r.status}</span>
+      </div>
+      <div className="alert-rule-card-body">
+        <div className="alert-rule-card-row">
+          <span className="alert-rule-label">类型</span>
+          <span className={`alert-type-tag ${r.alert_type}`}>{TYPE_LABELS[r.alert_type] || r.alert_type}</span>
+        </div>
+        <div className="alert-rule-card-row">
+          <span className="alert-rule-label">阈值</span>
+          <span className="alert-rule-value">{thresholdText(r)}</span>
+        </div>
+        <div className="alert-rule-card-row">
+          <span className="alert-rule-label">邮箱</span>
+          <span className="alert-rule-value alert-rule-email">{r.email}</span>
+        </div>
+        {r.triggered_at && (
+          <div className="alert-rule-card-row">
+            <span className="alert-rule-label">触发</span>
+            <span className="alert-rule-value">{r.triggered_at}</span>
+          </div>
+        )}
+      </div>
+      <div className="alert-rule-card-foot">{renderRuleActions(r)}</div>
+    </div>
+  );
 
   return (
     <div className="alert-page">
@@ -185,16 +241,22 @@ export default function StockAlert() {
             </span>
           )}
         </h1>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setShowAdd(v => !v)}>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => setShowAdd(v => !v)} className="alert-add-btn">
           {showAdd ? '收起' : '新增预警'}
         </Button>
       </div>
 
       <div className="alert-table-wrap">
-        {!loading && rules.length === 0
-          ? <div className="alert-empty">暂无预警规则，点击「新增预警」开始设置</div>
-          : <Table rowKey="id" columns={columns} dataSource={rules}
-              loading={loading} pagination={false} size="small" />}
+        {!loading && rules.length === 0 ? (
+          <div className="alert-empty">暂无预警规则，点击「新增预警」开始设置</div>
+        ) : isMobile ? (
+          <div className="alert-card-list">
+            {loading ? <div className="alert-loading">加载中…</div> : rules.map(renderMobileRuleCard)}
+          </div>
+        ) : (
+          <Table rowKey="id" columns={columns} dataSource={rules}
+            loading={loading} pagination={false} size="small" />
+        )}
       </div>
 
       {showAdd && (
@@ -203,15 +265,27 @@ export default function StockAlert() {
           <div className="alert-add-rows">
             {addRows.map((row, idx) => (
               <div className="alert-add-row" key={row._key}>
-                <Input placeholder="股票代码" value={row.code} maxLength={6}
-                  onChange={e => updateRow(idx, 'code', e.target.value.trim())} />
-                <Select value={row.alert_type} onChange={v => updateRow(idx, 'alert_type', v)} style={{ width: '100%' }}>
-                  {ALERT_TYPE_OPTIONS.map(o => <Option key={o.value} value={o.value}>{o.label}</Option>)}
-                </Select>
-                {thresholdCell(row, idx)}
-                <Input placeholder="收件邮箱" value={row.email}
-                  onChange={e => updateRow(idx, 'email', e.target.value.trim())} />
-                <Button size="small" danger icon={<DeleteOutlined />}
+                <div className="alert-field">
+                  <label className="alert-field-label">股票代码</label>
+                  <Input placeholder="如 600519" value={row.code} maxLength={6}
+                    onChange={e => updateRow(idx, 'code', e.target.value.trim())} />
+                </div>
+                <div className="alert-field">
+                  <label className="alert-field-label">预警类型</label>
+                  <Select value={row.alert_type} onChange={v => updateRow(idx, 'alert_type', v)}>
+                    {ALERT_TYPE_OPTIONS.map(o => <Option key={o.value} value={o.value}>{o.label}</Option>)}
+                  </Select>
+                </div>
+                <div className="alert-field alert-field-threshold">
+                  <label className="alert-field-label">阈值</label>
+                  {thresholdCell(row, idx)}
+                </div>
+                <div className="alert-field">
+                  <label className="alert-field-label">收件邮箱</label>
+                  <Input placeholder="your@email.com" value={row.email}
+                    onChange={e => updateRow(idx, 'email', e.target.value.trim())} />
+                </div>
+                <Button className="alert-row-delete" size="small" danger icon={<DeleteOutlined />}
                   disabled={addRows.length === 1} onClick={() => setAddRows(rows => rows.filter((_, i) => i !== idx))} />
               </div>
             ))}

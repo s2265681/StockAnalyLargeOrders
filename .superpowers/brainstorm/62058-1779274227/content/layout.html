@@ -1,0 +1,76 @@
+<h2>盘前资讯挂在情绪周期页面 — 选一个布局</h2>
+<p class="subtitle">两个新模块：① 海外市场夜盘涨跌（美股三大指数、恒生、日经）② AI 资讯摘要（今日关注板块）</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="A" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="font-size:11px;color:#666;padding:10px;background:#f5f5f5;border-radius:6px;line-height:1.8">
+        <div style="background:#fff;border-radius:4px;padding:6px 10px;margin-bottom:6px;display:flex;gap:16px;flex-wrap:wrap;font-size:11px">
+          <span>🇺🇸 道指 <b style="color:#f5222d">+1.2%</b></span>
+          <span>纳指 <b style="color:#f5222d">+0.8%</b></span>
+          <span>🇭🇰 恒指 <b style="color:#52c41a">-0.3%</b></span>
+          <span>🇯🇵 日经 <b style="color:#f5222d">+1.5%</b></span>
+          <span style="margin-left:auto;color:#aaa">📰 AI摘要：科技股走强，关注半导体 / 新能源板块…</span>
+        </div>
+        <div style="background:#fff;border-radius:4px;height:80px;display:flex;align-items:center;justify-content:center;color:#bbb">[ 原情绪周期图表 ]</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — 顶部横条</h3>
+      <p>海外行情 + AI 摘要折叠在图表上方一行，展开可看详情。<br/>不占额外空间，默认折叠</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="B" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="font-size:11px;color:#666;padding:10px;background:#f5f5f5;border-radius:6px;line-height:1.8">
+        <div style="background:#fff;border-radius:4px;height:80px;display:flex;align-items:center;justify-content:center;color:#bbb;margin-bottom:6px">[ 原情绪周期图表 ]</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <div style="background:#fff;border-radius:4px;padding:8px">
+            <div style="font-weight:600;margin-bottom:4px;font-size:11px">🌍 海外市场</div>
+            <div style="display:flex;flex-direction:column;gap:3px;font-size:10px">
+              <span>道指 <b style="color:#f5222d">+1.2%</b></span>
+              <span>纳指 <b style="color:#f5222d">+0.8%</b></span>
+              <span>恒指 <b style="color:#52c41a">-0.3%</b></span>
+              <span>日经 <b style="color:#f5222d">+1.5%</b></span>
+            </div>
+          </div>
+          <div style="background:#fff;border-radius:4px;padding:8px">
+            <div style="font-weight:600;margin-bottom:4px;font-size:11px">📰 AI 今日摘要</div>
+            <div style="font-size:10px;color:#666;line-height:1.6">· 半导体板块：美股费城半导体指数涨2%，关注国内芯片方向<br/>· 新能源：锂价企稳，电池链或有修复机会</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — 图表下方双列卡片（推荐）</h3>
+      <p>图表下面左右并排：左侧海外数字，右侧 AI 摘要。信息密度适中，阅读顺序自然</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="C" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="font-size:11px;color:#666;padding:10px;background:#f5f5f5;border-radius:6px;display:flex;gap:6px">
+        <div style="flex:1;background:#fff;border-radius:4px;height:110px;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:10px">[ 情绪周期图 ]</div>
+        <div style="width:130px;display:flex;flex-direction:column;gap:6px">
+          <div style="background:#fff;border-radius:4px;padding:8px;font-size:10px">
+            <div style="font-weight:600;margin-bottom:3px">🌍 海外</div>
+            <div>道指 <b style="color:#f5222d">+1.2%</b></div>
+            <div>纳指 <b style="color:#f5222d">+0.8%</b></div>
+            <div>恒指 <b style="color:#52c41a">-0.3%</b></div>
+          </div>
+          <div style="background:#fff;border-radius:4px;padding:8px;font-size:10px;flex:1">
+            <div style="font-weight:600;margin-bottom:3px">📰 AI摘要</div>
+            <div style="color:#666;line-height:1.5">科技/半导体<br/>新能源修复</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — 图表右侧边栏</h3>
+      <p>图表右边竖排两个小卡片。但宽屏才好看，窄屏会压缩图表空间</p>
+    </div>
+  </div>
+
+</div>

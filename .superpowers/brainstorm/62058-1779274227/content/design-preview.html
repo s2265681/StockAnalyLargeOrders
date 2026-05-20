@@ -1,0 +1,84 @@
+<h2>盘前资讯面板 — 交互预览</h2>
+<p class="subtitle">情绪周期页面顶部横条效果，点击「AI摘要」文字触发弹窗</p>
+
+<div class="mockup">
+  <div class="mockup-header">情绪周期页面（顶部区域）</div>
+  <div class="mockup-body" style="padding:0">
+
+    <!-- 顶部横条 -->
+    <div id="brief-bar" style="background:#fff;border-bottom:1px solid #f0f0f0;padding:8px 16px;display:flex;align-items:center;gap:0;flex-wrap:wrap;cursor:default">
+      <span style="font-size:11px;color:#999;margin-right:12px;white-space:nowrap">盘前参考</span>
+
+      <!-- 海外指数 -->
+      <span style="font-size:12px;margin-right:16px;white-space:nowrap">🇺🇸 道指 <b style="color:#f5222d">+1.23%</b></span>
+      <span style="font-size:12px;margin-right:16px;white-space:nowrap">纳指 <b style="color:#f5222d">+0.87%</b></span>
+      <span style="font-size:12px;margin-right:16px;white-space:nowrap">标普 <b style="color:#f5222d">+0.64%</b></span>
+      <span style="font-size:12px;margin-right:16px;white-space:nowrap">🇭🇰 恒指 <b style="color:#52c41a">-0.31%</b></span>
+      <span style="font-size:12px;margin-right:16px;white-space:nowrap">🇯🇵 日经 <b style="color:#f5222d">+1.54%</b></span>
+
+      <span style="color:#e0e0e0;margin-right:16px">|</span>
+
+      <!-- AI摘要入口 -->
+      <span id="summary-btn" onclick="openModal()"
+        style="font-size:12px;color:#1677ff;cursor:pointer;white-space:nowrap;max-width:320px;overflow:hidden;text-overflow:ellipsis;display:inline-block">
+        📰 AI摘要：科技股走强，半导体夜盘领涨，关注A股芯片方向 →
+      </span>
+
+      <span style="margin-left:auto;font-size:11px;color:#bbb;white-space:nowrap">8:30 更新</span>
+    </div>
+
+    <!-- 原页面内容占位 -->
+    <div style="height:120px;background:#fafafa;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:13px">
+      [ 情绪周期图表 · 不变 ]
+    </div>
+  </div>
+</div>
+
+<!-- 弹窗 -->
+<div id="modal-mask" onclick="closeModal()"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center">
+  <div onclick="event.stopPropagation()"
+    style="background:#fff;border-radius:12px;max-width:560px;width:90%;max-height:80vh;overflow-y:auto;padding:24px;position:relative">
+    <button onclick="closeModal()"
+      style="position:absolute;top:16px;right:16px;border:none;background:none;font-size:18px;cursor:pointer;color:#999">✕</button>
+    <h3 style="margin:0 0 4px;font-size:16px">今日盘前 AI 摘要</h3>
+    <p style="margin:0 0 16px;font-size:12px;color:#aaa">2026-05-20 08:30 生成</p>
+
+    <div style="font-size:13px;line-height:2;color:#333">
+      <p><b>🇺🇸 美股夜盘</b></p>
+      <p>三大指数集体上涨，道指涨1.23%，纳指涨0.87%。费城半导体指数涨2.1%，英伟达、AMD 盘后均有上涨。市场对 AI 算力需求预期持续乐观。</p>
+
+      <p><b>📌 今日关注板块</b></p>
+      <ul style="margin:0;padding-left:20px;line-height:2">
+        <li><b>半导体/芯片</b>：受美股费半指数带动，国内半导体方向值得关注，重点看封测、设备龙头</li>
+        <li><b>新能源车</b>：锂价小幅企稳，电池链龙头昨日缩量调整，今日或有修复机会</li>
+        <li><b>AI算力</b>：英伟达财报超预期，国内算力基础设施方向可跟踪</li>
+      </ul>
+
+      <p><b>⚠️ 风险提示</b></p>
+      <p>恒指小幅下跌，港股承压。美联储官员讲话偏鹰，关注今日A股开盘情绪。</p>
+    </div>
+  </div>
+</div>
+
+<script>
+function openModal() {
+  const m = document.getElementById('modal-mask');
+  m.style.display = 'flex';
+}
+function closeModal() {
+  const m = document.getElementById('modal-mask');
+  m.style.display = 'none';
+}
+</script>
+
+<div class="section" style="margin-top:24px">
+  <h3>设计说明</h3>
+  <ul style="font-size:13px;line-height:2;color:#555;padding-left:20px">
+    <li>横条高度约 36px，不折叠，直接显示（不影响图表，成本低）</li>
+    <li>点击「AI摘要：…→」文字弹出完整摘要弹窗</li>
+    <li>海外数据：每次进页面时实时拉取新浪财经接口（5 个指数，curl 子进程）</li>
+    <li>AI 摘要：每日 8:30 定时任务生成，存库，进页面直接读取</li>
+    <li>非交易日/还未生成时，摘要入口显示「暂无今日摘要」，不报错</li>
+  </ul>
+</div>

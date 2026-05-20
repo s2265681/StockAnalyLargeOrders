@@ -140,3 +140,11 @@
     gap: 6px;
   }
 }
+
+.uc-today-users {
+  margin-top: 8px;
+  padding: 20px 0 32px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-muted);
+}

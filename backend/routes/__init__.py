@@ -15,6 +15,7 @@ from .orders import orders_bp
 from .ai_diagnosis import ai_diagnosis_bp
 from .ai_account import ai_account_bp
 from .alert_rules import alert_rules_bp
+from .analytics import analytics_bp
 
 __all__ = [
     'stock_basic_bp',
@@ -33,4 +34,5 @@ __all__ = [
     'ai_diagnosis_bp',
     'ai_account_bp',
     'alert_rules_bp',
+    'analytics_bp',
 ]

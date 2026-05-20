@@ -10,6 +10,19 @@ logger = logging.getLogger(__name__)
 POLL_INTERVAL_TRADING = 3    # 交易时段轮询间隔（秒）
 POLL_INTERVAL_CLOSED = 60    # 非交易时段休眠间隔（秒）
 
+# 内存状态，供 /api/alert-rules/monitor-status 接口读取
+_status = {
+    'running': False,       # greenlet 是否已启动
+    'healthy': False,       # 最近一次循环是否正常
+    'sleeping': False,      # 当前是否处于非交易时段休眠
+    'last_check_at': None,  # 最近一次成功执行检查的时间（ISO 字符串）
+    'last_error': None,     # 最近一次异常信息
+}
+
+
+def get_monitor_status() -> dict:
+    return dict(_status)
+
 
 def _is_trade_time() -> bool:
     now = datetime.now()
@@ -107,15 +120,24 @@ def start_alert_monitor(socketio, adapter) -> None:
     """在 Flask-SocketIO eventlet 上下文中启动预警监控 greenlet"""
 
     def _monitor_loop():
+        _status['running'] = True
+        _status['healthy'] = True
         logger.info("预警监控服务已启动")
         while True:
             try:
                 if _is_trade_time():
+                    _status['sleeping'] = False
                     _run_check_cycle(adapter)
+                    _status['healthy'] = True
+                    _status['last_check_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    _status['last_error'] = None
                     socketio.sleep(POLL_INTERVAL_TRADING)
                 else:
+                    _status['sleeping'] = True
                     socketio.sleep(POLL_INTERVAL_CLOSED)
             except Exception as e:
+                _status['healthy'] = False
+                _status['last_error'] = str(e)
                 logger.error("预警监控循环异常: %s", e)
                 socketio.sleep(10)
 

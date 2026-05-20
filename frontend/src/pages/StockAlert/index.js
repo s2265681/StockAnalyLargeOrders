@@ -18,12 +18,34 @@ const STATUS_LABELS = { active: '监控中', triggered: '已触发', disabled: '
 
 const EMPTY_ROW = () => ({ _key: Date.now() + Math.random(), code: '', alert_type: 'limit_up', threshold: null, direction: 'above', email: '' });
 
+const MONITOR_LABELS = {
+  running:  { color: '#52c41a', text: '监控正常' },
+  sleeping: { color: '#8c8c8c', text: '非交易时段' },
+  error:    { color: '#ff4d4f', text: '监控异常' },
+  stopped:  { color: '#ff4d4f', text: '监控未启动' },
+};
+
+function MonitorBadge({ status }) {
+  const cfg = MONITOR_LABELS[status] || MONITOR_LABELS.stopped;
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: cfg.color }}>
+      <span style={{
+        width: 8, height: 8, borderRadius: '50%', background: cfg.color,
+        boxShadow: status === 'running' ? `0 0 0 2px ${cfg.color}33` : 'none',
+        display: 'inline-block',
+      }} />
+      {cfg.text}
+    </span>
+  );
+}
+
 export default function StockAlert() {
-  const [rules, setRules]     = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [showAdd, setShowAdd] = useState(false);
-  const [addRows, setAddRows] = useState([EMPTY_ROW()]);
-  const [saving, setSaving]   = useState(false);
+  const [rules, setRules]         = useState([]);
+  const [loading, setLoading]     = useState(false);
+  const [showAdd, setShowAdd]     = useState(false);
+  const [addRows, setAddRows]     = useState([EMPTY_ROW()]);
+  const [saving, setSaving]       = useState(false);
+  const [monitorStatus, setMonitorStatus] = useState(null);
 
   const fetchRules = useCallback(async () => {
     setLoading(true);
@@ -34,7 +56,20 @@ export default function StockAlert() {
     finally { setLoading(false); }
   }, []);
 
+  const fetchMonitorStatus = useCallback(async () => {
+    try {
+      const res = await apiRequest('/api/alert-rules/monitor-status');
+      if (res.success) setMonitorStatus(res.data.display);
+    } catch { /* 静默失败，不影响主流程 */ }
+  }, []);
+
   useEffect(() => { fetchRules(); }, [fetchRules]);
+
+  useEffect(() => {
+    fetchMonitorStatus();
+    const timer = setInterval(fetchMonitorStatus, 30000);
+    return () => clearInterval(timer);
+  }, [fetchMonitorStatus]);
 
   const handleAction = async (url, method = 'POST', successMsg = '操作成功') => {
     try {
@@ -144,6 +179,11 @@ export default function StockAlert() {
       <div className="alert-page-header">
         <h1 className="alert-page-title">
           <BellOutlined style={{ marginRight: 8 }} />条件预警
+          {monitorStatus && (
+            <span style={{ marginLeft: 12, fontWeight: 400 }}>
+              <MonitorBadge status={monitorStatus} />
+            </span>
+          )}
         </h1>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => setShowAdd(v => !v)}>
           {showAdd ? '收起' : '新增预警'}

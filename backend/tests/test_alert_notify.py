@@ -32,6 +32,16 @@ class TestAlertNotify(unittest.TestCase):
         self.assertIn('涨停', subject)
         self.assertIn('000001', subject)
 
+    def test_build_alert_email_limit_down(self):
+        from utils.alert_notify import build_alert_email
+        rule = {'code': '600036', 'stock_name': '招商银行', 'alert_type': 'limit_down',
+                'threshold': None, 'direction': None}
+        quote = {'change_percent': -10.01, 'price': 36.0}
+        subject, body = build_alert_email(rule, quote, {'is_limit_up': False})
+        self.assertIn('跌停', subject)
+        self.assertIn('600036', subject)
+        self.assertIn('-10.01', body)
+
     def test_build_alert_email_seal_order(self):
         from utils.alert_notify import build_alert_email
         rule = {'code': '300001', 'stock_name': '特锐德', 'alert_type': 'seal_order',

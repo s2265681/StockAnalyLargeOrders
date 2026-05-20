@@ -13,6 +13,7 @@ import {
   DashboardOutlined,
   ClockCircleOutlined,
   SafetyCertificateOutlined,
+  BellOutlined,
 } from '@ant-design/icons';
 import { useAtom } from 'jotai';
 import Home from './pages/Home';
@@ -26,6 +27,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import UserCenter from './pages/UserCenter';
 import PermissionCenter from './pages/PermissionCenter';
+import StockAlert from './pages/StockAlert';
 import PermissionGuard from './components/PermissionGuard';
 import ThemeToggle, { useTheme } from './components/ThemeToggle';
 import { useAuth } from './context/AuthContext';
@@ -53,6 +55,7 @@ const NAV_ITEMS = [
   { key: '/emotion-cycle', icon: <DashboardOutlined />, label: '情绪周期' },
   { key: '/auction-grab', icon: <ClockCircleOutlined />, label: '竞价抢筹' },
   { key: '/ai-diagnosis', icon: <RobotOutlined />, label: 'AI诊股' },
+  { key: '/alert', icon: <BellOutlined />, label: '条件预警' },
   { key: '/permission-center', icon: <SafetyCertificateOutlined />, label: '权限中心' },
 ];
 
@@ -328,6 +331,7 @@ function AppInner() {
             path="/user-center"
             element={<RequireAuth><UserCenter /></RequireAuth>}
           />
+          <Route path="/alert" element={<RequireAuth><StockAlert /></RequireAuth>} />
           <Route path="*" element={<Navigate to="/stock-dashboard" replace />} />
         </Routes>
       </Content>

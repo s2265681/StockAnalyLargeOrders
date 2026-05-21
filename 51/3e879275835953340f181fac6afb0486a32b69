@@ -1,0 +1,56 @@
+backend/tests/test_rise_count.py
+  s_de2e20b53ef69b::t_0a6e006ab32287 4-11,14-22,24-29,32-47,50-53,55,57-62,74-106
+backend/config/ai_prompts.py
+  s_de2e20b53ef69b::t_00dd7d2ebdd885 122-123
+  s_de2e20b53ef69b::t_9f08691ec22676 15-17,168-170,272-274
+frontend/src/pages/EmotionCycle/index.js
+  s_de2e20b53ef69b::t_c8c82b63548d12 46
+backend/jobs/intraday_refresh.py
+  s_de2e20b53ef69b::t_0c53ea9f73edcc 49-50
+  s_de2e20b53ef69b::t_1c781eb9e0fca9 18
+backend/services/eastmoney_free.py
+  s_6935aff8103032::t_6f61acdf23fc00 6
+  s_6935aff8103032::t_a7f31edba5aa27 60-82
+  s_6935aff8103032::t_796f15be39b8f2 476-514,516-523,535-537
+backend/services/limit_up_monitor.py
+  s_6935aff8103032::t_ba834261baf788 94
+  s_6935aff8103032::t_4e446ada20d271 198-204,216
+backend/services/alert_monitor.py
+  s_6935aff8103032::t_0a25ac9e710ca6 64-65
+backend/tests/test_alert_monitor.py
+  s_6935aff8103032::t_e2a13acd13d1d0 50,54,59,63,67,71,75-80
+backend/routes/emotion_cycle.py
+  s_de2e20b53ef69b::t_2eba265fcbbc86 977,982-985
+  s_de2e20b53ef69b::t_370d51225cfe1a 530
+  s_de2e20b53ef69b::t_9ab24bbc0d7fbf 1072
+  s_de2e20b53ef69b::t_5797a9cb1ea555 541-542
+  s_de2e20b53ef69b::t_c8654a6e0c3281 496-499,505-513
+  s_de2e20b53ef69b::t_e63a24921a592f 134-143,145-154,169-176,178,190-198,200,213-221,223,227-230,233-236,239-258,264-283,287,290-298,302,304-379,381-422
+  s_de2e20b53ef69b::t_b320a833664125 500-504
+  s_de2e20b53ef69b::t_82665a52080dc7 1371,1376-1377
+  s_de2e20b53ef69b::t_7aef2e8e2087b5 1446
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "513e879275835953340f181fac6afb0486a32b69",
+  "prompts": {},
+  "sessions": {
+    "s_6935aff8103032": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "e107dcf5-f98b-4d44-b6b4-c022a1e32e7a",
+        "model": "composer-2.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_de2e20b53ef69b": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "9ddda190-c3e5-42b8-a809-b3ed3feaa04d",
+        "model": "composer-2.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

@@ -43,7 +43,7 @@ const stageColorMap = {
 };
 
 const seriesConfig = [
-  { key: 'rise_count', name: '上涨家数', color: '#faad14', yAxisIndex: 0 },
+  { key: 'rise_ratio', name: '上涨比例', color: '#faad14', yAxisIndex: 0 },
   { key: 'consec_limit', name: '连板家数', color: '#52c41a', yAxisIndex: 0, showLabel: true },
   { key: 'pressure_height', name: '压力高度', color: '#ff7a45', yAxisIndex: 0 },
   { key: 'latest_height', name: '最新高度', color: '#ff4d4f', yAxisIndex: 0 },

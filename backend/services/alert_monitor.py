@@ -61,6 +61,8 @@ def check_rule_condition(rule: dict, quote, limit_up_data: dict) -> bool:
     if alert_type == 'seal_order':
         if not limit_up_data.get('is_limit_up', False):
             return False
+        if not limit_up_data.get('seal_data_valid', False):
+            return False
         if threshold is None:
             return False
         seal_lots = int(limit_up_data.get('seal_volume_lots', 0) or 0)

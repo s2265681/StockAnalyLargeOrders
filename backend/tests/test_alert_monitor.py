@@ -47,32 +47,37 @@ class TestCheckRuleCondition(unittest.TestCase):
 
     def test_seal_order_below_triggered(self):
         rule = {'alert_type': 'seal_order', 'threshold': 500.0, 'direction': 'below'}
-        self.assertTrue(self._check(rule, {}, {'is_limit_up': True, 'seal_volume_lots': 300}))
+        self.assertTrue(self._check(rule, {}, {'is_limit_up': True, 'seal_volume_lots': 300, 'seal_data_valid': True}))
 
     def test_seal_order_below_not_triggered(self):
         rule = {'alert_type': 'seal_order', 'threshold': 500.0, 'direction': 'below'}
-        self.assertFalse(self._check(rule, {}, {'is_limit_up': True, 'seal_volume_lots': 800}))
+        self.assertFalse(self._check(rule, {}, {'is_limit_up': True, 'seal_volume_lots': 800, 'seal_data_valid': True}))
 
     def test_seal_order_below_default_triggered(self):
         # direction=None 默认走 below 逻辑
         rule = {'alert_type': 'seal_order', 'threshold': 500.0, 'direction': None}
-        self.assertTrue(self._check(rule, {}, {'is_limit_up': True, 'seal_volume_lots': 300}))
+        self.assertTrue(self._check(rule, {}, {'is_limit_up': True, 'seal_volume_lots': 300, 'seal_data_valid': True}))
 
     def test_seal_order_above_triggered(self):
         rule = {'alert_type': 'seal_order', 'threshold': 500.0, 'direction': 'above'}
-        self.assertTrue(self._check(rule, {}, {'is_limit_up': True, 'seal_volume_lots': 800}))
+        self.assertTrue(self._check(rule, {}, {'is_limit_up': True, 'seal_volume_lots': 800, 'seal_data_valid': True}))
 
     def test_seal_order_above_not_triggered(self):
         rule = {'alert_type': 'seal_order', 'threshold': 500.0, 'direction': 'above'}
-        self.assertFalse(self._check(rule, {}, {'is_limit_up': True, 'seal_volume_lots': 300}))
+        self.assertFalse(self._check(rule, {}, {'is_limit_up': True, 'seal_volume_lots': 300, 'seal_data_valid': True}))
 
     def test_seal_order_above_exact_boundary(self):
         rule = {'alert_type': 'seal_order', 'threshold': 500.0, 'direction': 'above'}
-        self.assertTrue(self._check(rule, {}, {'is_limit_up': True, 'seal_volume_lots': 500}))
+        self.assertTrue(self._check(rule, {}, {'is_limit_up': True, 'seal_volume_lots': 500, 'seal_data_valid': True}))
 
     def test_seal_order_not_limit_up(self):
         rule = {'alert_type': 'seal_order', 'threshold': 500.0, 'direction': 'below'}
-        self.assertFalse(self._check(rule, {}, {'is_limit_up': False, 'seal_volume_lots': 300}))
+        self.assertFalse(self._check(rule, {}, {'is_limit_up': False, 'seal_volume_lots': 300, 'seal_data_valid': True}))
+
+    def test_seal_order_invalid_data_not_triggered(self):
+        """盘口数据不可信时不应误触发（如 eventlet 下读到空盘口）"""
+        rule = {'alert_type': 'seal_order', 'threshold': 500.0, 'direction': 'below'}
+        self.assertFalse(self._check(rule, {}, {'is_limit_up': True, 'seal_volume_lots': 0, 'seal_data_valid': False}))
 
     def test_quote_none_returns_false(self):
         rule = {'alert_type': 'change_pct', 'threshold': 5.0, 'direction': 'above'}

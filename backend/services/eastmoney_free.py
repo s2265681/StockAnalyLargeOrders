@@ -3,6 +3,7 @@
 提供实时行情、逐笔成交明细、分时走势数据
 """
 import os
+import sys
 import json
 import requests
 import logging
@@ -53,6 +54,29 @@ def _subprocess_fetch_json(url, headers=None, cookies=None, timeout=10):
             return _json.loads(result.stdout)
     except Exception as e:
         logger.warning(f"subprocess curl 失败: {e}")
+    return None
+
+
+def _subprocess_fetch_akshare_bid_ask(code: str, timeout: int = 12) -> dict | None:
+    """在独立子进程中调用 akshare 五档盘口，绕过 eventlet 对网络库的干扰。"""
+    import subprocess
+    script = (
+        "import akshare as ak, json, sys\n"
+        "code = json.loads(sys.argv[1])\n"
+        "df = ak.stock_bid_ask_em(symbol=code)\n"
+        "print(json.dumps(dict(zip(df['item'].tolist(), df['value'].tolist()))))\n"
+    )
+    try:
+        result = subprocess.run(
+            [sys.executable, '-c', script, json.dumps(code)],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return json.loads(result.stdout.strip())
+    except Exception as e:
+        logger.warning(f"subprocess akshare 盘口失败 {code}: {e}")
     return None
 
 
@@ -449,8 +473,54 @@ class EastMoneyFreeSource:
             logger.warning(f"东方财富五档盘口获取失败: {e}")
             return None
 
+    def _build_order_book_from_akshare_values(self, values: dict, source: str):
+        """将 akshare buy_N / buy_N_vol 字段解析为标准五档结构。volume 单位为股。"""
+        bids, asks = [], []
+        for level in range(1, 6):
+            bid_price = self._safe_float(values.get(f'buy_{level}'))
+            bid_volume = self._safe_float(values.get(f'buy_{level}_vol'))
+            ask_price = self._safe_float(values.get(f'sell_{level}'))
+            ask_volume = self._safe_float(values.get(f'sell_{level}_vol'))
+
+            if bid_price and bid_volume:
+                bids.append({
+                    'level': level,
+                    'price': bid_price,
+                    'volume': int(bid_volume),
+                    'amount': round(bid_price * bid_volume, 2),
+                })
+            if ask_price and ask_volume:
+                asks.append({
+                    'level': level,
+                    'price': ask_price,
+                    'volume': int(ask_volume),
+                    'amount': round(ask_price * ask_volume, 2),
+                })
+
+        if not bids and not asks:
+            return None
+
+        bid_amount = round(sum(b['amount'] for b in bids), 2)
+        ask_amount = round(sum(a['amount'] for a in asks), 2)
+        spread = round(asks[0]['price'] - bids[0]['price'], 3) if bids and asks else 0
+        return {
+            'bids': bids,
+            'asks': asks,
+            'spread': spread,
+            'bid_amount': bid_amount,
+            'ask_amount': ask_amount,
+            'source': source,
+        }
+
     def _get_order_book_akshare(self, code):
-        """akshare 五档盘口（降级备用）"""
+        """akshare 五档盘口（降级备用，优先子进程以兼容 eventlet）"""
+        values = _subprocess_fetch_akshare_bid_ask(code)
+        if values:
+            result = self._build_order_book_from_akshare_values(
+                values, 'akshare.stock_bid_ask_em.subprocess')
+            if result:
+                return result
+
         try:
             import akshare as ak
 
@@ -462,39 +532,9 @@ class EastMoneyFreeSource:
                 return self._empty_order_book()
 
             values = dict(zip(df['item'], df['value']))
-            bids, asks = [], []
-            for level in range(1, 6):
-                bid_price = self._safe_float(values.get(f'buy_{level}'))
-                bid_volume = self._safe_float(values.get(f'buy_{level}_vol'))
-                ask_price = self._safe_float(values.get(f'sell_{level}'))
-                ask_volume = self._safe_float(values.get(f'sell_{level}_vol'))
-
-                if bid_price and bid_volume:
-                    bids.append({
-                        'level': level,
-                        'price': bid_price,
-                        'volume': int(bid_volume),
-                        'amount': round(bid_price * bid_volume, 2),
-                    })
-                if ask_price and ask_volume:
-                    asks.append({
-                        'level': level,
-                        'price': ask_price,
-                        'volume': int(ask_volume),
-                        'amount': round(ask_price * ask_volume, 2),
-                    })
-
-            bid_amount = round(sum(b['amount'] for b in bids), 2)
-            ask_amount = round(sum(a['amount'] for a in asks), 2)
-            spread = round(asks[0]['price'] - bids[0]['price'], 3) if bids and asks else 0
-            return {
-                'bids': bids,
-                'asks': asks,
-                'spread': spread,
-                'bid_amount': bid_amount,
-                'ask_amount': ask_amount,
-                'source': 'akshare.stock_bid_ask_em',
-            }
+            result = self._build_order_book_from_akshare_values(
+                values, 'akshare.stock_bid_ask_em')
+            return result or self._empty_order_book()
         except Exception:
             return self._empty_order_book()
 

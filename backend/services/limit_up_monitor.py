@@ -91,6 +91,7 @@ class LimitUpMonitor:
             'break_count': 0,
             'first_limit_time': None,
             'turnover_at_limit': 0.0,
+            'seal_data_valid': False,
         }
 
     def analyze(self, code: str, quote: dict, order_book: dict) -> dict:
@@ -194,6 +195,13 @@ class LimitUpMonitor:
             else:
                 turnover_at_limit = 0.0
 
+            ob_source = (order_book or {}).get('source', 'empty')
+            has_order_book = (
+                ob_source not in ('empty', '')
+                and (bool(bids) or bool(order_book.get('asks')))
+            )
+            seal_data_valid = bool(is_limit_up and has_order_book)
+
             return {
                 'is_limit_up': is_limit_up,
                 'limit_up_price': limit_up_price,
@@ -205,6 +213,7 @@ class LimitUpMonitor:
                 'break_count': state['break_count'],
                 'first_limit_time': state['first_limit_time'],
                 'turnover_at_limit': turnover_at_limit,
+                'seal_data_valid': seal_data_valid,
             }
 
         except Exception as e:

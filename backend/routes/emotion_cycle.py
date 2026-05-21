@@ -131,10 +131,27 @@ def _safe_int(v) -> int:
         return 0
 
 
-def _fetch_rise_count() -> Optional[int]:
-    """获取全市场上涨家数。
+INTRADAY_SLOTS = ("0945", "1030", "1130", "1400", "1445", "close")
+MORNING_SLOTS = frozenset({"0945", "1030", "1130"})
 
-    优先同花顺涨跌分布（口径与行情软件一致），备选东财沪/深指数 f104 加总，
+
+def _compute_rise_ratio(rise_count: int, fall_count: int) -> Optional[float]:
+    """上涨比例 = 上涨家数 / 下跌家数"""
+    if not rise_count or not fall_count:
+        return None
+    return round(rise_count / fall_count, 2)
+
+
+def _apply_market_breadth(record: dict, rise_count: int, fall_count: int) -> None:
+    record["rise_count"] = rise_count
+    record["fall_count"] = fall_count
+    record["rise_ratio"] = _compute_rise_ratio(rise_count, fall_count)
+
+
+def _fetch_market_breadth() -> Optional[dict]:
+    """获取全市场涨跌家数及上涨比例（上涨/下跌）。
+
+    优先同花顺涨跌分布（口径与行情软件一致），备选东财沪/深指数 f104/f105 加总，
     最后尝试东财全 A 快照统计。
     """
     headers = {"Referer": "https://quote.eastmoney.com/"}
@@ -149,10 +166,16 @@ def _fetch_rise_count() -> Optional[int]:
         up = (body.get("data") or {}).get("up")
         down = (body.get("data") or {}).get("down")
         if up is not None and int(up) > 0:
-            logger.info("同花顺涨跌分布: 上涨=%d 下跌=%d", int(up), int(down or 0))
-            return int(up)
+            rise_count = int(up)
+            fall_count = int(down or 0)
+            logger.info("同花顺涨跌分布: 上涨=%d 下跌=%d", rise_count, fall_count)
+            return {
+                "rise_count": rise_count,
+                "fall_count": fall_count,
+                "rise_ratio": _compute_rise_ratio(rise_count, fall_count),
+            }
     except Exception as e:
-        logger.debug("同花顺上涨家数失败: %s", e)
+        logger.debug("同花顺涨跌分布失败: %s", e)
 
     for host in ("82.push2", "push2", "80.push2"):
         try:
@@ -164,13 +187,17 @@ def _fetch_rise_count() -> Optional[int]:
             diff = (body.get("data") or {}).get("diff") or []
             if not diff:
                 continue
-            up = sum(_safe_int(item.get("f104")) for item in diff)
-            down = sum(_safe_int(item.get("f105")) for item in diff)
-            if up > 0:
-                logger.info("东财指数统计: 上涨=%d 下跌=%d (沪+深)", up, down)
-                return up
+            rise_count = sum(_safe_int(item.get("f104")) for item in diff)
+            fall_count = sum(_safe_int(item.get("f105")) for item in diff)
+            if rise_count > 0:
+                logger.info("东财指数统计: 上涨=%d 下跌=%d (沪+深)", rise_count, fall_count)
+                return {
+                    "rise_count": rise_count,
+                    "fall_count": fall_count,
+                    "rise_ratio": _compute_rise_ratio(rise_count, fall_count),
+                }
         except Exception as e:
-            logger.debug("东财指数上涨家数 %s 失败: %s", host, e)
+            logger.debug("东财指数涨跌家数 %s 失败: %s", host, e)
 
     try:
         url = (
@@ -183,21 +210,122 @@ def _fetch_rise_count() -> Optional[int]:
         items = (body.get("data") or {}).get("diff") or []
         if not items:
             return None
-        up = sum(1 for item in items if _safe_int(item.get("f3")) > 0)
-        if up > 0:
-            logger.info("东财全A快照: 上涨=%d / %d", up, len(items))
-            return up
+        rise_count = sum(1 for item in items if _safe_int(item.get("f3")) > 0)
+        fall_count = sum(1 for item in items if _safe_int(item.get("f3")) < 0)
+        if rise_count > 0:
+            logger.info("东财全A快照: 上涨=%d 下跌=%d / %d", rise_count, fall_count, len(items))
+            return {
+                "rise_count": rise_count,
+                "fall_count": fall_count,
+                "rise_ratio": _compute_rise_ratio(rise_count, fall_count),
+            }
     except Exception as e:
-        logger.warning("获取上涨家数失败: %s", e)
+        logger.warning("获取涨跌家数失败: %s", e)
     return None
 
 
-def _rise_count_cache_path() -> str:
-    return os.path.join(os.path.dirname(os.path.dirname(__file__)), "cache", "rise_count_history.json")
+def _fetch_rise_count() -> Optional[int]:
+    """兼容旧调用：仅返回上涨家数"""
+    breadth = _fetch_market_breadth()
+    return breadth.get("rise_count") if breadth else None
 
 
-def _load_rise_count_cache() -> dict:
-    path = _rise_count_cache_path()
+def _breadth_cache_path() -> str:
+    return os.path.join(
+        os.path.dirname(os.path.dirname(__file__)), "cache", "market_breadth_history.json"
+    )
+
+
+def _legacy_rise_count_cache_path() -> str:
+    return os.path.join(
+        os.path.dirname(os.path.dirname(__file__)), "cache", "rise_count_history.json"
+    )
+
+
+def _load_breadth_cache() -> dict:
+    for path in (_breadth_cache_path(), _legacy_rise_count_cache_path()):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, dict):
+                    return data
+        except (FileNotFoundError, json.JSONDecodeError):
+            continue
+    return {}
+
+
+def _save_breadth_cache(cache: dict) -> None:
+    path = _breadth_cache_path()
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(cache, f, ensure_ascii=False, indent=2)
+
+
+def _normalize_breadth_entry(cached) -> Optional[dict]:
+    if isinstance(cached, dict):
+        rise = cached.get("rise_count")
+        fall = cached.get("fall_count")
+        ratio = cached.get("rise_ratio")
+        if rise is not None:
+            return {
+                "rise_count": int(rise),
+                "fall_count": int(fall or 0),
+                "rise_ratio": ratio if ratio is not None else _compute_rise_ratio(int(rise), int(fall or 0)),
+            }
+        return None
+    if isinstance(cached, (int, float)):
+        return {"rise_count": int(cached), "fall_count": None, "rise_ratio": None}
+    return None
+
+
+def _merge_breadth_cache(records: list) -> list:
+    """将本地缓存的历史涨跌数据合并进记录（StockAPI 不提供该字段）。"""
+    cache = _load_breadth_cache()
+    if not cache:
+        return records
+    for record in records:
+        if record.get("rise_ratio") is not None:
+            continue
+        dt = str(record.get("date", "")).replace("-", "")
+        entry = _normalize_breadth_entry(cache.get(dt))
+        if not entry:
+            continue
+        if record.get("rise_count") is None and entry.get("rise_count") is not None:
+            record["rise_count"] = entry["rise_count"]
+        if record.get("fall_count") is None and entry.get("fall_count") is not None:
+            record["fall_count"] = entry["fall_count"]
+        if record.get("rise_ratio") is None and entry.get("rise_ratio") is not None:
+            record["rise_ratio"] = entry["rise_ratio"]
+    return records
+
+
+def _persist_breadth(dt_display: str, breadth: dict) -> None:
+    dt = dt_display.replace("-", "")
+    cache = _load_breadth_cache()
+    entry = {
+        "rise_count": breadth.get("rise_count"),
+        "fall_count": breadth.get("fall_count"),
+        "rise_ratio": breadth.get("rise_ratio"),
+    }
+    if cache.get(dt) == entry:
+        return
+    cache[dt] = entry
+    _save_breadth_cache(cache)
+
+
+def _persist_rise_count(dt_display: str, rise_count: int) -> None:
+    """兼容旧调用"""
+    _persist_breadth(dt_display, {"rise_count": rise_count, "fall_count": None, "rise_ratio": None})
+
+
+def _intraday_snapshot_path() -> str:
+    return os.path.join(
+        os.path.dirname(os.path.dirname(__file__)), "cache", "emotion_intraday_snapshots.json"
+    )
+
+
+def _load_intraday_snapshots() -> dict:
+    path = _intraday_snapshot_path()
     try:
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -206,35 +334,92 @@ def _load_rise_count_cache() -> dict:
         return {}
 
 
-def _save_rise_count_cache(cache: dict) -> None:
-    path = _rise_count_cache_path()
+def _save_intraday_snapshots(cache: dict) -> None:
+    path = _intraday_snapshot_path()
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(cache, f, ensure_ascii=False, indent=2)
 
 
-def _merge_rise_count_cache(records: list) -> list:
-    """将本地缓存的历史上涨家数合并进记录（StockAPI 不提供该字段）。"""
-    cache = _load_rise_count_cache()
-    if not cache:
-        return records
-    for record in records:
-        if record.get("rise_count") is not None:
-            continue
-        dt = str(record.get("date", "")).replace("-", "")
-        cached = cache.get(dt)
-        if cached is not None:
-            record["rise_count"] = int(cached)
-    return records
+def _current_intraday_slot(now=None) -> Optional[str]:
+    """根据当前时间返回盘中时段键（与 cron 刷新点对齐）。"""
+    from datetime import datetime
+
+    t = now or datetime.now()
+    hm = t.hour * 100 + t.minute
+    if hm >= 1505:
+        return "close"
+    if hm >= 1445:
+        return "1445"
+    if hm >= 1400:
+        return "1400"
+    if hm >= 1130:
+        return "1130"
+    if hm >= 1030:
+        return "1030"
+    if hm >= 945:
+        return "0945"
+    return None
 
 
-def _persist_rise_count(dt_display: str, rise_count: int) -> None:
-    dt = dt_display.replace("-", "")
-    cache = _load_rise_count_cache()
-    if cache.get(dt) == rise_count:
+def _slot_display(slot: str) -> str:
+    if slot == "close":
+        return "收盘"
+    return f"{slot[:2]}:{slot[2:]}"
+
+
+def save_intraday_snapshot(record: dict, slot: Optional[str] = None) -> None:
+    """保存当日某时段的情绪快照，供上午同时段对比使用。"""
+    if not isinstance(record, dict):
         return
-    cache[dt] = rise_count
-    _save_rise_count_cache(cache)
+    dt = _record_date_key(record)
+    if not dt:
+        return
+    slot = slot or _current_intraday_slot()
+    if not slot:
+        return
+    cache = _load_intraday_snapshots()
+    day = cache.setdefault(dt, {})
+    day[slot] = {
+        k: record.get(k)
+        for k in (
+            "date", "rise_count", "fall_count", "rise_ratio",
+            "consec_limit", "pressure_height", "latest_height",
+            "big_loss_mood", "big_profit_mood", "limit_up_count",
+            "board_hit_rate", "limit_down_count", "broken_board_count",
+            "monster_stock",
+        )
+    }
+    _save_intraday_snapshots(cache)
+    logger.info("情绪同时段快照: %s %s", dt, slot)
+
+
+def _get_intraday_snapshot(dt: str, slot: str) -> Optional[dict]:
+    dt = str(dt).replace("-", "")
+    return (_load_intraday_snapshots().get(dt) or {}).get(slot)
+
+
+def _build_same_slot_comparison_text(context_records: list, slot: Optional[str] = None) -> str:
+    """上午分析：生成昨日同时段对比说明（避免与昨日收盘全天混比）。"""
+    slot = slot or _current_intraday_slot()
+    if not slot or slot not in MORNING_SLOTS or not context_records:
+        return ""
+    prev_dt = _record_date_key(context_records[-1])
+    prev_slot = _get_intraday_snapshot(prev_dt, slot)
+    if not prev_slot:
+        return (
+            f"【同时段对比说明】当前为上午时段 {_slot_display(slot)}，"
+            f"暂无昨日同时段快照，请勿将今日盘中数据与昨日收盘全天数据直接对比。"
+        )
+    prev_close = _get_intraday_snapshot(prev_dt, "close") or context_records[-1]
+    return (
+        f"【同时段对比说明】当前为上午时段 {_slot_display(slot)}。"
+        f"今日数据为盘中快照，须与昨日同时段对比，勿与昨日收盘全天对比。\n"
+        f"昨日同时段({_slot_display(slot)})基准：\n"
+        f"{json.dumps(prev_slot, ensure_ascii=False, indent=2)}\n"
+        f"（参考）昨日收盘全天：\n"
+        f"{json.dumps(prev_close, ensure_ascii=False, indent=2)}"
+    )
 
 
 def _fetch_zt_counts() -> dict:
@@ -308,13 +493,24 @@ def _fetch_emotion_records():
         return records
     last = records[-1]
 
-    # 上涨家数：StockAPI 不提供可靠数据，当日用东财实时补取
-    if last.get("rise_count") is None:
-        computed = _fetch_rise_count()
-        if computed is not None:
-            last["rise_count"] = computed
-            logger.info("rise_count 补取: %s → %d", last.get("date"), computed)
-            _persist_rise_count(last.get("date", ""), computed)
+    # 上涨比例：StockAPI 不提供可靠数据，当日用实时接口补取
+    if last.get("rise_ratio") is None:
+        breadth = _fetch_market_breadth()
+        if breadth:
+            _apply_market_breadth(
+                last,
+                breadth["rise_count"],
+                breadth.get("fall_count") or 0,
+            )
+            logger.info(
+                "market_breadth 补取: %s → 涨=%d 跌=%d 比例=%s",
+                last.get("date"),
+                last.get("rise_count"),
+                last.get("fall_count"),
+                last.get("rise_ratio"),
+            )
+            _persist_breadth(last.get("date", ""), breadth)
+            save_intraday_snapshot(last)
 
     # 涨停/跌停/炸板家数：有任一字段为 None 时用 akshare 涨停池补取
     zt_fields = ("limit_up_count", "limit_down_count", "broken_board_count", "board_hit_rate")
@@ -331,7 +527,7 @@ def _fetch_emotion_records():
                 last.get("broken_board_count"), last.get("board_hit_rate"),
             )
 
-    return _merge_rise_count_cache(records)
+    return _merge_breadth_cache(records)
 
 
 def _build_fallback_record(dt_str: str) -> dict:
@@ -342,6 +538,8 @@ def _build_fallback_record(dt_str: str) -> dict:
     record = {
         "date": dt_display,
         "rise_count": None,
+        "fall_count": None,
+        "rise_ratio": None,
         "consec_limit": None,
         "pressure_height": None,
         "latest_height": None,
@@ -776,10 +974,15 @@ def _call_claude_daily_analysis(
         ensure_ascii=False,
         indent=2,
     )
+    same_slot_text = _build_same_slot_comparison_text(context_records)
     user_prompt = (
         f"分析日期：{current_record.get('date')}\n\n"
         f"周期研判锚点：\n{anchor_text}\n\n"
         f"上一交易日当天分析（用于 prev_day_review 复盘）：\n{prev_text}\n\n"
+    )
+    if same_slot_text:
+        user_prompt += f"{same_slot_text}\n\n"
+    user_prompt += (
         f"情绪周期数据：\n{data_text}\n\n"
         f"当日涨停梯队（按连板高度排序）：\n{echelon_text}\n\n"
         f"热门板块：\n{hot_sectors}\n\n"
@@ -866,6 +1069,7 @@ def analyze_daily_one_date(
 
     echelon_text = _summarize_echelon_context(target_dt)
     hot_sectors = _fetch_hot_sectors()
+    save_intraday_snapshot(current_record)
 
     logger.info(f"生成当天分析 {target_dt}，上下文 {len(context_records)} 条")
     result = None
@@ -1164,10 +1368,13 @@ def _call_claude_single(context_records: list, target_record: dict) -> dict:
 
     ctx_text = json.dumps(context_records, ensure_ascii=False, indent=2)
     tgt_text = json.dumps(target_record, ensure_ascii=False, indent=2)
+    same_slot_text = _build_same_slot_comparison_text(context_records)
     user_prompt = (
         f"【历史上下文（仅供参考趋势，共{len(context_records)}条）】\n{ctx_text}\n\n"
         f"【目标日期（只分析这一天）】\n{tgt_text}"
     )
+    if same_slot_text:
+        user_prompt += f"\n\n{same_slot_text}"
 
     # 把字段说明从 BATCH_ANALYSIS_PROMPT 复用
     field_guide = "\n".join(
@@ -1236,6 +1443,7 @@ def analyze_one_date(target_dt: str, all_records: list, force: bool = False) -> 
 
     ctx_records = ordered[max(0, idx - 5):idx]
     target_record = ordered[idx]
+    save_intraday_snapshot(target_record)
     logger.info(f"分析 {target_dt}，上下文 {len(ctx_records)} 条")
 
     item = _call_claude_single(ctx_records, target_record)

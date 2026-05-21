@@ -1,0 +1,21 @@
+backend/jobs/install_server_crontab.sh
+  s_de2e20b53ef69b::t_32792dfe492633 24
+backend/jobs/install_local_crontab.sh
+  s_de2e20b53ef69b::t_1bbc00597bc66b 25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "58a9d3c6793e4bb4b1878982fbb100ec06135ed7",
+  "prompts": {},
+  "sessions": {
+    "s_de2e20b53ef69b": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "9ddda190-c3e5-42b8-a809-b3ed3feaa04d",
+        "model": "composer-2.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

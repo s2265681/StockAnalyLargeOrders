@@ -21,7 +21,7 @@ sed "s|\${NIU_ROOT}|$ROOT|g; s|\${NIU_LOG}|$NIU_LOG|g" "$TEMPLATE" > "$TMP.block
 KEEP=""
 if crontab -l >/dev/null 2>&1; then
   KEEP="$(crontab -l \
-    | grep -v 'NiuNIuNiu/backend/jobs/run_' \
+    | grep -v '/backend/jobs/run_' \
     | grep -vF '# NiuNIuNiu local jobs' \
     | grep -vF "$MARKER" \
     | sed '/^[[:space:]]*$/d' \

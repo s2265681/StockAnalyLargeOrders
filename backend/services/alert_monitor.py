@@ -8,7 +8,8 @@ from utils.stock_utils import calc_limit_price
 
 logger = logging.getLogger(__name__)
 
-POLL_INTERVAL_TRADING = 8    # 交易时段轮询间隔（秒）
+POLL_INTERVAL_TRADING = 5    # 非封单类交易时段轮询（秒）
+POLL_INTERVAL_SEAL = 3       # 封单类交易时段轮询（秒）
 POLL_INTERVAL_CLOSED = 60    # 非交易时段休眠间隔（秒）
 
 # 内存状态，供 /api/alert-rules/monitor-status 接口读取
@@ -146,13 +147,34 @@ def _is_in_cooldown(rule: dict) -> bool:
     return datetime.now() < last_notified + timedelta(minutes=repeat_minutes)
 
 
-def _get_active_rules() -> list:
-    return execute_query(
+def _get_active_rules(alert_types: set[str] | None = None) -> list:
+    rows = execute_query(
         "SELECT id, user_id, code, stock_name, alert_type, threshold, direction, email, "
         "repeat_minutes, last_notified_at "
         "FROM alert_rules WHERE status = 'active'",
         ()
     )
+    if not alert_types:
+        return rows
+    return [r for r in rows if r.get('alert_type') in alert_types]
+
+
+def _mark_successful_check(socketio) -> None:
+    _status['healthy'] = True
+    _status['last_check_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    _status['last_error'] = None
+    _push_monitor_status(socketio)
+
+
+def _sleep_if_market_closed(socketio) -> bool:
+    """非交易时段休眠并更新状态；返回 True 表示应 continue 外层循环"""
+    if _is_trade_time():
+        return False
+    was_sleeping = _status['sleeping']
+    _status['sleeping'] = True
+    if not was_sleeping:
+        _push_monitor_status(socketio)
+    return True
 
 
 def _mark_triggered(rule_id: int) -> None:
@@ -187,9 +209,10 @@ def _push_rule_triggered(socketio, rule: dict) -> None:
         logger.warning("预警 WebSocket 推送失败 rule_id=%s: %s", rule.get('id'), e)
 
 
-def _run_check_cycle(adapter, socketio=None) -> None:
+def _run_check_cycle(adapter, socketio=None, rules: list | None = None) -> None:
     """执行一轮预警检查"""
-    rules = _get_active_rules()
+    if rules is None:
+        rules = _get_active_rules()
     if not rules:
         return
 
@@ -237,33 +260,52 @@ def _run_check_cycle(adapter, socketio=None) -> None:
 def start_alert_monitor(socketio, adapter) -> None:
     """在 Flask-SocketIO eventlet 上下文中启动预警监控 greenlet"""
 
-    def _monitor_loop():
-        _status['running'] = True
-        _status['healthy'] = True
-        logger.info("预警监控服务已启动")
-        _push_monitor_status(socketio, force=True)
+    def _seal_monitor_loop():
+        logger.info("封单预警监控循环已启动（间隔 %ss）", POLL_INTERVAL_SEAL)
         while True:
             try:
-                if _is_trade_time():
-                    _status['sleeping'] = False
-                    _run_check_cycle(adapter, socketio)
-                    _status['healthy'] = True
-                    _status['last_check_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    _status['last_error'] = None
-                    _push_monitor_status(socketio)
-                    socketio.sleep(POLL_INTERVAL_TRADING)
-                else:
-                    was_sleeping = _status['sleeping']
-                    _status['sleeping'] = True
-                    if not was_sleeping:
-                        _push_monitor_status(socketio)
+                if _sleep_if_market_closed(socketio):
                     socketio.sleep(POLL_INTERVAL_CLOSED)
+                    continue
+                _status['sleeping'] = False
+                rules = _get_active_rules({'seal_order'})
+                if rules:
+                    _run_check_cycle(adapter, socketio, rules)
+                    _mark_successful_check(socketio)
+                    socketio.sleep(POLL_INTERVAL_SEAL)
+                else:
+                    socketio.sleep(POLL_INTERVAL_TRADING)
             except Exception as e:
                 _status['healthy'] = False
                 _status['last_error'] = str(e)
                 _push_monitor_status(socketio)
-                logger.error("预警监控循环异常: %s", e)
+                logger.error("封单预警监控循环异常: %s", e)
                 socketio.sleep(10)
 
-    socketio.start_background_task(_monitor_loop)
-    logger.info("预警监控任务已提交")
+    def _general_monitor_loop():
+        logger.info("通用预警监控循环已启动（间隔 %ss）", POLL_INTERVAL_TRADING)
+        while True:
+            try:
+                if _sleep_if_market_closed(socketio):
+                    socketio.sleep(POLL_INTERVAL_CLOSED)
+                    continue
+                _status['sleeping'] = False
+                rules = _get_active_rules({'limit_up', 'limit_down', 'change_pct'})
+                if rules:
+                    _run_check_cycle(adapter, socketio, rules)
+                    _mark_successful_check(socketio)
+                socketio.sleep(POLL_INTERVAL_TRADING)
+            except Exception as e:
+                _status['healthy'] = False
+                _status['last_error'] = str(e)
+                _push_monitor_status(socketio)
+                logger.error("通用预警监控循环异常: %s", e)
+                socketio.sleep(10)
+
+    _status['running'] = True
+    _status['healthy'] = True
+    logger.info("预警监控服务已启动")
+    _push_monitor_status(socketio, force=True)
+    socketio.start_background_task(_seal_monitor_loop)
+    socketio.start_background_task(_general_monitor_loop)
+    logger.info("预警监控任务已提交（封单 %ss / 其他 %ss）", POLL_INTERVAL_SEAL, POLL_INTERVAL_TRADING)

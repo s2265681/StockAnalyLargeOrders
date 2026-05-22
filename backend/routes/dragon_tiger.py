@@ -165,6 +165,44 @@ def _fetch_from_akshare(date: str):
     return stocks, all_seats
 
 
+def _build_emotion_context(date: str) -> dict:
+    """组装当日情绪环境上下文（情绪周期阶段 + 涨跌停/连板 + 市场宽度）。
+    数据缺失时返回部分字段，build_dragon_tiger_prompt 会用占位符兜底。"""
+    dt = (date or "").replace("-", "")
+    ctx: dict = {"trade_date": dt}
+
+    # 情绪周期阶段 + 当日研判摘要
+    try:
+        from routes.emotion_cycle import _get_analysis_from_db
+        emo = _get_analysis_from_db(dt) or {}
+        if emo:
+            ctx["emotion_stage"] = emo.get("stage") or ""
+            summary = (emo.get("analysis") or "").strip()
+            if len(summary) > 220:
+                summary = summary[:220] + "…"
+            ctx["emotion_summary"] = summary
+    except Exception as e:
+        logger.warning(f"读取情绪研判失败({dt}): {e}")
+
+    # 涨跌停/连板/市场宽度：取当日 close 时段快照
+    try:
+        from routes.emotion_cycle import _get_intraday_snapshot
+        snap = _get_intraday_snapshot(dt, "close") or {}
+        for key in (
+            "rise_count", "fall_count", "rise_ratio",
+            "limit_up_count", "limit_down_count", "broken_board_count",
+            "consec_limit", "latest_height", "board_hit_rate",
+            "big_profit_mood", "big_loss_mood", "monster_stock",
+        ):
+            val = snap.get(key)
+            if val is not None and val != "":
+                ctx[key] = val
+    except Exception as e:
+        logger.warning(f"读取情绪快照失败({dt}): {e}")
+
+    return ctx
+
+
 def _build_theme_profile(date: str, code: str) -> dict:
     """
     读取题材标签分析结果，补充：
@@ -279,7 +317,8 @@ def analyze_dragon_tiger_stock(date: str, code: str, force: bool = False) -> str
             return "no_data"
 
         theme_profile = _build_theme_profile(date, code)
-        prompt = build_dragon_tiger_prompt(stock, theme_profile)
+        emotion_ctx = _build_emotion_context(date)
+        prompt = build_dragon_tiger_prompt(stock, theme_profile, emotion_ctx)
         analysis = call_claude_for_scenario("dragon_tiger", prompt)
         if not analysis:
             return "failed"

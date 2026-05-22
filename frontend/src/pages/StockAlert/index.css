@@ -167,6 +167,16 @@
   width: 80px;
 }
 
+.alert-threshold-compact .alert-threshold-num.change-pct {
+  width: 100%;
+  max-width: 200px;
+}
+
+.alert-threshold-field .alert-threshold-num.change-pct {
+  width: 100%;
+  max-width: 200px;
+}
+
 .alert-threshold-compact .alert-threshold-num {
   width: 100px;
 }

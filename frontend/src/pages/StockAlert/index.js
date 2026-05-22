@@ -34,6 +34,24 @@ const TYPE_LABELS   = { limit_up: '涨停', limit_down: '跌停', change_pct: '�
 const STATUS_LABELS = { active: '监控中', triggered: '已触发', disabled: '已停用' };
 const RULES_POLL_MS = 5000;
 
+/** 涨跌幅：正数=涨超，负数=跌超；存库仍为正值+direction */
+function displayChangePctThreshold(threshold, direction) {
+  if (threshold === null || threshold === undefined) return null;
+  const abs = Math.abs(Number(threshold));
+  if (Number.isNaN(abs)) return null;
+  return (direction === 'below' ? -1 : 1) * abs;
+}
+
+function normalizeChangePctPayload(row) {
+  if (row.alert_type !== 'change_pct') return row;
+  const t = Number(row.threshold);
+  if (row.threshold === null || row.threshold === '' || Number.isNaN(t) || t === 0) {
+    return { ...row, threshold: null };
+  }
+  if (t < 0) return { ...row, threshold: Math.abs(t), direction: 'below' };
+  return { ...row, threshold: Math.abs(t), direction: 'above' };
+}
+
 const MONITOR_LABELS = {
   running:  { color: '#52c41a', text: '监控正常' },
   sleeping: { color: '#8c8c8c', text: '非交易时段' },
@@ -170,7 +188,9 @@ export default function StockAlert() {
     setEditForm({
       code: rule.code,
       alert_type: rule.alert_type,
-      threshold: rule.threshold,
+      threshold: rule.alert_type === 'change_pct'
+        ? displayChangePctThreshold(rule.threshold, rule.direction || 'above')
+        : rule.threshold,
       direction: rule.direction || (rule.alert_type === 'seal_order' ? 'below' : 'above'),
       email: rule.email,
     });
@@ -190,16 +210,20 @@ export default function StockAlert() {
     if (['change_pct', 'seal_order'].includes(editForm.alert_type) && editForm.threshold === null) {
       message.warning('请填写阈值'); return;
     }
+    if (editForm.alert_type === 'change_pct' && editForm.threshold === 0) {
+      message.warning('涨跌幅不能为 0'); return;
+    }
+    const payload = normalizeChangePctPayload(editForm);
     setEditSaving(true);
     try {
       const res = await apiRequest(`/api/alert-rules/${editingRule.id}`, {
         method: 'PUT',
         body: JSON.stringify({
-          code: editForm.code.trim(),
-          alert_type: editForm.alert_type,
-          threshold: editForm.threshold,
-          direction: editForm.direction,
-          email: editForm.email.trim(),
+          code: payload.code.trim(),
+          alert_type: payload.alert_type,
+          threshold: payload.threshold,
+          direction: payload.direction,
+          email: payload.email.trim(),
           reactivate: editReactivate,
         }),
       });
@@ -224,12 +248,15 @@ export default function StockAlert() {
       if (['change_pct', 'seal_order'].includes(row.alert_type) && row.threshold === null) {
         message.warning('请填写阈值'); return;
       }
+      if (row.alert_type === 'change_pct' && row.threshold === 0) {
+        message.warning('涨跌幅不能为 0'); return;
+      }
     }
     setSaving(true);
     try {
       const res = await apiRequest('/api/alert-rules/batch', {
         method: 'POST',
-        body: JSON.stringify({ rules: addRows }),
+        body: JSON.stringify({ rules: addRows.map(normalizeChangePctPayload) }),
       });
       if (res.success) {
         message.success(res.message || '保存成功');
@@ -246,14 +273,8 @@ export default function StockAlert() {
   const thresholdField = (row, onChange) => {
     if (row.alert_type === 'change_pct') return (
       <div className="alert-threshold-field">
-        <Space.Compact className="alert-threshold-compact">
-          <Select value={row.direction} onChange={v => onChange('direction', v)} className="alert-threshold-dir">
-            <Option value="above">涨超</Option>
-            <Option value="below">跌超</Option>
-          </Select>
-          <InputNumber value={row.threshold} onChange={v => onChange('threshold', v)}
-            min={0.1} max={20} step={0.5} placeholder="%" addonAfter="%" className="alert-threshold-num" />
-        </Space.Compact>
+        <InputNumber value={row.threshold} onChange={v => onChange('threshold', v)}
+          min={-20} max={20} step={0.5} placeholder="如 5 或 -5" addonAfter="%" className="alert-threshold-num change-pct" />
       </div>
     );
     if (row.alert_type === 'seal_order') return (
@@ -275,8 +296,11 @@ export default function StockAlert() {
     thresholdField(row, (field, value) => updateRow(idx, field, value));
 
   const thresholdText = (r) => {
-    if (r.alert_type === 'change_pct')
-      return `${r.direction === 'above' ? '涨超' : '跌超'}${r.threshold ?? '?'}%`;
+    if (r.alert_type === 'change_pct') {
+      const v = displayChangePctThreshold(r.threshold, r.direction);
+      if (v === null) return '?';
+      return `${v > 0 ? '+' : ''}${v}%`;
+    }
     if (r.alert_type === 'seal_order')
       return `${r.direction === 'above' ? '超过' : '低于'} ${r.threshold ?? '?'} 手`;
     return '—';
@@ -420,7 +444,7 @@ export default function StockAlert() {
             </div>
             <div className="alert-edit-field">
               <label className="alert-edit-label">收件邮箱</label>
-              <Input value={editForm.email}
+              <Input placeholder="可到个人中心设置常用邮箱" value={editForm.email}
                 onChange={e => updateEditForm('email', e.target.value.trim())} />
             </div>
             {editingRule?.status !== 'active' && (
@@ -455,7 +479,7 @@ export default function StockAlert() {
                 </div>
                 <div className="alert-field">
                   <label className="alert-field-label">收件邮箱</label>
-                  <Input placeholder="your@email.com" value={row.email}
+                  <Input placeholder="可到个人中心设置常用邮箱" value={row.email}
                     onChange={e => updateRow(idx, 'email', e.target.value.trim())} />
                 </div>
                 <Button className="alert-row-delete" size="small" danger icon={<DeleteOutlined />}

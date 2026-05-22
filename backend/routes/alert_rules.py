@@ -43,6 +43,21 @@ def list_rules():
     return v1_success_response(data={'items': items})
 
 
+def _normalize_change_pct(alert_type, threshold, direction):
+    """涨跌幅：支持前端传入负数，统一转为正值 + direction"""
+    if alert_type != 'change_pct' or threshold is None:
+        return threshold, direction
+    try:
+        t = float(threshold)
+    except (TypeError, ValueError):
+        return threshold, direction
+    if t < 0:
+        return abs(t), 'below'
+    if t > 0:
+        return t, direction or 'above'
+    return threshold, direction
+
+
 @alert_rules_bp.route('/api/alert-rules/batch', methods=['POST'])
 @login_required
 def batch_create_rules():
@@ -80,11 +95,13 @@ def batch_create_rules():
     for rule in rules:
         code = rule['code'].strip().zfill(6)
         stock_name = get_stock_name_by_code(code) or ''
+        threshold, direction = _normalize_change_pct(
+            rule['alert_type'], rule.get('threshold'), rule.get('direction')
+        )
         new_id = execute_insert(
             "INSERT INTO alert_rules (user_id, code, stock_name, alert_type, threshold, direction, email) "
             "VALUES (%s, %s, %s, %s, %s, %s, %s)",
-            (user_id, code, stock_name, rule['alert_type'],
-             rule.get('threshold'), rule.get('direction'), rule['email'].strip())
+            (user_id, code, stock_name, rule['alert_type'], threshold, direction, rule['email'].strip())
         )
         created_ids.append(new_id)
 
@@ -155,6 +172,7 @@ def update_rule(rule_id):
     stock_name = get_stock_name_by_code(code) or ''
     threshold = body.get('threshold')
     direction = body.get('direction')
+    threshold, direction = _normalize_change_pct(alert_type, threshold, direction)
     reactivate = bool(body.get('reactivate'))
 
     if reactivate and existing[0]['status'] != 'active':

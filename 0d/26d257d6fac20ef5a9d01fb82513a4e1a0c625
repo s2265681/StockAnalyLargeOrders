@@ -1,0 +1,24 @@
+backend/config/ai_prompts.py
+  s_bed7c809c1b4f3::t_9d0ad815619166 287
+  s_bed7c809c1b4f3::t_3868ff7de516e7 851-859,873-887
+  s_bed7c809c1b4f3::t_549b7c06134005 290-297,301,306-307
+backend/routes/dragon_tiger.py
+  s_bed7c809c1b4f3::t_dabfc441aadcff 168-205
+  s_bed7c809c1b4f3::t_892d2b65f5c4dc 320-321
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "0d26d257d6fac20ef5a9d01fb82513a4e1a0c625",
+  "prompts": {},
+  "sessions": {
+    "s_bed7c809c1b4f3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ed561f98-0574-4dfa-acd9-890be4d8493c",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

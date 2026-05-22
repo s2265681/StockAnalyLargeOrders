@@ -7,6 +7,7 @@ class StockWebSocket {
     this._callbacks = {
       l2Update: [],
       alertTriggered: [],
+      alertMonitorStatus: [],
       disconnect: [],
       connect: [],
     };
@@ -40,6 +41,10 @@ class StockWebSocket {
 
     this.socket.on('alert_rule_triggered', (data) => {
       this._callbacks.alertTriggered.forEach(cb => cb(data));
+    });
+
+    this.socket.on('alert_monitor_status', (data) => {
+      this._callbacks.alertMonitorStatus.forEach(cb => cb(data));
     });
 
     this.socket.on('error', (data) => {
@@ -77,6 +82,13 @@ class StockWebSocket {
     this._callbacks.alertTriggered.push(callback);
     return () => {
       this._callbacks.alertTriggered = this._callbacks.alertTriggered.filter(cb => cb !== callback);
+    };
+  }
+
+  onAlertMonitorStatus(callback) {
+    this._callbacks.alertMonitorStatus.push(callback);
+    return () => {
+      this._callbacks.alertMonitorStatus = this._callbacks.alertMonitorStatus.filter(cb => cb !== callback);
     };
   }
 

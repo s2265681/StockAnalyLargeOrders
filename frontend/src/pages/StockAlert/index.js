@@ -32,7 +32,6 @@ const ALERT_TYPE_OPTIONS = [
 
 const TYPE_LABELS   = { limit_up: '涨停', limit_down: '跌停', change_pct: '涨跌幅', seal_order: '涨停封单' };
 const STATUS_LABELS = { active: '监控中', triggered: '已触发', disabled: '已停用' };
-const RULES_POLL_MS = 15000;
 
 /** 涨跌幅：正数=涨超，负数=跌超；存库仍为正值+direction */
 function displayChangePctThreshold(threshold, direction) {
@@ -129,43 +128,35 @@ export default function StockAlert() {
     }
   }, [notifyNewlyTriggered]);
 
-  const fetchMonitorStatus = useCallback(async () => {
-    if (!localStorage.getItem('niuniu_token')) return;
-    try {
-      const res = await apiRequestWithRetry('/api/alert-rules/monitor-status');
-      if (res.success) setMonitorStatus(res.data.display);
-    } catch { /* 静默失败，不影响主流程 */ }
-  }, []);
-
   useEffect(() => {
     if (authLoading || !user) return;
     fetchRules();
   }, [authLoading, user, fetchRules]);
 
-  useEffect(() => {
-    if (authLoading || !user) return;
-    fetchMonitorStatus();
-    const timer = setInterval(fetchMonitorStatus, 30000);
-    return () => clearInterval(timer);
-  }, [authLoading, user, fetchMonitorStatus]);
-
-  // WebSocket 实时推送 + 静默轮询兜底
+  // WebSocket 推送：规则列表 + 监控状态（无轮询）；重连或切回页面时补拉规则
   useEffect(() => {
     if (authLoading || !user) return;
 
     stockWS.connect();
-    const offWs = stockWS.onAlertTriggered(() => {
+    const offTriggered = stockWS.onAlertTriggered(() => {
       fetchRules(true);
     });
-
-    const poll = () => {
+    const offMonitor = stockWS.onAlertMonitorStatus((data) => {
+      if (data?.display) setMonitorStatus(data.display);
+    });
+    const offReconnect = stockWS.onConnect(() => {
+      fetchRules(true);
+    });
+    const onVisible = () => {
       if (document.visibilityState === 'visible') fetchRules(true);
     };
-    const pollTimer = setInterval(poll, RULES_POLL_MS);
+    document.addEventListener('visibilitychange', onVisible);
 
     return () => {
-      offWs();
-      clearInterval(pollTimer);
+      offTriggered();
+      offMonitor();
+      offReconnect();
+      document.removeEventListener('visibilitychange', onVisible);
     };
   }, [authLoading, user, fetchRules]);
 

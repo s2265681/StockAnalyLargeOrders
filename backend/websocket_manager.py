@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 _subscriptions = {}    # sid -> {code, room}
 _alert_rooms = {}      # sid -> alert_user_{id} 房间
 _active_rooms = set()  # 当前有订阅者的房间名
+ALERT_MONITOR_ROOM = 'alert_monitor'
 
 POLL_INTERVAL_TRADING = 8    # 交易时间轮询间隔（秒），LiveFeed 的保底
 POLL_INTERVAL_CLOSED = 30    # 非交易时间轮询间隔（秒）
@@ -70,7 +71,13 @@ def register_websocket_events(socketio):
                 room = f"alert_user_{payload['user_id']}"
                 join_room(room)
                 _alert_rooms[sid] = room
+                join_room(ALERT_MONITOR_ROOM)
                 logger.info(f"客户端 {sid} 加入预警房间: {room}")
+                try:
+                    from services.alert_monitor import build_monitor_status_payload
+                    emit('alert_monitor_status', build_monitor_status_payload())
+                except Exception as e:
+                    logger.warning(f"推送监控状态失败 sid={sid}: {e}")
         logger.info(f"客户端已连接: {sid}")
 
     @socketio.on('disconnect')
@@ -78,6 +85,7 @@ def register_websocket_events(socketio):
         sid = request.sid
         if sid in _alert_rooms:
             leave_room(_alert_rooms.pop(sid))
+            leave_room(ALERT_MONITOR_ROOM)
         if sid in _subscriptions:
             info = _subscriptions.pop(sid)
             room = info['room']

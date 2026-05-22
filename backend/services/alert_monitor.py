@@ -25,6 +25,63 @@ def get_monitor_status() -> dict:
     return dict(_status)
 
 
+def compute_monitor_display(status: dict | None = None) -> str:
+    """根据内存状态计算角标展示值：running / sleeping / error / stopped"""
+    s = status if status is not None else _status
+    now = datetime.now()
+
+    seconds_since_check = None
+    if s.get('last_check_at'):
+        last_dt = datetime.strptime(s['last_check_at'], '%Y-%m-%d %H:%M:%S')
+        seconds_since_check = int((now - last_dt).total_seconds())
+
+    if not s.get('running'):
+        return 'stopped'
+    if s.get('sleeping'):
+        return 'sleeping'
+    if not s.get('healthy'):
+        return 'error'
+    if seconds_since_check is not None and seconds_since_check > 120:
+        return 'error'
+    return 'running'
+
+
+def build_monitor_status_payload(status: dict | None = None) -> dict:
+    s = status if status is not None else _status
+    now = datetime.now()
+    seconds_since_check = None
+    if s.get('last_check_at'):
+        last_dt = datetime.strptime(s['last_check_at'], '%Y-%m-%d %H:%M:%S')
+        seconds_since_check = int((now - last_dt).total_seconds())
+    return {
+        'display': compute_monitor_display(s),
+        'healthy': s.get('healthy', False),
+        'sleeping': s.get('sleeping', False),
+        'last_check_at': s.get('last_check_at'),
+        'seconds_since_check': seconds_since_check,
+        'last_error': s.get('last_error'),
+    }
+
+
+_last_pushed_display = None
+
+
+def _push_monitor_status(socketio, *, force: bool = False) -> None:
+    """状态变化时推送给所有已连接用户（全局监控状态）"""
+    global _last_pushed_display
+    if not socketio:
+        return
+    payload = build_monitor_status_payload()
+    display = payload['display']
+    if not force and display == _last_pushed_display:
+        return
+    _last_pushed_display = display
+    try:
+        socketio.emit('alert_monitor_status', payload, room='alert_monitor')
+    except Exception as e:
+        logger.warning("监控状态 WebSocket 推送失败: %s", e)
+
+
 def _is_trade_time() -> bool:
     now = datetime.now()
     if now.weekday() >= 5:
@@ -184,6 +241,7 @@ def start_alert_monitor(socketio, adapter) -> None:
         _status['running'] = True
         _status['healthy'] = True
         logger.info("预警监控服务已启动")
+        _push_monitor_status(socketio, force=True)
         while True:
             try:
                 if _is_trade_time():
@@ -192,13 +250,18 @@ def start_alert_monitor(socketio, adapter) -> None:
                     _status['healthy'] = True
                     _status['last_check_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     _status['last_error'] = None
+                    _push_monitor_status(socketio)
                     socketio.sleep(POLL_INTERVAL_TRADING)
                 else:
+                    was_sleeping = _status['sleeping']
                     _status['sleeping'] = True
+                    if not was_sleeping:
+                        _push_monitor_status(socketio)
                     socketio.sleep(POLL_INTERVAL_CLOSED)
             except Exception as e:
                 _status['healthy'] = False
                 _status['last_error'] = str(e)
+                _push_monitor_status(socketio)
                 logger.error("预警监控循环异常: %s", e)
                 socketio.sleep(10)
 

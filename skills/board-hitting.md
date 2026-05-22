@@ -103,11 +103,9 @@ description: 打板策略分析，结合封板质量、情绪周期、首板/连
 2. `mcp__niuniuniu__stock_l2_dashboard` — L2数据（封单、大单、时段分析）
 3. `mcp__niuniuniu__stock_large_orders` — 大单统计
 4. `mcp__niuniuniu__limit_up_themes` — 涨停题材（该股位置）
-5. WebSearch 搜索：
-   - 该股最新消息、连板情况
-   - 今日市场首板溢价率、连板溢价率
-   - 今日大面股数量
-   - 今日市场涨跌停数据、情绪周期位置
+5. WebSearch 仅补增量信息：
+   - 该股最新消息、连板原因
+注意：首板/连板溢价率、涨跌停结构等数据优先用 MCP 工具（limit_up_themes）获取；溢价率等无实时数据源的指标做定性判断，禁止编造精确数字。
 
 ### 第2步：打板维度分析
 

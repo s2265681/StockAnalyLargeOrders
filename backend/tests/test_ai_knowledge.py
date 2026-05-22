@@ -86,3 +86,24 @@ class DiagnosisTemplateTest(unittest.TestCase):
         self.assertIn("000001", s)
         self.assertIn("applicable_tactic", s)
         self.assertIn("tactic_fit", s)
+
+
+class AgentSkillsTest(unittest.TestCase):
+    def test_four_skills_registered(self):
+        from config.ai_prompts import AGENT_SKILLS
+        self.assertEqual(
+            set(AGENT_SKILLS),
+            {"stock-analysis", "market-sentiment", "board-hitting", "trading-patterns"},
+        )
+
+    def test_trading_patterns_body_has_seven_tactics(self):
+        from config.ai_prompts import AGENT_SKILLS
+        body = AGENT_SKILLS["trading-patterns"]["body"]
+        for name in ("打板", "断板反包", "龙回头", "中军补涨"):
+            self.assertIn(name, body)
+
+    def test_skill_step1_data_wording(self):
+        from config.ai_prompts import AGENT_SKILLS
+        body = AGENT_SKILLS["stock-analysis"]["body"]
+        # 结构化数据优先用 MCP，WebSearch 仅补消息面
+        self.assertIn("禁止编造", body)

@@ -13,6 +13,7 @@ from config.ai_knowledge import (
     EMOTION_INDICATORS,
     EMOTION_STAGES,
     TACTICS_BRIEF,
+    TACTICS_FULL,
 )
 
 SYSTEM_PROMPT = (
@@ -329,10 +330,10 @@ STOCK_ANALYSIS_SKILL_BODY = """# 短线炒股分析技能
 4. `mcp__niuniuniu__stock_l2_dashboard` — L2看板（盘口、封单、大单明细）
 5. `mcp__niuniuniu__limit_up_themes` — 涨停板块题材（传入该股代码）
 
-同时用 WebSearch 搜索：
-- 该股最新消息和板块动态
-- 该股所在板块今日整体表现（板块涨停数、板块指数涨跌）
-- 今日市场整体情绪数据（涨跌停数、首板溢价、连板溢价、大面股数量）
+同时用 WebSearch 仅搜索增量信息：
+- 该股最新消息、政策/事件催化
+- 该股所在板块今日动态
+注意：涨跌停数、首板/连板溢价等结构化数据优先用 MCP 工具（limit_up_themes 等）获取；无实时数据源的指标做定性判断，禁止编造精确数字。
 
 ### 第2步：综合研判
 
@@ -470,13 +471,10 @@ MARKET_SENTIMENT_SKILL_BODY = """# 市场情绪分析技能
 
 ### 第1步：获取数据
 
-1. `mcp__niuniuniu__limit_up_themes` — 涨停板块题材（完整涨停数据）
-2. WebSearch 搜索以下信息：
-   - 今日A股涨跌停数据、连板股情况
-   - 昨日首板股今日表现（首板溢价率）
-   - 昨日连板股今日表现（连板溢价率）
-   - 今日大面股数量（跌幅>7%的前期强势股）
-   - 高标股（最高连板）的封板质量和分歧情况
+1. `mcp__niuniuniu__limit_up_themes` — 涨停板块题材（完整涨停数据,优先使用）
+2. WebSearch 仅补增量信息：
+   - 高标股最新消息、板块催化事件
+注意：涨跌停结构、首板/连板溢价等结构化数据优先用 MCP 工具；溢价率等无实时数据源的指标做定性判断，禁止编造精确数字。
 
 ### 第2步：计算关键指标
 
@@ -686,11 +684,9 @@ BOARD_HITTING_SKILL_BODY = """# 打板策略分析技能
 2. `mcp__niuniuniu__stock_l2_dashboard` — L2数据（封单、大单、时段分析）
 3. `mcp__niuniuniu__stock_large_orders` — 大单统计
 4. `mcp__niuniuniu__limit_up_themes` — 涨停题材（该股位置）
-5. WebSearch 搜索：
-   - 该股最新消息、连板情况
-   - 今日市场首板溢价率、连板溢价率
-   - 今日大面股数量
-   - 今日市场涨跌停数据、情绪周期位置
+5. WebSearch 仅补增量信息：
+   - 该股最新消息、连板原因
+注意：首板/连板溢价率、涨跌停结构等数据优先用 MCP 工具（limit_up_themes）获取；溢价率等无实时数据源的指标做定性判断，禁止编造精确数字。
 
 ### 第2步：打板维度分析
 
@@ -862,8 +858,54 @@ def build_dragon_tiger_prompt(stock: dict, theme_profile: dict) -> str:
     )
 
 
+TRADING_PATTERNS_SKILL_META = """name: trading-patterns
+description: 短线核心战法库，含龙头首阴低吸、爆量涨停弱转强、首板一进二、打板接力、断板反包、龙回头、中军补涨七大超短战法。适用于用户问"XXX首阴能买吗"、"明天竞价怎么操作"、"哪些首板明天能二板"、"XXX断板了还能接吗"、"龙回头怎么低吸"等问题。"""
+
+TRADING_PATTERNS_SKILL_BODY = TACTICS_FULL + """
+
+## 分析流程
+
+### 第1步：获取数据
+
+并行调用 MCP 工具:
+1. `mcp__niuniuniu__stock_realtime` — 实时行情
+2. `mcp__niuniuniu__stock_l2_dashboard` — L2 看板(封单/大单/盘口)
+3. `mcp__niuniuniu__stock_large_orders` — 大单统计
+4. `mcp__niuniuniu__stock_timeshare` — 分时走势
+5. `mcp__niuniuniu__limit_up_themes` — 涨停题材
+
+WebSearch 仅补该股最新消息与板块催化事件。结构化情绪/溢价数据优先用 MCP 工具,无实时源的指标做定性判断,禁止编造精确数字。
+
+### 第2步：判断适用战法
+
+按用户问题与个股当前状态对应到上述七大战法之一(或明确指出当前不适用任何战法及原因)。
+
+### 第3步：按战法框架分析
+
+纯文本输出(发微信用,不要 markdown):
+
+```
+【{股票名}】{战法名}分析
+一、战法条件检查(逐项打勾/打叉)
+二、关键数据
+三、情绪环境(情绪周期 + 该战法当前胜率评估)
+四、操作计划(买点/仓位/止损/目标)
+五、风险提示
+```
+
+## 注意事项
+
+- 退潮期原则上全部战法不做
+- 总仓位控制在 6 成以内,单票上限 3 成
+- 止损是铁律,没有"再等等看"的说法
+- 龙头地位是前提,跟风股套用龙头战法必亏
+- 跨战法叠加要克制,不同时满仓做多个战法
+"""
+
+
 AGENT_SKILLS = {
     "stock-analysis": {"meta": STOCK_ANALYSIS_SKILL_META, "body": STOCK_ANALYSIS_SKILL_BODY, "path": "skills/stock-analysis.md"},
     "market-sentiment": {"meta": MARKET_SENTIMENT_SKILL_META, "body": MARKET_SENTIMENT_SKILL_BODY, "path": "skills/market-sentiment.md"},
     "board-hitting": {"meta": BOARD_HITTING_SKILL_META, "body": BOARD_HITTING_SKILL_BODY, "path": "skills/board-hitting.md"},
+    "trading-patterns": {"meta": TRADING_PATTERNS_SKILL_META, "body": TRADING_PATTERNS_SKILL_BODY, "path": "skills/trading-patterns.md"},
 }

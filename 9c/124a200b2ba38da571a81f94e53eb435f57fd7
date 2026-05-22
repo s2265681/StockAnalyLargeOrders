@@ -1,0 +1,40 @@
+frontend/src/pages/StockAlert/index.css
+  s_0031625e418713::t_742fa5511f7201 175-179
+  s_0031625e418713::t_6476e404c7a5e3 170-172
+frontend/src/pages/StockAlert/index.js
+  s_0031625e418713::t_f65b0d5c9c6499 482
+  s_0031625e418713::t_52f00b57140b11 191-193
+  s_0031625e418713::t_319fba36f1702a 222-226
+  s_0031625e418713::t_ff2ce7f59016bd 299-303
+  s_0031625e418713::t_1f57305f422ec1 447
+  s_0031625e418713::t_0eb5fab527ff6b 276-277
+  s_0031625e418713::t_4b54e11c5c39cd 213-216
+  s_0031625e418713::t_51c29f5063e831 251-253,259
+  s_0031625e418713::t_5b000be8487eb7 37-54
+frontend/public/index.html
+  s_0031625e418713::t_3a9e8b0f02eacf 5
+frontend/src/index.css
+  s_0031625e418713::t_a975721f934e4a 2851-2866
+backend/routes/alert_rules.py
+  s_0031625e418713::t_ca3ed3c98af30b 175
+  s_0031625e418713::t_8929cc53910eae 98-100,104
+  s_0031625e418713::t_f33c73e2dbff9a 46-60
+frontend/public/landing.html
+  s_0031625e418713::t_9e5df2b8a926dc 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "9c124a200b2ba38da571a81f94e53eb435f57fd7",
+  "prompts": {},
+  "sessions": {
+    "s_0031625e418713": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "5dd40059-32d1-433b-9db2-ad48d84ae558",
+        "model": "composer-2.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

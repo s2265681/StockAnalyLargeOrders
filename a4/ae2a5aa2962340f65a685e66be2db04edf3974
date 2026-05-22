@@ -1,0 +1,32 @@
+backend/routes/alert_rules.py
+  s_0031625e418713::t_446571f4b21e89 115-116
+frontend/src/pages/StockAlert/index.js
+  s_0031625e418713::t_cd4c3318d28a86 136,141,144-145,156-157
+  s_0031625e418713::t_41b0a1d4e422f9 147-150,153,158-159
+backend/services/alert_monitor.py
+  s_0031625e418713::t_cd93de09e89689 28-83
+backend/websocket_manager.py
+  s_0031625e418713::t_1aefc748c939f6 26
+  s_0031625e418713::t_5c78b175771806 88
+  s_0031625e418713::t_94a90eec40e4a8 74,76-80
+frontend/src/services/websocket.js
+  s_0031625e418713::t_cc688e80a73055 46-49
+  s_0031625e418713::t_4fe6f9954996ca 10
+  s_0031625e418713::t_ad7c84e8a208bc 88-94
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "a4ae2a5aa2962340f65a685e66be2db04edf3974",
+  "prompts": {},
+  "sessions": {
+    "s_0031625e418713": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "5dd40059-32d1-433b-9db2-ad48d84ae558",
+        "model": "composer-2.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

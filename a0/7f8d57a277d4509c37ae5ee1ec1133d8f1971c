@@ -1,0 +1,48 @@
+backend/websocket_manager.py
+  s_0031625e418713::t_d30dfd88a53344 27
+backend/routes/alert_rules.py
+  s_64961b7d5fe4dc::t_4625b98ef2e5f6 245-265
+backend/services/alert_monitor.py
+  s_0031625e418713::t_593db1c5ed657c 1
+  s_0031625e418713::t_a3039f76e267dc 149-156
+  ai_agent 3,6,11,16-20,79-91,94-95,102-110,112,159-172,174-175
+frontend/src/pages/StockAlert/index.js
+  s_0031625e418713::t_75b0d6c8ff7a32 35
+backend/services/limit_up_monitor.py
+  s_0031625e418713::t_567c375441f84a 99,107,112,114
+  s_0031625e418713::t_11f35c759a3180 147-149,153-178
+backend/services/eastmoney_free.py
+  s_0031625e418713::t_af13902d4af08d 326
+  s_0031625e418713::t_a3610dc0d08d38 334
+backend/migrations/20260522_alert_rules_cooldown_wechat.sql
+  s_64961b7d5fe4dc::t_a8145673df6996 1-17
+backend/jobs/crontab.server.txt
+  s_0031625e418713::t_a1e20277a9d0e2 4
+backend/utils/alert_notify.py
+  s_64961b7d5fe4dc::t_d5cd8bcc49636f 94-105
+  s_64961b7d5fe4dc::t_dc20eae5a4f030 1,10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "a07f8d57a277d4509c37ae5ee1ec1133d8f1971c",
+  "prompts": {},
+  "sessions": {
+    "s_0031625e418713": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "5dd40059-32d1-433b-9db2-ad48d84ae558",
+        "model": "composer-2.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    },
+    "s_64961b7d5fe4dc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8163d8ae-def7-4ca1-8fc7-0e07fb09dd0d",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

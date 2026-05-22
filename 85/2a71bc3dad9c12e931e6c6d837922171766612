@@ -1,0 +1,23 @@
+backend/config/ai_knowledge.py
+  s_cd54420eef5f19::t_ab950e6bf38071 496
+  s_cd54420eef5f19::t_7df703c4e765e9 3
+  s_cd54420eef5f19::t_f00df108c11751 75-495,497-521
+backend/tests/test_ai_knowledge.py
+  s_cd54420eef5f19::t_c9bf5dffe259cd 24-51
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "852a71bc3dad9c12e931e6c6d837922171766612",
+  "prompts": {},
+  "sessions": {
+    "s_cd54420eef5f19": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a85267f4-5d08-4861-9047-4c62e6c364cd",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

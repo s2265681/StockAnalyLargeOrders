@@ -4,6 +4,7 @@ from datetime import datetime
 
 from utils.db import execute_query, execute_write
 from utils.alert_notify import send_stock_alert
+from utils.stock_utils import calc_limit_price
 
 logger = logging.getLogger(__name__)
 
@@ -53,8 +54,10 @@ def check_rule_condition(rule: dict, quote, limit_up_data: dict) -> bool:
     if alert_type == 'limit_down':
         yesterday_close = quote.get('yesterday_close', 0) or 0
         price = quote.get('price', 0) or 0
+        code = rule.get('code', '')
+        name = rule.get('stock_name', '')
         if yesterday_close > 0:
-            limit_down_price = round(yesterday_close * 0.9, 2)
+            limit_down_price = calc_limit_price(yesterday_close, code, name, 'down')
             return price <= limit_down_price + 0.01
         return pct <= -9.9
 

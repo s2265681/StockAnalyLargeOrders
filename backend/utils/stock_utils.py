@@ -3,6 +3,7 @@
 处理股票代码、名称等通用功能
 """
 import logging
+from decimal import Decimal, ROUND_HALF_UP
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +49,53 @@ def validate_stock_code(code):
         return False
     valid_prefixes = ['00', '30', '60', '68', '90']
     return any(code.startswith(p) for p in valid_prefixes)
+
+
+def limit_pct_ratio(code, name='') -> Decimal:
+    """涨跌幅限制比例（小数，如 0.10 表示 10%）"""
+    code = normalize_stock_code(code) or str(code)
+    if name and 'ST' in str(name).upper():
+        return Decimal('0.05')
+    if code.startswith(('30', '68')):
+        return Decimal('0.20')
+    if code.startswith(('4', '8')):
+        return Decimal('0.30')
+    return Decimal('0.10')
+
+
+def calc_limit_price(yesterday_close, code, name='', direction='up') -> float:
+    """计算涨/跌停价，按交易所规则四舍五入到分（非 Python round 银行家舍入）"""
+    try:
+        yc = float(yesterday_close)
+    except (TypeError, ValueError):
+        return 0.0
+    if yc <= 0:
+        return 0.0
+    ratio = limit_pct_ratio(code, name)
+    factor = Decimal('1') + ratio if direction == 'up' else Decimal('1') - ratio
+    raw = Decimal(str(yc)) * factor
+    return float(raw.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP))
+
+
+def is_at_limit_up(current_price, yesterday_close, code, name='', change_percent=None) -> bool:
+    """判断当前价是否涨停"""
+    limit_up_price = calc_limit_price(yesterday_close, code, name, 'up')
+    if limit_up_price <= 0:
+        return False
+    try:
+        price = float(current_price)
+    except (TypeError, ValueError):
+        return False
+    if abs(price - limit_up_price) <= 0.005:
+        return True
+    if change_percent is not None:
+        try:
+            pct = float(change_percent)
+        except (TypeError, ValueError):
+            return False
+        threshold = float(limit_pct_ratio(code, name)) * 100 - 0.1
+        return pct >= threshold and price >= limit_up_price - 0.01
+    return False
 
 
 def _is_placeholder_name(name, code):

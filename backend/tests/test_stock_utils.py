@@ -29,5 +29,32 @@ class TestStockUtils(unittest.TestCase):
         self.assertEqual(name, '测试股份')
 
 
+class TestLimitPrice(unittest.TestCase):
+    def test_limit_up_rounds_half_up_not_bankers(self):
+        # 3.75 * 1.1 = 4.125，交易所四舍五入为 4.13，Python round 会得到 4.12
+        self.assertEqual(stock_utils.calc_limit_price(3.75, '000518'), 4.13)
+
+    def test_is_at_limit_up_for_000518(self):
+        self.assertTrue(stock_utils.is_at_limit_up(
+            4.13, 3.75, '000518', '四环生物', change_percent=10.13
+        ))
+
+    def test_seal_order_would_detect_limit_up(self):
+        from services.eastmoney_free import EastMoneyFreeSource
+        from services.limit_up_monitor import LimitUpMonitor
+        from services.alert_monitor import check_rule_condition
+
+        src = EastMoneyFreeSource()
+        code = '000518'
+        quote = src.get_realtime_quote(code)
+        if not quote:
+            self.skipTest('行情不可用')
+        ob = src.get_order_book(code)
+        data = LimitUpMonitor().analyze(code, quote, ob)
+        self.assertTrue(data['is_limit_up'], data)
+        rule = {'alert_type': 'seal_order', 'threshold': 610000.0, 'direction': 'below'}
+        self.assertTrue(check_rule_condition(rule, quote, data))
+
+
 if __name__ == '__main__':
     unittest.main()

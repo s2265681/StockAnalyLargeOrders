@@ -8,6 +8,8 @@ from datetime import datetime
 
 import numpy as np
 
+from utils.stock_utils import calc_limit_price, is_at_limit_up
+
 logger = logging.getLogger(__name__)
 
 # 模块级浮动市值缓存，key: (code, date_str) -> float_market_cap (元)
@@ -118,17 +120,11 @@ class LimitUpMonitor:
             if yesterday_close <= 0:
                 return self._empty_result()
 
-            # 判断是否为ST股票（含*ST / ST）
-            is_st = 'ST' in name.upper() if name else False
-
-            # 计算涨停价
-            if is_st:
-                limit_up_price = round(yesterday_close * 1.05, 2)
-            else:
-                limit_up_price = round(yesterday_close * 1.1, 2)
-
-            # 判断当前是否涨停（允许 0.005 误差）
-            is_limit_up = abs(current_price - limit_up_price) <= 0.005
+            limit_up_price = calc_limit_price(yesterday_close, code, name, 'up')
+            change_percent = quote.get('change_percent')
+            is_limit_up = is_at_limit_up(
+                current_price, yesterday_close, code, name, change_percent
+            )
 
             # 获取股票追踪状态
             state = self._get_stock_state(code)

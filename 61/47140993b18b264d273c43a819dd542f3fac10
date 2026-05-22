@@ -1,0 +1,37 @@
+backend/services/alert_monitor.py
+  s_0031625e418713::t_949d02396f5d8e 94-110
+  s_0031625e418713::t_958f8e7715bf3d 152
+  s_0031625e418713::t_e05d03b9998a61 136
+frontend/src/pages/StockAlert/index.js
+  s_0031625e418713::t_22ecad12159633 6
+  s_0031625e418713::t_4fcf0edaa1f54a 121-125,127-140
+  s_0031625e418713::t_9e843b8c255eba 126
+  s_0031625e418713::t_95441d2d708d56 35
+  s_0031625e418713::t_839b14519ba1bc 69-80,82,85-99
+backend/websocket_manager.py
+  s_0031625e418713::t_b920b8a7541557 64-74
+  s_0031625e418713::t_bdd5862f235961 24
+  s_0031625e418713::t_c8a8233d982b79 79-80
+  s_0031625e418713::t_b39427ba27d1ea 16
+frontend/src/services/websocket.js
+  s_0031625e418713::t_3208378015fc4e 18,24
+  s_0031625e418713::t_291b143603e9f1 41-44
+  s_0031625e418713::t_e746e30d6ad4f3 9
+  s_0031625e418713::t_1f1cf19c077b76 76-82
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "6147140993b18b264d273c43a819dd542f3fac10",
+  "prompts": {},
+  "sessions": {
+    "s_0031625e418713": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "5dd40059-32d1-433b-9db2-ad48d84ae558",
+        "model": "composer-2.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

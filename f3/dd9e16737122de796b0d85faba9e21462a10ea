@@ -1,0 +1,23 @@
+backend/services/alert_monitor.py
+  s_0031625e418713::t_99c20c11c396a5 212,214-215
+  s_0031625e418713::t_182acc56bb1c91 150-151,157-177
+  s_0031625e418713::t_d77b8dae47d378 11
+  s_0031625e418713::t_f79fd1827d4b7c 12
+  s_0031625e418713::t_42d7294ec9b10a 263-264,267-275,277-289,291-297,302,305-311
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "f3dd9e16737122de796b0d85faba9e21462a10ea",
+  "prompts": {},
+  "sessions": {
+    "s_0031625e418713": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "5dd40059-32d1-433b-9db2-ad48d84ae558",
+        "model": "composer-2.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

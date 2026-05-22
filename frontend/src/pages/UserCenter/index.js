@@ -16,6 +16,12 @@ export default function UserCenter() {
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [todayUserCount, setTodayUserCount] = useState(null);
   const [dauLoading, setDauLoading] = useState(false);
+  const [defaultEmail, setDefaultEmail] = useState(user?.default_email || '');
+  const [emailSaving, setEmailSaving] = useState(false);
+
+  useEffect(() => {
+    setDefaultEmail(user?.default_email || '');
+  }, [user?.default_email]);
 
   useEffect(() => {
     if (!user) {
@@ -76,6 +82,26 @@ export default function UserCenter() {
     navigate('/login');
   };
 
+  const handleSaveEmail = async () => {
+    const email = defaultEmail.trim();
+    if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      return message.error('邮箱格式不正确');
+    }
+    setEmailSaving(true);
+    try {
+      const res = await api.put('/api/user/profile', { default_email: email });
+      if (res.success) {
+        message.success(res.message || '常用邮箱已保存');
+        await refreshUser();
+      } else {
+        message.error(res.message || '保存失败');
+      }
+    } catch {
+      message.error('保存失败');
+    }
+    setEmailSaving(false);
+  };
+
   if (!user) return null;
 
   return (
@@ -89,6 +115,10 @@ export default function UserCenter() {
         <div className="uc-info-row">
           <span className="uc-info-label">手机号</span>
           <span className="uc-info-value">{user.phone || '未设置'}</span>
+        </div>
+        <div className="uc-info-row">
+          <span className="uc-info-label">常用邮箱</span>
+          <span className="uc-info-value">{user.default_email || '未设置'}</span>
         </div>
         <div className="uc-info-row">
           <span className="uc-info-label">VIP 状态</span>
@@ -108,6 +138,21 @@ export default function UserCenter() {
         </div>
         <div style={{ marginTop: 16 }}>
           <Button danger onClick={handleLogout}>退出登录</Button>
+        </div>
+      </div>
+
+      <div className="uc-section">
+        <div className="uc-section-title">常用邮箱</div>
+        <p className="uc-section-desc">用于条件预警等通知的默认收件地址，新增预警时将自动填充</p>
+        <div className="uc-email-form">
+          <Input
+            placeholder="your@email.com"
+            value={defaultEmail}
+            onChange={e => setDefaultEmail(e.target.value.trim())}
+          />
+          <Button type="primary" loading={emailSaving} onClick={handleSaveEmail} style={{ width: 120 }}>
+            保存邮箱
+          </Button>
         </div>
       </div>
 

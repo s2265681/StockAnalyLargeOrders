@@ -24,6 +24,20 @@
   border-bottom: 1px solid var(--border-secondary);
 }
 
+.uc-section-desc {
+  margin: -8px 0 12px;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.uc-email-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 400px;
+}
+
 .uc-info-row {
   display: flex;
   justify-content: space-between;

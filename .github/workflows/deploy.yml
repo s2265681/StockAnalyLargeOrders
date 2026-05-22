@@ -91,7 +91,8 @@ jobs:
               migrations/20260520_create_alert_rules.sql \
               migrations/20260520_create_market_brief.sql \
               migrations/20260520_alter_market_brief_news.sql \
-              migrations/20260520_create_page_daily_activity.sql
+              migrations/20260520_create_page_daily_activity.sql \
+              migrations/20260522_add_users_default_email.sql
             do
               if [ -f "$migration" ]; then
                 echo "Applying $migration"

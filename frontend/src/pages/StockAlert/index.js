@@ -34,8 +34,6 @@ const TYPE_LABELS   = { limit_up: '涨停', limit_down: '跌停', change_pct: '�
 const STATUS_LABELS = { active: '监控中', triggered: '已触发', disabled: '已停用' };
 const RULES_POLL_MS = 5000;
 
-const EMPTY_ROW = () => ({ _key: Date.now() + Math.random(), code: '', alert_type: 'limit_up', threshold: null, direction: 'above', email: '' });
-
 const MONITOR_LABELS = {
   running:  { color: '#52c41a', text: '监控正常' },
   sleeping: { color: '#8c8c8c', text: '非交易时段' },
@@ -62,13 +60,24 @@ export default function StockAlert() {
   const [rules, setRules]         = useState([]);
   const [loading, setLoading]     = useState(false);
   const [showAdd, setShowAdd]     = useState(false);
-  const [addRows, setAddRows]     = useState([EMPTY_ROW()]);
+  const [addRows, setAddRows]     = useState([]);
   const [saving, setSaving]       = useState(false);
   const [monitorStatus, setMonitorStatus] = useState(null);
   const [editingRule, setEditingRule] = useState(null);
   const [editForm, setEditForm] = useState(null);
   const [editReactivate, setEditReactivate] = useState(false);
   const [editSaving, setEditSaving] = useState(false);
+
+  const defaultEmail = user?.default_email || '';
+
+  const makeEmptyRow = useCallback((email = defaultEmail) => ({
+    _key: Date.now() + Math.random(),
+    code: '',
+    alert_type: 'limit_up',
+    threshold: null,
+    direction: 'above',
+    email,
+  }), [defaultEmail]);
 
   const notifyNewlyTriggered = useCallback((prev, next) => {
     if (!prev?.length || !next?.length) return;
@@ -224,7 +233,7 @@ export default function StockAlert() {
       });
       if (res.success) {
         message.success(res.message || '保存成功');
-        setAddRows([EMPTY_ROW()]);
+        setAddRows([makeEmptyRow()]);
         setShowAdd(false);
         fetchRules();
       } else {
@@ -358,7 +367,12 @@ export default function StockAlert() {
             </span>
           )}
         </h1>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setShowAdd(v => !v)} className="alert-add-btn">
+        <Button type="primary" icon={<PlusOutlined />}
+          onClick={() => setShowAdd(v => {
+            if (!v) setAddRows([makeEmptyRow()]);
+            return !v;
+          })}
+          className="alert-add-btn">
           {showAdd ? '收起' : '新增预警'}
         </Button>
       </div>
@@ -451,7 +465,7 @@ export default function StockAlert() {
           </div>
           <div className="alert-add-actions">
             {addRows.length < 3 && (
-              <Button icon={<PlusOutlined />} onClick={() => setAddRows(rows => [...rows, EMPTY_ROW()])}>
+              <Button icon={<PlusOutlined />} onClick={() => setAddRows(rows => [...rows, makeEmptyRow()])}>
                 再加一条
               </Button>
             )}

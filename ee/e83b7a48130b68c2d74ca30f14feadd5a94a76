@@ -1,0 +1,36 @@
+backend/migrations/20260522_add_users_default_email.sql
+  s_0031625e418713::t_1cbd33201f9602 1-3
+backend/routes/user.py
+  s_0031625e418713::t_f9deae32da8b6c 3,6,13-18,26-27,51,56-78
+frontend/src/pages/UserCenter/index.js
+  s_0031625e418713::t_be5863d50b7a49 19-24
+  s_0031625e418713::t_3602d59539c95c 145-158
+  s_0031625e418713::t_1bc61edd4b93bd 120-122
+  s_0031625e418713::t_a3b4ff45e05066 85-104
+.github/workflows/deploy.yml
+  s_0031625e418713::t_2c35b51c11b3a3 94-95
+frontend/src/pages/StockAlert/index.js
+  s_0031625e418713::t_2f5bf90a8de752 63
+  s_0031625e418713::t_8ef85ee189edab 370-375
+  s_0031625e418713::t_5293ad933618c8 468
+  s_0031625e418713::t_f483c1fd979a95 71-81
+  s_0031625e418713::t_5ceac6b93a6e81 236
+frontend/src/pages/UserCenter/index.css
+  s_0031625e418713::t_b6e2154982a838 27-40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "eee83b7a48130b68c2d74ca30f14feadd5a94a76",
+  "prompts": {},
+  "sessions": {
+    "s_0031625e418713": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "5dd40059-32d1-433b-9db2-ad48d84ae558",
+        "model": "composer-2.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

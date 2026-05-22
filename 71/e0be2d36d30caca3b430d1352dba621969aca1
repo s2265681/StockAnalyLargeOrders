@@ -1,0 +1,22 @@
+docs/superpowers/plans/2026-05-22-ai-prompts-tactics-refactor.md
+  s_cd54420eef5f19::t_9e3d880d4ad30e 1-193,196-396,398,400,409-416,418-421,423,426-427,432-520,524-807
+  s_cd54420eef5f19::t_3782fa683b655d 397,399,401-408,417,422,424-425,428-431
+  s_cd54420eef5f19::t_f443f9054f369b 194-195
+  s_cd54420eef5f19::t_017db8ab9fc685 521-523
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "71e0be2d36d30caca3b430d1352dba621969aca1",
+  "prompts": {},
+  "sessions": {
+    "s_cd54420eef5f19": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a85267f4-5d08-4861-9047-4c62e6c364cd",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

@@ -1,0 +1,32 @@
+frontend/src/pages/StockAlert/index.js
+  s_0031625e418713::t_bc7af5e0bf1608 278-280
+  s_0031625e418713::t_b530e7a7089118 2-3
+  s_0031625e418713::t_f1c96b485ae3a2 379-420
+  s_0031625e418713::t_835eb3f5e1f604 265-266
+  s_0031625e418713::t_ad86c5ffed222a 68-71
+  s_0031625e418713::t_58f6854bce7060 237,241,245,253,257
+  s_0031625e418713::t_5c666190f0c4ae 314
+  s_0031625e418713::t_ba90f4a4dc6bec 156-210
+backend/routes/alert_rules.py
+  s_0031625e418713::t_126c4f3ff0d668 132-135,140-147,152-178,180-182
+frontend/src/pages/StockAlert/index.css
+  s_0031625e418713::t_e13c807ad7f536 191-213
+backend/tests/test_alert_rules_api.py
+  s_0031625e418713::t_e0547773d685e5 128,130-131,134-135
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "c8f96259acc25498e2fa5f51ac833f228e539ae9",
+  "prompts": {},
+  "sessions": {
+    "s_0031625e418713": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "5dd40059-32d1-433b-9db2-ad48d84ae558",
+        "model": "composer-2.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

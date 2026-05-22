@@ -125,12 +125,14 @@ class TestAlertRulesAPI(unittest.TestCase):
         self.assertFalse(data['success'])
         self.assertIn('权限', data['message'])
 
+    @patch('routes.alert_rules.get_stock_name_by_code', return_value='贵州茅台')
     @patch('routes.alert_rules.execute_write', return_value=1)
-    @patch('routes.alert_rules.execute_query', return_value=[{'user_id': 1}])
-    def test_update_rule(self, _mock_q, _mock_w):
+    @patch('routes.alert_rules.execute_query', return_value=[{'user_id': 1, 'alert_type': 'change_pct', 'status': 'active'}])
+    def test_update_rule(self, _mock_q, _mock_w, _mock_name):
         with self._mock_auth():
             resp = self.client.put('/api/alert-rules/1',
-                                   json={'threshold': 6.0, 'direction': 'above', 'email': 'new@qq.com'},
+                                   json={'code': '600519', 'alert_type': 'change_pct',
+                                         'threshold': 6.0, 'direction': 'above', 'email': 'new@qq.com'},
                                    headers=self.auth_header)
         data = resp.get_json()
         self.assertTrue(data['success'])

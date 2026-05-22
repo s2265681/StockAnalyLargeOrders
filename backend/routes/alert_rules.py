@@ -129,18 +129,57 @@ def monitor_status():
 @login_required
 def update_rule(rule_id):
     user_id = request.current_user['user_id']
-    existing = execute_query("SELECT user_id FROM alert_rules WHERE id = %s", (rule_id,))
+    existing = execute_query(
+        "SELECT user_id, alert_type, status FROM alert_rules WHERE id = %s",
+        (rule_id,),
+    )
     if not existing or existing[0]['user_id'] != user_id:
         return v1_error_response('规则不存在或无权限')
 
     body = request.get_json(silent=True) or {}
+    code = body.get('code', '').strip().zfill(6)
+    if not code:
+        return v1_error_response('股票代码不能为空')
+
+    alert_type = body.get('alert_type') or existing[0]['alert_type']
+    if alert_type not in VALID_ALERT_TYPES:
+        return v1_error_response(f"预警类型无效: {alert_type}")
+
     email = body.get('email', '').strip()
     if not email:
         return v1_error_response('收件邮箱不能为空')
 
+    if alert_type in TYPES_WITH_THRESHOLD and body.get('threshold') is None:
+        return v1_error_response(f"{alert_type} 类型需要设置阈值")
+
+    stock_name = get_stock_name_by_code(code) or ''
+    threshold = body.get('threshold')
+    direction = body.get('direction')
+    reactivate = bool(body.get('reactivate'))
+
+    if reactivate and existing[0]['status'] != 'active':
+        active_count = execute_query(
+            "SELECT COUNT(*) AS cnt FROM alert_rules WHERE user_id = %s AND status = 'active'",
+            (user_id,),
+        )[0]['cnt']
+        if active_count >= MAX_ACTIVE_RULES_PER_USER:
+            return v1_error_response(
+                f"监控中规则已达上限（{MAX_ACTIVE_RULES_PER_USER} 条），请先停用或删除部分规则"
+            )
+
+    if reactivate:
+        execute_write(
+            "UPDATE alert_rules SET code = %s, stock_name = %s, alert_type = %s, "
+            "threshold = %s, direction = %s, email = %s, "
+            "status = 'active', triggered_at = NULL WHERE id = %s",
+            (code, stock_name, alert_type, threshold, direction, email, rule_id),
+        )
+        return v1_success_response(message='已保存并重新激活')
+
     execute_write(
-        "UPDATE alert_rules SET threshold = %s, direction = %s, email = %s WHERE id = %s",
-        (body.get('threshold'), body.get('direction'), email, rule_id)
+        "UPDATE alert_rules SET code = %s, stock_name = %s, alert_type = %s, "
+        "threshold = %s, direction = %s, email = %s WHERE id = %s",
+        (code, stock_name, alert_type, threshold, direction, email, rule_id),
     )
     return v1_success_response(message='更新成功')
 

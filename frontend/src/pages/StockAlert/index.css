@@ -188,6 +188,29 @@
   gap: 8px;
 }
 
+.alert-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 4px;
+}
+
+.alert-edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.alert-edit-label {
+  font-size: 13px;
+  color: var(--text-muted, #666);
+}
+
+.alert-edit-field .ant-select,
+.alert-edit-field .ant-input {
+  width: 100%;
+}
+
 .alert-type-tag {
   display: inline-block;
   padding: 2px 7px;

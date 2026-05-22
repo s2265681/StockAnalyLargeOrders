@@ -1,0 +1,19 @@
+docs/superpowers/specs/2026-05-22-ai-prompts-tactics-refactor-design.md
+  s_cd54420eef5f19::t_ba6fc982e83205 1-160
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "37037150d6570de0e5561e8a56955aa7fbea11e5",
+  "prompts": {},
+  "sessions": {
+    "s_cd54420eef5f19": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a85267f4-5d08-4861-9047-4c62e6c364cd",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

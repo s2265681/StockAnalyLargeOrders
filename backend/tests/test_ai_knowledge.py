@@ -49,3 +49,22 @@ class TacticsTest(unittest.TestCase):
         for tac in K.TACTICS.values():
             self.assertIn(tac.full, K.TACTICS_FULL)
         self.assertIn("没有永恒有效的战法", K.TACTICS_FULL)
+
+
+class PromptCompositionTest(unittest.TestCase):
+    def test_system_prompt_uses_fragments(self):
+        from config import ai_prompts as P
+        self.assertIn("broken_board_count", P.SYSTEM_PROMPT)   # FIELD_GUIDE
+        self.assertIn("六大情绪指标", P.SYSTEM_PROMPT)          # EMOTION_INDICATORS
+        self.assertIn("龙回头", P.SYSTEM_PROMPT)               # TACTICS_BRIEF
+        self.assertIn("\"stage\"", P.SYSTEM_PROMPT)            # JSON schema 保留
+
+    def test_no_stale_position_value(self):
+        from config import ai_prompts as P
+        # 旧的不一致仓位口径不得残留
+        self.assertNotIn("5-7成", P.SYSTEM_PROMPT)
+        self.assertNotIn("5-7成", P.BATCH_ANALYSIS_PROMPT)
+
+    def test_single_date_keeps_placeholder(self):
+        from config import ai_prompts as P
+        self.assertIn("{FIELD_GUIDE}", P.SINGLE_DATE_ANALYSIS_PROMPT)

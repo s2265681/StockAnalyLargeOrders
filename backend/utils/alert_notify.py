@@ -1,4 +1,4 @@
-"""股票条件预警邮件通知，复用 job_notify 的 SMTP 配置"""
+"""股票条件预警邮件 + 微信队列通知，复用 job_notify 的 SMTP 配置"""
 import logging
 import smtplib
 import ssl
@@ -7,6 +7,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 from utils.job_notify import _smtp_config
+from utils.db import execute_write
 
 logger = logging.getLogger(__name__)
 
@@ -90,3 +91,15 @@ def send_stock_alert(rule: dict, quote: dict, limit_up_data: dict, to_email: str
     except Exception as e:
         logger.error("预警邮件发送失败: %s", e)
         return False
+
+
+def queue_wechat_notification(rule: dict, quote: dict, limit_up_data: dict) -> None:
+    """将预警消息写入微信通知队列"""
+    _, body = build_alert_email(rule, quote, limit_up_data)
+    try:
+        execute_write(
+            "INSERT INTO wechat_notification_queue (rule_id, message) VALUES (%s, %s)",
+            (rule.get('id'), body)
+        )
+    except Exception as e:
+        logger.error("微信通知入队失败 rule_id=%s: %s", rule.get('id'), e)

@@ -1,7 +1,7 @@
 # NiuNIuNiu 服务器定时任务（路径 /www/StockAnalyLargeOrders）
 # 安装: bash backend/jobs/install_server_crontab.sh
 
-# --- 1. 盘中全量（12 次/日：梯队 + 情绪周期 + 买卖指导）---
+# --- 1. 盘中全量（梯队 + 情绪周期 + 买卖指导，午后减频降 CPU）---
 33 9  * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
 53 9  * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
 20 10 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
@@ -9,8 +9,6 @@
 30 11 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
 35 13 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
 0  14 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
-35 14 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
-55 14 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
 0  15 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
 0  17 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
 0  18 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1

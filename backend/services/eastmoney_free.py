@@ -323,7 +323,7 @@ class EastMoneyFreeSource:
 
     def get_order_book(self, code):
         """获取五档盘口。
-        若 get_realtime_quote 刚刚（3s内）已获取过该股数据，直接从缓存解析，
+        若 get_realtime_quote 刚刚（15s内）已获取过该股数据，直接从缓存解析，
         不再发额外请求；否则调东方财富接口，失败降级 akshare。
         volume 单位为股，amount 单位为元。
         """
@@ -331,7 +331,7 @@ class EastMoneyFreeSource:
         cached = self._ob_cache.get(code)
         if cached:
             raw_d, ts = cached
-            if _time.time() - ts < 3:
+            if _time.time() - ts < 15:
                 result = self._parse_order_book_from_raw(raw_d)
                 if result and (result['bids'] or result['asks']):
                     return result

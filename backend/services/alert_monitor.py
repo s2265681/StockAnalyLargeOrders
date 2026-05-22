@@ -1,23 +1,23 @@
-"""股票条件预警监控服务，作为 eventlet greenlet 在交易时段每 3 秒轮询"""
+"""股票条件预警监控服务，作为 eventlet greenlet 在交易时段轮询"""
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from utils.db import execute_query, execute_write
-from utils.alert_notify import send_stock_alert
+from utils.alert_notify import send_stock_alert, queue_wechat_notification
 from utils.stock_utils import calc_limit_price
 
 logger = logging.getLogger(__name__)
 
-POLL_INTERVAL_TRADING = 3    # 交易时段轮询间隔（秒）
+POLL_INTERVAL_TRADING = 8    # 交易时段轮询间隔（秒）
 POLL_INTERVAL_CLOSED = 60    # 非交易时段休眠间隔（秒）
 
 # 内存状态，供 /api/alert-rules/monitor-status 接口读取
 _status = {
-    'running': False,       # greenlet 是否已启动
-    'healthy': False,       # 最近一次循环是否正常
-    'sleeping': False,      # 当前是否处于非交易时段休眠
-    'last_check_at': None,  # 最近一次成功执行检查的时间（ISO 字符串）
-    'last_error': None,     # 最近一次异常信息
+    'running': False,
+    'healthy': False,
+    'sleeping': False,
+    'last_check_at': None,
+    'last_error': None,
 }
 
 
@@ -76,17 +76,40 @@ def check_rule_condition(rule: dict, quote, limit_up_data: dict) -> bool:
     return False
 
 
+def _is_in_cooldown(rule: dict) -> bool:
+    """判断规则是否在冷却期内（repeat_minutes > 0 时有效）"""
+    repeat_minutes = rule.get('repeat_minutes') or 0
+    if repeat_minutes <= 0:
+        return False
+    last_notified = rule.get('last_notified_at')
+    if not last_notified:
+        return False
+    if isinstance(last_notified, str):
+        last_notified = datetime.fromisoformat(last_notified)
+    return datetime.now() < last_notified + timedelta(minutes=repeat_minutes)
+
+
 def _get_active_rules() -> list:
     return execute_query(
-        "SELECT id, user_id, code, stock_name, alert_type, threshold, direction, email "
+        "SELECT id, user_id, code, stock_name, alert_type, threshold, direction, email, "
+        "repeat_minutes, last_notified_at "
         "FROM alert_rules WHERE status = 'active'",
         ()
     )
 
 
 def _mark_triggered(rule_id: int) -> None:
+    """一次性规则：标记为已触发"""
     execute_write(
-        "UPDATE alert_rules SET status = 'triggered', triggered_at = NOW() WHERE id = %s",
+        "UPDATE alert_rules SET status = 'triggered', triggered_at = NOW(), last_notified_at = NOW() WHERE id = %s",
+        (rule_id,)
+    )
+
+
+def _mark_notified(rule_id: int) -> None:
+    """重复规则：仅更新最近通知时间，保持 active 状态"""
+    execute_write(
+        "UPDATE alert_rules SET last_notified_at = NOW(), triggered_at = NOW() WHERE id = %s",
         (rule_id,)
     )
 
@@ -123,17 +146,33 @@ def _run_check_cycle(adapter, socketio=None) -> None:
             if not quote:
                 continue
 
-            order_book = (adapter.source.get_order_book(code)
-                          if hasattr(adapter.source, 'get_order_book') else {})
-            limit_up_data = adapter.limit_up_monitor.analyze(code, quote, order_book)
+            needs_seal = any(r['alert_type'] == 'seal_order' for r in code_rules)
+            if needs_seal and hasattr(adapter.source, 'get_order_book'):
+                order_book = adapter.source.get_order_book(code)
+            else:
+                order_book = {}
+            limit_up_data = adapter.limit_up_monitor.analyze(
+                code, quote, order_book, lightweight=not needs_seal,
+            )
 
             for rule in code_rules:
-                if check_rule_condition(rule, quote, limit_up_data):
-                    send_stock_alert(rule, quote, limit_up_data, to_email=rule['email'])
-                    logger.info("预警触发: rule_id=%s code=%s type=%s -> %s",
-                                rule['id'], code, rule['alert_type'], rule['email'])
+                if not check_rule_condition(rule, quote, limit_up_data):
+                    continue
+                if _is_in_cooldown(rule):
+                    continue
+
+                send_stock_alert(rule, quote, limit_up_data, to_email=rule['email'])
+                queue_wechat_notification(rule, quote, limit_up_data)
+                logger.info("预警触发: rule_id=%s code=%s type=%s -> %s",
+                            rule['id'], code, rule['alert_type'], rule['email'])
+
+                repeat_minutes = rule.get('repeat_minutes') or 0
+                if repeat_minutes > 0:
+                    _mark_notified(rule['id'])
+                else:
                     _mark_triggered(rule['id'])
-                    _push_rule_triggered(socketio, rule)
+
+                _push_rule_triggered(socketio, rule)
         except Exception as e:
             logger.error("预警检查失败 code=%s: %s", code, e)
 

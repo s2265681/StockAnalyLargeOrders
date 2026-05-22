@@ -32,7 +32,7 @@ const ALERT_TYPE_OPTIONS = [
 
 const TYPE_LABELS   = { limit_up: '涨停', limit_down: '跌停', change_pct: '涨跌幅', seal_order: '涨停封单' };
 const STATUS_LABELS = { active: '监控中', triggered: '已触发', disabled: '已停用' };
-const RULES_POLL_MS = 5000;
+const RULES_POLL_MS = 15000;
 
 /** 涨跌幅：正数=涨超，负数=跌超；存库仍为正值+direction */
 function displayChangePctThreshold(threshold, direction) {

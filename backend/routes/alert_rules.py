@@ -242,3 +242,24 @@ def disable_rule(rule_id):
         (rule_id,)
     )
     return v1_success_response(message='已停用')
+
+
+@alert_rules_bp.route('/api/alert-rules/wechat-queue', methods=['GET'])
+def pop_wechat_queue():
+    """拉取并清除待发微信通知（供 Claude Code 轮询调用，无需登录）"""
+    rows = execute_query(
+        "SELECT id, rule_id, message FROM wechat_notification_queue "
+        "WHERE sent = 0 ORDER BY created_at ASC LIMIT 20",
+        ()
+    )
+    if not rows:
+        return v1_success_response(data={'items': []})
+
+    ids = [r['id'] for r in rows]
+    placeholders = ','.join(['%s'] * len(ids))
+    execute_write(
+        f"UPDATE wechat_notification_queue SET sent = 1 WHERE id IN ({placeholders})",
+        tuple(ids)
+    )
+    items = [{'id': r['id'], 'rule_id': r['rule_id'], 'message': r['message']} for r in rows]
+    return v1_success_response(data={'items': items})

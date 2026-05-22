@@ -96,7 +96,7 @@ class LimitUpMonitor:
             'seal_data_valid': False,
         }
 
-    def analyze(self, code: str, quote: dict, order_book: dict) -> dict:
+    def analyze(self, code: str, quote: dict, order_book: dict, *, lightweight: bool = False) -> dict:
         """
         分析封单状态
 
@@ -104,12 +104,14 @@ class LimitUpMonitor:
             code: 股票代码
             quote: 实时行情，来自 EastMoneyFreeSource.get_realtime_quote()
             order_book: 五档盘口，来自 EastMoneyFreeSource.get_order_book()
+            lightweight: 预警等轻量场景，跳过流通市值/封单趋势等重计算
 
         Returns:
             封单分析结果字典
         """
-        if not quote or not order_book:
+        if not quote:
             return self._empty_result()
+        order_book = order_book or {}
 
         try:
             yesterday_close = float(quote.get('yesterday_close', 0) or 0)
@@ -142,36 +144,38 @@ class LimitUpMonitor:
                     seal_amount = round(bid1_amount / 10000, 2)  # 元 -> 万元
                     seal_volume_lots = int(bid1_volume // 100)  # 股 -> 手
 
-            # 获取流通市值（元）
-            float_market_cap = _get_float_market_cap(code)
-
-            # 计算封单比（封单额元 / 流通市值元）
-            if float_market_cap > 0:
-                seal_ratio = round(seal_amount * 10000 / float_market_cap, 6)
-            else:
+            # 获取流通市值（元）— 轻量模式跳过 akshare，避免 eventlet 下递归与 CPU 开销
+            if lightweight:
+                float_market_cap = 0.0
                 seal_ratio = 0.0
-
-            # 更新封单样本队列
-            state['seal_samples'].append(seal_amount)
-
-            # 线性回归计算封单趋势斜率
-            samples = list(state['seal_samples'])
-            if len(samples) >= 2:
-                x = np.arange(len(samples), dtype=float)
-                y = np.array(samples, dtype=float)
-                # 使用 numpy 线性回归
-                coeffs = np.polyfit(x, y, 1)
-                seal_trend = float(coeffs[0])
-            else:
                 seal_trend = 0.0
-
-            # 封单趋势标签
-            if seal_trend > 0.1:
-                seal_trend_label = '加封中'
-            elif seal_trend < -0.1:
-                seal_trend_label = '减封中'
-            else:
                 seal_trend_label = '封单平稳'
+                turnover_at_limit = 0.0
+            else:
+                float_market_cap = _get_float_market_cap(code)
+                if float_market_cap > 0:
+                    seal_ratio = round(seal_amount * 10000 / float_market_cap, 6)
+                else:
+                    seal_ratio = 0.0
+                state['seal_samples'].append(seal_amount)
+                samples = list(state['seal_samples'])
+                if len(samples) >= 2:
+                    x = np.arange(len(samples), dtype=float)
+                    y = np.array(samples, dtype=float)
+                    coeffs = np.polyfit(x, y, 1)
+                    seal_trend = float(coeffs[0])
+                else:
+                    seal_trend = 0.0
+                if seal_trend > 0.1:
+                    seal_trend_label = '加封中'
+                elif seal_trend < -0.1:
+                    seal_trend_label = '减封中'
+                else:
+                    seal_trend_label = '封单平稳'
+                if float_market_cap > 0:
+                    turnover_at_limit = round(turnover / float_market_cap * 100, 4)
+                else:
+                    turnover_at_limit = 0.0
 
             # 更新开板次数：was_limit_up=True → is_limit_up=False
             was_limit_up = state['was_limit_up']
@@ -184,12 +188,6 @@ class LimitUpMonitor:
 
             # 更新涨停状态
             state['was_limit_up'] = is_limit_up
-
-            # 换手率（成交额 / 流通市值）
-            if float_market_cap > 0:
-                turnover_at_limit = round(turnover / float_market_cap * 100, 4)
-            else:
-                turnover_at_limit = 0.0
 
             ob_source = (order_book or {}).get('source', 'empty')
             has_order_book = (

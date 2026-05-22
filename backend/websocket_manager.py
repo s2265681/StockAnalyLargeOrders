@@ -24,7 +24,7 @@ _subscriptions = {}    # sid -> {code, room}
 _alert_rooms = {}      # sid -> alert_user_{id} 房间
 _active_rooms = set()  # 当前有订阅者的房间名
 
-POLL_INTERVAL_TRADING = 3    # 交易时间轮询间隔（秒），LiveFeed 的保底
+POLL_INTERVAL_TRADING = 8    # 交易时间轮询间隔（秒），LiveFeed 的保底
 POLL_INTERVAL_CLOSED = 30    # 非交易时间轮询间隔（秒）
 
 # 共享实例

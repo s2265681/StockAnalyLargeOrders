@@ -32,7 +32,7 @@ _adapter = DataSourceAdapter(use_l2=False)
 _HOT_STOCKS_CACHE: dict = {"data": None, "ts": 0.0}
 _HOT_STOCKS_TTL = 600  # 10 分钟
 
-_STOCKAPI_TOKEN = "c6b042b0bc7178103985337e72c31b976264e6f85ce93b0e"
+_STOCKAPI_TOKEN = os.getenv("STOCKAPI_TOKEN", "c6b042b0bc7178103985337e72c31b976264e6f85ce93b0e")
 _STOCKAPI_JJQC = "http://user.stockapi.com.cn/v1/base/jjqcUser"
 
 
@@ -820,6 +820,8 @@ def _normalize_report(raw: dict, fallback_text: str = "") -> dict:
     return {
         "rating": raw.get("rating") or "中性",
         "theme_position": raw.get("theme_position") or "无题材",
+        "applicable_tactic": raw.get("applicable_tactic") or "待观察",
+        "tactic_fit": raw.get("tactic_fit") or "",
         "emotion_fit": raw.get("emotion_fit") or raw.get("emotion") or "",
         "market_env": raw.get("market_env") or "",
         "short_term_ecology": raw.get("short_term_ecology") or "",

@@ -262,5 +262,21 @@ class TestGetHotStocksForDiagnosis(unittest.TestCase):
         self.assertEqual(result["searched"], [])
 
 
+class NormalizeReportFieldsTest(unittest.TestCase):
+    def test_normalize_report_has_tactic_fields(self):
+        from services.ai_diagnosis_service import _normalize_report
+        rep = _normalize_report({})
+        self.assertIn("applicable_tactic", rep)
+        self.assertIn("tactic_fit", rep)
+        self.assertEqual(rep["applicable_tactic"], "待观察")
+        self.assertEqual(rep["tactic_fit"], "")
+
+    def test_normalize_report_keeps_ai_tactic(self):
+        from services.ai_diagnosis_service import _normalize_report
+        rep = _normalize_report({"applicable_tactic": "龙回头", "tactic_fit": "回踩10日线缩量"})
+        self.assertEqual(rep["applicable_tactic"], "龙回头")
+        self.assertEqual(rep["tactic_fit"], "回踩10日线缩量")
+
+
 if __name__ == "__main__":
     unittest.main()

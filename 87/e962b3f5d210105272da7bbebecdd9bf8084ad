@@ -1,0 +1,19 @@
+backend/migrations/20260522_add_users_default_email.sql
+  s_f3f2244d87ed0b::t_6d10b6751baa9f 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "87e962b3f5d210105272da7bbebecdd9bf8084ad",
+  "prompts": {},
+  "sessions": {
+    "s_f3f2244d87ed0b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2cf088ca-a7b9-4f1d-ac69-29133875cba1",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

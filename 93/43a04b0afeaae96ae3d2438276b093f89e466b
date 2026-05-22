@@ -1,0 +1,28 @@
+backend/services/limit_up_monitor.py
+  s_0031625e418713::t_9f3efc614f7afa 11-12
+  s_0031625e418713::t_0ce54b5fc5de08 123-127
+backend/services/alert_monitor.py
+  s_0031625e418713::t_f96a6f310db6ee 57-58,60
+  s_0031625e418713::t_ce582b71cd794e 7
+backend/utils/stock_utils.py
+  s_0031625e418713::t_b667074d08ff45 54-100
+  s_0031625e418713::t_c2c5f6a8197d49 6
+backend/tests/test_stock_utils.py
+  s_0031625e418713::t_2f3f396dfabf0d 32-58
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "9343a04b0afeaae96ae3d2438276b093f89e466b",
+  "prompts": {},
+  "sessions": {
+    "s_0031625e418713": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "5dd40059-32d1-433b-9db2-ad48d84ae558",
+        "model": "composer-2.5"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

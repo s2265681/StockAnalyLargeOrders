@@ -1,0 +1,25 @@
+skills/market-sentiment.md
+  s_cd54420eef5f19::t_8471ade80d5c90 18-21
+skills/board-hitting.md
+  s_cd54420eef5f19::t_8471ade80d5c90 106-108
+skills/stock-analysis.md
+  s_cd54420eef5f19::t_8471ade80d5c90 32-35
+skills/trading-patterns.md
+  s_cd54420eef5f19::t_8471ade80d5c90 3,6,8,10,12,15,25,30,35,40,45,49,54,58,60,63,73,77,81,83,86,108,122,127,132,138,145,149,152,154,165,172,179,181,187,193,195,200,206,211,217,223,230-275,277-354,356-389,393-399,404-405,407,411-412,415-416,420,424,426-427,432-437
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "9f8ccc0fb9e7004d1043ca9f4c3075132988e352",
+  "prompts": {},
+  "sessions": {
+    "s_cd54420eef5f19": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a85267f4-5d08-4861-9047-4c62e6c364cd",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

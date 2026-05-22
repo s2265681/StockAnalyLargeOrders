@@ -21,3 +21,31 @@ class KnowledgeFragmentsTest(unittest.TestCase):
         self.assertIn("6-8成", K.POSITION_TABLE)
         self.assertNotIn("5-7成", K.POSITION_TABLE)
         self.assertNotIn("5-7成", K.EMOTION_STAGES)
+
+
+class TacticsTest(unittest.TestCase):
+    EXPECTED = [
+        "龙头首阴低吸", "爆量涨停弱转强", "首板一进二",
+        "打板接力", "断板反包", "龙回头", "中军补涨",
+    ]
+
+    def test_seven_tactics(self):
+        self.assertEqual(len(K.TACTICS), 7)
+        for key in self.EXPECTED:
+            self.assertIn(key, K.TACTICS)
+
+    def test_tactic_has_brief_and_full(self):
+        for key, tac in K.TACTICS.items():
+            self.assertTrue(tac.brief, f"{key} brief 为空")
+            self.assertTrue(tac.full, f"{key} full 为空")
+            self.assertTrue(len(tac.full) > len(tac.brief), f"{key} full 应比 brief 长")
+
+    def test_tactics_brief_has_adapt_table(self):
+        self.assertIn("情绪适配", K.TACTICS_BRIEF)
+        for stage in ("冰点期", "升温期", "退潮期"):
+            self.assertIn(stage, K.TACTICS_BRIEF)
+
+    def test_tactics_full_covers_all(self):
+        for tac in K.TACTICS.values():
+            self.assertIn(tac.full, K.TACTICS_FULL)
+        self.assertIn("没有永恒有效的战法", K.TACTICS_FULL)

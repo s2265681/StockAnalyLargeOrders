@@ -91,7 +91,23 @@ def _mark_triggered(rule_id: int) -> None:
     )
 
 
-def _run_check_cycle(adapter) -> None:
+def _push_rule_triggered(socketio, rule: dict) -> None:
+    """通过 WebSocket 通知对应用户刷新预警列表"""
+    user_id = rule.get('user_id')
+    if not socketio or not user_id:
+        return
+    try:
+        socketio.emit('alert_rule_triggered', {
+            'rule_id': rule['id'],
+            'code': rule['code'],
+            'stock_name': rule.get('stock_name') or '',
+            'alert_type': rule['alert_type'],
+        }, room=f'alert_user_{user_id}')
+    except Exception as e:
+        logger.warning("预警 WebSocket 推送失败 rule_id=%s: %s", rule.get('id'), e)
+
+
+def _run_check_cycle(adapter, socketio=None) -> None:
     """执行一轮预警检查"""
     rules = _get_active_rules()
     if not rules:
@@ -117,6 +133,7 @@ def _run_check_cycle(adapter) -> None:
                     logger.info("预警触发: rule_id=%s code=%s type=%s -> %s",
                                 rule['id'], code, rule['alert_type'], rule['email'])
                     _mark_triggered(rule['id'])
+                    _push_rule_triggered(socketio, rule)
         except Exception as e:
             logger.error("预警检查失败 code=%s: %s", code, e)
 
@@ -132,7 +149,7 @@ def start_alert_monitor(socketio, adapter) -> None:
             try:
                 if _is_trade_time():
                     _status['sleeping'] = False
-                    _run_check_cycle(adapter)
+                    _run_check_cycle(adapter, socketio)
                     _status['healthy'] = True
                     _status['last_check_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     _status['last_error'] = None

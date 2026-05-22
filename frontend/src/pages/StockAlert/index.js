@@ -3,6 +3,7 @@ import { Table, Button, Select, Input, InputNumber, Popconfirm, message, Tooltip
 import { PlusOutlined, DeleteOutlined, ReloadOutlined, BellOutlined, PauseOutlined } from '@ant-design/icons';
 import { apiRequest, apiRequestWithRetry } from '../../config/api';
 import { useAuth } from '../../context/AuthContext';
+import { stockWS } from '../../services/websocket';
 import './index.css';
 
 const { Option } = Select;
@@ -31,6 +32,7 @@ const ALERT_TYPE_OPTIONS = [
 
 const TYPE_LABELS   = { limit_up: '涨停', limit_down: '跌停', change_pct: '涨跌幅', seal_order: '涨停封单' };
 const STATUS_LABELS = { active: '监控中', triggered: '已触发', disabled: '已停用' };
+const RULES_POLL_MS = 5000;
 
 const EMPTY_ROW = () => ({ _key: Date.now() + Math.random(), code: '', alert_type: 'limit_up', threshold: null, direction: 'above', email: '' });
 
@@ -64,16 +66,37 @@ export default function StockAlert() {
   const [saving, setSaving]       = useState(false);
   const [monitorStatus, setMonitorStatus] = useState(null);
 
-  const fetchRules = useCallback(async () => {
+  const notifyNewlyTriggered = useCallback((prev, next) => {
+    if (!prev?.length || !next?.length) return;
+    next.forEach((item) => {
+      const old = prev.find(r => r.id === item.id);
+      if (old?.status === 'active' && item.status === 'triggered') {
+        const label = TYPE_LABELS[item.alert_type] || item.alert_type;
+        message.info(`${item.code} ${label}预警已触发`);
+      }
+    });
+  }, []);
+
+  const fetchRules = useCallback(async (silent = false) => {
     if (!localStorage.getItem('niuniu_token')) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       const res = await apiRequestWithRetry('/api/alert-rules');
-      if (res.success) setRules(res.data.items || []);
-      else message.error(res.message || '加载失败');
-    } catch { message.error('加载失败'); }
-    finally { setLoading(false); }
-  }, []);
+      if (res.success) {
+        const items = res.data.items || [];
+        setRules(prev => {
+          if (silent) notifyNewlyTriggered(prev, items);
+          return items;
+        });
+      } else if (!silent) {
+        message.error(res.message || '加载失败');
+      }
+    } catch {
+      if (!silent) message.error('加载失败');
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  }, [notifyNewlyTriggered]);
 
   const fetchMonitorStatus = useCallback(async () => {
     if (!localStorage.getItem('niuniu_token')) return;
@@ -94,6 +117,26 @@ export default function StockAlert() {
     const timer = setInterval(fetchMonitorStatus, 30000);
     return () => clearInterval(timer);
   }, [authLoading, user, fetchMonitorStatus]);
+
+  // WebSocket 实时推送 + 静默轮询兜底
+  useEffect(() => {
+    if (authLoading || !user) return;
+
+    stockWS.connect();
+    const offWs = stockWS.onAlertTriggered(() => {
+      fetchRules(true);
+    });
+
+    const poll = () => {
+      if (document.visibilityState === 'visible') fetchRules(true);
+    };
+    const pollTimer = setInterval(poll, RULES_POLL_MS);
+
+    return () => {
+      offWs();
+      clearInterval(pollTimer);
+    };
+  }, [authLoading, user, fetchRules]);
 
   const handleAction = async (url, method = 'POST', successMsg = '操作成功') => {
     try {

@@ -13,6 +13,7 @@ from datetime import datetime
 from flask import request
 from flask_socketio import emit, join_room, leave_room
 
+from utils.auth_middleware import decode_token
 from services.data_source_adapter import DataSourceAdapter
 from services.eastmoney_playwright import LiveFeedManager, EastMoneyPlaywrightSource
 
@@ -20,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 # 模块级状态
 _subscriptions = {}    # sid -> {code, room}
+_alert_rooms = {}      # sid -> alert_user_{id} 房间
 _active_rooms = set()  # 当前有订阅者的房间名
 
 POLL_INTERVAL_TRADING = 3    # 交易时间轮询间隔（秒），LiveFeed 的保底
@@ -59,12 +61,23 @@ def register_websocket_events(socketio):
     """注册 WebSocket 事件处理器"""
 
     @socketio.on('connect')
-    def handle_connect():
-        logger.info(f"客户端已连接: {request.sid}")
+    def handle_connect(auth=None):
+        sid = request.sid
+        token = (auth or {}).get('token')
+        if token:
+            payload = decode_token(token)
+            if payload and payload.get('user_id'):
+                room = f"alert_user_{payload['user_id']}"
+                join_room(room)
+                _alert_rooms[sid] = room
+                logger.info(f"客户端 {sid} 加入预警房间: {room}")
+        logger.info(f"客户端已连接: {sid}")
 
     @socketio.on('disconnect')
     def handle_disconnect():
         sid = request.sid
+        if sid in _alert_rooms:
+            leave_room(_alert_rooms.pop(sid))
         if sid in _subscriptions:
             info = _subscriptions.pop(sid)
             room = info['room']

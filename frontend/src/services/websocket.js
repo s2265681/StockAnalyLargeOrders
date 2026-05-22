@@ -6,6 +6,7 @@ class StockWebSocket {
     this.socket = null;
     this._callbacks = {
       l2Update: [],
+      alertTriggered: [],
       disconnect: [],
       connect: [],
     };
@@ -14,11 +15,13 @@ class StockWebSocket {
   connect() {
     if (this.socket?.connected) return;
 
+    const token = localStorage.getItem('niuniu_token');
     this.socket = io(apiConfig.baseURL, {
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionAttempts: 10,
+      auth: token ? { token } : {},
     });
 
     this.socket.on('connect', () => {
@@ -33,6 +36,10 @@ class StockWebSocket {
 
     this.socket.on('l2_update', (data) => {
       this._callbacks.l2Update.forEach(cb => cb(data));
+    });
+
+    this.socket.on('alert_rule_triggered', (data) => {
+      this._callbacks.alertTriggered.forEach(cb => cb(data));
     });
 
     this.socket.on('error', (data) => {
@@ -63,6 +70,13 @@ class StockWebSocket {
     this._callbacks.l2Update.push(callback);
     return () => {
       this._callbacks.l2Update = this._callbacks.l2Update.filter(cb => cb !== callback);
+    };
+  }
+
+  onAlertTriggered(callback) {
+    this._callbacks.alertTriggered.push(callback);
+    return () => {
+      this._callbacks.alertTriggered = this._callbacks.alertTriggered.filter(cb => cb !== callback);
     };
   }
 

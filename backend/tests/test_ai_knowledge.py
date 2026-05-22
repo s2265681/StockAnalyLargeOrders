@@ -68,3 +68,21 @@ class PromptCompositionTest(unittest.TestCase):
     def test_single_date_keeps_placeholder(self):
         from config import ai_prompts as P
         self.assertIn("{FIELD_GUIDE}", P.SINGLE_DATE_ANALYSIS_PROMPT)
+
+
+class DiagnosisTemplateTest(unittest.TestCase):
+    def test_template_embeds_tactics(self):
+        from config import ai_prompts as P
+        self.assertIn("七大超短战法", P.DIAGNOSIS_REPORT_TEMPLATE)
+
+    def test_template_has_new_fields(self):
+        from config import ai_prompts as P
+        self.assertIn("applicable_tactic", P.DIAGNOSIS_REPORT_TEMPLATE)
+        self.assertIn("tactic_fit", P.DIAGNOSIS_REPORT_TEMPLATE)
+
+    def test_build_diagnosis_prompt_keeps_fields(self):
+        from config.ai_prompts import build_diagnosis_prompt
+        s = build_diagnosis_prompt({"code": "000001"})
+        self.assertIn("000001", s)
+        self.assertIn("applicable_tactic", s)
+        self.assertIn("tactic_fit", s)

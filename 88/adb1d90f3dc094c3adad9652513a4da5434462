@@ -1,0 +1,20 @@
+backend/config/ai_knowledge.py
+  s_cd54420eef5f19::t_278f3183f024b1 500
+  s_cd54420eef5f19::t_99db36e7a3ede1 502
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "88adb1d90f3dc094c3adad9652513a4da5434462",
+  "prompts": {},
+  "sessions": {
+    "s_cd54420eef5f19": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a85267f4-5d08-4861-9047-4c62e6c364cd",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

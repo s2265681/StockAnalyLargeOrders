@@ -17,7 +17,11 @@ module.exports = {
       instances: 1,
       autorestart: true,
       watch: false,
-      max_memory_restart: '1G',
+      max_memory_restart: '700M',
+      min_uptime: '30s',
+      max_restarts: 10,
+      restart_delay: 3000,
+      kill_timeout: 8000,
       env_production: {
         NODE_ENV: 'production'
       }

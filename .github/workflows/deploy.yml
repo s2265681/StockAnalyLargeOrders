@@ -88,6 +88,8 @@ jobs:
               migrations/20260516_cleanup_dragon_tiger_seat_duplicates.sql \
               migrations/20260517_create_theme_tables.sql \
               migrations/20260517_create_auction_grab_tables.sql \
+              migrations/20260517_emotion_intraday_columns.sql \
+              migrations/20260519_auction_grab_score_fields.sql \
               migrations/20260520_create_alert_rules.sql \
               migrations/20260520_create_market_brief.sql \
               migrations/20260520_alter_market_brief_news.sql \

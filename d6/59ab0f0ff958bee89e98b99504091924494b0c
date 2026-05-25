@@ -1,0 +1,24 @@
+backend/utils/date_utils.py
+  s_fc3b4b2f8e89fd::t_c21d06de2f89f0 5,7-8,10,19-21,36-37,39-45
+backend/routes/limit_up_echelon.py
+  s_fc3b4b2f8e89fd::t_285bea08cf31fe 352,354-365,367-370,372-374
+backend/jobs/job_lib.sh
+  s_fc3b4b2f8e89fd::t_b39670c6f6051d 47-49
+  s_fc3b4b2f8e89fd::t_3295499d3b32d1 83,87,91-95
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.1",
+  "base_commit_sha": "d659ab0f0ff958bee89e98b99504091924494b0c",
+  "prompts": {},
+  "sessions": {
+    "s_fc3b4b2f8e89fd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a40c0d64-3561-41a2-ad1d-d4fbaea69003",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

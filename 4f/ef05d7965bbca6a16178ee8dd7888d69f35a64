@@ -1,0 +1,23 @@
+.github/workflows/deploy.yml
+  s_fc3b4b2f8e89fd::t_fc3718f16bf4d2 91-92
+backend/migrations/20260517_emotion_intraday_columns.sql
+  s_fc3b4b2f8e89fd::t_234ab923001f5d 2-3
+ecosystem.config.js
+  s_fc3b4b2f8e89fd::t_589243fe25b7f7 20-24
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.1",
+  "base_commit_sha": "4fef05d7965bbca6a16178ee8dd7888d69f35a64",
+  "prompts": {},
+  "sessions": {
+    "s_fc3b4b2f8e89fd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a40c0d64-3561-41a2-ad1d-d4fbaea69003",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "佳伟 <s2265681@163.com>"
+    }
+  }
+}

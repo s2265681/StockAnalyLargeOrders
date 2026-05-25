@@ -349,18 +349,29 @@ def _code_to_em_symbol(code: str) -> str:
 
 
 def _fetch_em_stock_concepts(code: str) -> list:
-    """拉取个股所属概念/板块（东方财富 CoreConception）"""
-    import requests
+    """拉取个股所属概念/板块（东方财富 CoreConception）
 
+    eventlet 下禁用 requests，改用 curl 子进程 + --max-time 双层超时。"""
+    import json
+    import os
+    import subprocess
+    from urllib.parse import urlencode
+
+    params = {"code": _code_to_em_symbol(code)}
+    url = (
+        "https://emweb.securities.eastmoney.com/PC_HSF10/CoreConception/PageAjax?"
+        + urlencode(params)
+    )
+    env = {**os.environ, "no_proxy": "*", "NO_PROXY": "*"}
     try:
-        resp = requests.get(
-            "https://emweb.securities.eastmoney.com/PC_HSF10/CoreConception/PageAjax",
-            params={"code": _code_to_em_symbol(code)},
-            headers={"User-Agent": "Mozilla/5.0"},
-            timeout=8,
+        proc = subprocess.run(
+            ["curl", "-s", "-k", "--noproxy", "*", "--max-time", "8",
+             "-A", "Mozilla/5.0", url],
+            capture_output=True, text=True, timeout=12, env=env,
         )
-        resp.raise_for_status()
-        data = resp.json()
+        if proc.returncode != 0 or not proc.stdout:
+            return []
+        data = json.loads(proc.stdout)
         if data.get("status") == -1:
             return []
         items = data.get("ssbk") or []

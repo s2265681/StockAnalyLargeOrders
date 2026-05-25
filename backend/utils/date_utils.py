@@ -2,9 +2,12 @@
 日期工具模块
 用东方财富日K接口校验交易日，避免 akshare 慢查询
 """
+import json
 import logging
-import requests
+import os
+import subprocess
 from datetime import datetime, timedelta
+from urllib.parse import urlencode
 
 logger = logging.getLogger(__name__)
 
@@ -13,12 +16,13 @@ _trading_day_cache: dict = {}
 
 
 def _is_trading_day_eastmoney(date_str: str) -> bool:
-    """通过东方财富日K接口验证某日是否为交易日"""
+    """通过东方财富日K接口验证某日是否为交易日
+
+    eventlet 下禁用 requests，改用 curl 子进程；接口不可达时回退到工作日判断。"""
     if date_str in _trading_day_cache:
         return _trading_day_cache[date_str]
 
     date_compact = date_str.replace('-', '')
-    url = 'https://push2his.eastmoney.com/api/qt/stock/kline/get'
     params = {
         'secid': '0.000001',
         'fields1': 'f1,f2,f3,f4,f5,f6',
@@ -29,15 +33,21 @@ def _is_trading_day_eastmoney(date_str: str) -> bool:
         'end': date_compact,
         'ut': 'fa5fd1943c7b386f172d6893dbfba10b',
     }
+    url = 'https://push2his.eastmoney.com/api/qt/stock/kline/get?' + urlencode(params)
+    env = {**os.environ, "no_proxy": "*", "NO_PROXY": "*"}
     try:
-        resp = requests.get(url, params=params, timeout=5)
-        data = resp.json()
+        proc = subprocess.run(
+            ["curl", "-s", "-k", "--noproxy", "*", "--max-time", "5", url],
+            capture_output=True, text=True, timeout=8, env=env,
+        )
+        if proc.returncode != 0 or not proc.stdout:
+            raise IOError(f"curl exit={proc.returncode}")
+        data = json.loads(proc.stdout)
         klines = data.get('data', {})
         if klines:
             klines = klines.get('klines', [])
         result = bool(klines)
     except Exception:
-        # 接口不可达时，退化为工作日判断
         dt = datetime.strptime(date_str, '%Y-%m-%d')
         result = dt.weekday() < 5
 

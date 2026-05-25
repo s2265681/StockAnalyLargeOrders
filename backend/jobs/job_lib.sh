@@ -44,12 +44,12 @@ job_skip_if_not_trading_day() {
 
 job_acquire_lock() {
   local lock_name="${1:-$JOB_NAME}"
-  LOCKDIR="$LOG_DIR/.${lock_name}.lock"
-  if ! mkdir "$LOCKDIR" 2>/dev/null; then
+  local lock_file="$LOG_DIR/.${lock_name}.lock"
+  exec 9>"$lock_file"
+  if ! flock -n 9; then
     echo "$(date '+%F %T') [$JOB_NAME] 仍在运行，跳过本次"
     exit 0
   fi
-  trap 'rmdir "$LOCKDIR" 2>/dev/null || true' EXIT
 }
 
 job_on_failure() {
@@ -80,13 +80,19 @@ job_on_success() {
 }
 
 job_run() {
+  local timeout_sec="${JOB_TIMEOUT_SEC:-1800}"
   local start_ts
   start_ts=$(date +%s)
   set +e
-  "$@"
+  timeout --signal=TERM --kill-after=15s "$timeout_sec" "$@"
   local rc=$?
   set -e
   export JOB_DURATION_SECS=$(( $(date +%s) - start_ts ))
+  if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
+    echo "$(date '+%F %T') [$JOB_NAME] 超时强杀 timeout=${timeout_sec}s rc=$rc" >&2
+    job_on_failure "$rc" "执行超过 ${timeout_sec}s 被强制终止"
+    exit "$rc"
+  fi
   if [ "$rc" -ne 0 ]; then
     echo "$(date '+%F %T') [$JOB_NAME] 失败 exit=$rc 耗时=${JOB_DURATION_SECS}s" >&2
     job_on_failure "$rc"

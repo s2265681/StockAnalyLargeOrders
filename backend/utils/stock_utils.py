@@ -33,7 +33,8 @@ def normalize_stock_code(code):
     if not code:
         return None
     code = str(code).strip()
-    if code.startswith(('sh', 'sz')):
+    lower = code.lower()
+    if lower.startswith(('sh', 'sz')):
         code = code[2:]
     elif code.startswith(('0.', '1.')):
         code = code[2:]

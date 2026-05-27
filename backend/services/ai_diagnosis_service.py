@@ -175,10 +175,14 @@ def purge_stale_cache(code: str, session_date: str) -> None:
 
 
 def normalize_code(code: str) -> str:
-    c = (code or "").strip()
-    digits = re.sub(r"\D", "", c)
+    from utils.stock_utils import normalize_stock_code
+
+    normalized = normalize_stock_code(code)
+    if normalized and str(normalized).isdigit() and len(str(normalized)) == 6:
+        return str(normalized)
+    digits = re.sub(r"\D", "", (code or "").strip())
     if len(digits) >= 6:
-        return digits[-6:].zfill(6)
+        return digits[-6:]
     return digits.zfill(6) if digits else ""
 
 

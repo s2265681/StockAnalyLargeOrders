@@ -237,25 +237,4 @@ pnpm start
 
 ---
 
-**注意**: 本系统仅供学习和研究使用，不构成投资建议。股市有风险，投资需谨慎。 
-
-
-lsof -ti:9001 | xargs kill -9 2>/dev/null; echo "清理完成"
-
-
-add11# 测试GitHub Actions自动部署
-
-当前时间: Wed Jul 16 07:23:30 CST 2025
-API状态: 正常运行
-端口状态: 9001和9000已开放
-Wed Jul 16 07:34:21 CST 2025: 测试修复后的SSH配置
-
-
-
-参考
-https://github.com/hsliuping/TradingAgents-CN
-
-
-横店影视 
-
-分时240个点
+**注意**: 本系统仅供学习和研究使用，不构成投资建议。股市有风险，投资需谨慎。

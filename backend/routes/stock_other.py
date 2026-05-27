@@ -9,6 +9,7 @@ from flask import Blueprint, request
 from utils.response import success_response, error_response
 from utils.date_utils import get_next_trading_date, get_valid_trading_date, validate_and_get_trading_date
 from utils.cache import clear_cache
+from utils.stock_utils import normalize_stock_code
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,7 @@ _STAGE_TO_SENTIMENT = {
 
 
 def _normalize_code(code):
-    return str(code).zfill(6)
+    return normalize_stock_code(code) or ''
 
 
 def _json_value(value, default=0):

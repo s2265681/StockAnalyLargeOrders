@@ -10,12 +10,12 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = path.join(__dirname, '../frontend/public/landing-screenshots');
 const BASE = process.env.BASE_URL || process.argv[2] || 'https://stockai.xin';
-const API = process.env.API_URL || (BASE.includes('localhost') ? 'http://localhost:9001' : BASE);
+const API = process.env.API_URL || (BASE.includes('localhost') ? 'http://localhost:9001' : `${BASE.replace(/\/$/, '')}`);
 const USER = 'rock';
 const PASS = '123456';
 
 const PAGES = [
-  { id: 'stock-dashboard', path: '/stock-dashboard?code=601991', title: '个股分析', wait: '.stock-dashboard-container', delay: 4000 },
+  { id: 'stock-dashboard', path: '/stock-dashboard?code=000001', title: '个股分析', wait: '.stock-dashboard-container', delay: 8000, ready: '.chart-container canvas, .echarts-for-react canvas' },
   { id: 'ai-diagnosis', path: '/ai-diagnosis', title: 'AI诊股', wait: '.ai-diagnosis-page, [class*="diagnosis"]', delay: 3000 },
   { id: 'limit-up-echelon', path: '/limit-up-echelon', title: '涨停梯队', wait: '.limit-up-echelon, [class*="echelon"]', delay: 3000 },
   { id: 'dragon-tiger', path: '/dragon-tiger', title: '核心游资', wait: '.dragon-tiger-page, [class*="dragon"]', delay: 3000 },
@@ -54,7 +54,14 @@ async function capture(page, spec, viewport) {
   } catch {
     await page.waitForTimeout(3000);
   }
+  if (spec.ready) {
+    await page.waitForSelector(spec.ready, { timeout: 20000 }).catch(() => {});
+  }
   await page.waitForTimeout(spec.delay);
+  await page.waitForFunction(
+    () => !document.querySelector('.ant-spin-spinning'),
+    { timeout: 15000 },
+  ).catch(() => {});
   await hideChrome(page);
   const header = await page.locator('.ant-layout-header').first();
   const box = await header.boundingBox().catch(() => null);
@@ -68,20 +75,47 @@ async function capture(page, spec, viewport) {
   return file;
 }
 
+async function browserLogin(page) {
+  const loginUrl = `${BASE.replace(/\/$/, '')}/login`;
+  await page.goto(loginUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  await page.locator('input[placeholder="用户名"]').fill(USER);
+  await page.locator('input[placeholder="密码"]').fill(PASS);
+  await page.locator('button[type="submit"]').click();
+  await page.waitForURL(/stock-dashboard|limit-up|emotion/, { timeout: 30000 }).catch(() => {});
+  await page.waitForTimeout(2000);
+  const token = await page.evaluate(() => localStorage.getItem('niuniu_token'));
+  if (!token) throw new Error('浏览器登录失败，未获取 token');
+  await page.evaluate(() => localStorage.setItem('niuniu_theme', 'light'));
+  console.log('Logged in via browser UI');
+  return token;
+}
+
 async function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
-  const token = await apiLogin();
-  console.log('Logged in via API');
 
   const browser = await chromium.launch({ headless: true, channel: 'chrome' });
-  const context = await browser.newContext({ deviceScaleFactor: 2 });
+  const context = await browser.newContext({
+    deviceScaleFactor: 2,
+    ignoreHTTPSErrors: true,
+  });
   const page = await context.newPage();
 
-  await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
-  await page.evaluate((t) => {
-    localStorage.setItem('niuniu_token', t);
-    localStorage.setItem('niuniu_theme', 'light');
-  }, token);
+  let token;
+  try {
+    token = await apiLogin();
+    console.log('Logged in via API');
+  } catch (e) {
+    console.warn('API login failed, trying browser:', e.message);
+    token = await browserLogin(page);
+  }
+
+  if (token) {
+    await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
+    await page.evaluate((t) => {
+      localStorage.setItem('niuniu_token', t);
+      localStorage.setItem('niuniu_theme', 'light');
+    }, token);
+  }
 
   const desktop = { width: 1280, height: 900 };
   const mobile = { width: 390, height: 844 };

@@ -8,11 +8,7 @@ MARKER="# NiuNIuNiu local jobs"
 # 本地开发用；生产请用 install_server_crontab.sh
 TMP="$(mktemp)"
 
-chmod +x "$ROOT/backend/jobs/run_intraday.sh" \
-  "$ROOT/backend/jobs/run_auction_grab.sh" \
-  "$ROOT/backend/jobs/run_dragon_tiger.sh" \
-  "$ROOT/backend/jobs/run_echelon.sh" \
-  "$ROOT/backend/jobs/run_emotion_cycle.sh" 2>/dev/null || true
+chmod +x "$ROOT/backend/jobs/run_"*.sh "$ROOT/backend/jobs/install_"*.sh 2>/dev/null || true
 
 mkdir -p "$ROOT/logs"
 

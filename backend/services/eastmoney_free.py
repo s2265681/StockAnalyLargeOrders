@@ -555,6 +555,76 @@ class EastMoneyFreeSource:
             'source': 'empty',
         }
 
+    def get_minute_money_flow(self, code):
+        """分钟级主力资金/散户累计净流入（东财 fflow/kline，数值为万元字符串）"""
+        url = 'https://push2.eastmoney.com/api/qt/stock/fflow/kline/get'
+        params = {
+            'fields1': 'f1,f2,f3,f7',
+            'fields2': 'f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61,f62,f63,f64,f65',
+            'klt': '1',
+            'fqt': '1',
+            'secid': self._get_market_code(code),
+            'beg': '0',
+            'end': '20500101',
+            'lmt': '256',
+        }
+
+        def _do_request():
+            resp = self.session.get(url, params=params, timeout=10)
+            resp.raise_for_status()
+            return resp.json()
+
+        data = _safe_request(_do_request, timeout_seconds=12)
+        if data is None:
+            from urllib.parse import urlencode
+            full_url = f"{url}?{urlencode(params)}"
+            data = _subprocess_fetch_json(full_url, headers={
+                'Referer': 'https://quote.eastmoney.com/',
+                'User-Agent': self.session.headers.get('User-Agent', ''),
+            })
+
+        if not data or not data.get('data'):
+            return None
+
+        klines = data['data'].get('klines', [])
+        if not klines:
+            return None
+
+        zero = '0.000'
+        time_data, zhuli_data, sanhu_data = [], [], []
+        chaoda_data, dadan_data, zhongdan_data = [], [], []
+        for kline in klines:
+            parts = kline.split(',')
+            raw_time = parts[0] if parts else ''
+            time_data.append(raw_time.split(' ')[1] if ' ' in raw_time else raw_time)
+            if len(parts) < 6:
+                for bucket in (zhuli_data, sanhu_data, chaoda_data, dadan_data, zhongdan_data):
+                    bucket.append(zero)
+                continue
+            try:
+                zhuli = float(parts[1] or 0)
+                xiaodan = float(parts[2] or 0)
+                zhongdan = float(parts[3] or 0)
+                dadan = float(parts[4] or 0)
+                chaoda = float(parts[5] or 0)
+                zhuli_data.append(f'{zhuli / 10000:.3f}')
+                sanhu_data.append(f'{xiaodan / 10000:.3f}')
+                chaoda_data.append(f'{chaoda / 10000:.3f}')
+                dadan_data.append(f'{dadan / 10000:.3f}')
+                zhongdan_data.append(f'{zhongdan / 10000:.3f}')
+            except (ValueError, IndexError):
+                for bucket in (zhuli_data, sanhu_data, chaoda_data, dadan_data, zhongdan_data):
+                    bucket.append(zero)
+
+        return {
+            'time': time_data,
+            'zhuli': zhuli_data,
+            'sanhu': sanhu_data,
+            'chaoda': chaoda_data,
+            'dadan': dadan_data,
+            'zhongdan': zhongdan_data,
+        }
+
     def get_tick_details(self, code, pos=-100000, dt=None):
         """获取逐笔成交明细
         Args:

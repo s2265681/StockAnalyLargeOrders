@@ -1,20 +1,52 @@
-# NiuNIuNiu 本地定时任务（仅交易日由 job_guard 判断）
+# StockAnalyLargeOrders 本地定时任务（仅交易日由 job_guard 判断）
 # 文档: docs/local-cron-jobs.md
 # 安装: bash backend/jobs/install_local_crontab.sh
+# 与服务器同频；合盖休眠会漏跑，生产请用 install_server_crontab.sh
 
-# --- 1. 盘中：梯队 + 情绪周期 + 买卖指导（5 次/日，强制覆盖）---
-45 9 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
-30 10 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
-30 11 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
-0 14 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
-45 14 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
+# --- 1. 盘中全量（与 crontab.server.txt 一致）---
+35 9  * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
+46 9  * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
+8  10 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
+31 10 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
+52 10 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
+32 11 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
+5  13 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
+35 13 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
+2  14 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
+32 14 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
+47 14 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
+3  15 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
+12 15 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
+10 16 * * 1-5 ${NIU_ROOT}/backend/jobs/run_intraday.sh >> ${NIU_LOG}/intraday_job.log 2>&1
 
-# --- 2. 龙虎榜 AI：15:30–18:30 每小时，齐全则跳过 ---
+# --- 1b. 涨停梯队高频 ---
+40 9  * * 1-5 ${NIU_ROOT}/backend/jobs/run_echelon_intraday.sh >> ${NIU_LOG}/echelon_intraday_job.log 2>&1
+52 9  * * 1-5 ${NIU_ROOT}/backend/jobs/run_echelon_intraday.sh >> ${NIU_LOG}/echelon_intraday_job.log 2>&1
+18 10 * * 1-5 ${NIU_ROOT}/backend/jobs/run_echelon_intraday.sh >> ${NIU_LOG}/echelon_intraday_job.log 2>&1
+42 10 * * 1-5 ${NIU_ROOT}/backend/jobs/run_echelon_intraday.sh >> ${NIU_LOG}/echelon_intraday_job.log 2>&1
+58 10 * * 1-5 ${NIU_ROOT}/backend/jobs/run_echelon_intraday.sh >> ${NIU_LOG}/echelon_intraday_job.log 2>&1
+15 11 * * 1-5 ${NIU_ROOT}/backend/jobs/run_echelon_intraday.sh >> ${NIU_LOG}/echelon_intraday_job.log 2>&1
+42 11 * * 1-5 ${NIU_ROOT}/backend/jobs/run_echelon_intraday.sh >> ${NIU_LOG}/echelon_intraday_job.log 2>&1
+8  13 * * 1-5 ${NIU_ROOT}/backend/jobs/run_echelon_intraday.sh >> ${NIU_LOG}/echelon_intraday_job.log 2>&1
+22 13 * * 1-5 ${NIU_ROOT}/backend/jobs/run_echelon_intraday.sh >> ${NIU_LOG}/echelon_intraday_job.log 2>&1
+48 13 * * 1-5 ${NIU_ROOT}/backend/jobs/run_echelon_intraday.sh >> ${NIU_LOG}/echelon_intraday_job.log 2>&1
+18 14 * * 1-5 ${NIU_ROOT}/backend/jobs/run_echelon_intraday.sh >> ${NIU_LOG}/echelon_intraday_job.log 2>&1
+38 14 * * 1-5 ${NIU_ROOT}/backend/jobs/run_echelon_intraday.sh >> ${NIU_LOG}/echelon_intraday_job.log 2>&1
+52 14 * * 1-5 ${NIU_ROOT}/backend/jobs/run_echelon_intraday.sh >> ${NIU_LOG}/echelon_intraday_job.log 2>&1
+
+# --- 1c. 收盘周期研判兜底 ---
+5 16 * * 1-5 ${NIU_ROOT}/backend/jobs/run_emotion_cycle.sh >> ${NIU_LOG}/emotion_cycle_job.log 2>&1
+
+# --- 2. 龙虎榜 AI ---
+0  15 * * 1-5 ${NIU_ROOT}/backend/jobs/run_dragon_tiger.sh >> ${NIU_LOG}/dragon_tiger_job.log 2>&1
 30 15 * * 1-5 ${NIU_ROOT}/backend/jobs/run_dragon_tiger.sh >> ${NIU_LOG}/dragon_tiger_job.log 2>&1
 30 16 * * 1-5 ${NIU_ROOT}/backend/jobs/run_dragon_tiger.sh >> ${NIU_LOG}/dragon_tiger_job.log 2>&1
 30 17 * * 1-5 ${NIU_ROOT}/backend/jobs/run_dragon_tiger.sh >> ${NIU_LOG}/dragon_tiger_job.log 2>&1
 30 18 * * 1-5 ${NIU_ROOT}/backend/jobs/run_dragon_tiger.sh >> ${NIU_LOG}/dragon_tiger_job.log 2>&1
 
-# --- 3. 竞价抢筹：9:25/9:30 早盘；15:20/15:40 尾盘 ---
+# --- 3. 竞价抢筹 ---
 25,30 9 * * 1-5 ${NIU_ROOT}/backend/jobs/run_auction_grab.sh morning >> ${NIU_LOG}/auction_grab_job.log 2>&1
-20,40 15 * * 1-5 ${NIU_ROOT}/backend/jobs/run_auction_grab.sh tail >> ${NIU_LOG}/auction_grab_job.log 2>&1
+5,20,35 15 * * 1-5 ${NIU_ROOT}/backend/jobs/run_auction_grab.sh tail >> ${NIU_LOG}/auction_grab_job.log 2>&1
+
+# --- 4. 盘前资讯（本地可选，与服务器一致）---
+30 8 * * 1-5 ${NIU_ROOT}/backend/jobs/run_market_brief.sh >> ${NIU_LOG}/market_brief_job.log 2>&1

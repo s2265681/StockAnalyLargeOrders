@@ -36,8 +36,12 @@ venv.bak/
 *.swo
 *~
 
+# 本地 brainstorm / 设计草稿（勿提交）
+.superpowers/
+
 # Node.js相关
 node_modules/
+package-lock.json
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

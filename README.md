@@ -74,7 +74,7 @@
 ```bash
 # 克隆项目
 git clone <repository-url>
-cd NiuNIuNiu
+cd StockAnalyLargeOrders
 
 # 给脚本执行权限
 chmod +x start.sh stop.sh
@@ -104,13 +104,11 @@ python app.py
 ```bash
 cd frontend
 
-# 安装依赖 (推荐使用pnpm)
+# 安装依赖（项目统一使用 pnpm，见 start.sh）
 pnpm install
-# 或使用 npm install
 
 # 启动前端服务
 pnpm start
-# 或使用 npm start
 ```
 
 ### 访问系统

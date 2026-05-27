@@ -7,11 +7,14 @@
 
 ## 一、任务总览
 
-| 类别 | 脚本 | 触发时间（工作日 cron） | 行为 |
-|------|------|-------------------------|------|
-| 盘中刷新 | `run_intraday.sh` | **9:45 / 10:30 / 11:30 / 14:00 / 14:45**（5 次） | 强制覆盖当日：梯队 + 情绪周期 + 买卖指导 |
-| 龙虎榜 AI | `run_dragon_tiger.sh` | 15:30 / 16:30 / 17:30 / 18:30 | 补全 AI；**已齐全则跳过** |
-| 竞价抢筹 | `run_auction_grab.sh` | **9:25、9:30** 早盘；15:20、15:40 尾盘 | 写入 `auction_grab_stocks` |
+| 类别 | 脚本 | 触发频率（工作日） | 行为 |
+|------|------|-------------------|------|
+| 盘中全量 | `run_intraday.sh` | **14 次/日**（对齐 09:45/10:30/11:30/14:00/14:45 + 开收盘） | 梯队 + 情绪周期 + 买卖指导（`force`） |
+| 梯队补刷 | `run_echelon_intraday.sh` | **13 次/日**（约每 10 分钟，与全量错开） | 仅刷新涨停梯队 |
+| 周期兜底 | `run_emotion_cycle.sh` | **16:05** 1 次 | 收盘周期研判（DB 已有则 skip） |
+| 龙虎榜 AI | `run_dragon_tiger.sh` | 15:00–18:30 **5 次** | 补全 AI；齐全则跳过 |
+| 竞价抢筹 | `run_auction_grab.sh` | 早盘 9:25/9:30；尾盘 15:05/15:20/15:35 | 写入 `auction_grab_stocks` |
+| 盘前资讯 | `run_market_brief.sh` | **8:30** 1 次 | 市场简报 |
 
 ### 通用机制
 
@@ -68,8 +71,11 @@ crontab -l | grep -A15 "NiuNIuNiu local jobs"
 | 文件 | 内容 |
 |------|------|
 | `logs/intraday_job.log` | 盘中三合一 |
+| `logs/echelon_intraday_job.log` | 梯队高频 |
+| `logs/emotion_cycle_job.log` | 收盘周期兜底 |
 | `logs/dragon_tiger_job.log` | 龙虎榜 |
 | `logs/auction_grab_job.log` | 竞价 |
+| `logs/market_brief_job.log` | 盘前简报 |
 
 手动执行：
 
@@ -113,4 +119,8 @@ deploy/logrotate-niuniuniu.conf
 
 ---
 
-*更新：2026-05-17 — 降频 5 次/日、竞价 9:25/9:30、休市跳过、邮件告警、服务器 cron*
+*更新：2026-05-27 — 盘中加密：intraday 14 次/日 + echelon 13 次/日；对齐 INTRADAY_SLOTS；尾盘竞价 3 次*
+
+### 盘中全量时刻（`crontab.server.txt`）
+
+`09:35` `09:46` `10:08` `10:31` `10:52` `11:32` `13:05` `13:35` `14:02` `14:32` `14:47` `15:03` `15:12` `16:10`

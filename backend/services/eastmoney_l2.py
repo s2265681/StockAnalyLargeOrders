@@ -1,30 +1,17 @@
 """
-东方财富L2付费数据源（预留）
-开通L2后实现具体逻辑，替换免费数据源
+东方财富 L2 付费数据源（预留）
+未单独实现时继承免费源，避免 use_l2=True 时接口直接崩溃。
 """
 import logging
+
+from .eastmoney_free import EastMoneyFreeSource
 
 logger = logging.getLogger(__name__)
 
 
-class EastMoneyL2Source:
-    """东方财富L2付费数据源
+class EastMoneyL2Source(EastMoneyFreeSource):
+    """L2 占位：开通后可在此类覆盖逐笔/盘口等方法；当前回退免费接口。"""
 
-    与 EastMoneyFreeSource 相同的方法签名。
-    开通L2（约30元/月）后实现以下方法即可切换。
-    """
-
-    def get_realtime_quote(self, code):
-        raise NotImplementedError("L2数据源尚未实现，请先开通东方财富Level-2服务")
-
-    def get_tick_details(self, code, pos=-100000, dt=None):
-        raise NotImplementedError("L2数据源尚未实现，请先开通东方财富Level-2服务")
-
-    def get_timeshare(self, code, dt=None):
-        raise NotImplementedError("L2数据源尚未实现，请先开通东方财富Level-2服务")
-
-    def get_daily_kline(self, code, dt):
-        raise NotImplementedError("L2数据源尚未实现，请先开通东方财富Level-2服务")
-
-    def infer_direction(self, buy_sell_type):
-        raise NotImplementedError("L2数据源尚未实现，请先开通东方财富Level-2服务")
+    def __init__(self):
+        super().__init__()
+        logger.debug("EastMoneyL2Source 使用免费接口回退（L2 尚未单独实现）")

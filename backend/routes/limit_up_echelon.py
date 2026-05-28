@@ -50,7 +50,7 @@ from config.ai_prompts import (
     build_regroup_prompt,
     build_split_oversized_prompt,
 )
-from utils.claude_client import get_claude_api_key, call_claude_for_scenario
+from utils.claude_client import get_claude_api_key, call_claude_for_scenario, get_last_api_error
 
 # (date, codes_tuple) -> (unix_ts, {"labels": code -> group_label, "reasons": label -> reason, "leaders": label -> [leader]})
 _echelon_ai_cache = {}
@@ -1071,7 +1071,17 @@ def _group_stocks_fresh(stocks: list) -> dict:
     }
     ai_result = _claude_group_labels_for_stocks(stocks)
     if not (ai_result or {}).get("labels"):
-        raise ValueError("AI 分组未返回有效标签")
+        api_err = get_last_api_error()
+        if rule_labels:
+            logger.warning(
+                "AI 分组未返回有效标签，回退规则标签（%s 只）%s",
+                len(rule_labels),
+                f" API: {api_err}" if api_err else "",
+            )
+            ai_result = {"labels": dict(rule_labels), "reasons": {}, "leaders": {}}
+        else:
+            hint = f" API: {api_err}" if api_err else ""
+            raise ValueError(f"AI 分组未返回有效标签且无规则标签{hint}")
     labels = {}
     for s in stocks:
         code = s.get("code", "")
@@ -1603,7 +1613,17 @@ def build_echelon_one_date(dt: str, force: bool = False) -> str:
         )
         return "saved"
     except Exception as e:
-        logger.error("离线生成涨停梯队失败 date=%s: %s", dt_clean, e, exc_info=True)
+        api_err = get_last_api_error()
+        if api_err and str(api_err) not in str(e):
+            logger.error(
+                "离线生成涨停梯队失败 date=%s: %s | last_api_error=%s",
+                dt_clean,
+                e,
+                api_err,
+                exc_info=True,
+            )
+        else:
+            logger.error("离线生成涨停梯队失败 date=%s: %s", dt_clean, e, exc_info=True)
         return "failed"
 
 

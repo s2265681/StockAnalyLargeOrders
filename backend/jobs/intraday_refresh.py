@@ -35,12 +35,20 @@ def main() -> int:
     dt = _today_compact()
     logger.info("===== 盘中刷新开始 date=%s =====", dt)
 
-    echelon = build_echelon_one_date(dt, force=True)
+    try:
+        echelon = build_echelon_one_date(dt, force=True)
+    except Exception as e:
+        logger.error("涨停梯队异常: %s", e, exc_info=True)
+        return 1
     logger.info("涨停梯队: %s", echelon)
     if echelon == "failed":
         return 1
 
-    records = _fetch_emotion_records()
+    try:
+        records = _fetch_emotion_records()
+    except Exception as e:
+        logger.error("拉取情绪周期数据失败: %s", e, exc_info=True)
+        return 1
     if not records:
         logger.error("未获取到情绪周期数据")
         return 1

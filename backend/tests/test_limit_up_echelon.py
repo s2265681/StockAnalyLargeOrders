@@ -205,6 +205,17 @@ class SmartGroupRegroupTest(unittest.TestCase):
         mock_claude.assert_not_called()
 
 
+class GroupStocksFreshFallbackTest(unittest.TestCase):
+    @patch("routes.limit_up_echelon._claude_group_labels_for_stocks", return_value={})
+    @patch("routes.limit_up_echelon._assign_broad_tag_from_stock", return_value="电力")
+    def test_falls_back_to_rule_labels_when_ai_empty(self, _broad, _claude):
+        from routes.limit_up_echelon import _group_stocks_fresh
+
+        stocks = [{"code": "600726", "name": "华电", "boards": 3}]
+        result = _group_stocks_fresh(stocks)
+        self.assertEqual(result["labels"]["600726"], "电力")
+
+
 class BuildEchelonOneDateTest(unittest.TestCase):
     @patch("routes.limit_up_echelon.date_has_manual_tags", return_value=False)
     @patch("routes.limit_up_echelon.save_ai_grouping_result")

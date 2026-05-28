@@ -5,7 +5,7 @@ import os
 import subprocess
 import tempfile
 
-from config.ai_accounts import ACCOUNTS, AiAccount, get_active_account
+from config.ai_accounts import ACCOUNTS, AiAccount, get_active_account, get_active_account_id
 
 logger = logging.getLogger(__name__)
 
@@ -174,6 +174,25 @@ def _invoke_account(
             pass
 
 
+def _failover_account_attempts(
+    primary_id: str,
+    primary_model: str,
+) -> list[tuple[str, str]]:
+    """主账号失败后的备用 (account_id, model) 列表。"""
+    attempts: list[tuple[str, str]] = []
+    if primary_id == "kalowave":
+        ar = ACCOUNTS["anyrouter"]
+        if ar.resolve_api_key():
+            attempts.append(
+                ("anyrouter", primary_model if "claude" in primary_model else ar.models.get("sonnet", "")),
+            )
+    elif primary_id == "anyrouter":
+        kw = ACCOUNTS["kalowave"]
+        if kw.resolve_api_key():
+            attempts.append(("kalowave", kw.models.get("sonnet", primary_model)))
+    return [(aid, m) for aid, m in attempts if aid in ACCOUNTS and m]
+
+
 def call_claude(
     user_content: str,
     *,
@@ -184,20 +203,55 @@ def call_claude(
     proc_timeout=None,
     raise_on_error: bool = False,
 ) -> str:
-    """调用 AI，返回助手回复文本"""
+    """调用 AI，返回助手回复文本；主账号空响应/失败时自动尝试备用账号。"""
     if proc_timeout is None:
         proc_timeout = curl_timeout + 5
-    account = ACCOUNTS[account_id] if account_id else get_active_account()
+    primary_id = account_id or get_active_account_id()
+    account = ACCOUNTS[primary_id]
     use_model = model or account.models.get("haiku", "")
-    return _invoke_account(
+    text = _invoke_account(
         account,
         user_content,
         model=use_model,
         max_tokens=max_tokens,
         curl_timeout=curl_timeout,
         proc_timeout=proc_timeout,
-        raise_on_error=raise_on_error,
+        raise_on_error=False,
     )
+    if text:
+        return text
+
+    # 显式指定 account_id 时不再 failover（调用方自行控制）
+    if account_id:
+        if raise_on_error and not text:
+            raise RuntimeError(_last_api_error or "AI 调用失败")
+        return text
+
+    for fb_id, fb_model in _failover_account_attempts(primary_id, use_model):
+        logger.warning(
+            "AI 主账号 %s/%s 失败，降级 %s/%s — %s",
+            primary_id,
+            use_model,
+            fb_id,
+            fb_model,
+            _last_api_error,
+        )
+        text = _invoke_account(
+            ACCOUNTS[fb_id],
+            user_content,
+            model=fb_model,
+            max_tokens=max_tokens,
+            curl_timeout=curl_timeout,
+            proc_timeout=proc_timeout,
+            raise_on_error=False,
+        )
+        if text:
+            logger.info("AI 降级成功: %s/%s", fb_id, fb_model)
+            return text
+
+    if raise_on_error:
+        raise RuntimeError(_last_api_error or "AI 调用失败")
+    return ""
 
 
 def call_claude_for_scenario(

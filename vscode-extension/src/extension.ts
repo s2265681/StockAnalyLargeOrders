@@ -3,7 +3,7 @@ import { StockManager } from './stockManager';
 import { StatusBarManager } from './statusBar';
 import { AlertManager } from './alertManager';
 import { fetchQuotes, searchStock, StockQuote } from './sinaApi';
-import { openPanel, buildViewStockUrl, openTimeshareInBrowser } from './panel';
+import { openPanel, buildViewStockUrl } from './panel';
 
 export function activate(ctx: vscode.ExtensionContext): void {
   const log = vscode.window.createOutputChannel('AI炒股看盘');
@@ -133,16 +133,6 @@ export function activate(ctx: vscode.ExtensionContext): void {
     openPanel(buildViewStockUrl(cfg().backendUrl, code));
   }
 
-  async function cmdOpenTimeshareBrowser(preferredCode?: string): Promise<void> {
-    const stocks = stockManager.getAll();
-    const code = preferredCode ?? stocks[0]?.code;
-    if (!code) {
-      vscode.window.showWarningMessage('请先添加股票');
-      return;
-    }
-    await openTimeshareInBrowser(cfg().backendUrl, code);
-  }
-
   async function cmdRemoveStock(): Promise<void> {
     const stocks = stockManager.getAll();
     if (stocks.length === 0) { vscode.window.showInformationMessage('股票列表为空'); return; }
@@ -269,7 +259,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
     const ACTIONS: { label: string; description: string; fn: () => void }[] = [
       { label: '$(add) 添加股票',        description: '输入股票代码或名称添加',    fn: cmdAddStock    },
-      { label: '$(list-flat) 查看股票',  description: '登录后打开线上分时图',        fn: cmdViewStock   },
+      { label: '$(list-flat) 查看股票',  description: '在编辑器内置浏览器打开分时图', fn: cmdViewStock   },
       { label: '$(remove) 移除股票',     description: '从已添加的股票中选择移除',  fn: cmdRemoveStock },
       { label: '$(arrow-swap) 排序股票', description: '调整股票的显示顺序',        fn: cmdSortStocks  },
       { label: '$(trash) 清空股票',      description: '清空所有已添加的股票',      fn: cmdClearStocks },
@@ -307,7 +297,6 @@ export function activate(ctx: vscode.ExtensionContext): void {
     ['stockAnalysis.showMenu',        cmdShowMenu],
     ['stockAnalysis.addStock',        cmdAddStock],
     ['stockAnalysis.viewStock',       cmdViewStock],
-    ['stockAnalysis.openTimeshareBrowser', cmdOpenTimeshareBrowser],
     ['stockAnalysis.removeStock',     cmdRemoveStock],
     ['stockAnalysis.sortStocks',      cmdSortStocks],
     ['stockAnalysis.clearStocks',     cmdClearStocks],

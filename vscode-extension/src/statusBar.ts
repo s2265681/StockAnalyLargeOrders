@@ -68,7 +68,7 @@ export class StatusBarManager {
 
   /** 底部：左侧时间，右侧「查看分时图」可点击链接 */
   private buildFooterRow(time: string, code: string): string {
-    const href = `command:stockAnalysis.openTimeshareBrowser?${encodeURIComponent(JSON.stringify([code]))}`;
+    const href = `command:stockAnalysis.viewStock?${encodeURIComponent(JSON.stringify([code]))}`;
     return (
       `<table style="width:100%"><tr>` +
       `<td><span style="opacity:0.85">${time}</span></td>` +

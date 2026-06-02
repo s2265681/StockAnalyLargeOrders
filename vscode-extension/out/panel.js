@@ -36,35 +36,26 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.toSixDigitCode = toSixDigitCode;
 exports.buildViewStockUrl = buildViewStockUrl;
 exports.openPanel = openPanel;
-exports.openTimeshareInBrowser = openTimeshareInBrowser;
 const vscode = __importStar(require("vscode"));
 /** 将 sh603678 / sz000001 等格式转为 6 位代码 */
 function toSixDigitCode(code) {
     const m = code.match(/(\d{6})/);
     return m ? m[1] : code;
 }
-/** 构建登录页 URL，登录后进入分时图（有股票时带 code 参数） */
+/** 构建分时图页面 URL（未登录时由前端 RequireAuth 跳转登录，并保留 code 参数） */
 function buildViewStockUrl(backendUrl, stockCode) {
     const base = backendUrl.replace(/\/$/, '');
     const six = stockCode ? toSixDigitCode(stockCode) : '';
-    const next = six
-        ? `/stock-dashboard?code=${encodeURIComponent(six)}`
-        : '/stock-dashboard';
-    return `${base}/login?next=${encodeURIComponent(next)}`;
+    return six ? `${base}/stock-dashboard?code=${six}` : `${base}/stock-dashboard`;
 }
+/** 在 Cursor / VS Code 内置 Simple Browser 中打开页面 */
 async function openPanel(url) {
     try {
-        // VS Code built-in Simple Browser — supports full HTTP pages including React SPAs
         await vscode.commands.executeCommand('simpleBrowser.show', url);
     }
-    catch {
-        // Fallback: open in system browser if Simple Browser unavailable
-        await vscode.env.openExternal(vscode.Uri.parse(url));
+    catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        vscode.window.showErrorMessage(`无法在编辑器内打开页面: ${msg}`);
     }
-}
-/** 在系统默认浏览器中打开分时图（登录后跳转 stock-dashboard） */
-async function openTimeshareInBrowser(backendUrl, stockCode) {
-    const url = buildViewStockUrl(backendUrl, stockCode);
-    await vscode.env.openExternal(vscode.Uri.parse(url));
 }
 //# sourceMappingURL=panel.js.map

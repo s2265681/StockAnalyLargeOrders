@@ -6,28 +6,19 @@ export function toSixDigitCode(code: string): string {
   return m ? m[1] : code;
 }
 
-/** 构建登录页 URL，登录后进入分时图（有股票时带 code 参数） */
+/** 构建分时图页面 URL（未登录时由前端 RequireAuth 跳转登录，并保留 code 参数） */
 export function buildViewStockUrl(backendUrl: string, stockCode?: string): string {
   const base = backendUrl.replace(/\/$/, '');
   const six = stockCode ? toSixDigitCode(stockCode) : '';
-  const next = six
-    ? `/stock-dashboard?code=${encodeURIComponent(six)}`
-    : '/stock-dashboard';
-  return `${base}/login?next=${encodeURIComponent(next)}`;
+  return six ? `${base}/stock-dashboard?code=${six}` : `${base}/stock-dashboard`;
 }
 
+/** 在 Cursor / VS Code 内置 Simple Browser 中打开页面 */
 export async function openPanel(url: string): Promise<void> {
   try {
-    // VS Code built-in Simple Browser — supports full HTTP pages including React SPAs
     await vscode.commands.executeCommand('simpleBrowser.show', url);
-  } catch {
-    // Fallback: open in system browser if Simple Browser unavailable
-    await vscode.env.openExternal(vscode.Uri.parse(url));
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    vscode.window.showErrorMessage(`无法在编辑器内打开页面: ${msg}`);
   }
-}
-
-/** 在系统默认浏览器中打开分时图（登录后跳转 stock-dashboard） */
-export async function openTimeshareInBrowser(backendUrl: string, stockCode?: string): Promise<void> {
-  const url = buildViewStockUrl(backendUrl, stockCode);
-  await vscode.env.openExternal(vscode.Uri.parse(url));
 }

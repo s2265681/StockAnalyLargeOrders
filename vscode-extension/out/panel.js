@@ -43,11 +43,11 @@ function toSixDigitCode(code) {
     const m = code.match(/(\d{6})/);
     return m ? m[1] : code;
 }
-/** 线上 HTTPS 异常时回退 HTTP，避免 ERR_CONNECTION_CLOSED */
+/** 统一去掉末尾斜杠；旧版临时 HTTP 配置自动升回 HTTPS */
 function normalizeBackendUrl(url) {
     const trimmed = url.trim().replace(/\/$/, '');
-    if (/^https:\/\/(www\.)?stockai\.xin$/i.test(trimmed)) {
-        return trimmed.replace(/^https:/i, 'http:');
+    if (/^http:\/\/(www\.)?stockai\.xin$/i.test(trimmed)) {
+        return trimmed.replace(/^http:/i, 'https:');
     }
     return trimmed;
 }

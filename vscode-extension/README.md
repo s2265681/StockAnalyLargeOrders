@@ -39,7 +39,7 @@
 
 | 设置项 | 默认值 | 说明 |
 |--------|--------|------|
-| `stockAnalysis.backendUrl` | `http://localhost:9001` | 后端服务地址 |
+| `stockAnalysis.backendUrl` | `https://www.stockai.xin/` | 后端服务地址（本地开发可改为 `http://localhost:9001`） |
 | `stockAnalysis.refreshInterval` | `5000` | 刷新间隔（毫秒，最小 3000） |
 
 ## 快速开始

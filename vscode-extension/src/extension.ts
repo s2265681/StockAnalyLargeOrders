@@ -20,7 +20,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
   function cfg() {
     const c = vscode.workspace.getConfiguration('stockAnalysis');
     return {
-      backendUrl:      normalizeBackendUrl(c.get<string>('backendUrl', 'http://www.stockai.xin/')),
+      backendUrl:      normalizeBackendUrl(c.get<string>('backendUrl', 'https://www.stockai.xin/')),
       refreshInterval: Math.max(3000, c.get<number>('refreshInterval', 5000)),
     };
   }

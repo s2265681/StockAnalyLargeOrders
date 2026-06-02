@@ -149,8 +149,10 @@ function activate(ctx) {
         await refresh();
         vscode.window.showInformationMessage(added ? `✓ 已添加: ${selected.name} (${selected.code.toUpperCase()})` : `${selected.name} 已在列表中`);
     }
-    async function cmdViewStock() {
-        (0, panel_1.openPanel)(cfg().backendUrl);
+    async function cmdViewStock(preferredCode) {
+        const stocks = stockManager.getAll();
+        const code = preferredCode ?? stocks[0]?.code;
+        (0, panel_1.openPanel)((0, panel_1.buildViewStockUrl)(cfg().backendUrl, code));
     }
     async function cmdRemoveStock() {
         const stocks = stockManager.getAll();
@@ -267,7 +269,7 @@ function activate(ctx) {
         const nowVisible = statusBar.isVisible();
         const ACTIONS = [
             { label: '$(add) 添加股票', description: '输入股票代码或名称添加', fn: cmdAddStock },
-            { label: '$(list-flat) 查看股票', description: '打开股票大单分析完整页面', fn: cmdViewStock },
+            { label: '$(list-flat) 查看股票', description: '登录后打开线上分时图', fn: cmdViewStock },
             { label: '$(remove) 移除股票', description: '从已添加的股票中选择移除', fn: cmdRemoveStock },
             { label: '$(arrow-swap) 排序股票', description: '调整股票的显示顺序', fn: cmdSortStocks },
             { label: '$(trash) 清空股票', description: '清空所有已添加的股票', fn: cmdClearStocks },

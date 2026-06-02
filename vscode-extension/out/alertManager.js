@@ -64,7 +64,7 @@ class AlertManager {
         if (action === '清除闹钟')
             await this.stockManager.clearAlert(code);
         else if (action === '查看详情')
-            vscode.commands.executeCommand('stockAnalysis.viewStock');
+            vscode.commands.executeCommand('stockAnalysis.viewStock', code);
     }
     async checkSealAlert(code, name, q) {
         const stock = this.stockManager.getAll().find(s => s.code === code);
@@ -86,7 +86,7 @@ class AlertManager {
         if (action === '清除预警')
             await this.stockManager.clearSealAlert(code);
         else if (action === '查看详情')
-            vscode.commands.executeCommand('stockAnalysis.viewStock');
+            vscode.commands.executeCommand('stockAnalysis.viewStock', code);
     }
 }
 exports.AlertManager = AlertManager;

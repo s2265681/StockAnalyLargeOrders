@@ -1,17 +1,38 @@
-import React, { useState, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate, Link, useLocation, useSearchParams } from 'react-router-dom';
 import { Input, Button, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useAuth } from '../../context/AuthContext';
 import AuthLayout from '../../components/AuthLayout';
+
+function getPostLoginPath(location, searchParams) {
+  const next = searchParams.get('next');
+  if (next && next.startsWith('/') && !next.startsWith('//')) {
+    return next;
+  }
+  const from = location.state?.from;
+  if (from?.pathname) {
+    const path = from.pathname + (from.search || '');
+    if (path.startsWith('/') && !path.startsWith('//')) return path;
+  }
+  return '/stock-dashboard';
+}
 
 export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const passwordRef = useRef(null);
-  const { login } = useAuth();
+  const { user, loading: authLoading, login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate(getPostLoginPath(location, searchParams), { replace: true });
+    }
+  }, [authLoading, user, location, searchParams, navigate]);
 
   const focusPassword = () => {
     passwordRef.current?.focus();
@@ -28,7 +49,7 @@ export default function Login() {
 
     if (result.success) {
       message.success('登录成功');
-      navigate('/stock-dashboard');
+      navigate(getPostLoginPath(location, searchParams), { replace: true });
     } else {
       message.error(result.message);
     }

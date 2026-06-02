@@ -32,7 +32,7 @@ export class AlertManager {
 
     const action = await vscode.window.showWarningMessage(msg, '查看详情', '清除闹钟');
     if (action === '清除闹钟') await this.stockManager.clearAlert(code);
-    else if (action === '查看详情') vscode.commands.executeCommand('stockAnalysis.viewStock');
+    else if (action === '查看详情') vscode.commands.executeCommand('stockAnalysis.viewStock', code);
   }
 
   private async checkSealAlert(code: string, name: string, q: StockQuote): Promise<void> {
@@ -55,6 +55,6 @@ export class AlertManager {
 
     const action = await vscode.window.showWarningMessage(msg, '查看详情', '清除预警');
     if (action === '清除预警') await this.stockManager.clearSealAlert(code);
-    else if (action === '查看详情') vscode.commands.executeCommand('stockAnalysis.viewStock');
+    else if (action === '查看详情') vscode.commands.executeCommand('stockAnalysis.viewStock', code);
   }
 }

@@ -3,7 +3,7 @@ import { StockManager } from './stockManager';
 import { StatusBarManager } from './statusBar';
 import { AlertManager } from './alertManager';
 import { fetchQuotes, searchStock, StockQuote } from './sinaApi';
-import { openPanel, buildViewStockUrl } from './panel';
+import { openPanel, buildViewStockUrl, openTimeshareInBrowser } from './panel';
 
 export function activate(ctx: vscode.ExtensionContext): void {
   const log = vscode.window.createOutputChannel('AI炒股看盘');
@@ -131,6 +131,16 @@ export function activate(ctx: vscode.ExtensionContext): void {
     const stocks = stockManager.getAll();
     const code = preferredCode ?? stocks[0]?.code;
     openPanel(buildViewStockUrl(cfg().backendUrl, code));
+  }
+
+  async function cmdOpenTimeshareBrowser(preferredCode?: string): Promise<void> {
+    const stocks = stockManager.getAll();
+    const code = preferredCode ?? stocks[0]?.code;
+    if (!code) {
+      vscode.window.showWarningMessage('请先添加股票');
+      return;
+    }
+    await openTimeshareInBrowser(cfg().backendUrl, code);
   }
 
   async function cmdRemoveStock(): Promise<void> {
@@ -297,6 +307,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
     ['stockAnalysis.showMenu',        cmdShowMenu],
     ['stockAnalysis.addStock',        cmdAddStock],
     ['stockAnalysis.viewStock',       cmdViewStock],
+    ['stockAnalysis.openTimeshareBrowser', cmdOpenTimeshareBrowser],
     ['stockAnalysis.removeStock',     cmdRemoveStock],
     ['stockAnalysis.sortStocks',      cmdSortStocks],
     ['stockAnalysis.clearStocks',     cmdClearStocks],

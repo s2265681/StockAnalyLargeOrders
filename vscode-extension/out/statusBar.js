@@ -64,6 +64,7 @@ class StatusBarManager {
     buildTooltip(quotes) {
         const md = new vscode.MarkdownString('', true);
         md.isTrusted = true;
+        md.supportHtml = true;
         md.supportThemeIcons = true;
         for (const q of quotes) {
             const sign = q.percent >= 0 ? '+' : '';
@@ -85,9 +86,17 @@ class StatusBarManager {
             md.appendMarkdown(`| 成交额 | ${(q.amount / 1e8).toFixed(2)}亿 |\n`);
             md.appendMarkdown(`| 封单量 | **${sealVol}** |\n`);
             md.appendMarkdown(`| 封单金额 | **${sealAmt}** |\n`);
-            md.appendMarkdown(`\n*${q.time}*\n\n---\n\n`);
+            md.appendMarkdown(`\n${this.buildFooterRow(q.time, q.code)}\n\n---\n\n`);
         }
         return md;
+    }
+    /** 底部：左侧时间，右侧「查看分时图」可点击链接 */
+    buildFooterRow(time, code) {
+        const href = `command:stockAnalysis.openTimeshareBrowser?${encodeURIComponent(JSON.stringify([code]))}`;
+        return (`<table style="width:100%"><tr>` +
+            `<td><span style="opacity:0.85">${time}</span></td>` +
+            `<td style="text-align:right"><a href="${href}">$(link-external) 查看分时图</a></td>` +
+            `</tr></table>`);
     }
     setLoading() {
         if (!this.visible)

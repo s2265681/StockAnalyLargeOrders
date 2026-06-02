@@ -36,6 +36,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.toSixDigitCode = toSixDigitCode;
 exports.buildViewStockUrl = buildViewStockUrl;
 exports.openPanel = openPanel;
+exports.openTimeshareInBrowser = openTimeshareInBrowser;
 const vscode = __importStar(require("vscode"));
 /** 将 sh603678 / sz000001 等格式转为 6 位代码 */
 function toSixDigitCode(code) {
@@ -60,5 +61,10 @@ async function openPanel(url) {
         // Fallback: open in system browser if Simple Browser unavailable
         await vscode.env.openExternal(vscode.Uri.parse(url));
     }
+}
+/** 在系统默认浏览器中打开分时图（登录后跳转 stock-dashboard） */
+async function openTimeshareInBrowser(backendUrl, stockCode) {
+    const url = buildViewStockUrl(backendUrl, stockCode);
+    await vscode.env.openExternal(vscode.Uri.parse(url));
 }
 //# sourceMappingURL=panel.js.map

@@ -34,6 +34,12 @@ jobs:
         run: |
           pnpm install --no-frozen-lockfile
           pnpm run build:prod
+          MAIN_COUNT=$(grep -oE 'static/js/main\.[a-f0-9]+\.js' build/index.html | sort -u | wc -l | tr -d ' ')
+          if [ "$MAIN_COUNT" != "1" ]; then
+            echo "ERROR: build/index.html must reference exactly one main.js (found $MAIN_COUNT)"
+            grep -oE 'static/js/main\.[a-f0-9]+\.js' build/index.html || true
+            exit 1
+          fi
 
       - name: Prepare backend via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -115,6 +121,10 @@ jobs:
             echo "===> Backend: free port 9001 then start (early)"
             chmod +x backend/scripts/ensure_single_backend.sh
             bash backend/scripts/ensure_single_backend.sh
+
+            echo "===> Frontend: wipe stale build directory before upload"
+            rm -rf /www/StockAnalyLargeOrders/frontend/build
+            mkdir -p /www/StockAnalyLargeOrders/frontend/build
 
       - name: Upload frontend build
         uses: appleboy/scp-action@v0.1.7
@@ -287,6 +297,14 @@ jobs:
               exit 1
             fi
             test -f /www/StockAnalyLargeOrders/frontend/build/index.html
+            BUILD_INDEX=/www/StockAnalyLargeOrders/frontend/build/index.html
+            MAIN_COUNT=$(grep -oE 'static/js/main\.[a-f0-9]+\.js' "$BUILD_INDEX" | sort -u | wc -l | tr -d ' ')
+            if [ "$MAIN_COUNT" != "1" ]; then
+              echo "ERROR: deployed index.html references $MAIN_COUNT main.js bundles (expected 1)"
+              grep -oE 'static/js/main\.[a-f0-9]+\.js' "$BUILD_INDEX" || true
+              exit 1
+            fi
+            echo "Frontend index.html OK: single main.js bundle"
 
             echo "===> Server ops: swap + cron + logrotate"
             cd /www/StockAnalyLargeOrders

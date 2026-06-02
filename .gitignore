@@ -115,3 +115,5 @@ htmlcov/
 *.rar 
 
 nginx
+
+.pnpm-store/

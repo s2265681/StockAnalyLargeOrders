@@ -25,3 +25,9 @@ export async function openPanel(url: string): Promise<void> {
     await vscode.env.openExternal(vscode.Uri.parse(url));
   }
 }
+
+/** 在系统默认浏览器中打开分时图（登录后跳转 stock-dashboard） */
+export async function openTimeshareInBrowser(backendUrl: string, stockCode?: string): Promise<void> {
+  const url = buildViewStockUrl(backendUrl, stockCode);
+  await vscode.env.openExternal(vscode.Uri.parse(url));
+}

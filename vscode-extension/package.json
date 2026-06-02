@@ -28,6 +28,10 @@
         "title": "股票看盘: 查看股票"
       },
       {
+        "command": "stockAnalysis.openTimeshareBrowser",
+        "title": "股票看盘: 浏览器打开分时图"
+      },
+      {
         "command": "stockAnalysis.removeStock",
         "title": "股票看盘: 移除股票"
       },

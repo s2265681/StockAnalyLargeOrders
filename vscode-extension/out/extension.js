@@ -154,6 +154,15 @@ function activate(ctx) {
         const code = preferredCode ?? stocks[0]?.code;
         (0, panel_1.openPanel)((0, panel_1.buildViewStockUrl)(cfg().backendUrl, code));
     }
+    async function cmdOpenTimeshareBrowser(preferredCode) {
+        const stocks = stockManager.getAll();
+        const code = preferredCode ?? stocks[0]?.code;
+        if (!code) {
+            vscode.window.showWarningMessage('请先添加股票');
+            return;
+        }
+        await (0, panel_1.openTimeshareInBrowser)(cfg().backendUrl, code);
+    }
     async function cmdRemoveStock() {
         const stocks = stockManager.getAll();
         if (stocks.length === 0) {
@@ -304,6 +313,7 @@ function activate(ctx) {
         ['stockAnalysis.showMenu', cmdShowMenu],
         ['stockAnalysis.addStock', cmdAddStock],
         ['stockAnalysis.viewStock', cmdViewStock],
+        ['stockAnalysis.openTimeshareBrowser', cmdOpenTimeshareBrowser],
         ['stockAnalysis.removeStock', cmdRemoveStock],
         ['stockAnalysis.sortStocks', cmdSortStocks],
         ['stockAnalysis.clearStocks', cmdClearStocks],

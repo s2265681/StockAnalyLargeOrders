@@ -1,0 +1,91 @@
+{
+  "name": "stock-analysis",
+  "displayName": "AI炒股看盘",
+  "description": "实时股票行情状态栏显示，支持大单分析、涨停梯队、封单预警等完整功能",
+  "version": "0.3.0",
+  "publisher": "stockanalysis",
+  "icon": "images/icon.png",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": ["*"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "stockAnalysis.showMenu",
+        "title": "股票看盘: 选择操作"
+      },
+      {
+        "command": "stockAnalysis.addStock",
+        "title": "股票看盘: 添加股票"
+      },
+      {
+        "command": "stockAnalysis.viewStock",
+        "title": "股票看盘: 查看股票"
+      },
+      {
+        "command": "stockAnalysis.removeStock",
+        "title": "股票看盘: 移除股票"
+      },
+      {
+        "command": "stockAnalysis.sortStocks",
+        "title": "股票看盘: 排序股票"
+      },
+      {
+        "command": "stockAnalysis.clearStocks",
+        "title": "股票看盘: 清空股票"
+      },
+      {
+        "command": "stockAnalysis.priceAlert",
+        "title": "股票看盘: 价格闹钟"
+      },
+      {
+        "command": "stockAnalysis.toggleStatusBar",
+        "title": "股票看盘: 隐藏/显示状态栏"
+      },
+      {
+        "command": "stockAnalysis.refreshData",
+        "title": "股票看盘: 刷新行情数据"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "stockAnalysis.showMenu",
+        "key": "ctrl+alt+s",
+        "mac": "ctrl+alt+s"
+      }
+    ],
+    "configuration": {
+      "title": "股票看盘",
+      "properties": {
+        "stockAnalysis.backendUrl": {
+          "type": "string",
+          "default": "https://www.stockai.xin/",
+          "description": "股票大单分析页面地址（默认使用线上版，本地开发可改为 http://localhost:9001）"
+        },
+        "stockAnalysis.refreshInterval": {
+          "type": "number",
+          "default": 5000,
+          "minimum": 3000,
+          "description": "状态栏行情刷新间隔（毫秒）"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.74.0",
+    "@vscode/vsce": "^2.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {}
+}

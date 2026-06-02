@@ -53,7 +53,7 @@ function activate(ctx) {
     function cfg() {
         const c = vscode.workspace.getConfiguration('stockAnalysis');
         return {
-            backendUrl: c.get('backendUrl', 'https://www.stockai.xin/'),
+            backendUrl: (0, panel_1.normalizeBackendUrl)(c.get('backendUrl', 'http://www.stockai.xin/')),
             refreshInterval: Math.max(3000, c.get('refreshInterval', 5000)),
         };
     }

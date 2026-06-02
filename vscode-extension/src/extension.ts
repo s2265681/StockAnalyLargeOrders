@@ -3,7 +3,7 @@ import { StockManager } from './stockManager';
 import { StatusBarManager } from './statusBar';
 import { AlertManager } from './alertManager';
 import { fetchQuotes, searchStock, StockQuote } from './sinaApi';
-import { openPanel, buildViewStockUrl } from './panel';
+import { openPanel, buildViewStockUrl, normalizeBackendUrl } from './panel';
 
 export function activate(ctx: vscode.ExtensionContext): void {
   const log = vscode.window.createOutputChannel('AI炒股看盘');
@@ -20,7 +20,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
   function cfg() {
     const c = vscode.workspace.getConfiguration('stockAnalysis');
     return {
-      backendUrl:      c.get<string>('backendUrl', 'https://www.stockai.xin/'),
+      backendUrl:      normalizeBackendUrl(c.get<string>('backendUrl', 'http://www.stockai.xin/')),
       refreshInterval: Math.max(3000, c.get<number>('refreshInterval', 5000)),
     };
   }

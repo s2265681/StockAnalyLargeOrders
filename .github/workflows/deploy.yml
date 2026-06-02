@@ -152,7 +152,18 @@ jobs:
 
             echo "===> Configure Nginx"
             mkdir -p /var/www/letsencrypt
+            USE_SSL=false
             if [ -f /etc/letsencrypt/live/stockai.xin/fullchain.pem ] && [ -f /etc/letsencrypt/live/stockai.xin/privkey.pem ]; then
+              echo "===> Try renew SSL certificate"
+              certbot renew --cert-name stockai.xin --quiet 2>/dev/null || true
+              if echo | timeout 8 openssl s_client -connect 127.0.0.1:443 -servername stockai.xin 2>/dev/null | grep -q 'BEGIN CERTIFICATE'; then
+                USE_SSL=true
+                echo "SSL handshake OK, enabling HTTPS nginx"
+              else
+                echo "WARNING: cert files exist but 443 handshake failed; using HTTP-only nginx"
+              fi
+            fi
+            if [ "$USE_SSL" = true ]; then
             cat > /etc/nginx/sites-available/stock-analysis <<'NGINX'
             server {
                 listen 80 default_server;

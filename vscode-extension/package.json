@@ -2,7 +2,7 @@
   "name": "stock-analysis",
   "displayName": "AI炒股看盘",
   "description": "实时股票行情状态栏显示，支持大单分析、涨停梯队、封单预警等完整功能",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "publisher": "stockanalysis",
   "icon": "images/icon.png",
   "engines": {
@@ -64,8 +64,8 @@
       "properties": {
         "stockAnalysis.backendUrl": {
           "type": "string",
-          "default": "https://www.stockai.xin/",
-          "description": "股票大单分析页面地址（默认使用线上版，本地开发可改为 http://localhost:9001）"
+          "default": "http://www.stockai.xin/",
+          "description": "股票大单分析页面地址（线上默认 http://www.stockai.xin，本地开发可改为 http://localhost:9001）"
         },
         "stockAnalysis.refreshInterval": {
           "type": "number",

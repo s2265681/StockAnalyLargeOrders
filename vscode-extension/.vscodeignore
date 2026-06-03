@@ -9,3 +9,5 @@ tsconfig.json
 !out/**
 !images/**
 node_modules/**
+.claude/**
+*.vsix

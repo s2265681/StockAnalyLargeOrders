@@ -269,7 +269,7 @@ function activate(ctx) {
             vscode.window.showInformationMessage(`✓ ${stock.name} 价格${typeId === 'price_above' ? '高于' : '低于'} ${priceStr} 时提醒`);
             return;
         }
-        const curSeal = q?.isLimitUp && q.buy1Vol > 0 ? `当前封单 ${(q.buy1Vol / 10000).toFixed(2)}万手` : '仅涨停时触发';
+        const curSeal = q?.isLimitUp && q.buy1Vol > 0 ? `当前封单 ${(q.buy1Vol / 1e6).toFixed(2)}万手` : '仅涨停时触发';
         const volStr = await vscode.window.showInputBox({
             prompt: `${stock.name} 封单量阈值（${curSeal}）`,
             placeHolder: '输入手数，如 50000 表示 5万手',

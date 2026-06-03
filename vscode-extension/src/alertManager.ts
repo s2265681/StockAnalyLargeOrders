@@ -63,9 +63,9 @@ export class AlertManager {
 
     this.lastSealDropAlertAt.set(code, Date.now());
 
-    const prevWan = (prev / 10000).toFixed(2);
-    const curWan = (q.buy1Vol / 10000).toFixed(2);
-    const sealAmt = (q.buy1Vol * q.buy1Price * 100 / 1e8).toFixed(2);
+    const prevWan = (prev / 1e6).toFixed(2);
+    const curWan = (q.buy1Vol / 1e6).toFixed(2);
+    const sealAmt = (q.buy1Vol * q.buy1Price / 1e8).toFixed(2);
     const msg =
       `⚠️ ${name} 封单大减 ${dropPct.toFixed(1)}%　` +
       `${prevWan}万手 → ${curWan}万手（约 ${sealAmt}亿）`;
@@ -129,15 +129,15 @@ export class AlertManager {
     if (!q.isLimitUp || q.buy1Vol <= 0) return;
 
     const hit =
-      (stock.sealAlertDirection === 'above' && q.buy1Vol >= stock.sealAlertVol) ||
-      (stock.sealAlertDirection === 'below' && q.buy1Vol <= stock.sealAlertVol);
+      (stock.sealAlertDirection === 'above' && q.buy1Vol >= stock.sealAlertVol * 100) ||
+      (stock.sealAlertDirection === 'below' && q.buy1Vol <= stock.sealAlertVol * 100);
     if (!hit) return;
 
     await this.stockManager.markSealAlertTriggered(code);
 
     const dir = stock.sealAlertDirection === 'above' ? '超过' : '低于';
-    const sealWan = (q.buy1Vol / 10000).toFixed(2);
-    const sealAmt = (q.buy1Vol * q.buy1Price * 100 / 1e8).toFixed(2);
+    const sealWan = (q.buy1Vol / 1e6).toFixed(2);
+    const sealAmt = (q.buy1Vol * q.buy1Price / 1e8).toFixed(2);
     const msg = `🔒 ${name} 封单量已${dir} ${(stock.sealAlertVol / 10000).toFixed(2)}万手　当前封单: ${sealWan}万手（${sealAmt}亿）`;
 
     const action = await vscode.window.showWarningMessage(msg, '查看详情', '清除预警');

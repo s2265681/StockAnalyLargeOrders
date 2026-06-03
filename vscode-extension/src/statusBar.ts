@@ -45,7 +45,7 @@ export class StatusBarManager {
 
     const lockPart =
       this.displayConfig.showLockCount && q.isLimitUp && q.buy1Vol > 0
-        ? ` 封${(q.buy1Vol / 10000).toFixed(1)}万`
+        ? ` 封${(q.buy1Vol / 1e6).toFixed(1)}万`
         : '';
 
     return `${name} ${q.price}${changePart} ${arrow}${sign}${q.percent.toFixed(2)}%${tag}${lockPart}`;
@@ -105,10 +105,10 @@ export class StatusBarManager {
   private buildStockCardHtml(q: StockQuote): string {
     const sign = q.percent >= 0 ? '+' : '';
     const sealVol = q.isLimitUp && q.buy1Vol > 0
-      ? `${(q.buy1Vol / 10000).toFixed(2)}万手`
+      ? `${(q.buy1Vol / 1e6).toFixed(2)}万手`
       : '—';
     const sealAmt = q.isLimitUp && q.buy1Vol > 0 && q.buy1Price > 0
-      ? `${(q.buy1Vol * q.buy1Price * 100 / 1e8).toFixed(2)}亿`
+      ? `${(q.buy1Vol * q.buy1Price / 1e8).toFixed(2)}亿`
       : '—';
     const status = q.isLimitUp ? '🔒 涨停封板' : q.isLimitDown ? '🔓 跌停' : '正常';
     const name = this.escapeHtml(this.displayName(q));

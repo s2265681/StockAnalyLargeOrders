@@ -554,18 +554,13 @@ export const fetchL2DashboardAtom = atom(
         applyOrdersPayload(set, ordersPayload, requestedCode);
       });
 
+    // 用局部变量暂存 money_flow，避免比 l2_timeshare 先到时 base_info.code 还未写入导致丢弃
+    let resolvedMoneyFlow = null;
     const moneyFlowPromise = apiRequest(`/api/v1/l2_money_flow?${query}`, { timeout: 30000 })
       .catch(() => null)
       .then((moneyFlowResp) => {
         if (isStale()) return;
-        const moneyFlow = moneyFlowResp?.success ? moneyFlowResp.data : null;
-        if (!moneyFlow) return;
-        set(timeshareDataAtom, (prev) => {
-          if (!prev?.base_info?.code || !isSameStockCode(prev.base_info.code, requestedCode)) {
-            return prev;
-          }
-          return { ...prev, money_flow: moneyFlow };
-        });
+        resolvedMoneyFlow = moneyFlowResp?.success ? moneyFlowResp.data : null;
       });
 
     try {
@@ -594,6 +589,11 @@ export const fetchL2DashboardAtom = atom(
       finishTimeshareLoading();
 
       await Promise.all([ordersPromise, moneyFlowPromise]);
+
+      // timeshare 数据已落盘后再合并 money_flow，彻底消除 race condition
+      if (resolvedMoneyFlow && !isStale()) {
+        set(timeshareDataAtom, (prev) => prev ? { ...prev, money_flow: resolvedMoneyFlow } : prev);
+      }
     } catch (error) {
       if (!isStale()) {
         set(errorAtom, `获取L2看板数据失败: ${error.message}`);

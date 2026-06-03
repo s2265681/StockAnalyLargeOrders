@@ -569,8 +569,10 @@ class EastMoneyFreeSource:
             'lmt': '256',
         }
 
+        auth_session = self._make_auth_session()
+
         def _do_request():
-            resp = self.session.get(url, params=params, timeout=10)
+            resp = auth_session.get(url, params=params, timeout=10)
             resp.raise_for_status()
             return resp.json()
 
@@ -581,7 +583,7 @@ class EastMoneyFreeSource:
             data = _subprocess_fetch_json(full_url, headers={
                 'Referer': 'https://quote.eastmoney.com/',
                 'User-Agent': self.session.headers.get('User-Agent', ''),
-            })
+            }, cookies=EastMoneyFreeSource._em_cookie or None)
 
         if not data or not data.get('data'):
             return None

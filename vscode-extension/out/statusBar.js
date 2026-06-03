@@ -35,29 +35,64 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StatusBarManager = void 0;
 const vscode = __importStar(require("vscode"));
+const marketHours_1 = require("./marketHours");
 class StatusBarManager {
     constructor(ctx) {
         this.visible = true;
+        this.displayConfig = {
+            maxDisplayCount: 5,
+            showMiniName: false,
+            stockMiniNames: {},
+            showChangeValue: false,
+            showLockCount: false,
+            autoHideByMarket: false,
+        };
         this.item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 1000);
         this.item.command = 'stockAnalysis.showMenu';
         ctx.subscriptions.push(this.item);
     }
+    setDisplayConfig(config) {
+        this.displayConfig = config;
+    }
+    displayName(q) {
+        const { showMiniName, stockMiniNames } = this.displayConfig;
+        const custom = stockMiniNames[q.code];
+        if (custom)
+            return custom;
+        if (showMiniName)
+            return q.name.slice(0, 2);
+        return q.name;
+    }
+    formatStatusSegment(q) {
+        const name = this.displayName(q);
+        const arrow = q.percent >= 0 ? '↗' : '↘';
+        const sign = q.percent >= 0 ? '+' : '';
+        const tag = q.isLimitUp ? '[涨停]' : q.isLimitDown ? '[跌停]' : '';
+        const changePart = this.displayConfig.showChangeValue
+            ? ` ${sign}${q.updown.toFixed(2)}`
+            : '';
+        const lockPart = this.displayConfig.showLockCount && q.isLimitUp && q.buy1Vol > 0
+            ? ` 封${(q.buy1Vol / 10000).toFixed(1)}万`
+            : '';
+        return `${name} ${q.price}${changePart} ${arrow}${sign}${q.percent.toFixed(2)}%${tag}${lockPart}`;
+    }
     update(quotes) {
         if (!this.visible)
             return;
+        if (this.displayConfig.autoHideByMarket && !(0, marketHours_1.isAShareMarketOpen)()) {
+            this.item.hide();
+            return;
+        }
         if (quotes.length === 0) {
             this.item.text = '🔭 AI炒股看盘';
             this.item.tooltip = '点击打开菜单（或按 Ctrl+Alt+S）';
             this.item.show();
             return;
         }
-        const parts = quotes.map(q => {
-            const arrow = q.percent >= 0 ? '↗' : '↘';
-            const sign = q.percent >= 0 ? '+' : '';
-            const tag = q.isLimitUp ? '[涨停]' : q.isLimitDown ? '[跌停]' : '';
-            return `${q.name} ${q.price} ${arrow}${sign}${q.percent.toFixed(2)}%${tag}`;
-        });
-        this.item.text = `$(graph-line) ${parts.join('  |  ')}`;
+        const limited = quotes.slice(0, this.displayConfig.maxDisplayCount);
+        const parts = limited.map(q => this.formatStatusSegment(q));
+        const more = quotes.length > limited.length ? ` +${quotes.length - limited.length}` : '';
+        this.item.text = `$(graph-line) ${parts.join('  |  ')}${more}`;
         this.item.tooltip = this.buildTooltip(quotes);
         this.item.show();
     }
@@ -89,7 +124,7 @@ class StatusBarManager {
             ? `${(q.buy1Vol * q.buy1Price * 100 / 1e8).toFixed(2)}亿`
             : '—';
         const status = q.isLimitUp ? '🔒 涨停封板' : q.isLimitDown ? '🔓 跌停' : '正常';
-        const name = this.escapeHtml(q.name);
+        const name = this.escapeHtml(this.displayName(q));
         const code = this.escapeHtml(q.code.toUpperCase());
         return (`<div style="min-width:200px;max-width:260px;font-size:12px;line-height:1.5;">` +
             `<div style="font-weight:600;margin-bottom:4px;">${name} <code>${code}</code></div>` +
@@ -125,6 +160,10 @@ class StatusBarManager {
     setLoading() {
         if (!this.visible)
             return;
+        if (this.displayConfig.autoHideByMarket && !(0, marketHours_1.isAShareMarketOpen)()) {
+            this.item.hide();
+            return;
+        }
         this.item.text = '$(sync~spin) AI炒股看盘...';
         this.item.show();
     }

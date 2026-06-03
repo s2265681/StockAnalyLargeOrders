@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { PriceAlarmSetting } from './config';
 
 export interface StockItem {
   code: string;
@@ -71,6 +72,18 @@ export class StockManager {
 
   async markSealAlertTriggered(code: string): Promise<void> {
     await this._update(code, s => { s.sealAlertTriggered = true; });
+  }
+
+  /** 从 settings.json 同步股票列表与价格闹钟（仅新增/更新，不删除 UI 里已添加的） */
+  async syncFromSettings(stocks: string[], priceAlarms: PriceAlarmSetting[]): Promise<void> {
+    for (const code of stocks) {
+      if (!this.getAll().some(s => s.code === code)) {
+        await this.add({ code, name: code.toUpperCase() });
+      }
+    }
+    for (const alarm of priceAlarms) {
+      await this.setAlert(alarm.code, alarm.price, alarm.direction);
+    }
   }
 
   // ── 从行情自动更新股票名称 ──────────────────────────────────────────────

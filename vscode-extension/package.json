@@ -2,7 +2,7 @@
   "name": "stock-analysis",
   "displayName": "AI炒股看盘",
   "description": "实时股票行情状态栏显示，支持大单分析、涨停梯队、封单预警等完整功能",
-  "version": "0.3.5",
+  "version": "0.3.8",
   "publisher": "stockanalysis",
   "icon": "images/icon.png",
   "engines": {
@@ -80,6 +80,98 @@
           "default": 5000,
           "minimum": 3000,
           "description": "状态栏行情刷新间隔（毫秒）"
+        },
+        "stockAnalysis.stocks": {
+          "type": "array",
+          "default": [],
+          "items": { "type": "string" },
+          "description": "股票代码列表（如 sh600797、600797），启动时自动加入自选"
+        },
+        "stockAnalysis.priceAlarms": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": { "type": "string" },
+              "price": { "type": "number" },
+              "direction": { "type": "string", "enum": ["above", "below"] }
+            }
+          },
+          "description": "价格闹钟列表，例：[{\"code\":\"sh600797\",\"price\":8.5,\"direction\":\"above\"}]"
+        },
+        "stockAnalysis.maxDisplayCount": {
+          "type": "number",
+          "default": 5,
+          "minimum": 1,
+          "maximum": 20,
+          "description": "状态栏最多显示几只股票（超出显示 +N）"
+        },
+        "stockAnalysis.showMiniName": {
+          "type": "boolean",
+          "default": false,
+          "description": "状态栏显示股票简称（默认取名称前 2 字）"
+        },
+        "stockAnalysis.stockMiniNames": {
+          "type": "object",
+          "default": {},
+          "description": "自定义简称，如 {\"sh601318\":\"平安\"}"
+        },
+        "stockAnalysis.showChangeValue": {
+          "type": "boolean",
+          "default": false,
+          "description": "状态栏是否显示涨跌额"
+        },
+        "stockAnalysis.autoHideByMarket": {
+          "type": "boolean",
+          "default": false,
+          "description": "非交易时段自动隐藏状态栏（周一至五 9:15-11:30、13:00-15:00 外）"
+        },
+        "stockAnalysis.showLockCount": {
+          "type": "boolean",
+          "default": false,
+          "description": "状态栏涨停时显示封单量（万手）"
+        },
+        "stockAnalysis.enableLockTip": {
+          "type": "boolean",
+          "default": true,
+          "description": "开启封单异动通知（封单阈值预警 + 封单大减提醒）"
+        },
+        "stockAnalysis.enableLargeTip": {
+          "type": "boolean",
+          "default": false,
+          "description": "开启成交额异动通知（单轮刷新成交额突增）"
+        },
+        "stockAnalysis.sealDropPercent": {
+          "type": "number",
+          "default": 30,
+          "minimum": 5,
+          "maximum": 95,
+          "description": "封单大减：环比下降百分比阈值"
+        },
+        "stockAnalysis.sealDropMinVol": {
+          "type": "number",
+          "default": 10000,
+          "minimum": 0,
+          "description": "封单大减：上一轮封单至少多少手才检测"
+        },
+        "stockAnalysis.sealDropCooldownSec": {
+          "type": "number",
+          "default": 60,
+          "minimum": 10,
+          "description": "封单异动提醒冷却（秒）"
+        },
+        "stockAnalysis.largeTipMinAmountWan": {
+          "type": "number",
+          "default": 300,
+          "minimum": 10,
+          "description": "成交额异动：单轮刷新增加超过多少万元时提醒"
+        },
+        "stockAnalysis.largeTipCooldownSec": {
+          "type": "number",
+          "default": 60,
+          "minimum": 10,
+          "description": "成交额异动提醒冷却（秒）"
         }
       }
     }

@@ -22,7 +22,8 @@
 | 排序股票 | 调整状态栏显示顺序 |
 | 清空股票 | 一键清空列表 |
 | 价格闹钟 | 价格高于/低于目标时弹出通知 |
-| 封单预警 | 涨停封单量高于/低于阈值时提醒，支持封单减少预警 |
+| 封单预警 | 涨停封单量高于/低于阈值时提醒 |
+| 封单大减 | 涨停封单较上一轮刷新减少达设定比例时自动提醒（默认 30%，可配置） |
 | 隐藏/显示状态栏 | 临时隐藏股票行情显示 |
 
 ### 集成 AI大单分析系统
@@ -37,10 +38,25 @@
 
 ## 配置
 
-| 设置项 | 默认值 | 说明 |
-|--------|--------|------|
-| `stockAnalysis.backendUrl` | `https://www.stockai.xin/` | 后端服务地址（本地开发可改为 `http://localhost:9001`） |
-| `stockAnalysis.refreshInterval` | `5000` | 刷新间隔（毫秒，最小 3000） |
+在 `settings.json` 中搜索「股票看盘」，或参考下表：
+
+| 设置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `stockAnalysis.stocks` | array | `[]` | 股票代码列表，启动时自动加入自选 |
+| `stockAnalysis.priceAlarms` | array | `[]` | 价格闹钟，如 `[{"code":"sh600797","price":8.5,"direction":"above"}]` |
+| `stockAnalysis.maxDisplayCount` | number | `5` | 状态栏最多显示几只 |
+| `stockAnalysis.showMiniName` | boolean | `false` | 状态栏显示简称（前 2 字） |
+| `stockAnalysis.stockMiniNames` | object | `{}` | 自定义简称映射 |
+| `stockAnalysis.showChangeValue` | boolean | `false` | 状态栏显示涨跌额 |
+| `stockAnalysis.autoHideByMarket` | boolean | `false` | 非交易时段隐藏状态栏 |
+| `stockAnalysis.showLockCount` | boolean | `false` | 涨停时状态栏显示封单量 |
+| `stockAnalysis.enableLockTip` | boolean | `true` | 封单异动通知（阈值 + 大减） |
+| `stockAnalysis.enableLargeTip` | boolean | `false` | 成交额异动通知 |
+| `stockAnalysis.backendUrl` | string | `https://www.stockai.xin/` | 分时/大单页面地址 |
+| `stockAnalysis.refreshInterval` | number | `5000` | 刷新间隔（毫秒） |
+| `stockAnalysis.sealDropPercent` | number | `30` | 封单大减百分比阈值 |
+| `stockAnalysis.sealDropMinVol` | number | `10000` | 封单大减最低检测手数 |
+| `stockAnalysis.largeTipMinAmountWan` | number | `300` | 成交额异动阈值（万元/轮） |
 
 ## 快速开始
 

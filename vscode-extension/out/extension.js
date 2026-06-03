@@ -41,6 +41,7 @@ const statusBar_1 = require("./statusBar");
 const alertManager_1 = require("./alertManager");
 const sinaApi_1 = require("./sinaApi");
 const panel_1 = require("./panel");
+const config_1 = require("./config");
 function activate(ctx) {
     const log = vscode.window.createOutputChannel('AI炒股看盘');
     ctx.subscriptions.push(log);
@@ -50,14 +51,19 @@ function activate(ctx) {
     const alertManager = new alertManager_1.AlertManager(stockManager);
     let timer;
     let lastQuotes = [];
-    function cfg() {
-        const c = vscode.workspace.getConfiguration('stockAnalysis');
-        return {
-            backendUrl: (0, panel_1.normalizeBackendUrl)(c.get('backendUrl', 'https://www.stockai.xin/')),
-            refreshInterval: Math.max(3000, c.get('refreshInterval', 5000)),
-        };
+    function applyConfig() {
+        const cfg = (0, config_1.readExtensionConfig)();
+        statusBar.setDisplayConfig((0, config_1.toStatusDisplayConfig)(cfg));
+        return cfg;
+    }
+    async function syncSettingsStocks() {
+        const cfg = (0, config_1.readExtensionConfig)();
+        if (cfg.stocks.length > 0 || cfg.priceAlarms.length > 0) {
+            await stockManager.syncFromSettings(cfg.stocks, cfg.priceAlarms);
+        }
     }
     async function refresh() {
+        const cfg = applyConfig();
         const stocks = stockManager.getAll();
         if (stocks.length === 0) {
             statusBar.update([]);
@@ -69,7 +75,7 @@ function activate(ctx) {
                 lastQuotes = quotes;
                 await stockManager.updateNames(new Map(quotes.map(q => [q.code, q.name])));
                 statusBar.update(quotes);
-                await alertManager.check(quotes);
+                await alertManager.check(quotes, cfg);
             }
         }
         catch { /* keep last display on network error */ }
@@ -77,17 +83,27 @@ function activate(ctx) {
     function startTimer() {
         if (timer)
             clearInterval(timer);
-        const { refreshInterval } = cfg();
+        const { refreshInterval } = (0, config_1.readExtensionConfig)();
         statusBar.setLoading();
         refresh();
         timer = setInterval(refresh, refreshInterval);
     }
-    startTimer();
+    void syncSettingsStocks().then(() => startTimer());
     // 首次激活时在状态栏显示提示，确认扩展已启动
     vscode.window.setStatusBarMessage('$(graph-line) AI炒股看盘 已启动', 4000);
     ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => {
-        if (e.affectsConfiguration('stockAnalysis.refreshInterval'))
+        if (!e.affectsConfiguration('stockAnalysis'))
+            return;
+        if (e.affectsConfiguration('stockAnalysis.stocks') ||
+            e.affectsConfiguration('stockAnalysis.priceAlarms')) {
+            void syncSettingsStocks().then(() => refresh());
+        }
+        else if (e.affectsConfiguration('stockAnalysis.refreshInterval')) {
             startTimer();
+        }
+        else {
+            void refresh();
+        }
     }));
     // ── Helpers ──────────────────────────────────────────────────────────────
     // VS Code showQuickPick 通过 IPC 序列化 items，自定义属性会丢失。
@@ -152,7 +168,7 @@ function activate(ctx) {
     async function cmdViewStock(preferredCode) {
         const stocks = stockManager.getAll();
         const code = preferredCode ?? stocks[0]?.code;
-        (0, panel_1.openPanel)((0, panel_1.buildViewStockUrl)(cfg().backendUrl, code));
+        (0, panel_1.openPanel)((0, panel_1.buildViewStockUrl)((0, config_1.readExtensionConfig)().backendUrl, code));
     }
     async function cmdRemoveStock() {
         const stocks = stockManager.getAll();
@@ -273,7 +289,7 @@ function activate(ctx) {
             { label: '$(remove) 移除股票', description: '从已添加的股票中选择移除', fn: cmdRemoveStock },
             { label: '$(arrow-swap) 排序股票', description: '调整股票的显示顺序', fn: cmdSortStocks },
             { label: '$(trash) 清空股票', description: '清空所有已添加的股票', fn: cmdClearStocks },
-            { label: '$(bell) 价格/封单预警', description: '价格或封单量达到目标时提醒', fn: cmdPriceAlert },
+            { label: '$(bell) 价格/封单预警', description: '价格或封单阈值；封单大减在设置中自动提醒', fn: cmdPriceAlert },
             {
                 label: `$(eye${nowVisible ? '-closed' : ''}) ${nowVisible ? '隐藏' : '显示'}状态栏`,
                 description: '切换状态栏股票信息显示',

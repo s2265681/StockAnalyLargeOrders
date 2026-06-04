@@ -2,7 +2,7 @@
   "name": "stock-analysis",
   "displayName": "AI炒股看盘",
   "description": "实时股票行情状态栏显示，支持大单分析、涨停梯队、封单预警等完整功能",
-  "version": "0.3.9",
+  "version": "0.3.10",
   "publisher": "stockanalysis",
   "icon": "images/icon.png",
   "engines": {
@@ -19,7 +19,9 @@
     "A股",
     "stock"
   ],
-  "activationEvents": ["*"],
+  "activationEvents": [
+    "*"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
@@ -84,7 +86,9 @@
         "stockAnalysis.stocks": {
           "type": "array",
           "default": [],
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "description": "股票代码列表（如 sh600797、600797），启动时自动加入自选"
         },
         "stockAnalysis.priceAlarms": {
@@ -93,9 +97,19 @@
           "items": {
             "type": "object",
             "properties": {
-              "code": { "type": "string" },
-              "price": { "type": "number" },
-              "direction": { "type": "string", "enum": ["above", "below"] }
+              "code": {
+                "type": "string"
+              },
+              "price": {
+                "type": "number"
+              },
+              "direction": {
+                "type": "string",
+                "enum": [
+                  "above",
+                  "below"
+                ]
+              }
             }
           },
           "description": "价格闹钟列表，例：[{\"code\":\"sh600797\",\"price\":8.5,\"direction\":\"above\"}]"

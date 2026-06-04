@@ -110,6 +110,9 @@ export class StatusBarManager {
     const sealAmt = q.isLimitUp && q.buy1Vol > 0 && q.buy1Price > 0
       ? `${(q.buy1Vol * q.buy1Price / 1e8).toFixed(2)}亿`
       : '—';
+    const sealRatio = q.isLimitUp && q.buy1Vol > 0 && q.buy1Price > 0 && q.amount > 0
+      ? `${(q.buy1Vol * q.buy1Price / q.amount * 100).toFixed(1)}%`
+      : '—';
     const status = q.isLimitUp ? '🔒 涨停封板' : q.isLimitDown ? '🔓 跌停' : '正常';
     const name = this.escapeHtml(this.displayName(q));
     const code = this.escapeHtml(q.code.toUpperCase());
@@ -127,6 +130,7 @@ export class StatusBarManager {
       `<tr><td style="opacity:0.75;padding-right:10px;">成交额</td><td>${(q.amount / 1e8).toFixed(2)}亿</td></tr>` +
       `<tr><td style="opacity:0.75;padding-right:10px;">封单量</td><td><strong>${sealVol}</strong></td></tr>` +
       `<tr><td style="opacity:0.75;padding-right:10px;">封单金额</td><td><strong>${sealAmt}</strong></td></tr>` +
+      `<tr><td style="opacity:0.75;padding-right:10px;">封成比</td><td><strong>${sealRatio}</strong></td></tr>` +
       `</table>` +
       `<div style="margin-top:8px;">${this.buildFooterRow(q.time, q.code)}</div>` +
       `</div>`

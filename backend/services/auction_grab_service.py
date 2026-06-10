@@ -44,11 +44,21 @@ def items_from_raw_api(raw_list: list[dict], trade_date_dash: str) -> list[dict]
 
 
 def sort_items(items: list[dict], sort_by: str) -> list[dict]:
+    def _f(v):
+        try:
+            return float(v) if v is not None else 0.0
+        except (TypeError, ValueError):
+            return 0.0
+
     key_map = {
-        "wtje": lambda x: float(x.get("grab_order_amount") or 0),
-        "cjje": lambda x: float(x.get("grab_turnover") or 0),
-        "kpje": lambda x: float(x.get("open_amount") or 0),
-        "zf": lambda x: float(x.get("grab_change_pct") or 0),
+        "wtje": lambda x: _f(x.get("grab_order_amount")),
+        "cjje": lambda x: _f(x.get("grab_turnover")),
+        "kpje": lambda x: _f(x.get("open_amount")),
+        "zf":   lambda x: _f(x.get("grab_change_pct")),
+        "score": lambda x: _f(x.get("recommend_score")),
+        "jrzf": lambda x: _f(x.get("close_change_pct") or x.get("today_change_pct")),
+        "zrzf": lambda x: _f(x.get("prev_day_change_pct")),
+        "crzf": lambda x: _f(x.get("next_day_change_pct")),
     }
     key_fn = key_map.get(sort_by, key_map["wtje"])
     return sorted(items, key=key_fn, reverse=True)

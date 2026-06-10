@@ -35,10 +35,14 @@ const formatDateDisplay = (dateStr) => {
 };
 
 const SORT_OPTIONS = [
-  { key: 'wtje', label: '委托金额' },
-  { key: 'cjje', label: '成交金额' },
-  { key: 'kpje', label: '开盘金额' },
-  { key: 'zf', label: '涨幅' },
+  { key: 'score', label: '推荐度' },
+  { key: 'wtje',  label: '委托金额' },
+  { key: 'cjje',  label: '成交金额' },
+  { key: 'kpje',  label: '开盘金额' },
+  { key: 'zf',    label: '竞价涨幅' },
+  { key: 'jrzf',  label: '今日涨幅' },
+  { key: 'zrzf',  label: '昨日涨幅' },
+  { key: 'crzf',  label: '次日涨幅' },
 ];
 
 const normalizeCode = (code) => String(code || '').padStart(6, '0');
@@ -80,12 +84,47 @@ const sortAuctionItems = (items, sortKey) => {
     const n = parseFloat(v);
     return Number.isFinite(n) ? n : 0;
   };
+  const numOrNull = (v) => {
+    const n = parseFloat(v);
+    return Number.isFinite(n) ? n : null;
+  };
   const star = (x) => parseInt(x.recommend_stars, 10) || 0;
+  const score = (x) => parseFloat(x.recommend_score) || 0;
+
+  // 按推荐度：有评分的在前（按 score 降序），无评分的在后（按委托金额降序）
+  if (sortKey === 'score') {
+    return list.sort((a, b) => {
+      const sa = score(a), sb = score(b);
+      const hasA = sa > 0, hasB = sb > 0;
+      if (hasA !== hasB) return hasA ? -1 : 1;
+      if (hasA && hasB) return sb - sa;
+      return num(b.grab_order_amount) - num(a.grab_order_amount);
+    });
+  }
+
+  // 涨幅类排序：无数据的排最后
+  const changeSortField = {
+    jrzf: (x) => numOrNull(x.close_change_pct) ?? numOrNull(x.today_change_pct),
+    zrzf: (x) => numOrNull(x.prev_day_change_pct),
+    crzf: (x) => numOrNull(x.next_day_change_pct),
+  };
+  if (changeSortField[sortKey]) {
+    const getVal = changeSortField[sortKey];
+    return list.sort((a, b) => {
+      const va = getVal(a), vb = getVal(b);
+      if (va === null && vb === null) return 0;
+      if (va === null) return 1;
+      if (vb === null) return -1;
+      return vb - va;
+    });
+  }
+
+  // 其他排序（wtje/cjje/kpje/zf）：有推荐的置顶，再按字段排
   const byField = {
     wtje: (a, b) => num(b.grab_order_amount) - num(a.grab_order_amount),
     cjje: (a, b) => num(b.grab_turnover) - num(a.grab_turnover),
     kpje: (a, b) => num(b.open_amount) - num(a.open_amount),
-    zf: (a, b) => num(b.grab_change_pct) - num(a.grab_change_pct),
+    zf:   (a, b) => num(b.grab_change_pct) - num(a.grab_change_pct),
   };
   const cmpField = byField[sortKey] || byField.wtje;
   return list.sort((a, b) => {
@@ -123,7 +162,7 @@ function AuctionGrab() {
   const todayStr = useMemo(() => getLastTradingDayStr(), []);
   const [currentDate, setCurrentDate] = useState(getLastTradingDayStr);
   const [activeTab, setActiveTab] = useState('morning'); // morning | tail
-  const [sortBy, setSortBy] = useState('wtje');
+  const [sortBy, setSortBy] = useState('score');
   const [sortOpen, setSortOpen] = useState(false);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);

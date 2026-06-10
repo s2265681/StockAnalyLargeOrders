@@ -506,6 +506,19 @@ def get_auction_grab():
             if db_items:
                 items = db_items
                 source = 'db_fallback'
+            elif is_today:
+                # 今日无数据，回退到前一交易日 DB
+                prev_date = _offset_trading_date(trade_date, -1)
+                prev_compact = prev_date.replace('-', '')
+                prev_items = ag_store.load_items(prev_compact, period_int)
+                if prev_items:
+                    items = prev_items
+                    date_compact = prev_compact
+                    trade_date = prev_date
+                    is_today = False
+                    source = 'db_prev_day'
+                else:
+                    return v1_error_response('数据源暂不可用，请稍后重试')
             else:
                 return v1_error_response('数据源暂不可用，请稍后重试')
 

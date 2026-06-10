@@ -83,7 +83,8 @@ def load_items(date_compact: str, period: int) -> list[dict] | None:
             f"""
             SELECT code, name, open_amount, grab_change_pct, grab_turnover,
                    grab_order_amount, close_change_pct, next_day_change_pct,
-                   source_time
+                   prev_day_change_pct, recommend_stars, recommend_reason,
+                   recommend_score, source_time
             FROM {_TABLE}
             WHERE date = %s AND period = %s
             ORDER BY grab_order_amount DESC
@@ -110,6 +111,10 @@ def load_items(date_compact: str, period: int) -> list[dict] | None:
                 "grab_order_amount": float(r.get("grab_order_amount") or 0),
                 "close_change_pct": _float_or_none(r.get("close_change_pct")),
                 "next_day_change_pct": _float_or_none(r.get("next_day_change_pct")),
+                "prev_day_change_pct": _float_or_none(r.get("prev_day_change_pct")),
+                "recommend_stars": int(r.get("recommend_stars") or 0),
+                "recommend_reason": r.get("recommend_reason") or "",
+                "recommend_score": _float_or_none(r.get("recommend_score")),
                 "date": trade_date_dash,
                 "source_time": r.get("source_time") or "",
             }

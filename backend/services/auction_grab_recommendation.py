@@ -308,7 +308,7 @@ def _eligible_for_stars(item: dict, live_map: dict | None = None) -> bool:
 
 
 def _current_change_pct(item: dict, live_map: dict | None = None) -> float | None:
-    """取盘中/竞价/收盘涨幅中可用的最大值（用于涨停判定）"""
+    """尾盘/盘中涨停判定：取实时行情、今日涨幅、竞价涨幅的最大值"""
     code = str(item.get("code", "")).zfill(6)
     candidates = [
         (live_map or {}).get(code),
@@ -333,17 +333,37 @@ def _is_item_at_limit_up(item: dict, live_map: dict | None = None) -> bool:
     return _is_at_limit_up(code, pct)
 
 
+def _is_auction_eligible(item: dict, live_map: dict, period: int) -> bool:
+    """是否可参与竞价推荐（未涨停）。
+    period=0 早盘竞价：只看竞价涨幅——盘中涨停不影响竞价时的推荐资格。
+    period=1 尾盘：看实时行情。
+    """
+    code = str(item.get("code", "")).zfill(6)
+    if period == 0:
+        return not _is_at_limit_up(code, item.get("grab_change_pct"))
+    return not _is_item_at_limit_up(item, live_map)
+
+
 def strip_limit_up_recommendations(
     items: list[dict],
     live_change_by_code: dict | None = None,
+    period: int = 0,
 ) -> None:
-    """已涨停标的清除推荐星（盘中每次返回 score 前调用）"""
+    """涨停标的清除推荐星。
+    period=0 早盘竞价：仅用竞价涨幅判断，避免因盘中涨停误剥星。
+    period=1 尾盘：使用实时行情。
+    """
     live_map = live_change_by_code or {}
     for item in items:
-        if not _is_item_at_limit_up(item, live_map):
+        code = str(item.get("code", "")).zfill(6)
+        if period == 0:
+            at_limit = _is_at_limit_up(code, item.get("grab_change_pct"))
+        else:
+            at_limit = _is_item_at_limit_up(item, live_map)
+        if not at_limit:
             continue
         item["recommend_stars"] = 0
-        item["recommend_reason"] = "当日已涨停，不参与推荐"
+        item["recommend_reason"] = "竞价时已涨停，不参与推荐" if period == 0 else "当日已涨停，不参与推荐"
 
 
 def _build_reason(
@@ -562,7 +582,7 @@ def enrich_auction_recommendations(
     eligible = {
         str(it.get("code", "")).zfill(6)
         for it in items
-        if _eligible_for_stars(it, live_map)
+        if _is_auction_eligible(it, live_map, period)
     }
     _assign_stars(scored, eligible)
 
@@ -582,9 +602,9 @@ def enrich_auction_recommendations(
     for item in items:
         code = str(item.get("code", "")).zfill(6)
         row = score_by_code.get(code, {})
-        if _is_item_at_limit_up(item, live_map):
+        if not _is_auction_eligible(item, live_map, period):
             item["recommend_stars"] = 0
-            item["recommend_reason"] = "当日已涨停，不参与推荐"
+            item["recommend_reason"] = "竞价时已涨停，不参与推荐" if period == 0 else "当日已涨停，不参与推荐"
             item["recommend_score"] = row.get("composite_score", 0)
             continue
         stars = row.get("recommend_stars", 0)
@@ -595,7 +615,7 @@ def enrich_auction_recommendations(
         )
         item["recommend_score"] = row.get("composite_score", 0)
 
-    strip_limit_up_recommendations(items, live_map)
+    strip_limit_up_recommendations(items, live_map, period)
 
     hint = emotion.get("advice") or ""
     if stage and not hint:

@@ -371,6 +371,7 @@ function AuctionGrab() {
       <div className="ag-table-wrap">
         <div className="ag-table-header">
           <div className="ag-col ag-col-name">股票名称</div>
+          <div className="ag-col ag-col-meta">行业 / 题材</div>
           <div className="ag-col ag-col-amount">开盘金额</div>
           <div className="ag-col ag-col-change">竞价涨幅</div>
           <div className="ag-col ag-col-close-change">{isTodayView ? '今日涨幅' : '收盘涨幅'}</div>
@@ -398,6 +399,17 @@ function AuctionGrab() {
               <div className="ag-col ag-col-name">
                 <span className="ag-stock-name">{item.name}</span>
                 <span className="ag-stock-code">{item.code}</span>
+              </div>
+              <div className="ag-col ag-col-meta">
+                {item.industry
+                  ? <span className="ag-meta-industry">{item.industry}</span>
+                  : null}
+                {item.concepts
+                  ? <span className="ag-meta-concepts">{item.concepts}</span>
+                  : null}
+                {!item.industry && !item.concepts
+                  ? <span className="ag-meta-empty">--</span>
+                  : null}
               </div>
               <div className="ag-col ag-col-amount">
                 {formatAmount(item.open_amount)}

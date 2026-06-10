@@ -398,14 +398,24 @@ def _trigger_background_enrich(date_compact: str, period_int: int, items: list, 
                     except Exception as e:
                         logger.warning(f"涨幅写库失败（跳过）{date_compact}: {e}")
 
-            # 3. 推荐评分（情绪+题材+抢筹；排除当日已涨停）
+            # 3. 行业/题材元数据（补全缺失的 stock_meta 缓存）
+            try:
+                codes = [str(x.get('code', '')).zfill(6) for x in items_copy if x.get('code')]
+                existing_meta = ag_store.load_stock_meta(codes)
+                missing_meta = [c for c in codes if c not in existing_meta or not existing_meta[c].get('industry')]
+                if missing_meta:
+                    ag_store.populate_stock_meta_from_pool(missing_meta)
+            except Exception as e:
+                logger.warning(f"stock_meta populate 失败（跳过）{date_compact}: {e}")
+
+            # 4. 推荐评分（情绪+题材+抢筹；排除竞价时已涨停）
             try:
                 from services.auction_grab_recommendation import enrich_auction_recommendations
                 live_changes = {
                     str(x.get('code', '')).zfill(6): x.get('today_change_pct')
                     for x in items_copy if x.get('code')
                 }
-                # 同步 close/grab 供涨停判定
+                # period=0 早盘竞价不用盘中涨幅做涨停判定（用竞价涨幅），此处传 live_changes 仅供尾盘期间使用
                 for x in items_copy:
                     c = str(x.get('code', '')).zfill(6)
                     if live_changes.get(c) is None:
@@ -487,7 +497,10 @@ def get_auction_grab():
 
     items = items or []
 
-    # 非阻塞：后台计算涨幅+评分
+    # 合并行业/题材（stock_meta 缓存，缺失时后台补全）
+    ag_store.merge_stock_meta(items)
+
+    # 非阻塞：后台计算涨幅+评分（含 stock_meta 补全）
     _trigger_background_enrich(date_compact, period_int, items, trade_date, is_today)
 
     processed_items, rec_meta = _get_processed_payload(date_compact, period_int, is_today)
@@ -539,7 +552,7 @@ def get_auction_grab_score():
     if processed_items is not None:
         if is_today:
             from services.auction_grab_recommendation import strip_limit_up_recommendations
-            strip_limit_up_recommendations(processed_items)
+            strip_limit_up_recommendations(processed_items, period=period_int)
         enrichments = _build_enrichments_map(processed_items)
         has_scores = any(e.get('recommend_score') is not None for e in enrichments.values())
         return v1_success_response(data={

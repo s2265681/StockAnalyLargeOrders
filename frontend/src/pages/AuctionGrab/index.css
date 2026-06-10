@@ -215,7 +215,7 @@
 
 .ag-table-header {
   display: flex;
-  min-width: 1440px;
+  min-width: 1600px;
   padding: 10px 20px;
   background: var(--bg-card-hover);
   border-bottom: 1px solid var(--border-secondary);
@@ -225,7 +225,7 @@
 
 .ag-table-row {
   display: flex;
-  min-width: 1440px;
+  min-width: 1600px;
   padding: 12px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   align-items: center;
@@ -252,6 +252,28 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.ag-col-meta {
+  flex: 0 0 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ag-meta-industry {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.ag-meta-concepts {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.ag-meta-empty {
+  color: var(--text-muted);
+  font-size: 13px;
 }
 
 .ag-col-amount {

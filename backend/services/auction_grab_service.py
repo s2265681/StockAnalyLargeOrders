@@ -326,3 +326,89 @@ def scores_exist(date_compact: str, period: int) -> bool:
     except Exception as e:
         logger.warning(f"查询评分就绪状态失败: {e}")
         return False
+
+
+# ── stock_meta：行业/题材缓存 ──────────────────────────────────────
+
+_STOCK_META_TABLE = "stock_meta"
+
+
+def load_stock_meta(codes: list[str]) -> dict[str, dict]:
+    """批量读取 stock_meta，返回 {code: {industry, concepts}}"""
+    if not codes:
+        return {}
+    codes_padded = [str(c).zfill(6) for c in codes]
+    placeholders = ",".join(["%s"] * len(codes_padded))
+    try:
+        rows = execute_query(
+            f"SELECT code, industry, concepts FROM {_STOCK_META_TABLE} WHERE code IN ({placeholders})",
+            codes_padded,
+        )
+    except Exception as e:
+        logger.warning(f"读取 stock_meta 失败: {e}")
+        return {}
+    return {
+        r["code"]: {"industry": r.get("industry") or "", "concepts": r.get("concepts") or ""}
+        for r in (rows or [])
+    }
+
+
+def upsert_stock_meta(code: str, industry: str = "", concepts: str = "", name: str = "") -> None:
+    try:
+        sql = f"""
+            INSERT INTO {_STOCK_META_TABLE} (code, name, industry, concepts)
+            VALUES (%s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+                name       = IF(%s != '', VALUES(name), name),
+                industry   = IF(%s != '', VALUES(industry), industry),
+                concepts   = IF(%s != '', VALUES(concepts), concepts),
+                updated_at = CURRENT_TIMESTAMP
+        """
+        execute_write(sql, (code, name, industry, concepts, name, industry, concepts))
+    except Exception as e:
+        logger.warning(f"保存 stock_meta 失败 code={code}: {e}")
+
+
+def populate_stock_meta_from_pool(codes: list[str]) -> None:
+    """从涨停池（limit_up_stocks）查最近一次 industry/tag_name，写入 stock_meta"""
+    if not codes:
+        return
+    codes_padded = [str(c).zfill(6) for c in codes]
+    placeholders = ",".join(["%s"] * len(codes_padded))
+    try:
+        rows = execute_query(
+            f"""
+            SELECT l.code, l.name, l.industry, l.tag_name
+            FROM limit_up_stocks l
+            INNER JOIN (
+                SELECT code, MAX(date) AS max_date
+                FROM limit_up_stocks
+                WHERE code IN ({placeholders})
+                GROUP BY code
+            ) recent ON l.code = recent.code AND l.date = recent.max_date
+            """,
+            codes_padded,
+        )
+    except Exception as e:
+        logger.warning(f"从涨停池查 stock_meta 失败: {e}")
+        return
+    for r in (rows or []):
+        code = str(r.get("code", "")).zfill(6)
+        upsert_stock_meta(
+            code,
+            industry=(r.get("industry") or "").strip(),
+            concepts=(r.get("tag_name") or "").strip(),
+            name=(r.get("name") or "").strip(),
+        )
+
+
+def merge_stock_meta(items: list[dict]) -> None:
+    """就地将行业/题材合并到 items（stock_meta 缓存中无记录则为空字符串）"""
+    if not items:
+        return
+    codes = [item.get("code", "") for item in items]
+    meta = load_stock_meta(codes)
+    for item in items:
+        m = meta.get(item.get("code", ""), {})
+        item.setdefault("industry", m.get("industry", ""))
+        item.setdefault("concepts", m.get("concepts", ""))

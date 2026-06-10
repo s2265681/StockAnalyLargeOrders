@@ -383,11 +383,17 @@ def _trigger_background_enrich(date_compact: str, period_int: int, items: list, 
     def _do_enrich():
         rec_meta = {"stage": "", "hint": ""}
         try:
-            # 1. 盘中实时涨幅（今日/昨日）
+            # 1. 昨日/今日实时涨幅
             if is_today:
                 _enrich_live_quotes(items_copy, trade_date, is_today)
             else:
                 _enrich_prev_day_change(items_copy, trade_date)
+
+            # 昨日涨幅算好后立即落库（COALESCE 保证不覆盖已有值）
+            try:
+                ag_store.update_return_fields(date_compact, period_int, items_copy)
+            except Exception as e:
+                logger.warning(f"昨日涨幅写库失败（跳过）{date_compact}: {e}")
 
             # 2. 收盘/次日涨幅（历史日或收盘后补全）
             if not is_today or not _is_market_hours():

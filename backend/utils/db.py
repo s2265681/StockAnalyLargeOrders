@@ -1,8 +1,8 @@
 """
 MySQL 数据库连接管理
 """
-import os
 import logging
+import time
 import pymysql
 
 from utils.env import load_env, getenv
@@ -19,7 +19,14 @@ DB_CONFIG = {
     "database": getenv("MYSQL_DATABASE", "stock"),
     "charset": "utf8mb4",
     "cursorclass": pymysql.cursors.DictCursor,
+    "connect_timeout": 10,
+    "read_timeout": 30,
+    "write_timeout": 30,
 }
+
+_RETRYABLE_CODES = {2006, 2013}  # CR_SERVER_GONE_ERROR, CR_SERVER_LOST
+_MAX_RETRIES = 3
+_RETRY_DELAY = 0.5
 
 
 def get_connection():
@@ -27,59 +34,84 @@ def get_connection():
     return pymysql.connect(**DB_CONFIG)
 
 
+def _with_retry(fn):
+    """对可重试的 MySQL 错误（2006/2013）自动重试最多 _MAX_RETRIES 次"""
+    last_exc = None
+    for attempt in range(_MAX_RETRIES):
+        try:
+            return fn()
+        except pymysql.err.OperationalError as e:
+            code = e.args[0] if e.args else 0
+            if code in _RETRYABLE_CODES:
+                last_exc = e
+                if attempt < _MAX_RETRIES - 1:
+                    time.sleep(_RETRY_DELAY * (attempt + 1))
+                continue
+            raise
+    raise last_exc
+
+
 def execute_query(sql, params=None):
     """执行查询，返回结果列表"""
-    conn = get_connection()
-    try:
-        with conn.cursor() as cursor:
-            cursor.execute(sql, params)
-            return cursor.fetchall()
-    finally:
-        conn.close()
+    def _run():
+        conn = get_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(sql, params)
+                return cursor.fetchall()
+        finally:
+            conn.close()
+    return _with_retry(_run)
 
 
 def execute_write(sql, params=None):
     """执行写入（INSERT/UPDATE/DELETE），返回 affected rows"""
-    conn = get_connection()
-    try:
-        with conn.cursor() as cursor:
-            result = cursor.execute(sql, params)
-            conn.commit()
-            return result
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
+    def _run():
+        conn = get_connection()
+        try:
+            with conn.cursor() as cursor:
+                result = cursor.execute(sql, params)
+                conn.commit()
+                return result
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+    return _with_retry(_run)
 
 
 def execute_insert(sql, params=None):
     """执行 INSERT，返回 lastrowid"""
-    conn = get_connection()
-    try:
-        with conn.cursor() as cursor:
-            cursor.execute(sql, params)
-            conn.commit()
-            return cursor.lastrowid
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
+    def _run():
+        conn = get_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(sql, params)
+                conn.commit()
+                return cursor.lastrowid
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+    return _with_retry(_run)
 
 
 def execute_many(sql, params_list):
     """批量写入"""
     if not params_list:
         return 0
-    conn = get_connection()
-    try:
-        with conn.cursor() as cursor:
-            result = cursor.executemany(sql, params_list)
-            conn.commit()
-            return result
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
+    def _run():
+        conn = get_connection()
+        try:
+            with conn.cursor() as cursor:
+                result = cursor.executemany(sql, params_list)
+                conn.commit()
+                return result
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+    return _with_retry(_run)

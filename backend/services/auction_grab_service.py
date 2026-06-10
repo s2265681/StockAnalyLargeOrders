@@ -108,10 +108,13 @@ def load_items(date_compact: str, period: int) -> list[dict] | None:
 
 
 def replace_snapshot(date_compact: str, period: int, items: list[dict]) -> int:
-    """全量替换某日某时段快照"""
+    """全量替换某日某时段快照，保留已有的富化字段（涨幅/推荐度）"""
     if not items:
         return 0
     try:
+        # 先读取已持久化的富化字段，避免重新入库时丢失
+        existing = load_enrichment_fields(date_compact, period)
+
         execute_write(
             f"DELETE FROM {_TABLE} WHERE date = %s AND period = %s",
             (date_compact, int(period)),
@@ -119,24 +122,32 @@ def replace_snapshot(date_compact: str, period: int, items: list[dict]) -> int:
         sql = f"""
             INSERT INTO {_TABLE} (
                 date, period, code, name, open_amount, grab_change_pct,
-                grab_turnover, grab_order_amount, source_time
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                grab_turnover, grab_order_amount, source_time,
+                close_change_pct, next_day_change_pct, prev_day_change_pct,
+                recommend_stars, recommend_reason, recommend_score
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         params = []
         for item in items:
-            params.append(
-                (
-                    date_compact,
-                    int(period),
-                    str(item.get("code", "")).zfill(6),
-                    item.get("name") or "",
-                    float(item.get("open_amount") or 0),
-                    float(item.get("grab_change_pct") or 0),
-                    float(item.get("grab_turnover") or 0),
-                    float(item.get("grab_order_amount") or 0),
-                    str(item.get("source_time") or item.get("date") or ""),
-                )
-            )
+            code = str(item.get("code", "")).zfill(6)
+            ex = existing.get(code, {})
+            params.append((
+                date_compact,
+                int(period),
+                code,
+                item.get("name") or "",
+                float(item.get("open_amount") or 0),
+                float(item.get("grab_change_pct") or 0),
+                float(item.get("grab_turnover") or 0),
+                float(item.get("grab_order_amount") or 0),
+                str(item.get("source_time") or item.get("date") or ""),
+                ex.get("close_change_pct"),
+                ex.get("next_day_change_pct"),
+                ex.get("prev_day_change_pct"),
+                ex.get("recommend_stars"),
+                ex.get("recommend_reason"),
+                ex.get("recommend_score"),
+            ))
         return execute_many(sql, params)
     except Exception as e:
         logger.warning(f"写入竞价抢筹快照失败: {e}")
@@ -144,15 +155,16 @@ def replace_snapshot(date_compact: str, period: int, items: list[dict]) -> int:
 
 
 def update_return_fields(date_compact: str, period: int, items: list[dict]) -> int:
-    """回写当日/次日涨幅（有值才更新）"""
+    """回写当日/昨日/次日涨幅（有值才更新）"""
     updates = []
     for item in items:
         code = str(item.get("code", "")).zfill(6)
         close_pct = item.get("close_change_pct")
         next_pct = item.get("next_day_change_pct")
-        if close_pct is None and next_pct is None:
+        prev_pct = item.get("prev_day_change_pct")
+        if close_pct is None and next_pct is None and prev_pct is None:
             continue
-        updates.append((close_pct, next_pct, date_compact, int(period), code))
+        updates.append((close_pct, next_pct, prev_pct, date_compact, int(period), code))
 
     if not updates:
         return 0
@@ -161,7 +173,8 @@ def update_return_fields(date_compact: str, period: int, items: list[dict]) -> i
         sql = f"""
             UPDATE {_TABLE}
             SET close_change_pct = COALESCE(%s, close_change_pct),
-                next_day_change_pct = COALESCE(%s, next_day_change_pct)
+                next_day_change_pct = COALESCE(%s, next_day_change_pct),
+                prev_day_change_pct = COALESCE(%s, prev_day_change_pct)
             WHERE date = %s AND period = %s AND code = %s
         """
         return execute_many(sql, updates)
@@ -171,9 +184,11 @@ def update_return_fields(date_compact: str, period: int, items: list[dict]) -> i
 
 
 def items_need_return_enrich(items: list[dict]) -> bool:
-    """是否仍有缺失的收盘/次日涨幅"""
+    """是否仍有缺失的收盘/昨日/次日涨幅"""
     for item in items:
-        if item.get("close_change_pct") is None or item.get("next_day_change_pct") is None:
+        if (item.get("close_change_pct") is None
+                or item.get("next_day_change_pct") is None
+                or item.get("prev_day_change_pct") is None):
             return True
     return False
 
@@ -245,10 +260,13 @@ def _row_to_enrichment(row: dict) -> dict:
     out: dict[str, Any] = {}
     close_pct = _float_or_none(row.get("close_change_pct"))
     next_pct = _float_or_none(row.get("next_day_change_pct"))
+    prev_pct = _float_or_none(row.get("prev_day_change_pct"))
     if close_pct is not None:
         out["close_change_pct"] = close_pct
     if next_pct is not None:
         out["next_day_change_pct"] = next_pct
+    if prev_pct is not None:
+        out["prev_day_change_pct"] = prev_pct
     if row.get("recommend_score") is not None:
         out["recommend_stars"] = int(row.get("recommend_stars") or 0)
         out["recommend_reason"] = row.get("recommend_reason") or ""
@@ -261,7 +279,7 @@ def load_enrichment_fields(date_compact: str, period: int) -> dict:
     try:
         rows = execute_query(
             f"""
-            SELECT code, close_change_pct, next_day_change_pct,
+            SELECT code, close_change_pct, next_day_change_pct, prev_day_change_pct,
                    recommend_stars, recommend_reason, recommend_score
             FROM {_TABLE}
             WHERE date = %s AND period = %s

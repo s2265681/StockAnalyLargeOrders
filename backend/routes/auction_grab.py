@@ -493,13 +493,20 @@ def get_auction_grab():
     if items is None:
         raw_data = _fetch_from_stockapi(trade_date, period_int, _FETCH_API_TYPE)
         if raw_data is None:
-            return v1_error_response('数据源暂不可用，请稍后重试')
-        items = ag_store.items_from_raw_api(raw_data, trade_date)
-        if items:
-            ag_store.replace_snapshot(date_compact, period_int, items)
-            cache_key = f"{date_compact}_{period_int}_{_FETCH_API_TYPE}"
-            _cache[cache_key] = {'ts': time.time(), 'items': items}
-        source = 'api'
+            # 数据源不可用时，尝试读取 DB 缓存（今日数据可能已有）
+            db_items = ag_store.load_items(date_compact, period_int)
+            if db_items:
+                items = db_items
+                source = 'db_fallback'
+            else:
+                return v1_error_response('数据源暂不可用，请稍后重试')
+        else:
+            items = ag_store.items_from_raw_api(raw_data, trade_date)
+            if items:
+                ag_store.replace_snapshot(date_compact, period_int, items)
+                cache_key = f"{date_compact}_{period_int}_{_FETCH_API_TYPE}"
+                _cache[cache_key] = {'ts': time.time(), 'items': items}
+            source = 'api'
 
     items = items or []
 

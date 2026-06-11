@@ -9,6 +9,22 @@ class StockManager {
     getAll() {
         return this.ctx.globalState.get(KEY, []);
     }
+    /** 修正历史错误：sh0/1/2/3xxxxx → sz0/1/2/3xxxxx */
+    async migrateWrongPrefixes() {
+        const list = this.getAll();
+        let changed = false;
+        for (const s of list) {
+            if (/^sh[0123]\d{5}$/.test(s.code)) {
+                s.code = 'sz' + s.code.slice(2);
+                if (/^(sh|sz)\d{6}$/.test(s.name) || s.name === s.code.slice(2)) {
+                    s.name = s.code;
+                }
+                changed = true;
+            }
+        }
+        if (changed)
+            await this.ctx.globalState.update(KEY, list);
+    }
     async add(stock) {
         const list = this.getAll();
         if (list.some(s => s.code === stock.code))

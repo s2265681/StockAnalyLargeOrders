@@ -88,7 +88,7 @@ function activate(ctx) {
         refresh();
         timer = setInterval(refresh, refreshInterval);
     }
-    void syncSettingsStocks().then(() => startTimer());
+    void stockManager.migrateWrongPrefixes().then(() => syncSettingsStocks()).then(() => startTimer());
     // 首次激活时在状态栏显示提示，确认扩展已启动
     vscode.window.setStatusBarMessage('$(graph-line) AI炒股看盘 已启动', 4000);
     ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => {
@@ -134,7 +134,7 @@ function activate(ctx) {
         const keyword = input.trim();
         let selected;
         if (/^\d{6}$/.test(keyword)) {
-            const prefix = /^[056]/.test(keyword) ? 'sh' : 'sz';
+            const prefix = /^[56]/.test(keyword) ? 'sh' : 'sz';
             const results = await (0, sinaApi_1.searchStock)(keyword);
             selected = results[0] ?? { code: `${prefix}${keyword}`, name: keyword };
         }

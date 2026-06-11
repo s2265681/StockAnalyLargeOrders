@@ -54,7 +54,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
     timer = setInterval(refresh, refreshInterval);
   }
 
-  void syncSettingsStocks().then(() => startTimer());
+  void stockManager.migrateWrongPrefixes().then(() => syncSettingsStocks()).then(() => startTimer());
 
   // 首次激活时在状态栏显示提示，确认扩展已启动
   vscode.window.setStatusBarMessage('$(graph-line) AI炒股看盘 已启动', 4000);
@@ -108,7 +108,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
     let selected: { code: string; name: string } | undefined;
 
     if (/^\d{6}$/.test(keyword)) {
-      const prefix = /^[056]/.test(keyword) ? 'sh' : 'sz';
+      const prefix = /^[56]/.test(keyword) ? 'sh' : 'sz';
       const results = await searchStock(keyword);
       selected = results[0] ?? { code: `${prefix}${keyword}`, name: keyword };
     } else if (/^(sh|sz|bj)\d{6}$/i.test(keyword)) {

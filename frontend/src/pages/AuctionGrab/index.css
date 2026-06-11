@@ -402,6 +402,50 @@
   font-size: 14px;
 }
 
+/* 高级筛选按钮 */
+.ag-screen-btn {
+  padding: 5px 14px;
+  background: var(--bg-input);
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.ag-screen-btn:hover {
+  background: var(--border-primary);
+  border-color: #4a4a4a;
+  color: var(--text-secondary);
+}
+
+.ag-screen-btn.active {
+  background: rgba(24, 144, 255, 0.15);
+  border-color: #1890ff;
+  color: #1890ff;
+}
+
+/* 高级筛选模式列 */
+.ag-col-volratio {
+  flex: 0 0 110px;
+  font-weight: 500;
+}
+
+.ag-col-screen-meta {
+  flex: 0 0 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ag-screen-hint {
+  margin-top: 12px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
 /* ── 移动端适配 ── */
 @media (max-width: 768px) {
   .ag-container {

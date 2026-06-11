@@ -610,3 +610,46 @@ def get_auction_grab_score():
         'ready': has_scores or bool(enrichments),
         'live_refresh': is_today and _is_market_hours(),
     })
+
+
+# 高级筛选结果缓存
+_screen_cache: dict = {}
+_SCREEN_CACHE_TTL_LIVE = 120    # 盘中
+_SCREEN_CACHE_TTL_HIST = 3600   # 历史
+
+
+@auction_grab_bp.route('/api/v1/auction-grab/screen', methods=['GET'])
+def get_auction_grab_screen():
+    """
+    高级筛选：全市场竞价金额前N主板非ST → 竞价涨幅2-7% → 流通市值30-300亿 → 近1年涨停>2次
+    返回通过所有条件的股票，含 vol_ratio（竞价委托量/昨日成交量）
+    """
+    from services.auction_screen_service import run_advanced_screen
+
+    period = request.args.get('period', '0')
+    dt = request.args.get('dt', _get_last_trading_day())
+    trade_date = _format_date(dt)
+    date_compact = ag_store.to_compact_date(dt)
+    period_int = int(period)
+    is_today = _is_today_trading_date(date_compact)
+
+    cache_key = f'screen_{date_compact}_{period_int}'
+    ttl = _SCREEN_CACHE_TTL_LIVE if (is_today and _is_market_hours()) else _SCREEN_CACHE_TTL_HIST
+    cached = _screen_cache.get(cache_key)
+    if cached and (time.time() - cached['ts']) < ttl:
+        return v1_success_response(data=cached['payload'])
+
+    try:
+        stocks = run_advanced_screen(trade_date, period_int)
+    except Exception as e:
+        logger.error(f"高级筛选失败: {e}")
+        return v1_error_response('高级筛选暂时不可用，请稍后重试')
+
+    payload = {
+        'items': stocks,
+        'total': len(stocks),
+        'date': dt,
+        'period': period_int,
+    }
+    _screen_cache[cache_key] = {'ts': time.time(), 'payload': payload}
+    return v1_success_response(data=payload)

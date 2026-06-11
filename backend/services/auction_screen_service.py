@@ -125,3 +125,130 @@ def filter_by_auction_change(
 ) -> list[dict]:
     """按竞价涨幅区间过滤"""
     return [s for s in stocks if min_pct <= s.get('auction_change_pct', 0) <= max_pct]
+
+
+def _curl(url: str, ref: str = 'https://gu.qq.com/') -> str:
+    try:
+        r = subprocess.run(
+            ['curl', '-s', '--max-time', '12',
+             '-H', f'Referer: {ref}', '-H', 'User-Agent: Mozilla/5.0', url],
+            capture_output=True, timeout=15,
+        )
+        return r.stdout.decode('utf-8', errors='replace')
+    except Exception:
+        return ''
+
+
+def _get_mktcap_batch(codes: list[str]) -> dict[str, float]:
+    """腾讯API批量查流通市值(亿), 返回 {code: cap}"""
+    if not codes:
+        return {}
+    secids = ','.join([('sz' if c.startswith(('0', '3')) else 'sh') + c for c in codes])
+    text = _curl(f'https://qt.gtimg.cn/q={secids}')
+    result: dict[str, float] = {}
+    for line in text.split('\n'):
+        if '"' not in line or '~' not in line:
+            continue
+        try:
+            fields = line.split('"')[1].split('~')
+            if len(fields) >= 45:
+                code6 = fields[2]
+                result[code6] = float(fields[44]) if fields[44] else 0.0
+        except Exception:
+            pass
+    return result
+
+
+def _count_limit_up_and_prev_vol(code: str, target_date: str) -> tuple[int, float | None, float | None]:
+    """
+    返回 (近1年涨停次数, target_date前一日成交量(手), target_date收盘价)
+    target_date 格式 YYYY-MM-DD
+    """
+    prefix = 'sz' if code.startswith(('0', '3')) else 'sh'
+    url = (f'https://web.ifzq.gtimg.cn/appstock/app/fqkline/get'
+           f'?_var=kline_dayqfq&param={prefix}{code},day,,,250,qfq')
+    text = _curl(url)
+    cnt = 0
+    prev_vol: float | None = None
+    close_price: float | None = None
+    try:
+        idx = text.index('{')
+        d = json.loads(text[idx:])
+        klines = d.get('data', {}).get(f'{prefix}{code}', {}).get('qfqday', [])
+        prev_c: float | None = None
+        for i, k in enumerate(klines):
+            try:
+                c = float(k[2])
+                if prev_c and prev_c > 0 and (c - prev_c) / prev_c * 100 >= 9.8:
+                    cnt += 1
+                if str(k[0]) == target_date:
+                    close_price = c
+                    if i > 0:
+                        prev_vol = float(klines[i - 1][5])
+                prev_c = c
+            except Exception:
+                pass
+    except Exception:
+        pass
+    return cnt, prev_vol, close_price
+
+
+def run_advanced_screen(trade_date: str, period: int = 0) -> list[dict]:
+    """
+    完整高级筛选流程，返回通过所有条件的股票列表，含 vol_ratio 字段。
+
+    条件：全市场主板非ST → 竞价涨幅2-7% → 流通市值30-300亿 → 近1年涨停>2次
+    vol_ratio = 竞价委托手 / 前一日成交量(手)
+    """
+    import time
+    from datetime import datetime
+
+    # 标准化日期格式
+    if len(trade_date) == 8:
+        td_dash = f'{trade_date[:4]}-{trade_date[4:6]}-{trade_date[6:]}'
+    else:
+        td_dash = trade_date
+
+    # 1. 全市场主板非ST
+    step1 = get_main_board_top_auction(trade_date, period=period, top_n=60)
+    if not step1:
+        return []
+
+    # 2. 竞价涨幅 2-7%
+    step2 = filter_by_auction_change(step1, 2.0, 7.0)
+    if not step2:
+        return []
+
+    # 3. 流通市值 30-300亿（批量查）
+    mktcap = _get_mktcap_batch([s['code'] for s in step2])
+    step3 = []
+    for s in step2:
+        cap = mktcap.get(s['code'], 0)
+        if 30 <= cap <= 300:
+            s['mktcap'] = cap
+            step3.append(s)
+    if not step3:
+        return []
+
+    # 4. 近1年涨停>2次 + 计算 vol_ratio（并发查 K 线）
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        futures = {
+            ex.submit(_count_limit_up_and_prev_vol, s['code'], td_dash): s
+            for s in step3
+        }
+        for future in as_completed(futures):
+            s = futures[future]
+            try:
+                limit_up_cnt, prev_vol, close_price = future.result()
+            except Exception:
+                limit_up_cnt, prev_vol, close_price = 0, None, None
+            s['limit_up_cnt'] = limit_up_cnt
+            # vol_ratio = 竞价委托手 / 昨日成交量(手)
+            if prev_vol and prev_vol > 0 and close_price and close_price > 0:
+                grab_hands = s['auction_order_amt'] * 10000 / close_price / 100
+                s['vol_ratio'] = round(grab_hands / prev_vol, 4)
+            else:
+                s['vol_ratio'] = None
+
+    step4 = [s for s in step3 if s.get('limit_up_cnt', 0) > 2]
+    return step4

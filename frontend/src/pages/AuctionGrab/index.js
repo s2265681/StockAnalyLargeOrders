@@ -166,7 +166,11 @@ function AuctionGrab() {
   const [sortOpen, setSortOpen] = useState(false);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [advancedFilter, setAdvancedFilter] = useState(false);
+  const [screenData, setScreenData] = useState(null);
+  const [screenLoading, setScreenLoading] = useState(false);
   const dataCache = useRef({});
+  const screenCache = useRef({});
   const fetchIdRef = useRef(0);
   const dropdownRef = useRef(null);
 
@@ -287,16 +291,47 @@ function AuctionGrab() {
     }
   }, [pollScoreEnrichments, todayStr]);
 
+  const fetchScreenData = useCallback(async (dt, tab) => {
+    const period = tab === 'tail' ? '1' : '0';
+    const cacheKey = `${dt}_${period}`;
+    if (screenCache.current[cacheKey]) {
+      setScreenData(screenCache.current[cacheKey]);
+      return;
+    }
+    setScreenLoading(true);
+    try {
+      const res = await apiRequest(`/api/v1/auction-grab/screen?dt=${dt}&period=${period}`, {
+        timeout: 120000,
+      });
+      if (res?.data) {
+        screenCache.current[cacheKey] = res.data;
+        setScreenData(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch screen data:', err);
+    } finally {
+      setScreenLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchData(currentDate, activeTab);
   }, [fetchData, currentDate, activeTab]);
 
-  const items = useMemo(
-    () => sortAuctionItems(data?.items || [], sortBy),
-    [data?.items, sortBy]
-  );
+  useEffect(() => {
+    if (advancedFilter) {
+      fetchScreenData(currentDate, activeTab);
+    }
+  }, [advancedFilter, fetchScreenData, currentDate, activeTab]);
+
+  const items = useMemo(() => {
+    if (advancedFilter) return screenData?.items || [];
+    return sortAuctionItems(data?.items || [], sortBy);
+  }, [advancedFilter, screenData?.items, data?.items, sortBy]);
+
   const emotionStage = data?.emotion_stage || '';
   const recommendHint = data?.recommend_hint || '';
+  const isScreenMode = advancedFilter;
 
   const isTodayView = currentDate === todayStr;
 
@@ -370,31 +405,41 @@ function AuctionGrab() {
             </span>
           </div>
 
-          <div className="ag-sort-dropdown" ref={dropdownRef}>
-            <div
-              className="ag-sort-trigger"
-              onClick={() => setSortOpen(!sortOpen)}
-            >
-              <span>{currentSortLabel}</span>
-              <DownOutlined className={`ag-sort-arrow ${sortOpen ? 'open' : ''}`} />
-            </div>
-            {sortOpen && (
-              <div className="ag-sort-menu">
-                {SORT_OPTIONS.map(opt => (
-                  <div
-                    key={opt.key}
-                    className={`ag-sort-item ${sortBy === opt.key ? 'active' : ''}`}
-                    onClick={() => {
-                      setSortBy(opt.key);
-                      setSortOpen(false);
-                    }}
-                  >
-                    {opt.label}
-                  </div>
-                ))}
+          {!advancedFilter && (
+            <div className="ag-sort-dropdown" ref={dropdownRef}>
+              <div
+                className="ag-sort-trigger"
+                onClick={() => setSortOpen(!sortOpen)}
+              >
+                <span>{currentSortLabel}</span>
+                <DownOutlined className={`ag-sort-arrow ${sortOpen ? 'open' : ''}`} />
               </div>
-            )}
-          </div>
+              {sortOpen && (
+                <div className="ag-sort-menu">
+                  {SORT_OPTIONS.map(opt => (
+                    <div
+                      key={opt.key}
+                      className={`ag-sort-item ${sortBy === opt.key ? 'active' : ''}`}
+                      onClick={() => {
+                        setSortBy(opt.key);
+                        setSortOpen(false);
+                      }}
+                    >
+                      {opt.label}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <button
+            type="button"
+            className={`ag-screen-btn ${advancedFilter ? 'active' : ''}`}
+            onClick={() => setAdvancedFilter(v => !v)}
+          >
+            高级筛选
+          </button>
           </div>
         </div>
       </div>
@@ -408,92 +453,124 @@ function AuctionGrab() {
 
       {/* 表格 */}
       <div className="ag-table-wrap">
-        <div className="ag-table-header">
+        <div className={`ag-table-header${isScreenMode ? ' ag-screen-mode' : ''}`}>
           <div className="ag-col ag-col-name">股票名称</div>
           <div className="ag-col ag-col-meta">行业 / 题材</div>
           <div className="ag-col ag-col-amount">开盘金额</div>
           <div className="ag-col ag-col-change">竞价涨幅</div>
+          {isScreenMode && <div className="ag-col ag-col-volratio">竞价量/昨量</div>}
           <div className="ag-col ag-col-close-change">{isTodayView ? '今日涨幅' : '收盘涨幅'}</div>
           <div className="ag-col ag-col-prev-change">昨日涨幅</div>
           <div className="ag-col ag-col-next-change">次日涨幅</div>
           <div className="ag-col ag-col-turnover">抢筹成交额</div>
           <div className="ag-col ag-col-order">抢筹委托金额</div>
-          <div className="ag-col ag-col-date">时间</div>
-          <div className="ag-col ag-col-recommend">推荐度</div>
+          {!isScreenMode && <div className="ag-col ag-col-date">时间</div>}
+          {isScreenMode
+            ? <div className="ag-col ag-col-screen-meta">市值 / 涨停</div>
+            : <div className="ag-col ag-col-recommend">推荐度</div>
+          }
         </div>
 
-        {loading ? (
+        {(loading || (isScreenMode && screenLoading)) ? (
           <div className="ag-loading">
             <Spin size="large" />
+            {isScreenMode && <div className="ag-screen-hint">筛选中，约需 15-30 秒…</div>}
           </div>
         ) : items.length === 0 ? (
-          <div className="ag-empty">暂无数据</div>
+          <div className="ag-empty">{isScreenMode ? '无符合条件的股票' : '暂无数据'}</div>
         ) : (
-          items.map((item) => (
-            <div
-              key={item.code}
-              className="ag-table-row"
-              onClick={() => navigate(`/stock-dashboard?code=${item.code}`)}
-            >
-              <div className="ag-col ag-col-name">
-                <span className="ag-stock-name">{item.name}</span>
-                <span className="ag-stock-code">{item.code}</span>
-              </div>
-              <div className="ag-col ag-col-meta">
-                {item.industry
-                  ? <span className="ag-meta-industry">{item.industry}</span>
-                  : null}
-                {item.concepts
-                  ? <span className="ag-meta-concepts">{item.concepts}</span>
-                  : null}
-                {!item.industry && !item.concepts
-                  ? <span className="ag-meta-empty">--</span>
-                  : null}
-              </div>
-              <div className="ag-col ag-col-amount">
-                {formatAmount(item.open_amount)}
-              </div>
+          items.map((item) => {
+            const volRatio = item.vol_ratio;
+            const volRatioStr = volRatio != null ? `${(volRatio * 100).toFixed(1)}%` : '--';
+            const grabChangePct = isScreenMode
+              ? item.auction_change_pct
+              : item.grab_change_pct;
+            const grabOrderAmt = isScreenMode
+              ? item.auction_order_amt
+              : item.grab_order_amount;
+            const grabTurnover = isScreenMode
+              ? item.auction_trade_amt
+              : item.grab_turnover;
+            const openAmt = isScreenMode ? null : item.open_amount;
+
+            return (
               <div
-                className="ag-col ag-col-change"
-                style={{ color: getChangeColor(item.grab_change_pct) }}
+                key={item.code}
+                className={`ag-table-row${isScreenMode ? ' ag-screen-mode' : ''}`}
+                onClick={() => navigate(`/stock-dashboard?code=${item.code}`)}
               >
-                {parseFloat(item.grab_change_pct) > 0 ? '+' : ''}{item.grab_change_pct}%
+                <div className="ag-col ag-col-name">
+                  <span className="ag-stock-name">{item.name}</span>
+                  <span className="ag-stock-code">{item.code}</span>
+                </div>
+                <div className="ag-col ag-col-meta">
+                  {item.industry
+                    ? <span className="ag-meta-industry">{item.industry}</span>
+                    : null}
+                  {item.concepts
+                    ? <span className="ag-meta-concepts">{item.concepts}</span>
+                    : null}
+                  {!item.industry && !item.concepts
+                    ? <span className="ag-meta-empty">--</span>
+                    : null}
+                </div>
+                <div className="ag-col ag-col-amount">
+                  {openAmt != null ? formatAmount(openAmt) : '--'}
+                </div>
+                <div
+                  className="ag-col ag-col-change"
+                  style={{ color: getChangeColor(grabChangePct) }}
+                >
+                  {parseFloat(grabChangePct) > 0 ? '+' : ''}{parseFloat(grabChangePct).toFixed(2)}%
+                </div>
+                {isScreenMode && (
+                  <div className="ag-col ag-col-volratio" style={{ color: volRatio != null && volRatio >= 0.03 ? '#ff4d4f' : 'var(--text-muted)' }}>
+                    {volRatioStr}
+                  </div>
+                )}
+                <div
+                  className="ag-col ag-col-close-change"
+                  style={{ color: getChangeColor(displayTodayChange(item)) }}
+                >
+                  {formatPct(displayTodayChange(item))}
+                </div>
+                <div
+                  className="ag-col ag-col-prev-change"
+                  style={{ color: getChangeColor(item.prev_day_change_pct) }}
+                >
+                  {formatPct(item.prev_day_change_pct)}
+                </div>
+                <div
+                  className="ag-col ag-col-next-change"
+                  style={{ color: getChangeColor(item.next_day_change_pct) }}
+                >
+                  {formatPct(item.next_day_change_pct)}
+                </div>
+                <div className="ag-col ag-col-turnover">
+                  {formatAmount(grabTurnover)}
+                </div>
+                <div className="ag-col ag-col-order">
+                  {formatAmount(grabOrderAmt)}
+                </div>
+                {!isScreenMode && (
+                  <div className="ag-col ag-col-date">{item.date}</div>
+                )}
+                {isScreenMode ? (
+                  <div className="ag-col ag-col-screen-meta">
+                    <span className="ag-meta-industry">{item.mktcap != null ? `${item.mktcap.toFixed(0)}亿` : '--'}</span>
+                    <span className="ag-meta-concepts">{item.limit_up_cnt != null ? `近1年涨停 ${item.limit_up_cnt}次` : ''}</span>
+                  </div>
+                ) : (
+                  <div
+                    className="ag-col ag-col-recommend"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {renderStars(item.recommend_stars, item.recommend_reason)}
+                  </div>
+                )}
               </div>
-              <div
-                className="ag-col ag-col-close-change"
-                style={{ color: getChangeColor(displayTodayChange(item)) }}
-              >
-                {formatPct(displayTodayChange(item))}
-              </div>
-              <div
-                className="ag-col ag-col-prev-change"
-                style={{ color: getChangeColor(item.prev_day_change_pct) }}
-              >
-                {formatPct(item.prev_day_change_pct)}
-              </div>
-              <div
-                className="ag-col ag-col-next-change"
-                style={{ color: getChangeColor(item.next_day_change_pct) }}
-              >
-                {formatPct(item.next_day_change_pct)}
-              </div>
-              <div className="ag-col ag-col-turnover">
-                {formatAmount(item.grab_turnover)}
-              </div>
-              <div className="ag-col ag-col-order">
-                {formatAmount(item.grab_order_amount)}
-              </div>
-              <div className="ag-col ag-col-date">
-                {item.date}
-              </div>
-              <div
-                className="ag-col ag-col-recommend"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {renderStars(item.recommend_stars, item.recommend_reason)}
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>

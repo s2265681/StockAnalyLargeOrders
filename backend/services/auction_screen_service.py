@@ -161,10 +161,11 @@ def _get_mktcap_batch(codes: list[str]) -> dict[str, float]:
 
 def _count_limit_up_and_prev_vol(
     code: str, target_date: str
-) -> tuple[int, float | None, float | None, float | None]:
+) -> tuple[int, float | None, float | None, float | None, float | None]:
     """
-    返回 (近1年涨停次数, target_date前一日成交量(手), target_date收盘价, target_date前一日收盘价)
+    返回 (近1年涨停次数, prev_vol(手), close_price, prev_close, prev_prev_close)
     target_date 格式 YYYY-MM-DD
+    当 target_date 不在 K 线（竞价期间）时 close_price=None，prev/prev_prev 取最后两根 K 线
     """
     prefix = 'sz' if code.startswith(('0', '3')) else 'sh'
     url = (f'https://web.ifzq.gtimg.cn/appstock/app/fqkline/get'
@@ -174,6 +175,7 @@ def _count_limit_up_and_prev_vol(
     prev_vol: float | None = None
     close_price: float | None = None
     prev_close: float | None = None
+    prev_prev_close: float | None = None
     try:
         idx = text.index('{')
         d = json.loads(text[idx:])
@@ -189,32 +191,27 @@ def _count_limit_up_and_prev_vol(
                     if i > 0:
                         prev_vol = float(klines[i - 1][5])
                         prev_close = float(klines[i - 1][2])
+                    if i > 1:
+                        prev_prev_close = float(klines[i - 2][2])
                 prev_c = c
             except Exception:
                 pass
+        # target_date 不在 K 线（竞价期间），用最后两根作 prev/prev_prev
+        if close_price is None and klines:
+            n = len(klines)
+            try:
+                prev_vol = float(klines[-1][5])
+                prev_close = float(klines[-1][2])
+            except Exception:
+                pass
+            if n >= 2:
+                try:
+                    prev_prev_close = float(klines[-2][2])
+                except Exception:
+                    pass
     except Exception:
         pass
-    return cnt, prev_vol, close_price, prev_close
-
-
-def _get_today_change_batch(codes: list[str]) -> dict[str, float]:
-    """腾讯API批量查今日涨跌幅(%), 返回 {code: pct}"""
-    if not codes:
-        return {}
-    secids = ','.join([('sz' if c.startswith(('0', '3')) else 'sh') + c for c in codes])
-    text = _curl(f'https://qt.gtimg.cn/q={secids}')
-    result: dict[str, float] = {}
-    for line in text.split('\n'):
-        if '"' not in line or '~' not in line:
-            continue
-        try:
-            fields = line.split('"')[1].split('~')
-            if len(fields) >= 32:
-                code6 = fields[2]
-                result[code6] = float(fields[31]) if fields[31] else 0.0
-        except Exception:
-            pass
-    return result
+    return cnt, prev_vol, close_price, prev_close, prev_prev_close
 
 
 def run_advanced_screen(trade_date: str, period: int = 0) -> list[dict]:
@@ -224,7 +221,6 @@ def run_advanced_screen(trade_date: str, period: int = 0) -> list[dict]:
     条件：全市场主板非ST → 竞价涨幅2-7% → 流通市值30-300亿 → 近1年涨停>2次
     vol_ratio = 竞价委托手 / 前一日成交量(手)
     """
-    from datetime import date as _date
     from services.auction_grab_service import merge_stock_meta
 
     # 标准化日期格式
@@ -254,7 +250,7 @@ def run_advanced_screen(trade_date: str, period: int = 0) -> list[dict]:
     if not step3:
         return []
 
-    # 4. 近1年涨停>2次 + 计算 vol_ratio + close_change_pct（并发查 K 线）
+    # 4. 近1年涨停>2次 + 计算 vol_ratio / close_change_pct / prev_day_change_pct（并发查 K 线）
     with ThreadPoolExecutor(max_workers=8) as ex:
         futures = {
             ex.submit(_count_limit_up_and_prev_vol, s['code'], td_dash): s
@@ -263,39 +259,34 @@ def run_advanced_screen(trade_date: str, period: int = 0) -> list[dict]:
         for future in as_completed(futures):
             s = futures[future]
             try:
-                limit_up_cnt, prev_vol, close_price, prev_close = future.result()
+                limit_up_cnt, prev_vol, close_price, prev_close, prev_prev_close = future.result()
             except Exception:
-                limit_up_cnt, prev_vol, close_price, prev_close = 0, None, None, None
+                limit_up_cnt, prev_vol, close_price, prev_close, prev_prev_close = 0, None, None, None, None
             s['limit_up_cnt'] = limit_up_cnt
-            # vol_ratio = 竞价委托手 / 昨日成交量(手)
-            if prev_vol and prev_vol > 0 and close_price and close_price > 0:
-                grab_hands = s['auction_order_amt'] * 10000 / close_price / 100
+            # vol_ratio: 竞价委托手 / 昨日成交量(手)；竞价期间用 prev_close 近似当日价
+            ref_price = close_price or prev_close
+            if prev_vol and prev_vol > 0 and ref_price and ref_price > 0:
+                grab_hands = s['auction_order_amt'] * 10000 / ref_price / 100
                 s['vol_ratio'] = round(grab_hands / prev_vol, 4)
             else:
                 s['vol_ratio'] = None
-            # 收盘涨幅（target_date 当日涨跌幅）
+            # 收盘涨幅（target_date 当日）；竞价期间 close_price=None → None
             if close_price and prev_close and prev_close > 0:
                 s['close_change_pct'] = round((close_price - prev_close) / prev_close * 100, 2)
             else:
                 s['close_change_pct'] = None
+            s['today_change_pct'] = s['close_change_pct']
+            # 昨日涨幅（target_date 前一日）
+            if prev_close and prev_prev_close and prev_prev_close > 0:
+                s['prev_day_change_pct'] = round((prev_close - prev_prev_close) / prev_prev_close * 100, 2)
+            else:
+                s['prev_day_change_pct'] = None
 
     step4 = [s for s in step3 if s.get('limit_up_cnt', 0) > 2]
     if not step4:
         return []
 
-    # 5. 今日实时涨跌幅（仅当 trade_date 是今天时有意义，历史日期也查，用收盘值）
-    today_pct = _get_today_change_batch([s['code'] for s in step4])
-    is_today = (td_dash == str(_date.today()))
-    for s in step4:
-        pct = today_pct.get(s['code'])
-        if is_today and pct is not None:
-            s['today_change_pct'] = pct
-        elif s.get('close_change_pct') is not None:
-            s['today_change_pct'] = s['close_change_pct']
-        else:
-            s['today_change_pct'] = None
-
-    # 6. 补充行业/题材
+    # 5. 补充行业/题材
     merge_stock_meta(step4)
 
     return step4

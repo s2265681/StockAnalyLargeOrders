@@ -433,6 +433,11 @@
   font-weight: 500;
 }
 
+.ag-col-auction-close {
+  flex: 0 0 100px;
+  font-weight: 500;
+}
+
 .ag-col-screen-meta {
   flex: 0 0 160px;
   display: flex;

@@ -161,11 +161,11 @@ def _get_mktcap_batch(codes: list[str]) -> dict[str, float]:
 
 def _count_limit_up_and_prev_vol(
     code: str, target_date: str
-) -> tuple[int, float | None, float | None, float | None, float | None]:
+) -> tuple[int, float | None, float | None, float | None, float | None, float | None, float | None]:
     """
-    返回 (近1年涨停次数, prev_vol(手), close_price, prev_close, prev_prev_close)
+    返回 (涨停次数, prev_vol(手), close_price, prev_close, prev_prev_close, next_close, open_price)
     target_date 格式 YYYY-MM-DD
-    当 target_date 不在 K 线（竞价期间）时 close_price=None，prev/prev_prev 取最后两根 K 线
+    当 target_date 不在 K 线（竞价期间）时 close_price/open_price=None，prev/prev_prev 取最后两根
     """
     prefix = 'sz' if code.startswith(('0', '3')) else 'sh'
     url = (f'https://web.ifzq.gtimg.cn/appstock/app/fqkline/get'
@@ -174,8 +174,10 @@ def _count_limit_up_and_prev_vol(
     cnt = 0
     prev_vol: float | None = None
     close_price: float | None = None
+    open_price: float | None = None
     prev_close: float | None = None
     prev_prev_close: float | None = None
+    next_close: float | None = None
     try:
         idx = text.index('{')
         d = json.loads(text[idx:])
@@ -188,11 +190,14 @@ def _count_limit_up_and_prev_vol(
                     cnt += 1
                 if str(k[0]) == target_date:
                     close_price = c
+                    open_price = float(k[1])
                     if i > 0:
                         prev_vol = float(klines[i - 1][5])
                         prev_close = float(klines[i - 1][2])
                     if i > 1:
                         prev_prev_close = float(klines[i - 2][2])
+                    if i + 1 < len(klines):
+                        next_close = float(klines[i + 1][2])
                 prev_c = c
             except Exception:
                 pass
@@ -211,7 +216,7 @@ def _count_limit_up_and_prev_vol(
                     pass
     except Exception:
         pass
-    return cnt, prev_vol, close_price, prev_close, prev_prev_close
+    return cnt, prev_vol, close_price, prev_close, prev_prev_close, next_close, open_price
 
 
 def run_advanced_screen(trade_date: str, period: int = 0) -> list[dict]:
@@ -259,9 +264,9 @@ def run_advanced_screen(trade_date: str, period: int = 0) -> list[dict]:
         for future in as_completed(futures):
             s = futures[future]
             try:
-                limit_up_cnt, prev_vol, close_price, prev_close, prev_prev_close = future.result()
+                limit_up_cnt, prev_vol, close_price, prev_close, prev_prev_close, next_close, open_price = future.result()
             except Exception:
-                limit_up_cnt, prev_vol, close_price, prev_close, prev_prev_close = 0, None, None, None, None
+                limit_up_cnt, prev_vol, close_price, prev_close, prev_prev_close, next_close, open_price = 0, None, None, None, None, None, None
             s['limit_up_cnt'] = limit_up_cnt
             # vol_ratio: 竞价委托手 / 昨日成交量(手)；竞价期间用 prev_close 近似当日价
             ref_price = close_price or prev_close
@@ -276,11 +281,21 @@ def run_advanced_screen(trade_date: str, period: int = 0) -> list[dict]:
             else:
                 s['close_change_pct'] = None
             s['today_change_pct'] = s['close_change_pct']
-            # 昨日涨幅（target_date 前一日）
+            # 上一日涨幅（target_date 前一日）
             if prev_close and prev_prev_close and prev_prev_close > 0:
                 s['prev_day_change_pct'] = round((prev_close - prev_prev_close) / prev_prev_close * 100, 2)
             else:
                 s['prev_day_change_pct'] = None
+            # 后一日涨幅（target_date 后一日）
+            if next_close and close_price and close_price > 0:
+                s['next_day_change_pct'] = round((next_close - close_price) / close_price * 100, 2)
+            else:
+                s['next_day_change_pct'] = None
+            # 竞价到收盘涨幅（集合竞价开盘价→收盘价）
+            if close_price and open_price and open_price > 0:
+                s['auction_to_close_pct'] = round((close_price - open_price) / open_price * 100, 2)
+            else:
+                s['auction_to_close_pct'] = None
 
     step4 = [s for s in step3 if s.get('limit_up_cnt', 0) > 2]
     if not step4:

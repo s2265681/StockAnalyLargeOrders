@@ -1,25 +1,26 @@
 """
 竞价筛选条件服务
-按竞价金额 Top-N 筛选 + 多维过滤条件
+从全市场竞价金额排行中筛选沪深A股主板票（排除ST）
+
+stockapi 扫全市场，每种排序返回前50条；三种排序（委托额/成交额/开盘额）取并集，
+可覆盖全市场竞价金额约前55-60支；过滤主板后通常得到40+支主板候选池。
 """
 import json
 import logging
 import subprocess
-import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 _STOCKAPI_TOKEN = 'c6b042b0bc7178103985337e72c31b976264e6f85ce93b0e'
 _STOCKAPI_BASE = 'http://user.stockapi.com.cn/v1/base/jjqcUser'
-
-# 用三种排序合并，最大化覆盖竞价金额前60
 _STOCKAPI_TYPES = [1, 2, 3]  # 1=委托额 2=成交额 3=开盘额
+
+# 主板代码前缀（沪深A股主板，排除科创/创业/北交）
+_MAIN_BOARD_PREFIXES = ('000', '001', '002', '003', '600', '601', '603', '605', '606')
 
 
 def _fetch_stockapi_raw(trade_date: str, period: int = 0, api_type: int = 1) -> list[dict]:
-    """从 stockapi 拉单种排序竞价数据（原始行）"""
     url = (
         f"{_STOCKAPI_BASE}?tradeDate={trade_date}"
         f"&period={period}&type={api_type}&token={_STOCKAPI_TOKEN}"
@@ -37,20 +38,41 @@ def _fetch_stockapi_raw(trade_date: str, period: int = 0, api_type: int = 1) -> 
     return []
 
 
-def fetch_top_auction_stocks(
+def _is_main_board(code: str) -> bool:
+    return code.startswith(_MAIN_BOARD_PREFIXES)
+
+
+def _board_label(code: str) -> str:
+    if code.startswith(('688', '689')):
+        return '科创'
+    if code.startswith(('300', '301', '302')):
+        return '创业'
+    if code.startswith(('8', '4')):
+        return '北交'
+    return '主板'
+
+
+def get_main_board_top_auction(
     trade_date: str,
     period: int = 0,
     top_n: int = 60,
-    exclude_st: bool = True,
 ) -> list[dict]:
     """
-    拉取竞价金额前 top_n 的股票（三种排序合并取并集，再按委托额排序）。
+    从全市场竞价金额前 N 支中，筛选沪深A股主板票（排除ST），按委托额降序返回。
 
-    返回列表，每个元素：
-        code, name, auction_order_amt(万元), auction_trade_amt(万元),
-        auction_change_pct(%), is_st, board
+    参数：
+        trade_date  — YYYY-MM-DD 或 YYYYMMDD
+        period      — 0=早盘竞价 1=尾盘
+        top_n       — 目标主板股票数量（实际数量受数据源限制，通常40-45支）
+
+    返回列表字段：
+        code, name, board, auction_order_amt(万元), auction_trade_amt(万元),
+        auction_change_pct(%)
     """
-    # 并发拉三种排序
+    if len(trade_date) == 8:
+        trade_date = f"{trade_date[:4]}-{trade_date[4:6]}-{trade_date[6:]}"
+
+    # 并发拉三种排序，合并去重
     raw_map: dict[str, dict] = {}
     with ThreadPoolExecutor(max_workers=3) as ex:
         futures = {
@@ -58,8 +80,7 @@ def fetch_top_auction_stocks(
             for t in _STOCKAPI_TYPES
         }
         for future in as_completed(futures):
-            rows = future.result()
-            for r in rows:
+            for r in future.result():
                 code = str(r.get('code', '')).zfill(6)
                 if not code:
                     continue
@@ -81,33 +102,22 @@ def fetch_top_auction_stocks(
     if not raw_map:
         return []
 
-    stocks = sorted(raw_map.values(), key=lambda x: x['auction_order_amt'], reverse=True)
-
-    # 补充辅助字段
-    for s in stocks:
+    # 按委托额排序后过滤：主板 + 非ST
+    all_sorted = sorted(raw_map.values(), key=lambda x: x['auction_order_amt'], reverse=True)
+    result = []
+    for s in all_sorted:
         code = s['code']
         name = s['name']
-        s['is_st'] = 'ST' in name.upper()
-        # 板块：科创 68/688, 创业 30/300/301, 北交 8/4, 主板其余
-        if code.startswith(('688', '68')):
-            s['board'] = '科创'
-        elif code.startswith(('300', '301', '30')):
-            s['board'] = '创业'
-        elif code.startswith(('8', '4')):
-            s['board'] = '北交'
-        else:
-            s['board'] = '主板'
+        if not _is_main_board(code):
+            continue
+        if 'ST' in name.upper():
+            continue
+        s['board'] = _board_label(code)
+        result.append(s)
+        if len(result) >= top_n:
+            break
 
-    if exclude_st:
-        stocks = [s for s in stocks if not s['is_st']]
-
-    return stocks[:top_n]
-
-
-def filter_by_board(stocks: list[dict], boards: list[str]) -> list[dict]:
-    """按板块过滤，boards=['主板','创业','科创']"""
-    board_set = set(boards)
-    return [s for s in stocks if s.get('board') in board_set]
+    return result
 
 
 def filter_by_auction_change(

@@ -224,8 +224,8 @@ def run_advanced_screen(trade_date: str, period: int = 0) -> list[dict]:
     完整高级筛选流程，返回通过所有条件的股票列表。
 
     条件（按顺序）：
-      主板非ST → 竞价涨幅2-6% → 流通市值50-200亿 → 近1年涨停>2次
-      → 竞价量比≥2%（竞价委托手/昨日成交量） → 竞价委托额≥200万
+      主板非ST → 竞价涨幅2-5% → 流通市值50-200亿 → 近1年涨停>2次
+      → 竞价量比≥3%（竞价委托手/昨日成交量） → 竞价委托额≥200万
     """
     from services.auction_grab_service import merge_stock_meta
 
@@ -240,8 +240,8 @@ def run_advanced_screen(trade_date: str, period: int = 0) -> list[dict]:
     if not step1:
         return []
 
-    # 2. 竞价涨幅 2-6%（去掉 6-7% 极端拉升段，胜率更低）
-    step2 = filter_by_auction_change(step1, 2.0, 6.0)
+    # 2. 竞价涨幅 2-5%（回测：涨幅越收窄收益越好；6%+段胜率显著下降）
+    step2 = filter_by_auction_change(step1, 2.0, 5.0)
     if not step2:
         return []
 
@@ -309,8 +309,8 @@ def run_advanced_screen(trade_date: str, period: int = 0) -> list[dict]:
     if not step4:
         return []
 
-    # 5. 竞价量比 ≥ 2%：确保竞价买盘有实质意义；量比无法计算的保留
-    step5 = [s for s in step4 if s.get('vol_ratio') is None or s['vol_ratio'] >= 0.02]
+    # 5. 竞价量比 ≥ 3%：回测显示此阈值是正负收益分界线；量比无法计算的保留
+    step5 = [s for s in step4 if s.get('vol_ratio') is None or s['vol_ratio'] >= 0.03]
     if not step5:
         step5 = step4  # 全都没量比数据时回退
 

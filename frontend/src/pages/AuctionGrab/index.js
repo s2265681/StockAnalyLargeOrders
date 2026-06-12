@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Spin, Popover } from 'antd';
-import { LeftOutlined, RightOutlined, DownOutlined } from '@ant-design/icons';
+import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { apiRequest } from '../../config/api';
 import './index.css';
@@ -162,8 +162,8 @@ function AuctionGrab() {
   const todayStr = useMemo(() => getLastTradingDayStr(), []);
   const [currentDate, setCurrentDate] = useState(getLastTradingDayStr);
   const [activeTab, setActiveTab] = useState('morning'); // morning | tail
-  const [sortBy, setSortBy] = useState('score');
-  const [sortOpen, setSortOpen] = useState(false);
+  const [sortBy] = useState('score');
+  const [sortOpen] = useState(false);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [advancedFilter, setAdvancedFilter] = useState(true);
@@ -175,18 +175,6 @@ function AuctionGrab() {
   const screenCache = useRef({});
   const analyzeCache = useRef({});
   const fetchIdRef = useRef(0);
-  const dropdownRef = useRef(null);
-
-  // 点击外部关闭下拉
-  useEffect(() => {
-    const handler = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setSortOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
 
   const pollScoreEnrichments = useCallback(async (dt, tab, fetchId, { live = false, continuous = false } = {}) => {
     const period = tab === 'tail' ? '1' : '0';

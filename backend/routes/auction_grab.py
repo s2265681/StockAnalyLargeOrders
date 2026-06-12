@@ -669,11 +669,133 @@ def get_auction_grab_screen():
         logger.error(f"高级筛选失败: {e}")
         return v1_error_response('高级筛选暂时不可用，请稍后重试')
 
+    # 同行业涨停数量（来自当日涨停梯队库）
+    limit_up_by_industry = {}
+    try:
+        from services.theme_service import get_limit_up_stocks_by_date
+        for s in (get_limit_up_stocks_by_date(date_compact) or []):
+            ind = (s.get('industry') or '').strip()
+            if ind:
+                limit_up_by_industry[ind] = limit_up_by_industry.get(ind, 0) + 1
+    except Exception as e:
+        logger.warning(f"获取涨停行业数据失败: {e}")
+
     payload = {
         'items': stocks,
         'total': len(stocks),
         'date': dt,
         'period': period_int,
+        'limit_up_by_industry': limit_up_by_industry,
     }
     _screen_cache[cache_key] = {'ts': time.time(), 'payload': payload}
+    return v1_success_response(data=payload)
+
+
+# 分析结果缓存
+_analyze_cache: dict = {}
+_ANALYZE_CACHE_TTL_LIVE = 300   # 盘中 5min
+_ANALYZE_CACHE_TTL_HIST = 86400  # 历史 24h
+
+
+@auction_grab_bp.route('/api/v1/auction-grab/screen/analyze', methods=['GET'])
+def get_auction_grab_screen_analyze():
+    """高级筛选复盘分析：P&L 汇总 + AI 建议（独立接口，异步加载）"""
+    from services.auction_screen_service import run_advanced_screen
+    from utils.claude_client import call_claude_for_scenario
+
+    dt = request.args.get('dt', _get_last_trading_day())
+    period = request.args.get('period', '0')
+    trade_date = _format_date(dt)
+    date_compact = ag_store.to_compact_date(dt)
+    period_int = int(period)
+    is_today = _is_today_trading_date(date_compact)
+
+    analyze_key = f'analyze_{date_compact}_{period_int}'
+    analyze_ttl = _ANALYZE_CACHE_TTL_LIVE if (is_today and _is_market_hours()) else _ANALYZE_CACHE_TTL_HIST
+    cached = _analyze_cache.get(analyze_key)
+    if cached and (time.time() - cached['ts']) < analyze_ttl:
+        return v1_success_response(data=cached['payload'])
+
+    # 复用 screen 缓存，避免重复拉取
+    screen_key = f'screen_{date_compact}_{period_int}'
+    screen_ttl = _SCREEN_CACHE_TTL_LIVE if (is_today and _is_market_hours()) else _SCREEN_CACHE_TTL_HIST
+    sc = _screen_cache.get(screen_key)
+    if sc and (time.time() - sc['ts']) < screen_ttl:
+        stocks = sc['payload']['items']
+    else:
+        try:
+            stocks = run_advanced_screen(trade_date, period_int)
+        except Exception as e:
+            logger.error(f"analyze: 筛选失败: {e}")
+            stocks = []
+
+    if not stocks:
+        return v1_success_response(data={'ai_analysis': '暂无筛选结果。', 'pnl_summary': None})
+
+    # P&L 汇总
+    close_pcts = [s['auction_to_close_pct'] for s in stocks if s.get('auction_to_close_pct') is not None]
+    pnl_summary = None
+    if close_pcts:
+        avg = round(sum(close_pcts) / len(close_pcts), 2)
+        wins = [p for p in close_pcts if p > 0]
+        pnl_summary = {
+            'avg_pct': avg,
+            'win_count': len(wins),
+            'loss_count': len(close_pcts) - len(wins),
+            'total_count': len(close_pcts),
+            'win_rate': round(len(wins) / len(close_pcts) * 100, 1),
+            'best': round(max(close_pcts), 2),
+            'worst': round(min(close_pcts), 2),
+        }
+
+    # 情绪周期
+    emotion_stage = ''
+    try:
+        meta = ag_store.load_score_meta(date_compact, period_int)
+        emotion_stage = (meta or {}).get('stage', '')
+    except Exception:
+        pass
+
+    # 构建提示词
+    lines = []
+    for s in stocks:
+        a2c = f"{s['auction_to_close_pct']:+.2f}%" if s.get('auction_to_close_pct') is not None else 'N/A'
+        close = f"{s['close_change_pct']:+.2f}%" if s.get('close_change_pct') is not None else 'N/A'
+        lines.append(
+            f"  {s['name']}({s['code']}) [{s.get('industry','')}] "
+            f"竞价{s.get('auction_change_pct',0):+.2f}%→收盘{close} 竞价到收盘{a2c} "
+            f"市值{s.get('mktcap',0):.0f}亿 近1年涨停{s.get('limit_up_cnt',0)}次"
+        )
+    pnl_text = ''
+    if pnl_summary:
+        pnl_text = (f"等权买入结果：平均{pnl_summary['avg_pct']:+.2f}%，"
+                    f"胜率{pnl_summary['win_rate']}%（{pnl_summary['win_count']}盈/{pnl_summary['loss_count']}亏），"
+                    f"最好{pnl_summary['best']:+.2f}% 最差{pnl_summary['worst']:+.2f}%")
+
+    prompt = (
+        f"日期：{trade_date}，情绪周期：{emotion_stage or '未知'}\n\n"
+        f"当日竞价高级筛选（主板/竞价涨幅2-7%/市值30-300亿/近1年涨停>2次）共{len(stocks)}支：\n"
+        + '\n'.join(lines) + '\n\n'
+        + pnl_text + '\n\n'
+        "请给出（300字以内，语言简洁专业）：\n"
+        "1. 竞价到收盘整体表现评价\n"
+        "2. 表现最突出的1-2支及特征\n"
+        "3. 结合情绪周期，明日竞价参与建议\n"
+        "4. 值得关注的行业/题材方向"
+    )
+
+    ai_analysis = ''
+    try:
+        ai_analysis = call_claude_for_scenario('limit_up_split', prompt, max_tokens=800)
+    except Exception as e:
+        logger.warning(f"AI分析失败: {e}")
+        ai_analysis = '分析暂时不可用，请稍后重试。'
+
+    payload = {
+        'ai_analysis': ai_analysis,
+        'pnl_summary': pnl_summary,
+        'stocks_count': len(stocks),
+        'date': dt,
+    }
+    _analyze_cache[analyze_key] = {'ts': time.time(), 'payload': payload}
     return v1_success_response(data=payload)

@@ -504,3 +504,111 @@
     font-size: 11px;
   }
 }
+
+/* 早盘/尾盘切换 */
+.ag-period-toggle {
+  display: flex;
+  gap: 0;
+  background: var(--bg-input);
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.ag-period-btn {
+  padding: 5px 18px;
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.ag-period-btn:hover {
+  background: var(--border-primary);
+  color: var(--text-secondary);
+}
+
+.ag-period-btn.active {
+  background: rgba(24, 144, 255, 0.15);
+  color: #1890ff;
+}
+
+/* 复盘分析区 */
+.ag-analyze-section {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ag-analyze-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 16px 20px;
+  background: var(--bg-tooltip);
+  border: 1px solid var(--border-secondary);
+  border-radius: 8px;
+}
+
+.ag-pnl-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 24px;
+  padding: 14px 20px;
+  background: var(--bg-tooltip);
+  border: 1px solid var(--border-secondary);
+  border-radius: 8px;
+}
+
+.ag-pnl-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.ag-pnl-avg {
+  font-size: 20px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ag-pnl-stat {
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.ag-pnl-range {
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.ag-ai-card {
+  padding: 16px 20px;
+  background: var(--bg-tooltip);
+  border: 1px solid var(--border-secondary);
+  border-radius: 8px;
+}
+
+.ag-ai-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1890ff;
+  margin-bottom: 10px;
+}
+
+.ag-ai-content {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

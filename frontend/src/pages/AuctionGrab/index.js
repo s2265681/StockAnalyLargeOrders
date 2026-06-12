@@ -166,11 +166,14 @@ function AuctionGrab() {
   const [sortOpen, setSortOpen] = useState(false);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [advancedFilter, setAdvancedFilter] = useState(false);
+  const [advancedFilter, setAdvancedFilter] = useState(true);
   const [screenData, setScreenData] = useState(null);
   const [screenLoading, setScreenLoading] = useState(false);
+  const [analyzeData, setAnalyzeData] = useState(null);
+  const [analyzeLoading, setAnalyzeLoading] = useState(false);
   const dataCache = useRef({});
   const screenCache = useRef({});
+  const analyzeCache = useRef({});
   const fetchIdRef = useRef(0);
   const dropdownRef = useRef(null);
 
@@ -314,15 +317,47 @@ function AuctionGrab() {
     }
   }, []);
 
+  const fetchAnalyzeData = useCallback(async (dt, tab) => {
+    const period = tab === 'tail' ? '1' : '0';
+    const cacheKey = `analyze_${dt}_${period}`;
+    if (analyzeCache.current[cacheKey]) {
+      setAnalyzeData(analyzeCache.current[cacheKey]);
+      return;
+    }
+    setAnalyzeLoading(true);
+    try {
+      const res = await apiRequest(`/api/v1/auction-grab/screen/analyze?dt=${dt}&period=${period}`, {
+        timeout: 120000,
+      });
+      if (res?.data) {
+        analyzeCache.current[cacheKey] = res.data;
+        setAnalyzeData(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch analyze data:', err);
+    } finally {
+      setAnalyzeLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchData(currentDate, activeTab);
   }, [fetchData, currentDate, activeTab]);
 
   useEffect(() => {
     if (advancedFilter) {
+      setAnalyzeData(null);
       fetchScreenData(currentDate, activeTab);
     }
   }, [advancedFilter, fetchScreenData, currentDate, activeTab]);
+
+  // 屏幕数据加载完后，自动拉分析（有股票数据才发请求）
+  useEffect(() => {
+    if (advancedFilter && screenData?.items?.length > 0 && !analyzeLoading) {
+      fetchAnalyzeData(currentDate, activeTab);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screenData?.items?.length, currentDate, activeTab, advancedFilter]);
 
   const items = useMemo(() => {
     if (advancedFilter) return screenData?.items || [];
@@ -332,6 +367,7 @@ function AuctionGrab() {
   const emotionStage = data?.emotion_stage || '';
   const recommendHint = data?.recommend_hint || '';
   const isScreenMode = advancedFilter;
+  const limitUpByIndustry = screenData?.limit_up_by_industry || {};
 
   const isTodayView = currentDate === todayStr;
 
@@ -390,56 +426,20 @@ function AuctionGrab() {
 
         <div className="ag-toolbar">
           <div className="ag-toolbar-left">
-          <div className="ag-tabs">
-            <span
-              className={`ag-tab ${activeTab === 'morning' ? 'active' : ''}`}
-              onClick={() => setActiveTab('morning')}
-            >
-              早盘竞价抢筹
-            </span>
-            <span
-              className={`ag-tab ${activeTab === 'tail' ? 'active' : ''}`}
-              onClick={() => setActiveTab('tail')}
-            >
-              尾盘抢筹
-            </span>
-          </div>
-
-          {!advancedFilter && (
-            <div className="ag-sort-dropdown" ref={dropdownRef}>
-              <div
-                className="ag-sort-trigger"
-                onClick={() => setSortOpen(!sortOpen)}
+            <div className="ag-period-toggle">
+              <span
+                className={`ag-period-btn ${activeTab === 'morning' ? 'active' : ''}`}
+                onClick={() => setActiveTab('morning')}
               >
-                <span>{currentSortLabel}</span>
-                <DownOutlined className={`ag-sort-arrow ${sortOpen ? 'open' : ''}`} />
-              </div>
-              {sortOpen && (
-                <div className="ag-sort-menu">
-                  {SORT_OPTIONS.map(opt => (
-                    <div
-                      key={opt.key}
-                      className={`ag-sort-item ${sortBy === opt.key ? 'active' : ''}`}
-                      onClick={() => {
-                        setSortBy(opt.key);
-                        setSortOpen(false);
-                      }}
-                    >
-                      {opt.label}
-                    </div>
-                  ))}
-                </div>
-              )}
+                早盘
+              </span>
+              <span
+                className={`ag-period-btn ${activeTab === 'tail' ? 'active' : ''}`}
+                onClick={() => setActiveTab('tail')}
+              >
+                尾盘
+              </span>
             </div>
-          )}
-
-          <button
-            type="button"
-            className={`ag-screen-btn ${advancedFilter ? 'active' : ''}`}
-            onClick={() => setAdvancedFilter(v => !v)}
-          >
-            高级筛选
-          </button>
           </div>
         </div>
       </div>
@@ -514,7 +514,11 @@ function AuctionGrab() {
                     <span className="ag-meta-concepts">{item.limit_up_cnt != null ? `近1年涨停 ${item.limit_up_cnt}次` : ''}</span>
                   </div>
                   <div className="ag-col ag-col-meta">
-                    {item.industry ? <span className="ag-meta-industry">{item.industry}</span> : null}
+                    {item.industry ? (
+                      <span className="ag-meta-industry">
+                        {item.industry}{limitUpByIndustry[item.industry] ? `(${limitUpByIndustry[item.industry]})` : ''}
+                      </span>
+                    ) : null}
                     {item.concepts ? <span className="ag-meta-concepts">{item.concepts}</span> : null}
                     {!item.industry && !item.concepts ? <span className="ag-meta-empty">--</span> : null}
                   </div>
@@ -586,6 +590,41 @@ function AuctionGrab() {
           })
         )}
       </div>
+
+      {/* 复盘分析区 */}
+      {isScreenMode && (analyzeLoading || analyzeData) && (
+        <div className="ag-analyze-section">
+          {analyzeLoading && !analyzeData && (
+            <div className="ag-analyze-loading">
+              <Spin size="small" /> <span>AI 复盘分析中…</span>
+            </div>
+          )}
+          {analyzeData?.pnl_summary && (
+            <div className="ag-pnl-card">
+              <span className="ag-pnl-title">今日等权买入复盘</span>
+              <span
+                className="ag-pnl-avg"
+                style={{ color: getChangeColor(analyzeData.pnl_summary.avg_pct) }}
+              >
+                平均 {analyzeData.pnl_summary.avg_pct > 0 ? '+' : ''}{analyzeData.pnl_summary.avg_pct}%
+              </span>
+              <span className="ag-pnl-stat">
+                胜率 {analyzeData.pnl_summary.win_rate}%（{analyzeData.pnl_summary.win_count} 盈 / {analyzeData.pnl_summary.loss_count} 亏）
+              </span>
+              <span className="ag-pnl-range">
+                最好 <span style={{ color: '#ff4d4f' }}>{analyzeData.pnl_summary.best > 0 ? '+' : ''}{analyzeData.pnl_summary.best}%</span>
+                {' / '}最差 <span style={{ color: '#52c41a' }}>{analyzeData.pnl_summary.worst}%</span>
+              </span>
+            </div>
+          )}
+          {analyzeData?.ai_analysis && (
+            <div className="ag-ai-card">
+              <div className="ag-ai-title">AI 复盘建议</div>
+              <div className="ag-ai-content">{analyzeData.ai_analysis}</div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

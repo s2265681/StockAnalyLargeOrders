@@ -171,9 +171,12 @@ function AuctionGrab() {
   const [screenLoading, setScreenLoading] = useState(false);
   const [analyzeData, setAnalyzeData] = useState(null);
   const [analyzeLoading, setAnalyzeLoading] = useState(false);
+  const [backtestData, setBacktestData] = useState(null);
+  const [backtestLoading, setBacktestLoading] = useState(false);
   const dataCache = useRef({});
   const screenCache = useRef({});
   const analyzeCache = useRef({});
+  const backtestCache = useRef({});
   const fetchIdRef = useRef(0);
 
   const pollScoreEnrichments = useCallback(async (dt, tab, fetchId, { live = false, continuous = false } = {}) => {
@@ -346,6 +349,31 @@ function AuctionGrab() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screenData?.items?.length, currentDate, activeTab, advancedFilter]);
+
+  const fetchBacktestData = useCallback(async (tab) => {
+    const period = tab === 'tail' ? '1' : '0';
+    const cacheKey = `backtest_${period}`;
+    if (backtestCache.current[cacheKey]) {
+      setBacktestData(backtestCache.current[cacheKey]);
+      return;
+    }
+    setBacktestLoading(true);
+    setBacktestData(null);
+    try {
+      const res = await apiRequest(
+        `/api/v1/auction-grab/screen/backtest?days=10&period=${period}`,
+        { timeout: 300000 },
+      );
+      if (res?.data) {
+        backtestCache.current[cacheKey] = res.data;
+        setBacktestData(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch backtest data:', err);
+    } finally {
+      setBacktestLoading(false);
+    }
+  }, []);
 
   const items = useMemo(() => {
     if (advancedFilter) return screenData?.items || [];
@@ -609,6 +637,71 @@ function AuctionGrab() {
             <div className="ag-ai-card">
               <div className="ag-ai-title">AI 复盘建议</div>
               <div className="ag-ai-content">{analyzeData.ai_analysis}</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 参数回测区 */}
+      {isScreenMode && (
+        <div className="ag-backtest-section">
+          <button
+            className={`ag-screen-btn ${backtestLoading ? 'active' : ''}`}
+            onClick={() => fetchBacktestData(activeTab)}
+            disabled={backtestLoading}
+          >
+            {backtestLoading ? '回测计算中（约1分钟）…' : '参数回测（近10日）'}
+          </button>
+
+          {backtestData?.results?.length > 0 && (
+            <div className="ag-backtest-wrap">
+              <div className="ag-backtest-header">
+                参数组合回测（近 {backtestData.trade_dates?.length || 10} 个交易日，等权竞价→收盘）
+              </div>
+              <div className="ag-backtest-table">
+                <div className="ag-bt-row ag-bt-row-head">
+                  <div className="ag-bt-col ag-bt-col-name">参数组合</div>
+                  <div className="ag-bt-col ag-bt-col-days">有效天数</div>
+                  <div className="ag-bt-col ag-bt-col-avg">日均涨幅</div>
+                  <div className="ag-bt-col ag-bt-col-wr">胜率</div>
+                </div>
+                {backtestData.results.map((row, idx) => {
+                  const isBest = idx === 0;
+                  return (
+                    <React.Fragment key={row.params.name}>
+                      <div className={`ag-bt-row ${isBest ? 'ag-bt-best' : ''}`}>
+                        <div className="ag-bt-col ag-bt-col-name">
+                          {isBest && <span className="ag-bt-badge">最优</span>}
+                          {row.params.name}
+                        </div>
+                        <div className="ag-bt-col ag-bt-col-days">{row.days} 天</div>
+                        <div className="ag-bt-col ag-bt-col-avg" style={{ color: getChangeColor(row.avg_pct) }}>
+                          {row.avg_pct > 0 ? '+' : ''}{row.avg_pct}%
+                        </div>
+                        <div className="ag-bt-col ag-bt-col-wr">{row.win_rate}%</div>
+                      </div>
+                      {isBest && row.daily?.length > 0 && (
+                        <div className="ag-bt-daily">
+                          {row.daily.map((d) => (
+                            <div key={d.date} className="ag-bt-daily-row">
+                              <span className="ag-bt-daily-date">{d.date}</span>
+                              <span className="ag-bt-daily-count">{d.count} 支</span>
+                              <span style={{ color: getChangeColor(d.avg_pct), fontWeight: 500 }}>
+                                {d.avg_pct > 0 ? '+' : ''}{d.avg_pct}%
+                              </span>
+                              <span className="ag-bt-daily-wr">胜率 {d.win_rate}%</span>
+                              <span className="ag-bt-daily-picks">
+                                {d.picks.slice(0, 4).map((p) => `${p.name}(${p.pct > 0 ? '+' : ''}${p.pct}%)`).join('、')}
+                                {d.picks.length > 4 ? `等 ${d.picks.length} 支` : ''}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>

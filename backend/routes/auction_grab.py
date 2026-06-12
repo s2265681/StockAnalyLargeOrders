@@ -691,6 +691,34 @@ def get_auction_grab_screen():
     return v1_success_response(data=payload)
 
 
+# 回测结果缓存（计算较重，24h 有效）
+_backtest_cache: dict = {}
+_BACKTEST_CACHE_TTL = 86400
+
+
+@auction_grab_bp.route('/api/v1/auction-grab/screen/backtest', methods=['GET'])
+def get_auction_grab_screen_backtest():
+    """参数网格回测：过去 N 日，评估多组筛选参数的竞价到收盘表现"""
+    from services.auction_screen_service import run_backtest
+
+    n_days = min(int(request.args.get('days', '10')), 20)
+    period_int = int(request.args.get('period', '0'))
+
+    cache_key = f'backtest_{n_days}_{period_int}'
+    cached = _backtest_cache.get(cache_key)
+    if cached and (time.time() - cached['ts']) < _BACKTEST_CACHE_TTL:
+        return v1_success_response(data=cached['payload'])
+
+    try:
+        result = run_backtest(n_days=n_days, period=period_int)
+    except Exception as e:
+        logger.error(f"回测失败: {e}")
+        return v1_error_response('回测暂时不可用，请稍后重试')
+
+    _backtest_cache[cache_key] = {'ts': time.time(), 'payload': result}
+    return v1_success_response(data=result)
+
+
 # 分析结果缓存
 _analyze_cache: dict = {}
 _ANALYZE_CACHE_TTL_LIVE = 300   # 盘中 5min

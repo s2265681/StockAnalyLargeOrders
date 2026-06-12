@@ -612,3 +612,132 @@
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+/* 参数回测 */
+.ag-backtest-section {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ag-backtest-wrap {
+  background: var(--bg-tooltip);
+  border: 1px solid var(--border-secondary);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ag-backtest-header {
+  padding: 12px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-secondary);
+}
+
+.ag-backtest-table {
+  overflow-x: auto;
+}
+
+.ag-bt-row {
+  display: flex;
+  padding: 10px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  align-items: center;
+  font-size: 13px;
+  min-width: 500px;
+}
+
+.ag-bt-row:last-child {
+  border-bottom: none;
+}
+
+.ag-bt-row-head {
+  background: var(--bg-card-hover);
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.ag-bt-best {
+  background: rgba(82, 196, 26, 0.06);
+  border-left: 3px solid #52c41a;
+}
+
+.ag-bt-col-name {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+}
+
+.ag-bt-col-days {
+  flex: 0 0 80px;
+  color: var(--text-muted);
+}
+
+.ag-bt-col-avg {
+  flex: 0 0 90px;
+  font-weight: 500;
+}
+
+.ag-bt-col-wr {
+  flex: 0 0 70px;
+  color: var(--text-muted);
+}
+
+.ag-bt-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  background: rgba(82, 196, 26, 0.15);
+  border: 1px solid #52c41a;
+  border-radius: 3px;
+  font-size: 11px;
+  color: #52c41a;
+  white-space: nowrap;
+}
+
+.ag-bt-daily {
+  padding: 8px 20px 12px 36px;
+  background: rgba(82, 196, 26, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.ag-bt-daily-row {
+  display: flex;
+  align-items: center;
+  gap: 12px 16px;
+  padding: 5px 0;
+  font-size: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  flex-wrap: wrap;
+}
+
+.ag-bt-daily-row:last-child {
+  border-bottom: none;
+}
+
+.ag-bt-daily-date {
+  flex: 0 0 82px;
+  color: var(--text-muted);
+}
+
+.ag-bt-daily-count {
+  flex: 0 0 36px;
+  color: var(--text-muted);
+}
+
+.ag-bt-daily-wr {
+  flex: 0 0 70px;
+  color: var(--text-muted);
+}
+
+.ag-bt-daily-picks {
+  flex: 1;
+  color: var(--text-muted);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

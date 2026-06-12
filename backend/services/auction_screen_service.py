@@ -305,3 +305,200 @@ def run_advanced_screen(trade_date: str, period: int = 0) -> list[dict]:
     merge_stock_meta(step4)
 
     return step4
+
+
+# ─── 回测优化 ────────────────────────────────────────────────────────────────
+
+_BACKTEST_PARAM_SETS = [
+    {'name': '当前策略',        'min_pct': 2.0, 'max_pct': 7.0, 'min_mkt': 30, 'max_mkt': 300, 'min_lu': 2, 'min_vr': None},
+    {'name': '低涨幅(1.5-5%)',  'min_pct': 1.5, 'max_pct': 5.0, 'min_mkt': 30, 'max_mkt': 300, 'min_lu': 2, 'min_vr': None},
+    {'name': '中涨幅(2-5%)',    'min_pct': 2.0, 'max_pct': 5.0, 'min_mkt': 30, 'max_mkt': 300, 'min_lu': 2, 'min_vr': None},
+    {'name': '高涨幅(3-7%)',    'min_pct': 3.0, 'max_pct': 7.0, 'min_mkt': 30, 'max_mkt': 300, 'min_lu': 2, 'min_vr': None},
+    {'name': '涨停>3次',        'min_pct': 2.0, 'max_pct': 7.0, 'min_mkt': 30, 'max_mkt': 300, 'min_lu': 3, 'min_vr': None},
+    {'name': '涨停>4次',        'min_pct': 2.0, 'max_pct': 7.0, 'min_mkt': 30, 'max_mkt': 300, 'min_lu': 4, 'min_vr': None},
+    {'name': '小盘(30-150亿)',   'min_pct': 2.0, 'max_pct': 7.0, 'min_mkt': 30, 'max_mkt': 150, 'min_lu': 2, 'min_vr': None},
+    {'name': '高量比(>2%)',     'min_pct': 2.0, 'max_pct': 7.0, 'min_mkt': 30, 'max_mkt': 300, 'min_lu': 2, 'min_vr': 0.02},
+    {'name': '严选组合',        'min_pct': 2.0, 'max_pct': 6.0, 'min_mkt': 30, 'max_mkt': 200, 'min_lu': 3, 'min_vr': 0.02},
+]
+
+
+def _fetch_raw_klines(code: str) -> list:
+    """获取复权日K线（最近250日），用于回测"""
+    prefix = 'sz' if code.startswith(('0', '3')) else 'sh'
+    url = (f'https://web.ifzq.gtimg.cn/appstock/app/fqkline/get'
+           f'?_var=kline_dayqfq&param={prefix}{code},day,,,250,qfq')
+    text = _curl(url)
+    try:
+        idx = text.index('{')
+        d = json.loads(text[idx:])
+        return d.get('data', {}).get(f'{prefix}{code}', {}).get('qfqday', [])
+    except Exception:
+        return []
+
+
+def _kline_metrics_for_date(klines: list, target_date: str) -> dict:
+    """从 K 线列表提取指定日期的关键指标（limit_up_cnt_1y / auction_to_close_pct 等）"""
+    cnt = 0
+    prev_c: float | None = None
+    for i, k in enumerate(klines):
+        try:
+            c = float(k[2])
+            if prev_c and prev_c > 0 and (c - prev_c) / prev_c * 100 >= 9.8:
+                cnt += 1
+            if str(k[0]) == target_date:
+                open_price = float(k[1]) if len(k) > 1 else None
+                prev_close = float(klines[i - 1][2]) if i > 0 else None
+                prev_vol = float(klines[i - 1][5]) if i > 0 else None
+                result: dict = {
+                    'limit_up_cnt_1y': cnt,
+                    'close_price': c,
+                    'open_price': open_price,
+                    'prev_close': prev_close,
+                    'prev_vol': prev_vol,
+                }
+                if c and open_price and open_price > 0:
+                    result['auction_to_close_pct'] = round((c - open_price) / open_price * 100, 2)
+                return result
+            prev_c = c
+        except Exception:
+            pass
+    # target_date 不在 K 线（竞价期间等），用最后一根作 prev
+    result = {'limit_up_cnt_1y': cnt}
+    if klines:
+        try:
+            result['prev_close'] = float(klines[-1][2])
+            result['prev_vol'] = float(klines[-1][5])
+        except Exception:
+            pass
+    return result
+
+
+def _get_mktcap_batch_chunked(codes: list[str], chunk: int = 80) -> dict[str, float]:
+    """分批查流通市值，避免 URL 过长"""
+    result: dict[str, float] = {}
+    for i in range(0, len(codes), chunk):
+        result.update(_get_mktcap_batch(codes[i: i + chunk]))
+    return result
+
+
+def run_backtest(n_days: int = 10, period: int = 0) -> dict:
+    """
+    对过去 n_days 个交易日运行参数网格回测，返回各组合的日均竞价到收盘涨幅和胜率。
+    流程：
+      1. 并发拉各日 stockapi 候选池（竞价涨幅≥1% 的主板非ST）
+      2. 批量查所有唯一股票的流通市值
+      3. 并发拉所有唯一股票的 K 线（每股一次，覆盖多日）
+      4. 对每日候选应用不同参数组合，统计 auction_to_close_pct
+    """
+    from datetime import date as _date, timedelta
+
+    # 生成最近 n_days 个交易日（跳过周末）
+    trade_dates: list[str] = []
+    d = _date.today()
+    while len(trade_dates) < n_days:
+        d -= timedelta(days=1)
+        if d.weekday() < 5:
+            trade_dates.append(d.strftime('%Y-%m-%d'))
+    trade_dates = sorted(trade_dates)
+
+    # Phase 1: 并发拉各日候选池
+    date_candidates: dict[str, list[dict]] = {}
+    with ThreadPoolExecutor(max_workers=5) as ex:
+        futures = {
+            ex.submit(get_main_board_top_auction, dt, period, 60): dt
+            for dt in trade_dates
+        }
+        for future in as_completed(futures):
+            dt = futures[future]
+            try:
+                stocks = future.result()
+                date_candidates[dt] = [
+                    s for s in stocks if s.get('auction_change_pct', 0) >= 1.0
+                ]
+            except Exception as e:
+                logger.warning(f"backtest stockapi {dt}: {e}")
+                date_candidates[dt] = []
+
+    all_codes = list({s['code'] for cands in date_candidates.values() for s in cands})
+    if not all_codes:
+        return {'results': [], 'best_params': None, 'trade_dates': trade_dates, 'total_days': 0}
+
+    # Phase 2: 批量查流通市值
+    mktcap_map = _get_mktcap_batch_chunked(all_codes)
+    for cands in date_candidates.values():
+        for s in cands:
+            s['mktcap'] = mktcap_map.get(s['code'], 0)
+
+    # Phase 3: 并发拉 K 线（每股仅一次）
+    kline_store: dict[str, list] = {}
+    with ThreadPoolExecutor(max_workers=12) as ex:
+        kf = {ex.submit(_fetch_raw_klines, code): code for code in all_codes}
+        for future in as_completed(kf):
+            code = kf[future]
+            try:
+                kline_store[code] = future.result()
+            except Exception:
+                kline_store[code] = []
+
+    # Phase 4: 为每日每股计算指标
+    for dt, cands in date_candidates.items():
+        for s in cands:
+            metrics = _kline_metrics_for_date(kline_store.get(s['code'], []), dt)
+            s.update(metrics)
+            # vol_ratio（需要 prev_vol + ref_price）
+            ref = s.get('close_price') or s.get('prev_close')
+            pv = s.get('prev_vol')
+            if ref and ref > 0 and pv and pv > 0:
+                s['vol_ratio'] = s['auction_order_amt'] * 10000 / ref / 100 / pv
+
+    # Phase 5: 参数网格评估
+    results = []
+    for params in _BACKTEST_PARAM_SETS:
+        daily_rows = []
+        for dt in sorted(date_candidates):
+            cands = date_candidates[dt]
+            filtered = [
+                s for s in cands
+                if params['min_pct'] <= s.get('auction_change_pct', 0) <= params['max_pct']
+                and params['min_mkt'] <= s.get('mktcap', 0) <= params['max_mkt']
+                and s.get('limit_up_cnt_1y', 0) > params['min_lu']
+                and (params['min_vr'] is None or (s.get('vol_ratio') or 0) >= params['min_vr'])
+                and s.get('auction_to_close_pct') is not None
+            ]
+            if not filtered:
+                continue
+            pcts = [s['auction_to_close_pct'] for s in filtered]
+            wins = sum(1 for p in pcts if p > 0)
+            daily_rows.append({
+                'date': dt,
+                'count': len(filtered),
+                'avg_pct': round(sum(pcts) / len(pcts), 2),
+                'win_rate': round(wins / len(pcts) * 100, 1),
+                'picks': [
+                    {'code': s['code'], 'name': s['name'],
+                     'pct': s['auction_to_close_pct'],
+                     'auction_pct': round(s.get('auction_change_pct', 0), 2)}
+                    for s in sorted(filtered, key=lambda x: x['auction_to_close_pct'], reverse=True)
+                ],
+            })
+        if not daily_rows:
+            continue
+        avgs = [r['avg_pct'] for r in daily_rows]
+        wrs = [r['win_rate'] for r in daily_rows]
+        results.append({
+            'params': params,
+            'days': len(daily_rows),
+            'avg_pct': round(sum(avgs) / len(avgs), 2),
+            'win_rate': round(sum(wrs) / len(wrs), 1),
+            'daily': daily_rows,
+        })
+
+    results.sort(key=lambda x: x['avg_pct'], reverse=True)
+    best = results[0] if results else None
+
+    return {
+        'results': results,
+        'best_params': best['params'] if best else None,
+        'trade_dates': sorted(date_candidates.keys()),
+        'total_days': sum(1 for c in date_candidates.values() if c),
+    }

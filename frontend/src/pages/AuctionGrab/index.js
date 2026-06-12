@@ -477,6 +477,7 @@ function AuctionGrab() {
               <div className="ag-col ag-col-close-change">{isTodayView ? '今日涨幅' : '收盘涨幅'}</div>
               <div className="ag-col ag-col-prev-change">上一日涨幅</div>
               <div className="ag-col ag-col-next-change">后一日涨幅</div>
+              <div className="ag-col ag-col-auction-close">竞价到收盘</div>
               <div className="ag-col ag-col-turnover">抢筹成交额</div>
               <div className="ag-col ag-col-order">抢筹委托金额</div>
               <div className="ag-col ag-col-date">时间</div>
@@ -570,6 +571,9 @@ function AuctionGrab() {
                 </div>
                 <div className="ag-col ag-col-next-change" style={{ color: getChangeColor(item.next_day_change_pct) }}>
                   {formatPct(item.next_day_change_pct)}
+                </div>
+                <div className="ag-col ag-col-auction-close" style={{ color: getChangeColor(item.auction_to_close_pct) }}>
+                  {formatPct(item.auction_to_close_pct)}
                 </div>
                 <div className="ag-col ag-col-turnover">{formatAmount(item.grab_turnover)}</div>
                 <div className="ag-col ag-col-order">{formatAmount(item.grab_order_amount)}</div>

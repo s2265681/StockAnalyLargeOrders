@@ -306,12 +306,33 @@ def _get_realtime_change_pct(code: str):
     return value
 
 
+def _fill_auction_to_close(items: list[dict]) -> None:
+    """就地计算竞价到收盘涨幅：(close/open-1) = ((1+close_pct%)/(1+grab_pct%)-1)"""
+    for item in items:
+        if item.get('auction_to_close_pct') is not None:
+            continue
+        close_pct = item.get('close_change_pct')
+        grab_pct = item.get('grab_change_pct')
+        if close_pct is None or grab_pct is None:
+            continue
+        denom = 1 + grab_pct / 100
+        if abs(denom) > 0.001:
+            item['auction_to_close_pct'] = round(((1 + close_pct / 100) / denom - 1) * 100, 2)
+
+
 def _enrichment_from_item(item: dict) -> dict:
     """单条 item -> 可合并到前端的富化字段"""
     out = {}
     for key in ('close_change_pct', 'next_day_change_pct', 'today_change_pct', 'prev_day_change_pct'):
         if item.get(key) is not None:
             out[key] = item.get(key)
+    # 竞价到收盘涨幅（从 close_change_pct 和 grab_change_pct 推算）
+    close_pct = item.get('close_change_pct')
+    grab_pct = item.get('grab_change_pct')
+    if close_pct is not None and grab_pct is not None:
+        denom = 1 + grab_pct / 100
+        if abs(denom) > 0.001:
+            out['auction_to_close_pct'] = round(((1 + close_pct / 100) / denom - 1) * 100, 2)
     if item.get('recommend_score') is not None:
         out['recommend_stars'] = int(item.get('recommend_stars') or 0)
         out['recommend_reason'] = item.get('recommend_reason') or ''
@@ -526,6 +547,9 @@ def get_auction_grab():
 
     # 合并行业/题材（stock_meta 缓存，缺失时后台补全）
     ag_store.merge_stock_meta(items)
+
+    # 对 DB 历史数据就地补全竞价到收盘（有 close_change_pct 就能算）
+    _fill_auction_to_close(items)
 
     # 非阻塞：后台计算涨幅+评分（含 stock_meta 补全）
     _trigger_background_enrich(date_compact, period_int, items, trade_date, is_today)

@@ -698,8 +698,9 @@ _BACKTEST_CACHE_TTL = 86400
 
 @auction_grab_bp.route('/api/v1/auction-grab/screen/backtest', methods=['GET'])
 def get_auction_grab_screen_backtest():
-    """参数网格回测：过去 N 日，评估多组筛选参数的竞价到收盘表现"""
+    """参数网格回测：过去 N 日，评估多组筛选参数的竞价到收盘表现，含 AI 参数推荐"""
     from services.auction_screen_service import run_backtest
+    from utils.claude_client import call_claude_for_scenario
 
     n_days = min(int(request.args.get('days', '10')), 20)
     period_int = int(request.args.get('period', '0'))
@@ -715,6 +716,44 @@ def get_auction_grab_screen_backtest():
         logger.error(f"回测失败: {e}")
         return v1_error_response('回测暂时不可用，请稍后重试')
 
+    # AI 分析：根据回测结果推荐最优参数
+    ai_recommend = ''
+    try:
+        rows = result.get('results', [])
+        if rows:
+            top5 = rows[:5]
+            lines = []
+            for r in top5:
+                p = r['params']
+                vr_str = f"量比≥{p['min_vr']*100:.0f}%" if p.get('min_vr') else '不限量比'
+                order_str = f"委托≥{p['min_order']}万" if p.get('min_order') else '不限委托额'
+                lines.append(
+                    f"  【{p['name']}】 涨幅{p['min_pct']}-{p['max_pct']}% | "
+                    f"市值{p['min_mkt']}-{p['max_mkt']}亿 | {vr_str} | {order_str} | "
+                    f"有效{r['days']}天 | 日均{r['avg_pct']:+.2f}% | 胜率{r['win_rate']}%"
+                )
+            worst5 = rows[-3:] if len(rows) > 5 else []
+            worst_lines = []
+            for r in worst5:
+                p = r['params']
+                worst_lines.append(f"  【{p['name']}】日均{r['avg_pct']:+.2f}% 胜率{r['win_rate']}%")
+
+            prompt = (
+                f"以下是竞价抢筹策略近{n_days}个交易日的参数组合回测结果（{'早盘' if period_int == 0 else '尾盘'}竞价）。\n\n"
+                f"表现最好的前5组：\n" + '\n'.join(lines) + '\n\n'
+                + (f"表现最差的3组：\n" + '\n'.join(worst_lines) + '\n\n' if worst_lines else '')
+                + "请给出（200字以内，语言专业简洁）：\n"
+                "1. 推荐哪组参数作为主策略（最优解），理由是什么\n"
+                "2. 哪些条件对提升收益最关键（竞价涨幅区间/市值/量比/委托额/涨停次数）\n"
+                "3. 如何避免大面（市场普跌日）的误伤，有无辅助判断建议\n"
+                "4. 一句话总结当前参数优化方向"
+            )
+            ai_recommend = call_claude_for_scenario('limit_up_split', prompt, max_tokens=600)
+    except Exception as e:
+        logger.warning(f"backtest AI推荐失败: {e}")
+        ai_recommend = ''
+
+    result['ai_recommend'] = ai_recommend
     _backtest_cache[cache_key] = {'ts': time.time(), 'payload': result}
     return v1_success_response(data=result)
 

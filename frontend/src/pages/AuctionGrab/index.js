@@ -653,6 +653,13 @@ function AuctionGrab() {
             {backtestLoading ? '回测计算中（约1分钟）…' : '参数回测（近10日）'}
           </button>
 
+          {backtestData?.ai_recommend && (
+            <div className="ag-ai-card">
+              <div className="ag-ai-title">AI 参数优化建议</div>
+              <div className="ag-ai-content">{backtestData.ai_recommend}</div>
+            </div>
+          )}
+
           {backtestData?.results?.length > 0 && (
             <div className="ag-backtest-wrap">
               <div className="ag-backtest-header">

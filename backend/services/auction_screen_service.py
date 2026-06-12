@@ -221,10 +221,11 @@ def _count_limit_up_and_prev_vol(
 
 def run_advanced_screen(trade_date: str, period: int = 0) -> list[dict]:
     """
-    完整高级筛选流程，返回通过所有条件的股票列表，含 vol_ratio 字段。
+    完整高级筛选流程，返回通过所有条件的股票列表。
 
-    条件：全市场主板非ST → 竞价涨幅2-7% → 流通市值30-300亿 → 近1年涨停>2次
-    vol_ratio = 竞价委托手 / 前一日成交量(手)
+    条件（按顺序）：
+      主板非ST → 竞价涨幅2-6% → 流通市值50-200亿 → 近1年涨停>2次
+      → 竞价量比≥2%（竞价委托手/昨日成交量） → 竞价委托额≥200万
     """
     from services.auction_grab_service import merge_stock_meta
 
@@ -239,23 +240,23 @@ def run_advanced_screen(trade_date: str, period: int = 0) -> list[dict]:
     if not step1:
         return []
 
-    # 2. 竞价涨幅 2-7%
-    step2 = filter_by_auction_change(step1, 2.0, 7.0)
+    # 2. 竞价涨幅 2-6%（去掉 6-7% 极端拉升段，胜率更低）
+    step2 = filter_by_auction_change(step1, 2.0, 6.0)
     if not step2:
         return []
 
-    # 3. 流通市值 30-300亿（批量查）
+    # 3. 流通市值 50-200亿（主板中小盘甜蜜区，兼顾流动性与弹性）
     mktcap = _get_mktcap_batch([s['code'] for s in step2])
     step3 = []
     for s in step2:
         cap = mktcap.get(s['code'], 0)
-        if 30 <= cap <= 300:
+        if 50 <= cap <= 200:
             s['mktcap'] = cap
             step3.append(s)
     if not step3:
         return []
 
-    # 4. 近1年涨停>2次 + 计算 vol_ratio / close_change_pct / prev_day_change_pct（并发查 K 线）
+    # 4. 近1年涨停>2次 + 计算 vol_ratio / 各涨幅 / 竞价换手率（并发查 K 线）
     with ThreadPoolExecutor(max_workers=8) as ex:
         futures = {
             ex.submit(_count_limit_up_and_prev_vol, s['code'], td_dash): s
@@ -275,6 +276,12 @@ def run_advanced_screen(trade_date: str, period: int = 0) -> list[dict]:
                 s['vol_ratio'] = round(grab_hands / prev_vol, 4)
             else:
                 s['vol_ratio'] = None
+            # 竞价换手率 = 竞价委托金额(万) / 流通市值(亿×10000万)
+            cap = s.get('mktcap') or 0
+            if cap > 0:
+                s['auction_turnover_rate'] = round(s['auction_order_amt'] / (cap * 10000), 5)
+            else:
+                s['auction_turnover_rate'] = None
             # 收盘涨幅（target_date 当日）；竞价期间 close_price=None → None
             if close_price and prev_close and prev_close > 0:
                 s['close_change_pct'] = round((close_price - prev_close) / prev_close * 100, 2)
@@ -297,28 +304,64 @@ def run_advanced_screen(trade_date: str, period: int = 0) -> list[dict]:
             else:
                 s['auction_to_close_pct'] = None
 
+    # 近1年涨停 > 2次（有涨停基因）
     step4 = [s for s in step3 if s.get('limit_up_cnt', 0) > 2]
     if not step4:
         return []
 
-    # 5. 补充行业/题材
-    merge_stock_meta(step4)
+    # 5. 竞价量比 ≥ 2%：确保竞价买盘有实质意义；量比无法计算的保留
+    step5 = [s for s in step4 if s.get('vol_ratio') is None or s['vol_ratio'] >= 0.02]
+    if not step5:
+        step5 = step4  # 全都没量比数据时回退
 
-    return step4
+    # 6. 竞价委托额 ≥ 200万：过滤极小单子噪音
+    step6 = [s for s in step5 if s.get('auction_order_amt', 0) >= 200]
+    if not step6:
+        step6 = step5  # 回退
+
+    # 7. 补充行业/题材
+    merge_stock_meta(step6)
+
+    return step6
 
 
 # ─── 回测优化 ────────────────────────────────────────────────────────────────
 
+# 每个参数集字段说明：
+#   min_pct/max_pct  竞价涨幅区间(%)
+#   min_mkt/max_mkt  流通市值区间(亿)
+#   min_lu           近1年涨停次数下限（严格大于）
+#   min_vr           竞价量比下限（竞价委托手/昨日成交量），None=不限
+#   min_order        竞价委托金额下限(万元)，None=不限
 _BACKTEST_PARAM_SETS = [
-    {'name': '当前策略',        'min_pct': 2.0, 'max_pct': 7.0, 'min_mkt': 30, 'max_mkt': 300, 'min_lu': 2, 'min_vr': None},
-    {'name': '低涨幅(1.5-5%)',  'min_pct': 1.5, 'max_pct': 5.0, 'min_mkt': 30, 'max_mkt': 300, 'min_lu': 2, 'min_vr': None},
-    {'name': '中涨幅(2-5%)',    'min_pct': 2.0, 'max_pct': 5.0, 'min_mkt': 30, 'max_mkt': 300, 'min_lu': 2, 'min_vr': None},
-    {'name': '高涨幅(3-7%)',    'min_pct': 3.0, 'max_pct': 7.0, 'min_mkt': 30, 'max_mkt': 300, 'min_lu': 2, 'min_vr': None},
-    {'name': '涨停>3次',        'min_pct': 2.0, 'max_pct': 7.0, 'min_mkt': 30, 'max_mkt': 300, 'min_lu': 3, 'min_vr': None},
-    {'name': '涨停>4次',        'min_pct': 2.0, 'max_pct': 7.0, 'min_mkt': 30, 'max_mkt': 300, 'min_lu': 4, 'min_vr': None},
-    {'name': '小盘(30-150亿)',   'min_pct': 2.0, 'max_pct': 7.0, 'min_mkt': 30, 'max_mkt': 150, 'min_lu': 2, 'min_vr': None},
-    {'name': '高量比(>2%)',     'min_pct': 2.0, 'max_pct': 7.0, 'min_mkt': 30, 'max_mkt': 300, 'min_lu': 2, 'min_vr': 0.02},
-    {'name': '严选组合',        'min_pct': 2.0, 'max_pct': 6.0, 'min_mkt': 30, 'max_mkt': 200, 'min_lu': 3, 'min_vr': 0.02},
+    # ── 基线 ──────────────────────────────────────────────────────────────────
+    {'name': '旧策略(2-7%/30-300亿)',   'min_pct': 2.0, 'max_pct': 7.0, 'min_mkt': 30,  'max_mkt': 300, 'min_lu': 2, 'min_vr': None,  'min_order': None},
+    # ── 竞价涨幅优化 ──────────────────────────────────────────────────────────
+    {'name': '涨幅1.5-4%',             'min_pct': 1.5, 'max_pct': 4.0, 'min_mkt': 30,  'max_mkt': 300, 'min_lu': 2, 'min_vr': None,  'min_order': None},
+    {'name': '涨幅2-4%',               'min_pct': 2.0, 'max_pct': 4.0, 'min_mkt': 30,  'max_mkt': 300, 'min_lu': 2, 'min_vr': None,  'min_order': None},
+    {'name': '涨幅2-5%',               'min_pct': 2.0, 'max_pct': 5.0, 'min_mkt': 30,  'max_mkt': 300, 'min_lu': 2, 'min_vr': None,  'min_order': None},
+    {'name': '涨幅2-6%',               'min_pct': 2.0, 'max_pct': 6.0, 'min_mkt': 30,  'max_mkt': 300, 'min_lu': 2, 'min_vr': None,  'min_order': None},
+    {'name': '涨幅3-6%',               'min_pct': 3.0, 'max_pct': 6.0, 'min_mkt': 30,  'max_mkt': 300, 'min_lu': 2, 'min_vr': None,  'min_order': None},
+    # ── 市值优化 ──────────────────────────────────────────────────────────────
+    {'name': '市值50-200亿',            'min_pct': 2.0, 'max_pct': 7.0, 'min_mkt': 50,  'max_mkt': 200, 'min_lu': 2, 'min_vr': None,  'min_order': None},
+    {'name': '市值30-150亿',            'min_pct': 2.0, 'max_pct': 7.0, 'min_mkt': 30,  'max_mkt': 150, 'min_lu': 2, 'min_vr': None,  'min_order': None},
+    # ── 竞价量比优化 ──────────────────────────────────────────────────────────
+    {'name': '+量比≥2%',               'min_pct': 2.0, 'max_pct': 7.0, 'min_mkt': 30,  'max_mkt': 300, 'min_lu': 2, 'min_vr': 0.02,  'min_order': None},
+    {'name': '+量比≥3%',               'min_pct': 2.0, 'max_pct': 7.0, 'min_mkt': 30,  'max_mkt': 300, 'min_lu': 2, 'min_vr': 0.03,  'min_order': None},
+    {'name': '+量比≥5%',               'min_pct': 2.0, 'max_pct': 7.0, 'min_mkt': 30,  'max_mkt': 300, 'min_lu': 2, 'min_vr': 0.05,  'min_order': None},
+    # ── 委托额过滤 ────────────────────────────────────────────────────────────
+    {'name': '+委托≥300万',             'min_pct': 2.0, 'max_pct': 7.0, 'min_mkt': 30,  'max_mkt': 300, 'min_lu': 2, 'min_vr': None,  'min_order': 300},
+    {'name': '+委托≥500万',             'min_pct': 2.0, 'max_pct': 7.0, 'min_mkt': 30,  'max_mkt': 300, 'min_lu': 2, 'min_vr': None,  'min_order': 500},
+    # ── 涨停基因增强 ──────────────────────────────────────────────────────────
+    {'name': '涨停>3次',               'min_pct': 2.0, 'max_pct': 7.0, 'min_mkt': 30,  'max_mkt': 300, 'min_lu': 3, 'min_vr': None,  'min_order': None},
+    {'name': '涨停>4次',               'min_pct': 2.0, 'max_pct': 7.0, 'min_mkt': 30,  'max_mkt': 300, 'min_lu': 4, 'min_vr': None,  'min_order': None},
+    # ── 综合组合（当前策略） ──────────────────────────────────────────────────
+    {'name': '当前策略(2-6%+量比2%)',  'min_pct': 2.0, 'max_pct': 6.0, 'min_mkt': 50,  'max_mkt': 200, 'min_lu': 2, 'min_vr': 0.02,  'min_order': 200},
+    # ── 复合最优候选 ──────────────────────────────────────────────────────────
+    {'name': '组合A(2-5%/50-200亿/量比2%)',  'min_pct': 2.0, 'max_pct': 5.0, 'min_mkt': 50, 'max_mkt': 200, 'min_lu': 2, 'min_vr': 0.02, 'min_order': 300},
+    {'name': '组合B(2-5%/50-200亿/量比3%)',  'min_pct': 2.0, 'max_pct': 5.0, 'min_mkt': 50, 'max_mkt': 200, 'min_lu': 3, 'min_vr': 0.03, 'min_order': 500},
+    {'name': '组合C(2-4%/50-150亿/量比3%)',  'min_pct': 2.0, 'max_pct': 4.0, 'min_mkt': 50, 'max_mkt': 150, 'min_lu': 3, 'min_vr': 0.03, 'min_order': 300},
+    {'name': '组合D(3-6%/50-200亿/量比2%)',  'min_pct': 3.0, 'max_pct': 6.0, 'min_mkt': 50, 'max_mkt': 200, 'min_lu': 3, 'min_vr': 0.02, 'min_order': 300},
 ]
 
 
@@ -450,6 +493,10 @@ def run_backtest(n_days: int = 10, period: int = 0) -> dict:
             pv = s.get('prev_vol')
             if ref and ref > 0 and pv and pv > 0:
                 s['vol_ratio'] = s['auction_order_amt'] * 10000 / ref / 100 / pv
+            # 竞价换手率 = 竞价委托金额(万) / 流通市值(亿×10000)
+            cap = s.get('mktcap') or 0
+            if cap > 0:
+                s['auction_turnover_rate'] = s['auction_order_amt'] / (cap * 10000)
 
     # Phase 5: 参数网格评估
     results = []
@@ -463,6 +510,7 @@ def run_backtest(n_days: int = 10, period: int = 0) -> dict:
                 and params['min_mkt'] <= s.get('mktcap', 0) <= params['max_mkt']
                 and s.get('limit_up_cnt_1y', 0) > params['min_lu']
                 and (params['min_vr'] is None or (s.get('vol_ratio') or 0) >= params['min_vr'])
+                and (params.get('min_order') is None or s.get('auction_order_amt', 0) >= params['min_order'])
                 and s.get('auction_to_close_pct') is not None
             ]
             if not filtered:

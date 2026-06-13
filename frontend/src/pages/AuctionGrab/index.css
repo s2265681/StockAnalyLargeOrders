@@ -180,6 +180,66 @@
   color: #1890ff;
 }
 
+/* 大盘情绪预警条 */
+.ag-market-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 12px;
+  border: 1px solid;
+}
+
+.ag-market-label {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.ag-market-index {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.ag-market-divider {
+  width: 1px;
+  height: 14px;
+  background: rgba(255,255,255,0.12);
+  flex-shrink: 0;
+}
+
+.ag-market-hint {
+  color: inherit;
+  opacity: 0.85;
+  line-height: 1.4;
+}
+
+.ag-market-danger {
+  background: rgba(255, 77, 79, 0.08);
+  border-color: rgba(255, 77, 79, 0.35);
+  color: #ff7875;
+}
+
+.ag-market-caution {
+  background: rgba(250, 173, 20, 0.08);
+  border-color: rgba(250, 173, 20, 0.35);
+  color: #ffc53d;
+}
+
+.ag-market-positive {
+  background: rgba(82, 196, 26, 0.08);
+  border-color: rgba(82, 196, 26, 0.35);
+  color: #73d13d;
+}
+
+.ag-market-neutral {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--border-secondary);
+  color: var(--text-muted);
+}
+
 /* 表格 */
 .ag-table-wrap {
   background: var(--bg-tooltip);

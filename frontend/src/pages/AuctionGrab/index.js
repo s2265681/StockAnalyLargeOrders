@@ -384,6 +384,7 @@ function AuctionGrab() {
   const recommendHint = data?.recommend_hint || '';
   const isScreenMode = advancedFilter;
   const limitUpByIndustry = screenData?.limit_up_by_industry || {};
+  const marketSentiment = screenData?.market_sentiment || null;
 
   const isTodayView = currentDate === todayStr;
 
@@ -464,6 +465,24 @@ function AuctionGrab() {
         <div className="ag-rec-hint">
           {emotionStage && <span className="ag-rec-stage">情绪周期：{emotionStage}</span>}
           {recommendHint && <span className="ag-rec-text">{recommendHint}</span>}
+        </div>
+      )}
+
+      {/* 大盘情绪预警 */}
+      {isScreenMode && marketSentiment && marketSentiment.risk_level !== 'unknown' && (
+        <div className={`ag-market-bar ag-market-${marketSentiment.risk_level}`}>
+          <span className="ag-market-label">大盘指数</span>
+          {marketSentiment.indexes?.map((idx) => (
+            <span
+              key={idx.code}
+              className="ag-market-index"
+              style={{ color: idx.change_pct > 0 ? '#ff4d4f' : idx.change_pct < 0 ? '#52c41a' : 'inherit' }}
+            >
+              {idx.name} {idx.change_pct > 0 ? '+' : ''}{idx.change_pct.toFixed(2)}%
+            </span>
+          ))}
+          <span className="ag-market-divider" />
+          <span className="ag-market-hint">{marketSentiment.hint}</span>
         </div>
       )}
 

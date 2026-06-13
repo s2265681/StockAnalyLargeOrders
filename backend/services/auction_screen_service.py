@@ -139,6 +139,54 @@ def _curl(url: str, ref: str = 'https://gu.qq.com/') -> str:
         return ''
 
 
+def get_market_sentiment() -> dict:
+    """
+    查上证/沪深300/深证三大指数实时涨幅，评估大面风险。
+    risk_level: 'danger' | 'caution' | 'neutral' | 'positive'
+    """
+    text = _curl('https://qt.gtimg.cn/q=sh000001,sh000300,sz399001')
+    indexes = []
+    for line in text.split('\n'):
+        if '"' not in line or '~' not in line:
+            continue
+        try:
+            fields = line.split('"')[1].split('~')
+            if len(fields) >= 32 and fields[1]:
+                pct = float(fields[31]) if fields[31] else 0.0
+                indexes.append({
+                    'name': fields[1],
+                    'code': fields[2],
+                    'change_pct': round(pct, 2),
+                })
+        except Exception:
+            pass
+
+    if not indexes:
+        return {'risk_level': 'unknown', 'hint': '', 'indexes': []}
+
+    avg = sum(i['change_pct'] for i in indexes) / len(indexes)
+
+    if avg <= -1.5:
+        risk = 'danger'
+        hint = f'大盘全线低开（均跌 {avg:.2f}%），大面风险极高，建议今日不参与竞价抢筹'
+    elif avg <= -0.8:
+        risk = 'caution'
+        hint = f'大盘竞价偏弱（均跌 {abs(avg):.2f}%），大面风险较高，建议轻仓或观望'
+    elif avg >= 0.8:
+        risk = 'positive'
+        hint = f'大盘竞价高开（均涨 {avg:.2f}%），市场情绪偏好，可正常参与'
+    else:
+        risk = 'neutral'
+        hint = f'大盘竞价平稳（{avg:+.2f}%），市场情绪中性，谨慎参与'
+
+    return {
+        'risk_level': risk,
+        'avg_change': round(avg, 2),
+        'hint': hint,
+        'indexes': indexes,
+    }
+
+
 def _get_mktcap_batch(codes: list[str]) -> dict[str, float]:
     """腾讯API批量查流通市值(亿), 返回 {code: cap}"""
     if not codes:

@@ -680,12 +680,22 @@ def get_auction_grab_screen():
     except Exception as e:
         logger.warning(f"获取涨停行业数据失败: {e}")
 
+    # 大盘情绪（仅当日实时拉取，历史日期跳过）
+    market_sentiment = None
+    if is_today:
+        try:
+            from services.auction_screen_service import get_market_sentiment
+            market_sentiment = get_market_sentiment()
+        except Exception as e:
+            logger.warning(f"获取大盘情绪失败: {e}")
+
     payload = {
         'items': stocks,
         'total': len(stocks),
         'date': dt,
         'period': period_int,
         'limit_up_by_industry': limit_up_by_industry,
+        'market_sentiment': market_sentiment,
     }
     _screen_cache[cache_key] = {'ts': time.time(), 'payload': payload}
     return v1_success_response(data=payload)

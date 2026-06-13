@@ -7,7 +7,9 @@ stockapi 扫全市场，每种排序返回前50条；三种排序（委托额/�
 """
 import json
 import logging
+import os
 import subprocess
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 logger = logging.getLogger(__name__)
@@ -18,6 +20,43 @@ _STOCKAPI_TYPES = [1, 2, 3]  # 1=委托额 2=成交额 3=开盘额
 
 # 主板代码前缀（沪深A股主板，排除科创/创业/北交）
 _MAIN_BOARD_PREFIXES = ('000', '001', '002', '003', '600', '601', '603', '605', '606')
+
+# ── stockapi 双层缓存（内存 + 磁盘持久化，防止重启丢失 + 防止每日限额耗尽）────
+# 历史日期：永久缓存；当日数据：60 秒刷新
+_STOCKAPI_TTL_TODAY = 60
+_STOCKAPI_TTL_HIST = 86400 * 30
+_CACHE_FILE = os.path.join(os.path.dirname(__file__), '..', 'data', 'stockapi_cache.json')
+_STOCKAPI_RESULT_CACHE: dict[str, dict] = {}
+
+
+def _load_disk_cache() -> None:
+    """启动时从磁盘恢复历史 stockapi 缓存"""
+    global _STOCKAPI_RESULT_CACHE
+    try:
+        if os.path.exists(_CACHE_FILE):
+            with open(_CACHE_FILE, 'r', encoding='utf-8') as f:
+                _STOCKAPI_RESULT_CACHE = json.load(f)
+            logger.info(f"stockapi 磁盘缓存加载 {len(_STOCKAPI_RESULT_CACHE)} 条")
+    except Exception as e:
+        logger.warning(f"加载 stockapi 磁盘缓存失败: {e}")
+        _STOCKAPI_RESULT_CACHE = {}
+
+
+def _save_disk_cache() -> None:
+    """将历史日期的缓存写入磁盘（不保存今日数据，避免陈旧）"""
+    from datetime import date as _date
+    today = _date.today().strftime('%Y-%m-%d')
+    to_save = {k: v for k, v in _STOCKAPI_RESULT_CACHE.items() if not k.startswith(today)}
+    try:
+        os.makedirs(os.path.dirname(_CACHE_FILE), exist_ok=True)
+        with open(_CACHE_FILE, 'w', encoding='utf-8') as f:
+            json.dump(to_save, f, ensure_ascii=False)
+    except Exception as e:
+        logger.warning(f"保存 stockapi 磁盘缓存失败: {e}")
+
+
+# 模块加载时立即恢复磁盘缓存
+_load_disk_cache()
 
 
 def _fetch_stockapi_raw(trade_date: str, period: int = 0, api_type: int = 1) -> list[dict]:
@@ -59,18 +98,26 @@ def get_main_board_top_auction(
 ) -> list[dict]:
     """
     从全市场竞价金额前 N 支中，筛选沪深A股主板票（排除ST），按委托额降序返回。
+    结果在内存中缓存：历史日期永久缓存，当日数据60秒刷新，防止超出 stockapi 日调用限额。
 
     参数：
         trade_date  — YYYY-MM-DD 或 YYYYMMDD
         period      — 0=早盘竞价 1=尾盘
         top_n       — 目标主板股票数量（实际数量受数据源限制，通常40-45支）
-
-    返回列表字段：
-        code, name, board, auction_order_amt(万元), auction_trade_amt(万元),
-        auction_change_pct(%)
     """
+    from datetime import date as _date
+
     if len(trade_date) == 8:
         trade_date = f"{trade_date[:4]}-{trade_date[4:6]}-{trade_date[6:]}"
+
+    today_str = _date.today().strftime('%Y-%m-%d')
+    is_today = (trade_date == today_str)
+    ttl = _STOCKAPI_TTL_TODAY if is_today else _STOCKAPI_TTL_HIST
+    cache_key = f"{trade_date}_{period}"
+
+    cached = _STOCKAPI_RESULT_CACHE.get(cache_key)
+    if cached and (time.time() - cached['ts']) < ttl:
+        return [dict(s) for s in cached['data']]  # 返回副本，避免被调用方修改
 
     # 并发拉三种排序，合并去重
     raw_map: dict[str, dict] = {}
@@ -100,6 +147,14 @@ def get_main_board_top_auction(
                 }
 
     if not raw_map:
+        # stockapi 无数据（超限或网络）→ 优先沿用缓存，其次从 DB 回退
+        if cached:
+            logger.warning(f"stockapi {trade_date} 无数据，沿用内存/磁盘缓存")
+            return [dict(s) for s in cached['data']]
+        db_stocks = _load_from_db(trade_date, period)
+        if db_stocks:
+            _STOCKAPI_RESULT_CACHE[cache_key] = {'ts': time.time(), 'data': db_stocks}
+            return [dict(s) for s in db_stocks]
         return []
 
     # 按委托额排序后过滤：主板 + 非ST
@@ -117,7 +172,45 @@ def get_main_board_top_auction(
         if len(result) >= top_n:
             break
 
-    return result
+    _STOCKAPI_RESULT_CACHE[cache_key] = {'ts': time.time(), 'data': result}
+    if not is_today:
+        _save_disk_cache()  # 历史数据持久化到磁盘，重启后无需重新拉取
+    return [dict(s) for s in result]
+
+
+def _load_from_db(trade_date: str, period: int) -> list[dict]:
+    """当 stockapi 超限时，从 auction_grab_stocks 表回退构建候选池"""
+    date_compact = trade_date.replace('-', '')
+    try:
+        from utils.db import get_connection
+        conn = get_connection()
+        with conn.cursor() as cur:
+            cur.execute(
+                """SELECT code, name, grab_order_amount, grab_turnover, grab_change_pct
+                   FROM auction_grab_stocks WHERE date=%s AND period=%s""",
+                (date_compact, period),
+            )
+            rows = cur.fetchall()
+        conn.close()
+        result = []
+        for row in rows:
+            code = str(row['code']).zfill(6)
+            if not _is_main_board(code):
+                continue
+            result.append({
+                'code': code,
+                'name': row.get('name') or '',
+                'auction_order_amt': float(row.get('grab_order_amount') or 0),
+                'auction_trade_amt': float(row.get('grab_turnover') or 0),
+                'auction_change_pct': float(row.get('grab_change_pct') or 0),
+                'board': _board_label(code),
+            })
+        if result:
+            logger.info(f"stockapi 超限，DB 回退 {trade_date} period={period}: {len(result)} 支")
+        return result
+    except Exception as e:
+        logger.warning(f"DB 回退失败 {trade_date}: {e}")
+        return []
 
 
 def filter_by_auction_change(
@@ -139,10 +232,18 @@ def _curl(url: str, ref: str = 'https://gu.qq.com/') -> str:
         return ''
 
 
+_INDEX_NAME_MAP = {
+    '000001': '上证指数',
+    '000300': '沪深300',
+    '399001': '深证成指',
+}
+
+
 def get_market_sentiment() -> dict:
     """
     查上证/沪深300/深证三大指数实时涨幅，评估大面风险。
     risk_level: 'danger' | 'caution' | 'neutral' | 'positive'
+    指数名称使用硬编码映射，避免 Tencent API GBK 编码导致乱码。
     """
     text = _curl('https://qt.gtimg.cn/q=sh000001,sh000300,sz399001')
     indexes = []
@@ -151,11 +252,17 @@ def get_market_sentiment() -> dict:
             continue
         try:
             fields = line.split('"')[1].split('~')
-            if len(fields) >= 32 and fields[1]:
-                pct = float(fields[31]) if fields[31] else 0.0
+            if len(fields) >= 6:
+                code6 = fields[2].strip()
+                current = float(fields[3]) if fields[3] else 0.0
+                prev_close = float(fields[4]) if fields[4] else 0.0
+                if prev_close <= 0:
+                    continue
+                pct = (current - prev_close) / prev_close * 100
+                name = _INDEX_NAME_MAP.get(code6, code6)
                 indexes.append({
-                    'name': fields[1],
-                    'code': fields[2],
+                    'name': name,
+                    'code': code6,
                     'change_pct': round(pct, 2),
                 })
         except Exception:
@@ -272,7 +379,7 @@ def run_advanced_screen(trade_date: str, period: int = 0) -> list[dict]:
     完整高级筛选流程，返回通过所有条件的股票列表。
 
     条件（按顺序）：
-      主板非ST → 竞价涨幅2-5% → 流通市值50-200亿 → 近1年涨停>2次
+      主板非ST → 竞价涨幅2-5% → 流通市值30-300亿 → 近1年涨停>2次
       → 竞价量比≥3%（竞价委托手/昨日成交量） → 竞价委托额≥200万
     """
     from services.auction_grab_service import merge_stock_meta
@@ -293,12 +400,12 @@ def run_advanced_screen(trade_date: str, period: int = 0) -> list[dict]:
     if not step2:
         return []
 
-    # 3. 流通市值 50-200亿（主板中小盘甜蜜区，兼顾流动性与弹性）
+    # 3. 流通市值 30-300亿（回测显示量比3%是关键，市值范围宽松以保留足够候选）
     mktcap = _get_mktcap_batch([s['code'] for s in step2])
     step3 = []
     for s in step2:
         cap = mktcap.get(s['code'], 0)
-        if 50 <= cap <= 200:
+        if 30 <= cap <= 300:
             s['mktcap'] = cap
             step3.append(s)
     if not step3:

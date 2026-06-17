@@ -432,7 +432,8 @@ def _get_auction_for_code(code: str, trade_date_fmt: str) -> dict:
         body = json.loads(proc.stdout)
         if body.get("code") != 20000:
             return {"in_list": False}
-        for item in body.get("data") or []:
+        from services.auction_unmask import unmask_stockapi_rows
+        for item in unmask_stockapi_rows(body.get("data") or []):
             if str(item.get("code", "")).zfill(6) == code:
                 return {
                     "in_list": True,

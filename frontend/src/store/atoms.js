@@ -300,7 +300,11 @@ const applyOrdersPayload = (set, ordersPayload, requestedCode) => {
   });
 };
 
-const applyTimesharePayload = (set, timeshareResp, requestedCode, { moneyFlow = null, bigMap = {} } = {}) => {
+const applyTimesharePayload = (set, timeshareResp, requestedCode, {
+  moneyFlow = null,
+  bigMap = {},
+  skipBasic = false,
+} = {}) => {
   const d = timeshareResp.data;
   const timeshare = d.timeshare || [];
   const aligned = alignTimeshareToTradingAxis(timeshare);
@@ -318,13 +322,39 @@ const applyTimesharePayload = (set, timeshareResp, requestedCode, { moneyFlow = 
     base_info: buildTimeshareBaseInfo(d.stock_info, requestedCode),
   });
 
-  if (d.stock_info) {
+  if (d.stock_info && !skipBasic) {
     set(stockBasicDataAtom, {
       ...d.stock_info,
       current_price: d.stock_info.current_price ?? d.stock_info.price,
       yesterday_close: d.stock_info.yesterday_close ?? d.stock_info.pre_close,
     });
   }
+};
+
+const applyStockBasicPayload = (set, basicData, requestedCode) => {
+  if (!basicData) return;
+  const code = basicData.code ?? requestedCode;
+  set(stockBasicDataAtom, {
+    ...basicData,
+    code,
+    current_price: basicData.current_price ?? basicData.price,
+    yesterday_close: basicData.yesterday_close ?? basicData.pre_close,
+  });
+  set(timeshareDataAtom, (prev) => {
+    if (!prev?.base_info?.code || !isSameStockCode(prev.base_info.code, requestedCode)) {
+      return prev;
+    }
+    return {
+      ...prev,
+      base_info: buildTimeshareBaseInfo({
+        code,
+        yesterday_close: basicData.yesterday_close ?? basicData.pre_close,
+        open: basicData.open,
+        high: basicData.high,
+        low: basicData.low,
+      }, requestedCode, prev.base_info),
+    };
+  });
 };
 
 // 帮助函数：根据金额确定订单大小标签
@@ -537,7 +567,7 @@ export const fetchL2DashboardAtom = atom(
       return;
     }
 
-    // 普通模式：三接口并行，分时先到先渲染；大单/资金流不阻塞首屏。
+    // 普通模式：首屏 chart_only 先出图，行情 /api/stock/basic 后补；轮询走全量 l2_timeshare。
     const query = new URLSearchParams({ code, dt });
     let timeshareReady = false;
     const finishTimeshareLoading = () => {
@@ -554,7 +584,6 @@ export const fetchL2DashboardAtom = atom(
         applyOrdersPayload(set, ordersPayload, requestedCode);
       });
 
-    // 用局部变量暂存 money_flow，避免比 l2_timeshare 先到时 base_info.code 还未写入导致丢弃
     let resolvedMoneyFlow = null;
     const moneyFlowPromise = apiRequest(`/api/v1/l2_money_flow?${query}`, { timeout: 30000 })
       .catch(() => null)
@@ -563,7 +592,49 @@ export const fetchL2DashboardAtom = atom(
         resolvedMoneyFlow = moneyFlowResp?.success ? moneyFlowResp.data : null;
       });
 
+    const mergeMoneyFlow = () => {
+      if (resolvedMoneyFlow && !isStale()) {
+        set(timeshareDataAtom, (prev) => prev ? { ...prev, money_flow: resolvedMoneyFlow } : prev);
+      }
+    };
+
     try {
+      if (isInitialLoad) {
+        const chartQuery = new URLSearchParams({ code, dt, chart_only: '1' });
+        const chartPromise = apiRequest(`/api/v1/l2_timeshare?${chartQuery}`, { timeout: 45000 })
+          .then((timeshareResp) => {
+            if (isStale()) return;
+            const timeshareOk = timeshareResp?.success && timeshareResp?.data;
+            if (!timeshareOk) {
+              if (!isStale()) {
+                set(errorAtom, '分时数据获取失败，请检查网络');
+              }
+              return;
+            }
+            const d = timeshareResp.data;
+            if (d.stock_info?.code && !isSameStockCode(requestedCode, d.stock_info.code)) {
+              return;
+            }
+            applyTimesharePayload(set, timeshareResp, requestedCode, {
+              moneyFlow: null,
+              skipBasic: true,
+            });
+            timeshareReady = true;
+            finishTimeshareLoading();
+          });
+
+        const quotePromise = apiRequest(`/api/stock/basic?code=${code}`, { timeout: 30000 })
+          .catch(() => null)
+          .then((basicResp) => {
+            if (isStale()) return;
+            applyStockBasicPayload(set, basicResp?.data, requestedCode);
+          });
+
+        await Promise.all([chartPromise, quotePromise, ordersPromise, moneyFlowPromise]);
+        mergeMoneyFlow();
+        return;
+      }
+
       const timeshareResp = await apiRequest(`/api/v1/l2_timeshare?${query}`, { timeout: 45000 });
 
       if (isStale()) return;
@@ -589,11 +660,7 @@ export const fetchL2DashboardAtom = atom(
       finishTimeshareLoading();
 
       await Promise.all([ordersPromise, moneyFlowPromise]);
-
-      // timeshare 数据已落盘后再合并 money_flow，彻底消除 race condition
-      if (resolvedMoneyFlow && !isStale()) {
-        set(timeshareDataAtom, (prev) => prev ? { ...prev, money_flow: resolvedMoneyFlow } : prev);
-      }
+      mergeMoneyFlow();
     } catch (error) {
       if (!isStale()) {
         set(errorAtom, `获取L2看板数据失败: ${error.message}`);

@@ -202,15 +202,15 @@ def l2_timeshare():
     """
     code = request.args.get('code', '000001')
     dt = request.args.get('dt', datetime.now().strftime('%Y-%m-%d'))
+    chart_only = request.args.get('chart_only') in ('1', 'true', 'True')
 
     if not code.isdigit() or len(code) != 6:
         return jsonify({'success': False, 'message': f'无效的股票代码: {code}'}), 400
 
     try:
         # 资金流（主力/散户线）单独走 /api/v1/l2_money_flow（同花顺，含分钟净额 delta）。
-        # 此处不再内嵌东财 fflow：东财常不可达会拖满 8s，且其数据缺 chaoda_delta，
-        # 与同花顺形状不一致，前端二选一时会“时有时无”。本接口只管分时，保持单一数据源。
-        result = adapter.get_timeshare_data(code, dt)
+        # chart_only=1：仅 trends2 分时，行情由前端 /api/stock/basic 后补。
+        result = adapter.get_timeshare_data(code, dt, chart_only=chart_only)
         return jsonify(result)
     except Exception as e:
         logger.error(f"l2_timeshare 接口异常: {e}", exc_info=True)

@@ -721,6 +721,73 @@ class EastMoneyFreeSource:
             logger.error(f"获取成交明细失败: {e}")
             return self._get_intraday_details_sina(code, dt)
 
+    def _parse_trends2_response(self, data):
+        """解析 trends2 响应为分时列表 + 昨收/名称元数据"""
+        if not data or data.get('rc') != 0 or not data.get('data'):
+            return None
+        raw = data['data']
+        timeshare = []
+        for item in raw.get('trends', []):
+            parsed = self.parse_trend_item(item)
+            if parsed:
+                timeshare.append(parsed)
+        if not timeshare:
+            return None
+        pre_close = raw.get('prePrice') or raw.get('preClose')
+        if pre_close is not None:
+            try:
+                pre_close = float(pre_close)
+            except (TypeError, ValueError):
+                pre_close = None
+        name = raw.get('name') or ''
+        return {'timeshare': timeshare, 'pre_close': pre_close, 'name': name}
+
+    def _fetch_today_trends2(self, code):
+        """当日 trends2 一次 HTTP，返回原始 JSON 或 None"""
+        market_code = self._get_market_code(code)
+        url = 'https://push2his.eastmoney.com/api/qt/stock/trends2/get'
+        params = {
+            'secid': market_code,
+            'fields1': 'f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13',
+            'fields2': 'f51,f52,f53,f54,f55,f56,f57,f58',
+            'iscr': 0,
+            'ndays': 1,
+            'ut': 'fa5fd1943c7b386f172d6893dbfba10b',
+        }
+        try:
+            return _fetch_eastmoney_json(url, params)
+        except Exception as e:
+            logger.error(f"获取实时分时数据失败: {e}")
+            return None
+
+    def get_timeshare_bundle(self, code, dt=None):
+        """一次请求返回分时 + 昨收/名称（chart_only 用，不再等行情接口）"""
+        today = datetime.now().strftime('%Y-%m-%d')
+        is_today = (dt is None or dt == today)
+
+        if not is_today:
+            return {
+                'timeshare': self._get_history_timeshare(code, dt),
+                'pre_close': None,
+                'name': None,
+            }
+
+        data = self._fetch_today_trends2(code)
+        if data is None:
+            logger.info("curl/requests 均失败（实时分时）")
+
+        parsed = self._parse_trends2_response(data) if data else None
+        if parsed:
+            return parsed
+
+        if data:
+            logger.warning(f"东方财富实时分时接口 trends 为空，降级到最近交易日 K 线 code={code}")
+        else:
+            logger.warning(f"东方财富实时分时接口异常，降级到最近交易日 K 线 code={code}")
+
+        fallback = self._get_latest_kline_timeshare(code, today)
+        return {'timeshare': fallback, 'pre_close': None, 'name': None}
+
     def get_timeshare(self, code, dt=None):
         """获取分时走势数据
         Args:
@@ -735,41 +802,7 @@ class EastMoneyFreeSource:
         if not is_today:
             return self._get_history_timeshare(code, dt)
 
-        market_code = self._get_market_code(code)
-        url = 'https://push2his.eastmoney.com/api/qt/stock/trends2/get'
-        params = {
-            'secid': market_code,
-            'fields1': 'f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13',
-            'fields2': 'f51,f52,f53,f54,f55,f56,f57,f58',
-            'iscr': 0,
-            'ndays': 1,
-            'ut': 'fa5fd1943c7b386f172d6893dbfba10b'
-        }
-
-        data = None
-        try:
-            data = _fetch_eastmoney_json(url, params)
-        except Exception as e:
-            logger.error(f"获取实时分时数据失败: {e}")
-
-        if data is None:
-            logger.info("curl/requests 均失败（实时分时）")
-
-        if data and data.get('rc') == 0 and data.get('data'):
-            trends_raw = data['data'].get('trends', [])
-            result = []
-            for item in trends_raw:
-                parsed = self.parse_trend_item(item)
-                if parsed:
-                    result.append(parsed)
-            if result:
-                return result
-            logger.warning(f"东方财富实时分时接口 trends 为空，降级到最近交易日 K 线 code={code}")
-        else:
-            logger.warning(f"东方财富实时分时接口异常，降级到最近交易日 K 线 code={code}")
-
-        # 降级：往前找最近有数据的交易日（最多 7 天），用 1 分钟 K 线代替
-        return self._get_latest_kline_timeshare(code, today)
+        return self.get_timeshare_bundle(code, dt).get('timeshare') or []
 
     def _get_history_timeshare(self, code, dt):
         """获取历史日期分时数据（优先 AkShare/Tencent，东财 trends2 兜底）

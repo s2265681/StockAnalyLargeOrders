@@ -235,6 +235,20 @@ class DataSourceAdapterAnalysisTest(unittest.TestCase):
         self.assertEqual(result['data']['order_book']['source'], 'empty')
         self.assertEqual(result['data']['session_snapshot'], {})
 
+    def test_chart_stock_info_uses_trends2_pre_close(self):
+        adapter = DataSourceAdapter(use_l2=False)
+        timeshare = [
+            {'time': '09:31', 'price': 10.0, 'volume': 100, 'amount': 100000},
+            {'time': '09:32', 'price': 10.5, 'volume': 200, 'amount': 210000},
+        ]
+        info = adapter._chart_stock_info_from_timeshare(
+            '000001', timeshare, {'pre_close': 9.8, 'name': '平安银行'},
+        )
+        self.assertEqual(info['yesterday_close'], 9.8)
+        self.assertEqual(info['price'], 10.5)
+        self.assertEqual(info['name'], '平安银行')
+        self.assertAlmostEqual(info['change_percent'], 7.14, places=1)
+
 if __name__ == '__main__':
     unittest.main()
 
@@ -250,6 +264,23 @@ class EastMoneyFreeSourceParseTest(unittest.TestCase):
         self.assertEqual(parsed['volume'], 48413)
         self.assertEqual(parsed['amount'], 55725414.0)
         self.assertEqual(parsed['avg_price'], 11.509)
+
+    def test_parse_trends2_response_extracts_pre_close(self):
+        source = EastMoneyFreeSource()
+        payload = {
+            'rc': 0,
+            'data': {
+                'prePrice': 21.09,
+                'name': '宏昌电子',
+                'trends': [
+                    '2026-06-17 09:31,21.50,21.50,21.50,21.50,1000,2150000.00,21.50',
+                ],
+            },
+        }
+        parsed = source._parse_trends2_response(payload)
+        self.assertEqual(parsed['pre_close'], 21.09)
+        self.assertEqual(parsed['name'], '宏昌电子')
+        self.assertEqual(len(parsed['timeshare']), 1)
 
     def test_akshare_minute_fallback_filters_target_date(self):
         rows = EastMoneyFreeSource._build_timeshare_from_minute_records([

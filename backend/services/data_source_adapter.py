@@ -134,23 +134,87 @@ class DataSourceAdapter:
         _cache[cache_key] = (now, result)
         return result
 
-    def get_timeshare_data(self, code, dt=None):
+    def get_timeshare_data(self, code, dt=None, *, chart_only=False):
         """只返回分时走势 + 股票基础信息（轻量，适合首屏快速渲染）"""
         today = datetime.now().strftime('%Y-%m-%d')
         if dt is None:
             dt = today
         is_today = (dt == today)
 
-        cache_key = f'l2_timeshare_{code}_{dt}'
+        if chart_only:
+            cache_key = f'l2_timeshare_chart_{code}_{dt}'
+        else:
+            cache_key = f'l2_timeshare_{code}_{dt}'
         now = time.time()
         if cache_key in _cache:
             ts, cached = _cache[cache_key]
             if now - ts < (CACHE_TTL if is_today else 300):
                 return cached
 
-        result = self._build_timeshare(code, dt=dt, fast=True)
+        if chart_only:
+            result = self._build_timeshare_chart(code, dt=dt)
+        else:
+            result = self._build_timeshare(code, dt=dt, fast=True)
         _cache[cache_key] = (now, result)
         return result
+
+    def _build_timeshare_chart(self, code, dt=None):
+        """仅拉 trends2 分时，用昨收元数据画线（不等行情接口）"""
+        today = datetime.now().strftime('%Y-%m-%d')
+        if dt is None:
+            dt = today
+
+        try:
+            import eventlet
+            bundle = eventlet.tpool.execute(self.source.get_timeshare_bundle, code, dt)
+        except Exception:
+            bundle = self.source.get_timeshare_bundle(code, dt)
+
+        timeshare = bundle.get('timeshare') or []
+        stock_info = self._chart_stock_info_from_timeshare(code, timeshare, bundle)
+
+        return {
+            'success': True,
+            'data': {
+                'stock_info': stock_info,
+                'timeshare': timeshare,
+                'order_book': self._empty_order_book(),
+                'session_snapshot': {},
+                'update_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            },
+        }
+
+    def _chart_stock_info_from_timeshare(self, code, timeshare, bundle=None):
+        """从分时序列 + trends2 元数据拼最小 stock_info（供先出图）"""
+        bundle = bundle or {}
+        prices = [float(t['price']) for t in timeshare if t.get('price')]
+        pre_close = bundle.get('pre_close')
+        if pre_close is not None:
+            try:
+                pre_close = float(pre_close)
+                if pre_close <= 0:
+                    pre_close = None
+            except (TypeError, ValueError):
+                pre_close = None
+
+        first = prices[0] if prices else 0
+        last = prices[-1] if prices else 0
+        yclose = pre_close if pre_close else first
+        name = bundle.get('name') or self._get_fallback_stock_name(code)
+        change_pct = round((last - yclose) / yclose * 100, 2) if yclose and last else 0
+
+        return {
+            'code': code,
+            'name': name,
+            'price': last,
+            'yesterday_close': yclose,
+            'open': first,
+            'high': max(prices) if prices else 0,
+            'low': min(prices) if prices else 0,
+            'volume': sum(int(t.get('volume', 0) or 0) for t in timeshare),
+            'turnover': sum(float(t.get('amount', 0) or 0) for t in timeshare),
+            'change_percent': change_pct,
+        }
 
     def get_orders_data(self, code, dt=None):
         """只返回大单列表 + 分级统计 + big_map（依赖逐笔，稍慢）"""

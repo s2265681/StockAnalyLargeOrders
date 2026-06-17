@@ -326,6 +326,8 @@ function activate(ctx) {
         ['stockAnalysis.priceAlert', cmdPriceAlert],
         ['stockAnalysis.toggleStatusBar', () => {
                 const now = statusBar.toggle();
+                if (now)
+                    void refresh();
                 vscode.window.showInformationMessage(now ? '✓ 已显示状态栏' : '✓ 已隐藏状态栏');
             }],
         ['stockAnalysis.refreshData', () => {

@@ -30,6 +30,7 @@ import {
   alignMoneyFlowToTradingAxis,
   buildFlowLineSeriesData,
   isPrevCloseConsistentWithFenshi,
+  isTimesharePriceStale,
 } from '../utils/l2Analysis';
 
 // 注册ECharts组件
@@ -80,16 +81,26 @@ export const resolvePrevClosePrice = (baseInfo, stockBasicData, fenshi) => {
 
   const hasFenshi = (fenshi || []).some((p) => p != null && p !== '');
 
+  const fenshiPrices = (fenshi || [])
+    .map((p) => parseFloat(p))
+    .filter((p) => Number.isFinite(p) && p > 0);
+  const fenshiLast = fenshiPrices.length ? fenshiPrices[fenshiPrices.length - 1] : null;
+  const basicPrice = parsePrice(stockBasicData?.current_price) ?? parsePrice(stockBasicData?.price);
+  const fenshiMatchesBasic = !fenshiLast || !basicPrice
+    ? true
+    : Math.abs(fenshiLast - basicPrice) / basicPrice <= 0.05;
+
   // 有分时序列时，昨收必须与价格同量级，禁止用 header 实时昨收去算历史分时
   if (hasFenshi) {
-    if (fromTimeshare && isPrevCloseConsistentWithFenshi(fromTimeshare, fenshi)) {
+    if (fenshiMatchesBasic && fromTimeshare && isPrevCloseConsistentWithFenshi(fromTimeshare, fenshi)) {
       return fromTimeshare;
     }
     if (fromBasic && isPrevCloseConsistentWithFenshi(fromBasic, fenshi)) {
       return fromBasic;
     }
-    // 一致性校验对涨跌停（振幅>5%）必然判 false，此时仍应优先用后端同源昨收，
-    // 首个分时价只是当日首分钟成交价，绝不能当昨收（否则涨停被画成 0% 基准错位）。
+    if (!fenshiMatchesBasic && fromBasic) {
+      return fromBasic;
+    }
     const prices = (fenshi || [])
       .map((p) => parseFloat(p))
       .filter((p) => Number.isFinite(p) && p > 0);
@@ -230,6 +241,12 @@ const StockChart = () => {
   const hasTimesharePoints = useMemo(() => (
     (timeshareData?.fenshi || []).some((price) => price != null && price !== '')
   ), [timeshareData]);
+
+  const isTimeshareStale = useMemo(() => {
+    if (!hasTimesharePoints || !stockBasicData) return false;
+    const refPrice = stockBasicData.current_price ?? stockBasicData.price;
+    return isTimesharePriceStale(timeshareData?.fenshi, refPrice);
+  }, [hasTimesharePoints, timeshareData, stockBasicData]);
 
   // 生成筛选金额标注点（使用百分比坐标）
   const generateFilteredAmountMarkers = (fenshiData, largeOrders, filterAmount, yesterdayClose) => {
@@ -1214,8 +1231,8 @@ const StockChart = () => {
 
   const dataValidation = validateData();
   const chartOption = useMemo(
-    () => getTimeshareChartOption(),
-    [timeshareData, stockBasicData, largeOrdersData, filterAmount, filterThreshold, isDark, textColor, textMuted, borderColor]
+    () => (isTimeshareStale ? {} : getTimeshareChartOption()),
+    [timeshareData, stockBasicData, largeOrdersData, filterAmount, filterThreshold, isDark, textColor, textMuted, borderColor, isTimeshareStale]
   );
 
   return (
@@ -1321,7 +1338,7 @@ const StockChart = () => {
               图表配置: {Object.keys(getTimeshareChartOption()).length > 0 ? '已生成' : '未生成'}
             </div>
           </div> */}
-        {!timeshareLoading && timeshareData && !hasTimesharePoints && (
+        {!timeshareLoading && timeshareData && (!hasTimesharePoints || isTimeshareStale) && (
           <div
             className="chart-empty-hint"
             style={{
@@ -1335,7 +1352,7 @@ const StockChart = () => {
               zIndex: 5,
             }}
           >
-            暂无分时数据
+            {isTimeshareStale ? '分时数据同步中，请稍候…' : '暂无分时数据'}
           </div>
         )}
         <ReactEChartsCore

@@ -5,6 +5,7 @@ import {
   buildTimeshareBaseInfo,
   buildTradingTimeAxis,
   isSameStockCode,
+  isTimesharePriceStale,
   sliceL2DataByTime,
 } from '../pages/StockDashboard/utils/l2Analysis.js';
 // 股票代码原子
@@ -601,36 +602,52 @@ export const fetchL2DashboardAtom = atom(
     try {
       if (isInitialLoad) {
         const chartQuery = new URLSearchParams({ code, dt, chart_only: '1' });
-        const chartPromise = apiRequest(`/api/v1/l2_timeshare?${chartQuery}`, { timeout: 45000 })
-          .then((timeshareResp) => {
-            if (isStale()) return;
-            const timeshareOk = timeshareResp?.success && timeshareResp?.data;
-            if (!timeshareOk) {
-              if (!isStale()) {
-                set(errorAtom, '分时数据获取失败，请检查网络');
-              }
-              return;
-            }
-            const d = timeshareResp.data;
-            if (d.stock_info?.code && !isSameStockCode(requestedCode, d.stock_info.code)) {
-              return;
-            }
-            applyTimesharePayload(set, timeshareResp, requestedCode, {
-              moneyFlow: null,
-              skipBasic: true,
-            });
-            timeshareReady = true;
-            finishTimeshareLoading();
-          });
-
+        const chartPromise = apiRequest(`/api/v1/l2_timeshare?${chartQuery}`, { timeout: 45000 });
         const quotePromise = apiRequest(`/api/stock/basic?code=${code}`, { timeout: 30000 })
-          .catch(() => null)
-          .then((basicResp) => {
-            if (isStale()) return;
-            applyStockBasicPayload(set, basicResp?.data, requestedCode);
-          });
+          .catch(() => null);
 
-        await Promise.all([chartPromise, quotePromise, ordersPromise, moneyFlowPromise]);
+        const [timeshareResp, basicResp] = await Promise.all([
+          chartPromise,
+          quotePromise,
+          ordersPromise,
+          moneyFlowPromise,
+        ]);
+
+        if (!isStale()) {
+          const timeshareOk = timeshareResp?.success && timeshareResp?.data;
+          if (timeshareOk) {
+            const d = timeshareResp.data;
+            if (!d.stock_info?.code || isSameStockCode(requestedCode, d.stock_info.code)) {
+              applyTimesharePayload(set, timeshareResp, requestedCode, {
+                moneyFlow: null,
+                skipBasic: true,
+              });
+              timeshareReady = true;
+              finishTimeshareLoading();
+            }
+          } else {
+            set(errorAtom, '分时数据获取失败，请检查网络');
+          }
+
+          applyStockBasicPayload(set, basicResp?.data, requestedCode);
+
+          const aligned = alignTimeshareToTradingAxis(timeshareResp?.data?.timeshare || []);
+          const basicPrice = basicResp?.data?.current_price ?? basicResp?.data?.price;
+          if (timeshareOk && isTimesharePriceStale(aligned.fenshi, basicPrice)) {
+            const retryResp = await apiRequest(`/api/v1/l2_timeshare?${query}`, { timeout: 45000 })
+              .catch(() => null);
+            if (!isStale() && retryResp?.success && retryResp?.data) {
+              const rd = retryResp.data;
+              if (!rd.stock_info?.code || isSameStockCode(requestedCode, rd.stock_info.code)) {
+                applyTimesharePayload(set, retryResp, requestedCode, {
+                  moneyFlow: null,
+                  skipBasic: true,
+                });
+              }
+            }
+          }
+        }
+
         mergeMoneyFlow();
         return;
       }

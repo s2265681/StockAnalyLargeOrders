@@ -85,7 +85,7 @@ class StatusBarManager {
         }
         if (quotes.length === 0) {
             this.item.text = '🔭 AI炒股看盘';
-            this.item.tooltip = '点击打开菜单（或按 Ctrl+Alt+S）';
+            this.item.tooltip = '点击打开菜单（Ctrl+Option+S 隐藏/显示）';
             this.item.show();
             return;
         }

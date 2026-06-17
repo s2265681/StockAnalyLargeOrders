@@ -249,6 +249,32 @@ class DataSourceAdapterAnalysisTest(unittest.TestCase):
         self.assertEqual(info['name'], '平安银行')
         self.assertAlmostEqual(info['change_percent'], 7.14, places=1)
 
+    def test_timeshare_mismatch_detects_stale_trends2(self):
+        adapter = DataSourceAdapter(use_l2=False)
+        stale_ts = [{'time': '09:31', 'price': 39.44, 'volume': 100, 'amount': 100000}]
+        quote = {'price': 48.17, 'yesterday_close': 49.39}
+        self.assertTrue(adapter._timeshare_mismatch_with_quote(stale_ts, quote))
+        good_ts = [{'time': '09:31', 'price': 48.0, 'volume': 100, 'amount': 100000}]
+        self.assertFalse(adapter._timeshare_mismatch_with_quote(good_ts, quote))
+
+    def test_maybe_refresh_timeshare_uses_playwright_fallback(self):
+        adapter = DataSourceAdapter(use_l2=False)
+        stale_ts = [{'time': '09:31', 'price': 39.44, 'volume': 100, 'amount': 100000}]
+        good_ts = [
+            {'time': '09:31', 'price': 48.0, 'volume': 100, 'amount': 100000},
+            {'time': '09:32', 'price': 48.2, 'volume': 120, 'amount': 120000},
+        ]
+        quote = {'price': 48.17, 'yesterday_close': 49.39}
+
+        class FakePw:
+            def get_timeshare(self, code, dt=None):
+                return good_ts
+
+        with patch('services.data_source_adapter._get_playwright_source', return_value=FakePw()):
+            refreshed = adapter._maybe_refresh_timeshare('002741', '2026-06-17', stale_ts, quote)
+
+        self.assertEqual(refreshed[-1]['price'], 48.2)
+
 if __name__ == '__main__':
     unittest.main()
 

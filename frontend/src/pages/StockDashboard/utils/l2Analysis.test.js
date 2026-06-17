@@ -9,6 +9,7 @@ import {
   getFlowTone,
   isPrevCloseConsistentWithFenshi,
   isSameStockCode,
+  isTimesharePriceStale,
 } from './l2Analysis';
 
 describe('l2Analysis helpers', () => {
@@ -46,6 +47,12 @@ describe('l2Analysis helpers', () => {
   test('detects prev close mismatch against fenshi prices', () => {
     expect(isPrevCloseConsistentWithFenshi(11.03, [11.02, 11.01, 10.99])).toBe(true);
     expect(isPrevCloseConsistentWithFenshi(12.14, [11.02, 11.01, 10.99])).toBe(false);
+  });
+
+  test('detects stale fenshi vs header current price', () => {
+    const stale = Array(120).fill(39.44);
+    expect(isTimesharePriceStale(stale, 48.17)).toBe(true);
+    expect(isTimesharePriceStale([48.0, 48.2, 48.17], 48.17)).toBe(false);
   });
 
   test('builds timeshare base_info from stock_info', () => {

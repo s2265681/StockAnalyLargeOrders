@@ -158,20 +158,96 @@ class DataSourceAdapter:
         _cache[cache_key] = (now, result)
         return result
 
+    @staticmethod
+    def _timeshare_last_price(timeshare):
+        prices = [float(t['price']) for t in (timeshare or []) if t.get('price')]
+        return prices[-1] if prices else None
+
+    @staticmethod
+    def _timeshare_mismatch_with_quote(timeshare, quote, threshold=0.05):
+        """分时末价与实时行情偏离过大时，视为 trends2 缓存/脏数据。"""
+        if not timeshare or not quote:
+            return False
+        last_ts = DataSourceAdapter._timeshare_last_price(timeshare)
+        quote_price = float(quote.get('price') or 0)
+        if not last_ts or quote_price <= 0:
+            return False
+        return abs(last_ts - quote_price) / quote_price > threshold
+
+    def _maybe_refresh_timeshare(self, code, dt, timeshare, quote):
+        """当日分时与行情不一致时，依次回退 Playwright / 新浪分钟线。"""
+        if not self._timeshare_mismatch_with_quote(timeshare, quote):
+            return timeshare
+
+        ts_last = self._timeshare_last_price(timeshare)
+        quote_px = (quote or {}).get('price')
+        logger.warning(
+            '分时与行情偏离，尝试回退 code=%s ts_last=%s quote=%s',
+            code, ts_last, quote_px,
+        )
+
+        pw = _get_playwright_source()
+        if pw:
+            try:
+                pw_ts = pw.get_timeshare(code, dt=dt)
+                if pw_ts and not self._timeshare_mismatch_with_quote(pw_ts, quote):
+                    logger.info('Playwright 分时回退成功 code=%s', code)
+                    return pw_ts
+            except Exception as e:
+                logger.warning('Playwright 分时回退失败 code=%s: %s', code, e)
+
+        try:
+            sina_ts = self.source._get_minute_timeshare_sina_kline(code, dt)
+            if sina_ts and not self._timeshare_mismatch_with_quote(sina_ts, quote):
+                logger.info('新浪分钟线分时回退成功 code=%s', code)
+                return sina_ts
+        except Exception as e:
+            logger.warning('新浪分钟线回退失败 code=%s: %s', code, e)
+
+        return timeshare
+
     def _build_timeshare_chart(self, code, dt=None):
-        """仅拉 trends2 分时，用昨收元数据画线（不等行情接口）"""
+        """拉 trends2 分时；当日并行校验行情，偏离时回退 Playwright。"""
         today = datetime.now().strftime('%Y-%m-%d')
         if dt is None:
             dt = today
+        is_today = (dt == today)
 
-        try:
-            import eventlet
-            bundle = eventlet.tpool.execute(self.source.get_timeshare_bundle, code, dt)
-        except Exception:
+        quote = None
+        if is_today:
+            def _fetch_pair():
+                with ThreadPoolExecutor(max_workers=2) as pool:
+                    f_bundle = pool.submit(self.source.get_timeshare_bundle, code, dt)
+                    f_quote = pool.submit(self.source.get_realtime_quote, code)
+                    return f_bundle.result(), f_quote.result()
+
+            try:
+                import eventlet
+                bundle, quote = eventlet.tpool.execute(_fetch_pair)
+            except Exception:
+                bundle, quote = _fetch_pair()
+        else:
             bundle = self.source.get_timeshare_bundle(code, dt)
 
         timeshare = bundle.get('timeshare') or []
-        stock_info = self._chart_stock_info_from_timeshare(code, timeshare, bundle)
+        if is_today and quote:
+            timeshare = self._maybe_refresh_timeshare(code, dt, timeshare, quote)
+
+        if is_today and quote:
+            stock_info = {
+                'code': code,
+                'name': quote.get('name') or bundle.get('name') or self._get_fallback_stock_name(code),
+                'price': quote.get('price'),
+                'yesterday_close': quote.get('yesterday_close'),
+                'open': quote.get('open'),
+                'high': quote.get('high'),
+                'low': quote.get('low'),
+                'volume': quote.get('volume'),
+                'turnover': quote.get('turnover'),
+                'change_percent': quote.get('change_percent'),
+            }
+        else:
+            stock_info = self._chart_stock_info_from_timeshare(code, timeshare, bundle)
 
         return {
             'success': True,
@@ -256,6 +332,8 @@ class DataSourceAdapter:
                 timeshare, quote = eventlet.tpool.execute(_fetch_ts_quote_pair)
             except Exception:
                 timeshare, quote = _fetch_ts_quote_pair()
+            if quote:
+                timeshare = self._maybe_refresh_timeshare(code, dt, timeshare, quote)
             prefetched_yvol = None
         else:
             timeshare = self.source.get_timeshare(code, dt=dt)

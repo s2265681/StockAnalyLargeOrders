@@ -49,6 +49,18 @@ export const isPrevCloseConsistentWithFenshi = (prevClose, fenshi) => {
   return relDiff <= 0.05 || absDiff <= 0.15;
 };
 
+/** 分时末价与参考价（通常为 header 现价）偏离过大，视为脏数据 */
+export const isTimesharePriceStale = (fenshi, referencePrice, threshold = 0.05) => {
+  const prices = (fenshi || [])
+    .map((p) => parseFloat(p))
+    .filter((p) => Number.isFinite(p) && p > 0);
+  if (!prices.length) return false;
+  const ref = parseFloat(referencePrice);
+  if (!Number.isFinite(ref) || ref <= 0) return false;
+  const last = prices[prices.length - 1];
+  return Math.abs(last - ref) / ref > threshold;
+};
+
 const formatNumber = (value, digits = 2) => Number(value || 0).toFixed(digits);
 
 export const buildAnalysisCards = (analysis = {}) => [

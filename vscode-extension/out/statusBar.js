@@ -129,19 +129,21 @@ class StatusBarManager {
         const status = q.isLimitUp ? '🔒 涨停封板' : q.isLimitDown ? '🔓 跌停' : '正常';
         const name = this.escapeHtml(this.displayName(q));
         const code = this.escapeHtml(q.code.toUpperCase());
-        return (`<div style="min-width:200px;max-width:260px;font-size:12px;line-height:1.5;">` +
-            `<div style="font-weight:600;margin-bottom:4px;">${name} <code>${code}</code></div>` +
-            `<div><strong>${q.price}</strong> ${sign}${q.updown} (${sign}${q.percent.toFixed(2)}%) ${status}</div>` +
+        const labelStyle = 'opacity:0.75;padding-right:10px;white-space:nowrap;';
+        const valueStyle = 'white-space:nowrap;';
+        return (`<div style="min-width:200px;font-size:12px;line-height:1.5;">` +
+            `<div style="font-weight:600;margin-bottom:4px;white-space:nowrap;">${name} <code>${code}</code></div>` +
+            `<div style="white-space:nowrap;"><strong>${q.price}</strong> ${sign}${q.updown} (${sign}${q.percent.toFixed(2)}%) ${status}</div>` +
             `<table style="margin-top:6px;font-size:11px;border-collapse:collapse;">` +
-            `<tr><td style="opacity:0.75;padding-right:10px;">今开</td><td>${q.open}</td></tr>` +
-            `<tr><td style="opacity:0.75;padding-right:10px;">最高</td><td>${q.high}</td></tr>` +
-            `<tr><td style="opacity:0.75;padding-right:10px;">最低</td><td>${q.low}</td></tr>` +
-            `<tr><td style="opacity:0.75;padding-right:10px;">昨收</td><td>${q.yestClose}</td></tr>` +
-            `<tr><td style="opacity:0.75;padding-right:10px;">成交量</td><td>${(q.volume / 10000).toFixed(2)}万手</td></tr>` +
-            `<tr><td style="opacity:0.75;padding-right:10px;">成交额</td><td>${(q.amount / 1e8).toFixed(2)}亿</td></tr>` +
-            `<tr><td style="opacity:0.75;padding-right:10px;">封单量</td><td><strong>${sealVol}</strong></td></tr>` +
-            `<tr><td style="opacity:0.75;padding-right:10px;">封单金额</td><td><strong>${sealAmt}</strong></td></tr>` +
-            `<tr><td style="opacity:0.75;padding-right:10px;">封成比</td><td><strong>${sealRatio}</strong></td></tr>` +
+            `<tr><td style="${labelStyle}">今开</td><td style="${valueStyle}">${q.open}</td></tr>` +
+            `<tr><td style="${labelStyle}">最高</td><td style="${valueStyle}">${q.high}</td></tr>` +
+            `<tr><td style="${labelStyle}">最低</td><td style="${valueStyle}">${q.low}</td></tr>` +
+            `<tr><td style="${labelStyle}">昨收</td><td style="${valueStyle}">${q.yestClose}</td></tr>` +
+            `<tr><td style="${labelStyle}">成交量</td><td style="${valueStyle}">${(q.volume / 10000).toFixed(2)}万手</td></tr>` +
+            `<tr><td style="${labelStyle}">成交额</td><td style="${valueStyle}">${(q.amount / 1e8).toFixed(2)}亿</td></tr>` +
+            `<tr><td style="${labelStyle}">封单量</td><td style="${valueStyle}"><strong>${sealVol}</strong></td></tr>` +
+            `<tr><td style="${labelStyle}">封单金额</td><td style="${valueStyle}"><strong>${sealAmt}</strong></td></tr>` +
+            `<tr><td style="${labelStyle}">封成比</td><td style="${valueStyle}"><strong>${sealRatio}</strong></td></tr>` +
             `</table>` +
             `<div style="margin-top:8px;">${this.buildFooterRow(q.time, q.code)}</div>` +
             `</div>`);

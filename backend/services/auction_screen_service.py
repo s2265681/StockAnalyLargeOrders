@@ -395,17 +395,17 @@ def run_advanced_screen(trade_date: str, period: int = 0) -> list[dict]:
     if not step1:
         return []
 
-    # 2. 竞价涨幅 2-5%（回测：涨幅越收窄收益越好；6%+段胜率显著下降）
-    step2 = filter_by_auction_change(step1, 2.0, 5.0)
+    # 2. 竞价涨幅 1-7%
+    step2 = filter_by_auction_change(step1, 1.0, 7.0)
     if not step2:
         return []
 
-    # 3. 流通市值 30-300亿（回测显示量比3%是关键，市值范围宽松以保留足够候选）
+    # 3. 流通市值 20-500亿
     mktcap = _get_mktcap_batch([s['code'] for s in step2])
     step3 = []
     for s in step2:
         cap = mktcap.get(s['code'], 0)
-        if 30 <= cap <= 300:
+        if 20 <= cap <= 500:
             s['mktcap'] = cap
             step3.append(s)
     if not step3:
@@ -459,18 +459,18 @@ def run_advanced_screen(trade_date: str, period: int = 0) -> list[dict]:
             else:
                 s['auction_to_close_pct'] = None
 
-    # 近1年涨停 > 2次（有涨停基因）
-    step4 = [s for s in step3 if s.get('limit_up_cnt', 0) > 2]
+    # 近1年涨停 > 1次（有涨停基因）
+    step4 = [s for s in step3 if s.get('limit_up_cnt', 0) > 1]
     if not step4:
         return []
 
-    # 5. 竞价量比 ≥ 3%：回测显示此阈值是正负收益分界线；量比无法计算的保留
-    step5 = [s for s in step4 if s.get('vol_ratio') is None or s['vol_ratio'] >= 0.03]
+    # 5. 竞价量比 ≥ 2%；量比无法计算的保留
+    step5 = [s for s in step4 if s.get('vol_ratio') is None or s['vol_ratio'] >= 0.02]
     if not step5:
         step5 = step4  # 全都没量比数据时回退
 
-    # 6. 竞价委托额 ≥ 200万：过滤极小单子噪音
-    step6 = [s for s in step5 if s.get('auction_order_amt', 0) >= 200]
+    # 6. 竞价委托额 ≥ 100万：过滤极小单子噪音
+    step6 = [s for s in step5 if s.get('auction_order_amt', 0) >= 100]
     if not step6:
         step6 = step5  # 回退
 

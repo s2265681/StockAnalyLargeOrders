@@ -24,10 +24,25 @@ LEVEL_THRESHOLDS = {
 
 # 简单内存缓存
 _cache = {}
-CACHE_TTL = 2  # 秒
+CACHE_TTL = 20  # 秒（今日数据；历史数据用300s）
+
+# 历史日K缓存（收盘后永不变化，缓存24小时）
+_kline_cache = {}
+_KLINE_CACHE_TTL = 86400
 
 # Playwright 数据源（懒加载）
 _playwright_source = None
+
+def _get_cached_daily_kline(source, code, dt):
+    """获取日K线（历史数据缓存24小时，避免每次 session_snapshot 都发 HTTP 请求）"""
+    key = f'kline_{code}_{dt}'
+    now = time.time()
+    if key in _kline_cache and now - _kline_cache[key][0] < _KLINE_CACHE_TTL:
+        return _kline_cache[key][1]
+    data = source.get_daily_kline(code, dt)
+    _kline_cache[key] = (now, data)
+    return data
+
 
 def _get_playwright_source():
     global _playwright_source
@@ -267,7 +282,7 @@ class DataSourceAdapter:
                 if d1.weekday() >= 5:
                     continue
                 pd = d1.strftime('%Y-%m-%d')
-                yk = self.source.get_daily_kline(code, pd)
+                yk = _get_cached_daily_kline(self.source, code, pd)
                 if yk and yk.get('volume'):
                     yvol = int(yk['volume'])
                     break

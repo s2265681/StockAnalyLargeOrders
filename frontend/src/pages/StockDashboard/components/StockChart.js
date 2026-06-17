@@ -193,6 +193,17 @@ export const getPercentAxisInterval = ({ min, max, sections = 4 }) => {
 
 export const getZeroLineLabel = () => ({ show: false });
 
+const isBigMapBuyOrder = (item) => {
+  const rawType = item.type ?? item.t ?? item.direction;
+  const type = Number.isNaN(parseInt(rawType, 10)) ? rawType : parseInt(rawType, 10);
+  return type === 1 || type === 2 || type === '主买' || type === '被买';
+};
+
+const isBigMapSellOrder = (item) => {
+  const rawType = item.type ?? item.t ?? item.direction;
+  const type = Number.isNaN(parseInt(rawType, 10)) ? rawType : parseInt(rawType, 10);
+  return type === 3 || type === 4 || type === '主卖' || type === '被卖';
+};
 
 const StockChart = () => {
   const [stockCode] = useAtom(stockCodeAtom);
@@ -341,16 +352,8 @@ const StockChart = () => {
       }
 
       const institutionalMarkers = [];
-      const isBuyOrder = (item) => {
-        const rawType = item.type ?? item.t ?? item.direction;
-        const type = Number.isNaN(parseInt(rawType, 10)) ? rawType : parseInt(rawType, 10);
-        return type === 1 || type === 2 || type === '主买' || type === '被买';
-      };
-      const isSellOrder = (item) => {
-        const rawType = item.type ?? item.t ?? item.direction;
-        const type = Number.isNaN(parseInt(rawType, 10)) ? rawType : parseInt(rawType, 10);
-        return type === 3 || type === 4 || type === '主卖' || type === '被卖';
-      };
+      const isBuyOrder = isBigMapBuyOrder;
+      const isSellOrder = isBigMapSellOrder;
       const buildMarker = (timeStr, item, stackIndex, side) => {
         const value = parseFloat(item.amount ?? item.v);
         const isBuy = side === 'buy';
@@ -681,6 +684,27 @@ const StockChart = () => {
       yAxisMax
     );
 
+    // 大单净量：每分钟大单(买-卖)净额（万元），来自 big_map
+    const netFlowData = fullTimeAxis.map((timePoint, index) => {
+      if (!fenshi[index] || fenshi[index] == null || index > lastFenshiIndex) {
+        return { value: [timePoint, null], itemStyle: { color: 'transparent' } };
+      }
+      const orders = timeshareData.big_map?.[timePoint] || [];
+      let buyAmt = 0;
+      let sellAmt = 0;
+      orders.forEach(item => {
+        const amount = parseFloat(item.amount ?? item.v);
+        if (!amount || Number.isNaN(amount)) return;
+        if (isBigMapBuyOrder(item)) buyAmt += amount;
+        else if (isBigMapSellOrder(item)) sellAmt += amount;
+      });
+      const net = buyAmt - sellAmt;
+      return {
+        value: [timePoint, net === 0 && buyAmt === 0 ? null : net],
+        itemStyle: { color: net >= 0 ? '#ff4d4f' : '#52c41a' }
+      };
+    });
+
     const chartOption = {
       backgroundColor: 'transparent',
       tooltip: {
@@ -720,6 +744,14 @@ const StockChart = () => {
                 return `<div>${marker}${item.seriesName}: ${Number(rawValue).toLocaleString()}</div>`;
               }
 
+              if (item.seriesName === '大单净量') {
+                const net = Number(rawValue);
+                const formatted = Math.abs(net) >= 10000
+                  ? `${(net / 10000).toFixed(2)}亿`
+                  : `${net >= 0 ? '+' : ''}${Math.round(net)}万`;
+                return `<div>${marker}大单净量: ${formatted}</div>`;
+              }
+
               if (item.seriesName === '主力' || item.seriesName === '散户') {
                 const flowIndex = fullTimeAxis.indexOf(time);
                 if (flowIndex < 0) return '';
@@ -744,14 +776,20 @@ const StockChart = () => {
         {
           left: '4%',
           right: '10%',
-          top: '8%',
-          height: '72%',
+          top: '5%',
+          height: '56%',
         },
         {
           left: '4%',
           right: '10%',
-          top: '84%',
-          height: '12%',
+          top: '65%',
+          height: '10%',
+        },
+        {
+          left: '4%',
+          right: '10%',
+          top: '79%',
+          height: '17%',
         },
       ],
       xAxis: [
@@ -784,19 +822,34 @@ const StockChart = () => {
           data: fullTimeAxis,
           scale: true,
           boundaryGap: false,
-          axisLine: { 
+          axisLine: {
             onZero: false,
             lineStyle: { color: borderColor }
           },
-          axisTick: { 
+          axisTick: {
             show: false
           },
-          splitLine: { 
-            show: false 
+          splitLine: {
+            show: false
           },
-          axisLabel: { 
-            show: false 
+          axisLabel: {
+            show: false
           },
+          silent: false
+        },
+        {
+          type: 'category',
+          gridIndex: 2,
+          data: fullTimeAxis,
+          scale: true,
+          boundaryGap: false,
+          axisLine: {
+            onZero: false,
+            lineStyle: { color: borderColor }
+          },
+          axisTick: { show: false },
+          splitLine: { show: false },
+          axisLabel: { show: false },
           silent: false
         }
       ],
@@ -808,16 +861,16 @@ const StockChart = () => {
           interval: yAxisInterval,
           splitNumber: 4,
           position: 'right',
-          splitArea: { 
+          splitArea: {
             show: false
           },
-          axisLine: { 
+          axisLine: {
             show: false
           },
           axisTick: {
             show: false
           },
-          splitLine: { 
+          splitLine: {
             show: false
           },
           axisLabel: {
@@ -835,18 +888,40 @@ const StockChart = () => {
           scale: true,
           gridIndex: 1,
           splitNumber: 2,
-          axisLabel: { 
-            show: false 
+          axisLabel: {
+            show: false
           },
-          axisLine: { 
-            show: false 
+          axisLine: {
+            show: false
           },
-          axisTick: { 
-            show: false 
+          axisTick: {
+            show: false
           },
-          splitLine: { 
-            show: false 
+          splitLine: {
+            show: false
           },
+          silent: false
+        },
+        {
+          scale: true,
+          gridIndex: 2,
+          splitNumber: 2,
+          position: 'right',
+          axisLabel: {
+            show: true,
+            color: textMuted,
+            fontSize: 9,
+            formatter: (val) => {
+              const v = Math.abs(val);
+              if (v >= 10000) return `${(val / 10000).toFixed(0)}亿`;
+              if (v >= 1000) return `${(val / 1000).toFixed(0)}k`;
+              return `${Math.round(val)}`;
+            },
+            margin: 4,
+          },
+          axisLine: { show: false },
+          axisTick: { show: false },
+          splitLine: { show: false },
           silent: false
         }
       ],
@@ -972,6 +1047,24 @@ const StockChart = () => {
           data: volumeData,
           barWidth: '60%',
           silent: false
+        },
+        {
+          name: '大单净量',
+          type: 'bar',
+          xAxisIndex: 2,
+          yAxisIndex: 2,
+          data: netFlowData,
+          barWidth: '60%',
+          silent: false,
+          markLine: {
+            silent: true,
+            symbol: 'none',
+            data: [{
+              yAxis: 0,
+              lineStyle: { color: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)', width: 1, type: 'dashed' },
+              label: { show: false }
+            }]
+          }
         }
       ]
     };
@@ -1203,6 +1296,10 @@ const StockChart = () => {
             <div className="legend-item">
               <span className="legend-line" style={{ borderTop: '2px dashed #22c55e', width: 20, display: 'inline-block', verticalAlign: 'middle', marginRight: 4 }}></span>
               <span className="legend-text" style={{ color: '#22c55e' }}>散户</span>
+            </div>
+            <div className="legend-item">
+              <span style={{ display: 'inline-block', width: 10, height: 10, background: '#ff4d4f', marginRight: 4, verticalAlign: 'middle' }}></span>
+              <span className="legend-text" style={{ color: 'var(--text-muted)', fontSize: 11 }}>大单净量</span>
             </div>
           </div>
         </div>

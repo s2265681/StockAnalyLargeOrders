@@ -11,6 +11,9 @@ import {
 import LimitUpMonitorPanel from './LimitUpMonitorPanel';
 import { apiRequest } from '../../../config/api';
 
+const fmtWan = (v) => (v != null && Number.isFinite(v) ? (v / 10000).toFixed(2) : '--');
+const fmtYi = (v) => (v != null && Number.isFinite(v) ? (v / 100000000).toFixed(2) : '--');
+
 const StockBasicInfo = ({ onStockCodeChange }) => {
   const navigate = useNavigate();
   const [stockCode, setStockCode] = useAtom(stockCodeAtom);
@@ -183,7 +186,7 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
               </div>
               <div className="stat-item">
                 <span className="label">量</span>
-                <span className="value">{(stockBasicData?.volume / 10000).toFixed(2)}</span>
+                <span className="value">{fmtWan(stockBasicData?.volume)}</span>
               </div>
             </div>
             <div className="stats-row">
@@ -197,7 +200,7 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
               </div>
               <div className="stat-item">
                 <span className="label">额</span>
-                <span className="value">{(stockBasicData?.turnover / 100000000).toFixed(2)}</span>
+                <span className="value">{fmtYi(stockBasicData?.turnover)}</span>
               </div>
             </div>
           </div>

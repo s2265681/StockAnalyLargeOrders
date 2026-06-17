@@ -5,6 +5,7 @@ import logging
 from typing import Any
 
 from utils.db import execute_many, execute_query, execute_write
+from utils.stock_code import is_valid_stock_code
 
 logger = logging.getLogger(__name__)
 
@@ -28,9 +29,12 @@ def items_from_raw_api(raw_list: list[dict], trade_date_dash: str) -> list[dict]
     """stockapi 原始行 -> 标准 item"""
     items = []
     for r in raw_list or []:
+        code = str(r.get("code", "")).zfill(6)
+        if not is_valid_stock_code(code):
+            continue
         items.append(
             {
-                "code": str(r.get("code", "")).zfill(6),
+                "code": code,
                 "name": r.get("name", "") or "",
                 "open_amount": round(float(r.get("openAmt") or 0) / 10000, 2),
                 "grab_change_pct": float(r.get("qczf") or 0),
@@ -101,9 +105,12 @@ def load_items(date_compact: str, period: int) -> list[dict] | None:
     trade_date_dash = to_dash_date(date_compact)
     items = []
     for r in rows:
+        code = str(r.get("code", "")).zfill(6)
+        if not is_valid_stock_code(code):
+            continue
         items.append(
             {
-                "code": str(r.get("code", "")).zfill(6),
+                "code": code,
                 "name": r.get("name") or "",
                 "open_amount": float(r.get("open_amount") or 0),
                 "grab_change_pct": float(r.get("grab_change_pct") or 0),
@@ -119,11 +126,12 @@ def load_items(date_compact: str, period: int) -> list[dict] | None:
                 "source_time": r.get("source_time") or "",
             }
         )
-    return items
+    return items if items else None
 
 
 def replace_snapshot(date_compact: str, period: int, items: list[dict]) -> int:
     """全量替换某日某时段快照，保留已有的富化字段（涨幅/推荐度）"""
+    items = [it for it in (items or []) if is_valid_stock_code(it.get("code"))]
     if not items:
         return 0
     try:

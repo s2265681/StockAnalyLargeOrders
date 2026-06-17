@@ -105,7 +105,7 @@ class StatusBarManager {
             const divider = index < quotes.length - 1
                 ? 'border-right:1px solid rgba(128,128,128,0.35);'
                 : '';
-            return (`<td style="vertical-align:top;padding:0 14px;white-space:nowrap;${divider}">` +
+            return (`<td style="vertical-align:top;padding:0 14px;white-space:nowrap;min-width:max-content;${divider}">` +
                 `${this.buildStockCardHtml(q)}</td>`);
         }).join('');
         md.appendMarkdown('<div style="overflow-x:auto;overflow-y:hidden;max-width:960px;padding-bottom:6px;' +
@@ -129,22 +129,24 @@ class StatusBarManager {
         const status = q.isLimitUp ? '🔒 涨停封板' : q.isLimitDown ? '🔓 跌停' : '正常';
         const name = this.escapeHtml(this.displayName(q));
         const code = this.escapeHtml(q.code.toUpperCase());
-        const labelStyle = 'opacity:0.75;padding-right:10px;white-space:nowrap;';
-        const valueStyle = 'white-space:nowrap;';
-        return (`<div style="min-width:200px;font-size:12px;line-height:1.5;">` +
+        const metricRow = (label, value) => (`<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;white-space:nowrap;">` +
+            `<span style="opacity:0.75;flex-shrink:0;">${label}</span>` +
+            `<span style="flex-shrink:0;text-align:right;">${value}</span>` +
+            `</div>`);
+        return (`<div style="min-width:168px;font-size:12px;line-height:1.6;">` +
             `<div style="font-weight:600;margin-bottom:4px;white-space:nowrap;">${name} <code>${code}</code></div>` +
             `<div style="white-space:nowrap;"><strong>${q.price}</strong> ${sign}${q.updown} (${sign}${q.percent.toFixed(2)}%) ${status}</div>` +
-            `<table style="margin-top:6px;font-size:11px;border-collapse:collapse;">` +
-            `<tr><td style="${labelStyle}">今开</td><td style="${valueStyle}">${q.open}</td></tr>` +
-            `<tr><td style="${labelStyle}">最高</td><td style="${valueStyle}">${q.high}</td></tr>` +
-            `<tr><td style="${labelStyle}">最低</td><td style="${valueStyle}">${q.low}</td></tr>` +
-            `<tr><td style="${labelStyle}">昨收</td><td style="${valueStyle}">${q.yestClose}</td></tr>` +
-            `<tr><td style="${labelStyle}">成交量</td><td style="${valueStyle}">${(q.volume / 10000).toFixed(2)}万手</td></tr>` +
-            `<tr><td style="${labelStyle}">成交额</td><td style="${valueStyle}">${(q.amount / 1e8).toFixed(2)}亿</td></tr>` +
-            `<tr><td style="${labelStyle}">封单量</td><td style="${valueStyle}"><strong>${sealVol}</strong></td></tr>` +
-            `<tr><td style="${labelStyle}">封单金额</td><td style="${valueStyle}"><strong>${sealAmt}</strong></td></tr>` +
-            `<tr><td style="${labelStyle}">封成比</td><td style="${valueStyle}"><strong>${sealRatio}</strong></td></tr>` +
-            `</table>` +
+            `<div style="margin-top:6px;font-size:11px;display:flex;flex-direction:column;gap:2px;">` +
+            metricRow('今开', `${q.open}`) +
+            metricRow('最高', `${q.high}`) +
+            metricRow('最低', `${q.low}`) +
+            metricRow('昨收', `${q.yestClose}`) +
+            metricRow('成交量', `${(q.volume / 10000).toFixed(2)}万手`) +
+            metricRow('成交额', `${(q.amount / 1e8).toFixed(2)}亿`) +
+            metricRow('封单量', `<strong>${sealVol}</strong>`) +
+            metricRow('封单金额', `<strong>${sealAmt}</strong>`) +
+            metricRow('封成比', `<strong>${sealRatio}</strong>`) +
+            `</div>` +
             `<div style="margin-top:8px;">${this.buildFooterRow(q.time, q.code)}</div>` +
             `</div>`);
     }

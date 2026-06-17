@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import patch
 
 from services import auction_grab_service as ag_store
+from utils.stock_code import is_valid_stock_code
 
 
 class AuctionGrabServiceTest(unittest.TestCase):
@@ -21,6 +22,21 @@ class AuctionGrabServiceTest(unittest.TestCase):
         self.assertEqual(items[0]["code"], "600673")
         self.assertEqual(items[0]["open_amount"], 1200.0)
         self.assertEqual(items[0]["grab_order_amount"], 800.0)
+
+    def test_items_from_raw_api_skips_masked_codes(self):
+        raw = [
+            {"code": "00****", "name": "冰轮****", "openAmt": 1, "qczf": 10, "qccje": 1, "qcwtje": 1},
+            {"code": "600673", "name": "东阳光", "openAmt": 12000000, "qczf": 9.99, "qccje": 5000000, "qcwtje": 8000000},
+        ]
+        items = ag_store.items_from_raw_api(raw, "2026-06-17")
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]["code"], "600673")
+
+    def test_is_valid_stock_code(self):
+        self.assertTrue(is_valid_stock_code("600673"))
+        self.assertTrue(is_valid_stock_code("673"))
+        self.assertFalse(is_valid_stock_code("00****"))
+        self.assertFalse(is_valid_stock_code(""))
 
     def test_sort_items_by_turnover(self):
         items = [

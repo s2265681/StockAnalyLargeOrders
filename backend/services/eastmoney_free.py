@@ -278,7 +278,7 @@ class EastMoneyFreeSource:
             return resp.json()
 
         try:
-            data = _safe_request(_do_request, timeout_seconds=10)
+            data = _safe_request(_do_request, timeout_seconds=3, retry=0)
             if data is None:
                 from urllib.parse import urlencode
                 full_url = f"{url}?{urlencode(params)}"
@@ -398,7 +398,7 @@ class EastMoneyFreeSource:
 
         data = None
         try:
-            data = _safe_request(_do_request, timeout_seconds=10)
+            data = _safe_request(_do_request, timeout_seconds=3, retry=0)
         except Exception as e:
             logger.error(f"获取五档盘口失败: {e}")
 
@@ -742,7 +742,7 @@ class EastMoneyFreeSource:
 
         data = None
         try:
-            data = _safe_request(_do_request, timeout_seconds=10)
+            data = _safe_request(_do_request, timeout_seconds=3, retry=0)
         except Exception as e:
             logger.error(f"获取实时分时数据失败: {e}")
 

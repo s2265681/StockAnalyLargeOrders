@@ -5,6 +5,7 @@
 import logging
 import math
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 
 from .eastmoney_free import EastMoneyFreeSource
@@ -42,6 +43,31 @@ def _get_cached_daily_kline(source, code, dt):
     data = source.get_daily_kline(code, dt)
     _kline_cache[key] = (now, data)
     return data
+
+
+def _lookup_yesterday_volume(source, code, dt, *, cache_only=False):
+    """上一交易日全日成交量（手）。cache_only 时仅读缓存，不发起 HTTP。"""
+    try:
+        d0 = datetime.strptime(dt, '%Y-%m-%d')
+        for i in range(1, 15):
+            d1 = d0 - timedelta(days=i)
+            if d1.weekday() >= 5:
+                continue
+            pd = d1.strftime('%Y-%m-%d')
+            key = f'kline_{code}_{pd}'
+            now = time.time()
+            if key in _kline_cache and now - _kline_cache[key][0] < _KLINE_CACHE_TTL:
+                yk = _kline_cache[key][1]
+                if yk and yk.get('volume'):
+                    return int(yk['volume'])
+            if cache_only:
+                continue
+            yk = _get_cached_daily_kline(source, code, pd)
+            if yk and yk.get('volume'):
+                return int(yk['volume'])
+    except Exception as e:
+        logger.debug(f"昨日成交量查询失败: {e}")
+    return None
 
 
 def _get_playwright_source():
@@ -122,7 +148,7 @@ class DataSourceAdapter:
             if now - ts < (CACHE_TTL if is_today else 300):
                 return cached
 
-        result = self._build_timeshare(code, dt=dt)
+        result = self._build_timeshare(code, dt=dt, fast=True)
         _cache[cache_key] = (now, result)
         return result
 
@@ -144,14 +170,29 @@ class DataSourceAdapter:
         _cache[cache_key] = (now, result)
         return result
 
-    def _build_timeshare(self, code, dt=None):
-        """构建分时 + 股票基础信息（不含逐笔/大单）"""
+    def _build_timeshare(self, code, dt=None, *, fast=False):
+        """构建分时 + 股票基础信息（不含逐笔/大单）
+
+        fast=True 用于 l2_timeshare 首屏：并行拉取、跳过重计算，优先出图。
+        """
         today = datetime.now().strftime('%Y-%m-%d')
         if dt is None:
             dt = today
         is_today = (dt == today)
 
-        timeshare = self.source.get_timeshare(code, dt=dt)
+        if is_today:
+            with ThreadPoolExecutor(max_workers=3) as pool:
+                f_ts = pool.submit(self.source.get_timeshare, code, dt=dt)
+                f_quote = pool.submit(self.source.get_realtime_quote, code)
+                f_yvol = None if fast else pool.submit(_lookup_yesterday_volume, self.source, code, dt)
+                timeshare = f_ts.result()
+                quote = f_quote.result()
+                prefetched_yvol = f_yvol.result() if f_yvol else None
+        else:
+            timeshare = self.source.get_timeshare(code, dt=dt)
+            quote = None
+            prefetched_yvol = None
+
         if not is_today and timeshare:
             prices = [t['price'] for t in timeshare if t.get('price')]
             quote = self._get_limit_up_quote(code, dt) or self._build_fallback_quote(code, dt, timeshare)
@@ -171,7 +212,8 @@ class DataSourceAdapter:
                 }
             }
 
-        quote = self.source.get_realtime_quote(code)
+        if quote is None:
+            quote = self.source.get_realtime_quote(code)
         if not quote:
             quote = self._build_fallback_quote(code, dt, timeshare)
 
@@ -207,10 +249,14 @@ class DataSourceAdapter:
 
         order_book = (self.source.get_order_book(code)
                        if hasattr(self.source, 'get_order_book') else self._empty_order_book())
-        limit_up_data = self.limit_up_monitor.analyze(code, quote, order_book)
+        limit_up_data = self.limit_up_monitor.analyze(
+            code, quote, order_book, lightweight=fast,
+        )
         snap = self._session_snapshot(
             code, dt, timeshare, quote, is_today, simulate_time=None,
             order_book=order_book, limit_up_data=limit_up_data,
+            yesterday_volume=prefetched_yvol,
+            yvol_cache_only=fast,
         )
         return {
             'success': True,
@@ -224,7 +270,8 @@ class DataSourceAdapter:
         }
 
     def _session_snapshot(self, code, dt, timeshare, quote, is_today, simulate_time=None,
-                          order_book=None, limit_up_data=None):
+                          order_book=None, limit_up_data=None,
+                          yesterday_volume=None, yvol_cache_only=False):
         """集合竞价成交量、尾盘相对昨日全日量比等（volume 单位：手）"""
         if not timeshare:
             return {}
@@ -274,20 +321,11 @@ class DataSourceAdapter:
         else:
             day_vol = sum(int(t.get('volume', 0) or 0) for t in timeshare)
 
-        yvol = None
-        try:
-            d0 = datetime.strptime(dt, '%Y-%m-%d')
-            for i in range(1, 15):
-                d1 = d0 - timedelta(days=i)
-                if d1.weekday() >= 5:
-                    continue
-                pd = d1.strftime('%Y-%m-%d')
-                yk = _get_cached_daily_kline(self.source, code, pd)
-                if yk and yk.get('volume'):
-                    yvol = int(yk['volume'])
-                    break
-        except Exception as e:
-            logger.debug(f"session_snapshot 昨日量: {e}")
+        yvol = yesterday_volume
+        if yvol is None:
+            yvol = _lookup_yesterday_volume(
+                self.source, code, dt, cache_only=yvol_cache_only,
+            )
 
         prev_close = float(quote.get('yesterday_close', 0) or 0) if quote else 0.0
         auction_chg = None

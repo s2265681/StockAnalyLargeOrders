@@ -78,7 +78,49 @@ def _fetch_stockapi_raw(trade_date: str, period: int = 0, api_type: int = 1) -> 
 
 
 def _is_main_board(code: str) -> bool:
+    from utils.stock_code import is_valid_stock_code
+    if not is_valid_stock_code(code):
+        return False
     return code.startswith(_MAIN_BOARD_PREFIXES)
+
+
+def _fallback_candidate_pool(
+    trade_date: str,
+    period: int,
+    cached: dict | None,
+    *,
+    reason: str,
+) -> list[dict]:
+    """stockapi 无有效数据时：沿用历史缓存或 DB 快照"""
+    if cached and cached.get('data'):
+        logger.warning(f"stockapi {trade_date} {reason}，沿用内存/磁盘缓存")
+        return [dict(s) for s in cached['data']]
+    db_stocks = _load_from_db(trade_date, period)
+    if db_stocks:
+        logger.info(f"stockapi {trade_date} {reason}，DB 回退 {len(db_stocks)} 支")
+        return [dict(s) for s in db_stocks]
+
+    from datetime import datetime, timedelta
+    from utils.date_utils import get_valid_trading_date
+
+    today_str = get_valid_trading_date()
+    if trade_date == today_str:
+        d = datetime.strptime(trade_date, '%Y-%m-%d')
+        prev = d
+        for _ in range(7):
+            prev -= timedelta(days=1)
+            if prev.weekday() >= 5:
+                continue
+            prev_str = prev.strftime('%Y-%m-%d')
+            prev_stocks = _load_from_db(prev_str, period)
+            if prev_stocks:
+                logger.info(
+                    f"stockapi {trade_date} {reason}，回退上一交易日 {prev_str}: {len(prev_stocks)} 支"
+                )
+                return [dict(s) for s in prev_stocks]
+
+    logger.warning(f"stockapi {trade_date} {reason}，DB 也无数据")
+    return []
 
 
 def _board_label(code: str) -> str:
@@ -116,11 +158,14 @@ def get_main_board_top_auction(
     cache_key = f"{trade_date}_{period}"
 
     cached = _STOCKAPI_RESULT_CACHE.get(cache_key)
-    if cached and (time.time() - cached['ts']) < ttl:
+    if cached and cached.get('data') and (time.time() - cached['ts']) < ttl:
         return [dict(s) for s in cached['data']]  # 返回副本，避免被调用方修改
+
+    from utils.stock_code import is_valid_stock_code
 
     # 并发拉三种排序，合并去重
     raw_map: dict[str, dict] = {}
+    masked_rows = 0
     with ThreadPoolExecutor(max_workers=3) as ex:
         futures = {
             ex.submit(_fetch_stockapi_raw, trade_date, period, t): t
@@ -129,7 +174,8 @@ def get_main_board_top_auction(
         for future in as_completed(futures):
             for r in future.result():
                 code = str(r.get('code', '')).zfill(6)
-                if not code:
+                if not is_valid_stock_code(code):
+                    masked_rows += 1
                     continue
                 cur = raw_map.get(code, {})
                 raw_map[code] = {
@@ -147,15 +193,11 @@ def get_main_board_top_auction(
                 }
 
     if not raw_map:
-        # stockapi 无数据（超限或网络）→ 优先沿用缓存，其次从 DB 回退
-        if cached:
-            logger.warning(f"stockapi {trade_date} 无数据，沿用内存/磁盘缓存")
-            return [dict(s) for s in cached['data']]
-        db_stocks = _load_from_db(trade_date, period)
-        if db_stocks:
-            _STOCKAPI_RESULT_CACHE[cache_key] = {'ts': time.time(), 'data': db_stocks}
-            return [dict(s) for s in db_stocks]
-        return []
+        reason = '返回脱敏代码' if masked_rows else '无数据'
+        fallback = _fallback_candidate_pool(trade_date, period, cached, reason=reason)
+        if fallback:
+            _STOCKAPI_RESULT_CACHE[cache_key] = {'ts': time.time(), 'data': fallback}
+        return fallback
 
     # 按委托额排序后过滤：主板 + 非ST
     all_sorted = sorted(raw_map.values(), key=lambda x: x['auction_order_amt'], reverse=True)
@@ -171,6 +213,18 @@ def get_main_board_top_auction(
         result.append(s)
         if len(result) >= top_n:
             break
+
+    if not result:
+        reason = '无有效主板候选'
+        if masked_rows:
+            reason = f'返回脱敏代码({masked_rows}条)'
+        fallback = _fallback_candidate_pool(trade_date, period, cached, reason=reason)
+        if fallback:
+            _STOCKAPI_RESULT_CACHE[cache_key] = {'ts': time.time(), 'data': fallback}
+            if not is_today:
+                _save_disk_cache()
+            return fallback
+        return []
 
     _STOCKAPI_RESULT_CACHE[cache_key] = {'ts': time.time(), 'data': result}
     if not is_today:

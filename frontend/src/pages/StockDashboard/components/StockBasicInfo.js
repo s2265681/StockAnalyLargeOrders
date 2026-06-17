@@ -13,6 +13,7 @@ import { apiRequest } from '../../../config/api';
 
 const fmtWan = (v) => (v != null && Number.isFinite(v) ? (v / 10000).toFixed(2) : '--');
 const fmtYi = (v) => (v != null && Number.isFinite(v) ? (v / 100000000).toFixed(2) : '--');
+const fmtPrice = (v) => (v != null && Number.isFinite(Number(v)) ? Number(v) : '--');
 
 const StockBasicInfo = ({ onStockCodeChange }) => {
   const navigate = useNavigate();
@@ -178,11 +179,11 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
             <div className="stats-row">
               <div className="stat-item">
                 <span className="label">开</span>
-                <span className="value">{stockBasicData?.open}</span>
+                <span className="value">{fmtPrice(stockBasicData?.open)}</span>
               </div>
               <div className="stat-item">
                 <span className="label">高</span>
-                <span className="value">{stockBasicData?.high}</span>
+                <span className="value">{fmtPrice(stockBasicData?.high)}</span>
               </div>
               <div className="stat-item">
                 <span className="label">量</span>
@@ -192,11 +193,11 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
             <div className="stats-row">
               <div className="stat-item">
                 <span className="label">昨</span>
-                <span className="value">{stockBasicData?.yesterday_close}</span>
+                <span className="value">{fmtPrice(stockBasicData?.yesterday_close)}</span>
               </div>
               <div className="stat-item">
                 <span className="label">低</span>
-                <span className="value">{stockBasicData?.low}</span>
+                <span className="value">{fmtPrice(stockBasicData?.low)}</span>
               </div>
               <div className="stat-item">
                 <span className="label">额</span>

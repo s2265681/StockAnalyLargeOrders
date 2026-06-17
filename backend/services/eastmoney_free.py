@@ -57,6 +57,28 @@ def _subprocess_fetch_json(url, headers=None, cookies=None, timeout=10):
     return None
 
 
+_EM_HEADERS = {
+    'Referer': 'https://quote.eastmoney.com/',
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+}
+
+
+def _fetch_eastmoney_json(url, params, *, curl_timeout=6):
+    """东财 JSON：优先 curl 子进程（~0.4s），避免 eventlet 下 requests 空等数秒。"""
+    from urllib.parse import urlencode
+    full_url = f"{url}?{urlencode(params)}"
+    data = _subprocess_fetch_json(full_url, headers=_EM_HEADERS, timeout=curl_timeout)
+    if data is not None:
+        return data
+
+    def _do_request():
+        resp = requests.get(url, params=params, timeout=8, headers=_EM_HEADERS)
+        resp.raise_for_status()
+        return resp.json()
+
+    return _safe_request(_do_request, timeout_seconds=5, retry=0)
+
+
 def _subprocess_fetch_akshare_bid_ask(code: str, timeout: int = 12) -> dict | None:
     """在独立子进程中调用 akshare 五档盘口，绕过 eventlet 对网络库的干扰。"""
     import subprocess
@@ -272,20 +294,8 @@ class EastMoneyFreeSource:
             'fltt': 2
         }
 
-        def _do_request():
-            resp = self.session.get(url, params=params, timeout=8)
-            resp.raise_for_status()
-            return resp.json()
-
         try:
-            data = _safe_request(_do_request, timeout_seconds=3, retry=0)
-            if data is None:
-                from urllib.parse import urlencode
-                full_url = f"{url}?{urlencode(params)}"
-                data = _subprocess_fetch_json(full_url, headers={
-                    'Referer': 'https://quote.eastmoney.com/',
-                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-                })
+            data = _fetch_eastmoney_json(url, params)
             if data is None:
                 logger.warning("东方财富行情接口超时或不可达")
                 return None
@@ -735,25 +745,14 @@ class EastMoneyFreeSource:
             'ut': 'fa5fd1943c7b386f172d6893dbfba10b'
         }
 
-        def _do_request():
-            resp = self.session.get(url, params=params, timeout=8)
-            resp.raise_for_status()
-            return resp.json()
-
         data = None
         try:
-            data = _safe_request(_do_request, timeout_seconds=3, retry=0)
+            data = _fetch_eastmoney_json(url, params)
         except Exception as e:
             logger.error(f"获取实时分时数据失败: {e}")
 
         if data is None:
-            from urllib.parse import urlencode
-            full_url = f"{url}?{urlencode(params)}"
-            logger.info("eventlet 请求失败，尝试 subprocess curl（实时分时）")
-            data = _subprocess_fetch_json(full_url, headers={
-                'Referer': 'https://quote.eastmoney.com/',
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-            })
+            logger.info("curl/requests 均失败（实时分时）")
 
         if data and data.get('rc') == 0 and data.get('data'):
             trends_raw = data['data'].get('trends', [])

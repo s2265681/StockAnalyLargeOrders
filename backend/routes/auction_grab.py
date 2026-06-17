@@ -168,7 +168,8 @@ def _fetch_from_stockapi(trade_date, period, api_type):
         if resp.get('code') != 20000:
             logger.warning(f"stockapi 返回错误: {resp.get('msg')}")
             return None
-        return resp.get('data', [])
+        from services.auction_unmask import unmask_stockapi_rows
+        return unmask_stockapi_rows(resp.get('data', []))
     except Exception as e:
         logger.error(f"stockapi 请求异常: {type(e).__name__}: {e}")
         return None

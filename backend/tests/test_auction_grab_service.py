@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch
 
 from services import auction_grab_service as ag_store
-from utils.stock_code import is_valid_stock_code
+from services.auction_unmask import is_valid_stock_code
 
 
 class AuctionGrabServiceTest(unittest.TestCase):

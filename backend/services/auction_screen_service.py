@@ -71,14 +71,15 @@ def _fetch_stockapi_raw(trade_date: str, period: int = 0, api_type: int = 1) -> 
         r = subprocess.run(cmd, capture_output=True, timeout=20)
         d = json.loads(r.stdout)
         if d.get('code') == 20000:
-            return d.get('data') or []
+            from services.auction_unmask import unmask_stockapi_rows
+            return unmask_stockapi_rows(d.get('data') or [])
     except Exception as e:
         logger.warning(f"stockapi type={api_type} 失败: {e}")
     return []
 
 
 def _is_main_board(code: str) -> bool:
-    from utils.stock_code import is_valid_stock_code
+    from services.auction_unmask import is_valid_stock_code
     if not is_valid_stock_code(code):
         return False
     return code.startswith(_MAIN_BOARD_PREFIXES)
@@ -161,7 +162,7 @@ def get_main_board_top_auction(
     if cached and cached.get('data') and (time.time() - cached['ts']) < ttl:
         return [dict(s) for s in cached['data']]  # 返回副本，避免被调用方修改
 
-    from utils.stock_code import is_valid_stock_code
+    from services.auction_unmask import is_valid_stock_code
 
     # 并发拉三种排序，合并去重
     raw_map: dict[str, dict] = {}

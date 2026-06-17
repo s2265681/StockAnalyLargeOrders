@@ -181,13 +181,24 @@ class DataSourceAdapter:
         is_today = (dt == today)
 
         if is_today:
-            with ThreadPoolExecutor(max_workers=3) as pool:
-                f_ts = pool.submit(self.source.get_timeshare, code, dt=dt)
-                f_quote = pool.submit(self.source.get_realtime_quote, code)
-                f_yvol = None if fast else pool.submit(_lookup_yesterday_volume, self.source, code, dt)
-                timeshare = f_ts.result()
-                quote = f_quote.result()
-                prefetched_yvol = f_yvol.result() if f_yvol else None
+            try:
+                import eventlet
+                gt_ts = eventlet.spawn(
+                    lambda: eventlet.tpool.execute(self.source.get_timeshare, code, dt),
+                )
+                gt_quote = eventlet.spawn(
+                    lambda: eventlet.tpool.execute(self.source.get_realtime_quote, code),
+                )
+                timeshare = gt_ts.wait()
+                quote = gt_quote.wait()
+                prefetched_yvol = None
+            except Exception:
+                with ThreadPoolExecutor(max_workers=2) as pool:
+                    f_ts = pool.submit(self.source.get_timeshare, code, dt=dt)
+                    f_quote = pool.submit(self.source.get_realtime_quote, code)
+                    timeshare = f_ts.result()
+                    quote = f_quote.result()
+                prefetched_yvol = None
         else:
             timeshare = self.source.get_timeshare(code, dt=dt)
             quote = None

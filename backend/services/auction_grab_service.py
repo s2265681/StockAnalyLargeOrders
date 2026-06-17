@@ -5,7 +5,7 @@ import logging
 from typing import Any
 
 from utils.db import execute_many, execute_query, execute_write
-from utils.stock_code import is_valid_stock_code
+from services.auction_unmask import is_valid_stock_code
 
 logger = logging.getLogger(__name__)
 

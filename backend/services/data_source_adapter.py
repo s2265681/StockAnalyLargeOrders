@@ -181,24 +181,18 @@ class DataSourceAdapter:
         is_today = (dt == today)
 
         if is_today:
-            try:
-                import eventlet
-                gt_ts = eventlet.spawn(
-                    lambda: eventlet.tpool.execute(self.source.get_timeshare, code, dt),
-                )
-                gt_quote = eventlet.spawn(
-                    lambda: eventlet.tpool.execute(self.source.get_realtime_quote, code),
-                )
-                timeshare = gt_ts.wait()
-                quote = gt_quote.wait()
-                prefetched_yvol = None
-            except Exception:
+            def _fetch_ts_quote_pair():
                 with ThreadPoolExecutor(max_workers=2) as pool:
                     f_ts = pool.submit(self.source.get_timeshare, code, dt=dt)
                     f_quote = pool.submit(self.source.get_realtime_quote, code)
-                    timeshare = f_ts.result()
-                    quote = f_quote.result()
-                prefetched_yvol = None
+                    return f_ts.result(), f_quote.result()
+
+            try:
+                import eventlet
+                timeshare, quote = eventlet.tpool.execute(_fetch_ts_quote_pair)
+            except Exception:
+                timeshare, quote = _fetch_ts_quote_pair()
+            prefetched_yvol = None
         else:
             timeshare = self.source.get_timeshare(code, dt=dt)
             quote = None
@@ -258,17 +252,22 @@ class DataSourceAdapter:
                     'volume': 0, 'turnover': 0, 'change_percent': 0,
                 }
 
-        order_book = (self.source.get_order_book(code)
-                       if hasattr(self.source, 'get_order_book') else self._empty_order_book())
-        limit_up_data = self.limit_up_monitor.analyze(
-            code, quote, order_book, lightweight=fast,
-        )
-        snap = self._session_snapshot(
-            code, dt, timeshare, quote, is_today, simulate_time=None,
-            order_book=order_book, limit_up_data=limit_up_data,
-            yesterday_volume=prefetched_yvol,
-            yvol_cache_only=fast,
-        )
+        if fast:
+            order_book = self._empty_order_book()
+            limit_up_data = {}
+            snap = {}
+        else:
+            order_book = (self.source.get_order_book(code)
+                           if hasattr(self.source, 'get_order_book') else self._empty_order_book())
+            limit_up_data = self.limit_up_monitor.analyze(
+                code, quote, order_book, lightweight=False,
+            )
+            snap = self._session_snapshot(
+                code, dt, timeshare, quote, is_today, simulate_time=None,
+                order_book=order_book, limit_up_data=limit_up_data,
+                yesterday_volume=prefetched_yvol,
+                yvol_cache_only=False,
+            )
         return {
             'success': True,
             'data': {

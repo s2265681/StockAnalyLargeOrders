@@ -71,12 +71,13 @@ def _fetch_eastmoney_json(url, params, *, curl_timeout=6):
     if data is not None:
         return data
 
-    def _do_request():
+    try:
         resp = requests.get(url, params=params, timeout=8, headers=_EM_HEADERS)
         resp.raise_for_status()
         return resp.json()
-
-    return _safe_request(_do_request, timeout_seconds=5, retry=0)
+    except Exception as e:
+        logger.warning(f"东财 JSON 请求失败: {e}")
+        return None
 
 
 def _subprocess_fetch_akshare_bid_ask(code: str, timeout: int = 12) -> dict | None:

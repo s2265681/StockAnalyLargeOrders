@@ -2,7 +2,7 @@
   "name": "stock-analysis",
   "displayName": "AI炒股看盘",
   "description": "实时股票行情状态栏显示，支持大单分析、涨停梯队、封单预警等完整功能",
-  "version": "0.3.12",
+  "version": "0.3.13",
   "publisher": "stockanalysis",
   "icon": "images/icon.png",
   "engines": {

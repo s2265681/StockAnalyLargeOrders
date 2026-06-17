@@ -157,13 +157,13 @@ class StatusBarManager {
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
     }
-    /** 底部：左侧时间，右侧「查看分时图」可点击链接 */
+    /** 底部：上行「查看分时图」，下行时间（避免窄列内竖排） */
     buildFooterRow(time, code) {
         const href = `command:stockAnalysis.viewStock?${encodeURIComponent(JSON.stringify([code]))}`;
-        return (`<table style="width:100%"><tr>` +
-            `<td><span style="opacity:0.85">${time}</span></td>` +
-            `<td style="text-align:right"><a href="${href}">$(link-external) 查看分时图</a></td>` +
-            `</tr></table>`);
+        return (`<div style="margin-top:4px;line-height:1.5;">` +
+            `<div style="white-space:nowrap;"><a href="${href}">$(link-external) 查看分时图</a></div>` +
+            `<div style="opacity:0.85;white-space:nowrap;font-size:11px;margin-top:2px;">${time}</div>` +
+            `</div>`);
     }
     setLoading() {
         if (!this.visible)

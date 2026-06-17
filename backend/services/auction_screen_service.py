@@ -411,8 +411,8 @@ def run_advanced_screen(trade_date: str, period: int = 0) -> list[dict]:
     if not step3:
         return []
 
-    # 4. 近1年涨停>2次 + 计算 vol_ratio / 各涨幅 / 竞价换手率（并发查 K 线）
-    with ThreadPoolExecutor(max_workers=8) as ex:
+    # 4. 近1年涨停>2次 + 计算 vol_ratio / 各涨幅 / 竞价换手率（并发查 K 线，限4线程防崩）
+    with ThreadPoolExecutor(max_workers=4) as ex:
         futures = {
             ex.submit(_count_limit_up_and_prev_vol, s['code'], td_dash): s
             for s in step3
@@ -599,23 +599,17 @@ def run_backtest(n_days: int = 10, period: int = 0) -> dict:
             trade_dates.append(d.strftime('%Y-%m-%d'))
     trade_dates = sorted(trade_dates)
 
-    # Phase 1: 并发拉各日候选池
+    # Phase 1: 逐日拉候选池（历史日期已缓存，不消耗 stockapi 额度）
     date_candidates: dict[str, list[dict]] = {}
-    with ThreadPoolExecutor(max_workers=5) as ex:
-        futures = {
-            ex.submit(get_main_board_top_auction, dt, period, 60): dt
-            for dt in trade_dates
-        }
-        for future in as_completed(futures):
-            dt = futures[future]
-            try:
-                stocks = future.result()
-                date_candidates[dt] = [
-                    s for s in stocks if s.get('auction_change_pct', 0) >= 1.0
-                ]
-            except Exception as e:
-                logger.warning(f"backtest stockapi {dt}: {e}")
-                date_candidates[dt] = []
+    for dt in trade_dates:
+        try:
+            stocks = get_main_board_top_auction(dt, period, 60)
+            date_candidates[dt] = [
+                s for s in stocks if s.get('auction_change_pct', 0) >= 1.0
+            ]
+        except Exception as e:
+            logger.warning(f"backtest stockapi {dt}: {e}")
+            date_candidates[dt] = []
 
     all_codes = list({s['code'] for cands in date_candidates.values() for s in cands})
     if not all_codes:
@@ -627,9 +621,9 @@ def run_backtest(n_days: int = 10, period: int = 0) -> dict:
         for s in cands:
             s['mktcap'] = mktcap_map.get(s['code'], 0)
 
-    # Phase 3: 并发拉 K 线（每股仅一次）
+    # Phase 3: 并发拉 K 线（限制并发数防止 CPU/内存过载）
     kline_store: dict[str, list] = {}
-    with ThreadPoolExecutor(max_workers=12) as ex:
+    with ThreadPoolExecutor(max_workers=4) as ex:
         kf = {ex.submit(_fetch_raw_klines, code): code for code in all_codes}
         for future in as_completed(kf):
             code = kf[future]

@@ -1553,8 +1553,10 @@ def run_batch_emotion_analysis(records: list, force_mode: str = "missing") -> di
             item = _calibrate_result_for_records(item, records)
             dt = item["date"].replace("-", "")
             if dt in need_analysis_dates:
-                _save_analysis_to_db(dt, item)
-                total_saved += 1
+                if _save_analysis_to_db(dt, item):
+                    total_saved += 1
+                else:
+                    logger.error(f"{dt} 存库失败，跳过计数")
 
     logger.info(f"批量分析完成: 共 {total_batches} 批, 存库 {total_saved} 条")
     return {

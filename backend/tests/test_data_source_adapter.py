@@ -257,6 +257,14 @@ class DataSourceAdapterAnalysisTest(unittest.TestCase):
         good_ts = [{'time': '09:31', 'price': 48.0, 'volume': 100, 'amount': 100000}]
         self.assertFalse(adapter._timeshare_mismatch_with_quote(good_ts, quote))
 
+    def test_timeshare_looks_flat_detects_stuck_trends2(self):
+        adapter = DataSourceAdapter(use_l2=False)
+        flat_ts = [{'time': f'10:{i:02d}', 'price': 38.19, 'volume': 100, 'amount': 100000}
+                   for i in range(40)]
+        varied_ts = flat_ts + [{'time': '11:00', 'price': 39.0, 'volume': 100, 'amount': 100000}]
+        self.assertTrue(adapter._timeshare_looks_flat(flat_ts))
+        self.assertFalse(adapter._timeshare_looks_flat(varied_ts))
+
     def test_maybe_refresh_timeshare_uses_playwright_fallback(self):
         adapter = DataSourceAdapter(use_l2=False)
         stale_ts = [{'time': '09:31', 'price': 39.44, 'volume': 100, 'amount': 100000}]

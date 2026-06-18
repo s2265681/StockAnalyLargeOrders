@@ -88,6 +88,16 @@ describe('l2Analysis helpers', () => {
     expect(aligned.volume[1]).toBe(100);
   });
 
+  test('normalizes compact time keys when aligning timeshare', () => {
+    const aligned = alignTimeshareToTradingAxis([
+      { time: '0931', price: 11.56, volume: 100 },
+      { time: '0932', price: 11.58, volume: 200 },
+    ]);
+
+    expect(aligned.fenshi[1]).toBe(11.56);
+    expect(aligned.fenshi[2]).toBe(11.58);
+  });
+
   test('falls back to avg_price when price field is missing', () => {
     const aligned = alignTimeshareToTradingAxis([
       { time: '09:31', avg_price: 12.15, volume: 100 },

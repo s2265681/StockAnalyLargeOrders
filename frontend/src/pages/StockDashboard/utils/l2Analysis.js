@@ -125,7 +125,7 @@ export const buildTradingTimeAxis = () => {
 
 export const alignTimeshareToTradingAxis = (timeshare = []) => {
   const axis = buildTradingTimeAxis();
-  const byTime = new Map(timeshare.map(item => [item.time, item]));
+  const byTime = new Map(timeshare.map((item) => [normalizeFlowTimeKey(item.time), item]));
 
   const resolvePointPrice = (item) => {
     if (!item) return null;

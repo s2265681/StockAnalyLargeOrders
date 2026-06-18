@@ -358,6 +358,7 @@ const applyTimesharePayload = (set, timeshareResp, requestedCode, {
 
 const applyStockBasicPayload = (set, basicData, requestedCode) => {
   if (!basicData) return;
+  if (basicData.data_source === 'offline_mock') return;
   const code = basicData.code ?? requestedCode;
   set(stockBasicDataAtom, {
     ...basicData,
@@ -560,6 +561,8 @@ export const fetchL2DashboardAtom = atom(
     const code = typeof params === 'string' ? params : params.code;
     const requestedCode = code;
     const dt = typeof params === 'string' ? get(selectedDateAtom) : (params.dt || get(selectedDateAtom));
+    const latestTradingDay = getLatestTradingDay();
+    const isHistoricalDt = dt !== latestTradingDay;
     const isStale = () => !isSameStockCode(get(stockCodeAtom), requestedCode);
     const simulate = typeof params === 'object' && params.simulate;
     const simulateTime = typeof params === 'object' ? params.simulateTime : null;
@@ -627,8 +630,9 @@ export const fetchL2DashboardAtom = atom(
       if (isInitialLoad) {
         const chartQuery = new URLSearchParams({ code, dt, chart_only: '1' });
         const chartPromise = apiRequest(`/api/v1/l2_timeshare?${chartQuery}`, { timeout: 45000 });
-        const quotePromise = apiRequest(`/api/stock/basic?code=${code}`, { timeout: 30000 })
-          .catch(() => null);
+        const quotePromise = isHistoricalDt
+          ? Promise.resolve(null)
+          : apiRequest(`/api/stock/basic?code=${code}`, { timeout: 30000 }).catch(() => null);
 
         // 首屏只等分时 + 行情，大单 / 主力散户线后台合并
         const [timeshareResp, basicResp] = await Promise.all([
@@ -643,7 +647,7 @@ export const fetchL2DashboardAtom = atom(
             if (!d.stock_info?.code || isSameStockCode(requestedCode, d.stock_info.code)) {
               applyTimesharePayload(set, timeshareResp, requestedCode, {
                 moneyFlow: null,
-                skipBasic: true,
+                skipBasic: !isHistoricalDt,
               });
               timeshareReady = true;
               finishTimeshareLoading();
@@ -652,23 +656,25 @@ export const fetchL2DashboardAtom = atom(
             set(errorAtom, '分时数据获取失败，请检查网络');
           }
 
-          applyStockBasicPayload(set, basicResp?.data, requestedCode);
+          if (!isHistoricalDt) {
+            applyStockBasicPayload(set, basicResp?.data, requestedCode);
 
-          const aligned = alignTimeshareToTradingAxis(timeshareResp?.data?.timeshare || []);
-          const basicPrice = basicResp?.data?.current_price ?? basicResp?.data?.price;
-          if (timeshareOk && isTimesharePriceStale(aligned.fenshi, basicPrice)) {
-            void apiRequest(`/api/v1/l2_timeshare?${query}`, { timeout: 45000 })
-              .catch(() => null)
-              .then((retryResp) => {
-                if (isStale() || !retryResp?.success || !retryResp?.data) return;
-                const rd = retryResp.data;
-                if (!rd.stock_info?.code || isSameStockCode(requestedCode, rd.stock_info.code)) {
-                  applyTimesharePayload(set, retryResp, requestedCode, {
-                    moneyFlow: null,
-                    skipBasic: true,
-                  });
-                }
-              });
+            const aligned = alignTimeshareToTradingAxis(timeshareResp?.data?.timeshare || []);
+            const basicPrice = basicResp?.data?.current_price ?? basicResp?.data?.price;
+            if (timeshareOk && isTimesharePriceStale(aligned.fenshi, basicPrice)) {
+              void apiRequest(`/api/v1/l2_timeshare?${query}`, { timeout: 45000 })
+                .catch(() => null)
+                .then((retryResp) => {
+                  if (isStale() || !retryResp?.success || !retryResp?.data) return;
+                  const rd = retryResp.data;
+                  if (!rd.stock_info?.code || isSameStockCode(requestedCode, rd.stock_info.code)) {
+                    applyTimesharePayload(set, retryResp, requestedCode, {
+                      moneyFlow: null,
+                      skipBasic: true,
+                    });
+                  }
+                });
+            }
           }
         }
 

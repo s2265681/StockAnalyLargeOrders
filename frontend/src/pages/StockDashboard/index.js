@@ -15,6 +15,7 @@ import {
   alignTimeshareToTradingAxis,
   buildTimeshareBaseInfo,
   isSameStockCode,
+  normalizeFlowTimeKey,
 } from './utils/l2Analysis';
 import { stockWS } from '../../services/websocket';
 import { apiRequest } from '../../config/api';
@@ -346,7 +347,7 @@ const StockDashboard = () => {
           const newVolume = [...prev.volume];
 
           wsTimeshare.forEach(item => {
-            const idx = axis.indexOf(item.time);
+            const idx = axis.indexOf(normalizeFlowTimeKey(item.time));
             if (idx !== -1) {
               newFenshi[idx] = item.price ?? item.avg_price;
               newVolume[idx] = item.volume;

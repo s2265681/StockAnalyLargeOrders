@@ -174,6 +174,14 @@ class DataSourceAdapter:
             return False
         return abs(last_ts - quote_price) / quote_price > threshold
 
+    @staticmethod
+    def _timeshare_looks_flat(timeshare):
+        """全天价格几乎不变时，多为 trends2 脏数据或错误降级。"""
+        prices = [round(float(t['price']), 2) for t in (timeshare or []) if t.get('price')]
+        if len(prices) < 30:
+            return False
+        return len(set(prices)) <= 1
+
     def _maybe_refresh_timeshare(self, code, dt, timeshare, quote):
         """当日分时与行情不一致时，依次回退 Playwright / 新浪分钟线。"""
         if not self._timeshare_mismatch_with_quote(timeshare, quote):
@@ -230,8 +238,19 @@ class DataSourceAdapter:
             bundle = self.source.get_timeshare_bundle(code, dt)
 
         timeshare = bundle.get('timeshare') or []
-        if is_today and quote:
-            timeshare = self._maybe_refresh_timeshare(code, dt, timeshare, quote)
+        if is_today:
+            if quote is None:
+                quote = self.source.get_realtime_quote(code)
+            if quote:
+                timeshare = self._maybe_refresh_timeshare(code, dt, timeshare, quote)
+            elif self._timeshare_looks_flat(timeshare):
+                try:
+                    sina_ts = self.source._get_minute_timeshare_sina_kline(code, dt)
+                    if sina_ts:
+                        logger.info('行情不可用，新浪分钟线回退成功 code=%s', code)
+                        timeshare = sina_ts
+                except Exception as e:
+                    logger.warning('新浪分钟线回退失败 code=%s: %s', code, e)
 
         if is_today and quote:
             stock_info = {

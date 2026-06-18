@@ -95,11 +95,12 @@ export const resolvePrevClosePrice = (baseInfo, stockBasicData, fenshi) => {
     if (fenshiMatchesBasic && fromTimeshare && isPrevCloseConsistentWithFenshi(fromTimeshare, fenshi)) {
       return fromTimeshare;
     }
-    if (fromBasic && isPrevCloseConsistentWithFenshi(fromBasic, fenshi)) {
+    if (fenshiMatchesBasic && fromBasic && isPrevCloseConsistentWithFenshi(fromBasic, fenshi)) {
       return fromBasic;
     }
-    if (!fenshiMatchesBasic && fromBasic) {
-      return fromBasic;
+    // 分时与 header 不同步时，图表基准必须与分时同源，否则会画成大幅偏离的平线
+    if (!fenshiMatchesBasic && fromTimeshare) {
+      return fromTimeshare;
     }
     const prices = (fenshi || [])
       .map((p) => parseFloat(p))
@@ -1231,8 +1232,8 @@ const StockChart = () => {
 
   const dataValidation = validateData();
   const chartOption = useMemo(
-    () => getTimeshareChartOption(),
-    [timeshareData, stockBasicData, largeOrdersData, filterAmount, filterThreshold, isDark, textColor, textMuted, borderColor]
+    () => (isTimeshareStale ? {} : getTimeshareChartOption()),
+    [timeshareData, stockBasicData, largeOrdersData, filterAmount, filterThreshold, isTimeshareStale, isDark, textColor, textMuted, borderColor]
   );
 
   return (

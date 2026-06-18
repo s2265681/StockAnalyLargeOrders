@@ -61,13 +61,13 @@ describe('StockChart helpers', () => {
     )).toBe(6.37);
   });
 
-  test('prefers header prev close when fenshi prices are stale vs current quote', () => {
+  test('keeps timeshare prev close when fenshi prices are stale vs current quote', () => {
     const fenshi = Array(120).fill(39.44);
     expect(resolvePrevClosePrice(
       { prevClosePrice: 39.44, code: '002741' },
       { yesterday_close: 49.39, current_price: 48.17, code: '002741' },
       fenshi,
-    )).toBe(49.39);
+    )).toBe(39.44);
   });
 
   test('ignores stale stockBasic limits when code does not match', () => {

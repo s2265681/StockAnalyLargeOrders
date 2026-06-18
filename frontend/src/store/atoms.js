@@ -29,7 +29,7 @@ const isTradingDay = (date) => {
 };
 
 // 当前看板只展示最新有效交易日
-const getLastTradingDay = () => {
+export const getLatestTradingDay = () => {
   const d = new Date();
   const now = new Date();
 
@@ -44,7 +44,31 @@ const getLastTradingDay = () => {
   return formatLocalDate(d);
 };
 
-export const selectedDateAtom = atom(getLastTradingDay());
+/** 按交易日偏移，dateStr 格式 YYYY-MM-DD，delta 为交易日个数 */
+export const offsetTradingDay = (dateStr, delta) => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  let remaining = Math.abs(delta);
+  const step = delta > 0 ? 1 : -1;
+  while (remaining > 0) {
+    date.setDate(date.getDate() + step);
+    if (isTradingDay(date)) remaining -= 1;
+  }
+  return formatLocalDate(date);
+};
+
+/** 从最新交易日往前数 lookbackDays 个交易日（含当天） */
+export const getMinTradingDay = (lookbackDays = 5) => {
+  let date = getLatestTradingDay();
+  for (let i = 1; i < lookbackDays; i += 1) {
+    date = offsetTradingDay(date, -1);
+  }
+  return date;
+};
+
+export const STOCK_DASHBOARD_MAX_TRADING_DAYS = 5;
+
+export const selectedDateAtom = atom(getLatestTradingDay());
 
 // 股票基础数据原子
 export const stockBasicDataAtom = atom(null);
@@ -606,11 +630,10 @@ export const fetchL2DashboardAtom = atom(
         const quotePromise = apiRequest(`/api/stock/basic?code=${code}`, { timeout: 30000 })
           .catch(() => null);
 
+        // 首屏只等分时 + 行情，大单 / 主力散户线后台合并
         const [timeshareResp, basicResp] = await Promise.all([
           chartPromise,
           quotePromise,
-          ordersPromise,
-          moneyFlowPromise,
         ]);
 
         if (!isStale()) {
@@ -634,21 +657,22 @@ export const fetchL2DashboardAtom = atom(
           const aligned = alignTimeshareToTradingAxis(timeshareResp?.data?.timeshare || []);
           const basicPrice = basicResp?.data?.current_price ?? basicResp?.data?.price;
           if (timeshareOk && isTimesharePriceStale(aligned.fenshi, basicPrice)) {
-            const retryResp = await apiRequest(`/api/v1/l2_timeshare?${query}`, { timeout: 45000 })
-              .catch(() => null);
-            if (!isStale() && retryResp?.success && retryResp?.data) {
-              const rd = retryResp.data;
-              if (!rd.stock_info?.code || isSameStockCode(requestedCode, rd.stock_info.code)) {
-                applyTimesharePayload(set, retryResp, requestedCode, {
-                  moneyFlow: null,
-                  skipBasic: true,
-                });
-              }
-            }
+            void apiRequest(`/api/v1/l2_timeshare?${query}`, { timeout: 45000 })
+              .catch(() => null)
+              .then((retryResp) => {
+                if (isStale() || !retryResp?.success || !retryResp?.data) return;
+                const rd = retryResp.data;
+                if (!rd.stock_info?.code || isSameStockCode(requestedCode, rd.stock_info.code)) {
+                  applyTimesharePayload(set, retryResp, requestedCode, {
+                    moneyFlow: null,
+                    skipBasic: true,
+                  });
+                }
+              });
           }
         }
 
-        mergeMoneyFlow();
+        void Promise.all([ordersPromise, moneyFlowPromise]).then(() => mergeMoneyFlow());
         return;
       }
 

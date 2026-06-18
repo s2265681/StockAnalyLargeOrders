@@ -85,6 +85,7 @@ from config.ai_prompts import (
     SYSTEM_PROMPT,
 )
 from utils.claude_client import call_claude_for_scenario
+from utils.emotion_stage import calibrate_analysis_stage
 
 # 列名 → 英文 key 的映射
 COL_KEY_MAP = {
@@ -996,7 +997,7 @@ def _call_claude_daily_analysis(
     )
     result = _parse_claude_json_object(content)
     result["date"] = current_record.get("date")
-    return result
+    return calibrate_analysis_stage(result, current_record, context_records)
 
 
 def _call_claude_intraday(
@@ -1261,6 +1262,8 @@ def refresh_current_emotion_analysis():
         if current_result is None:
             return v1_error_response(message="AI 未返回最新交易日分析结果")
 
+        current_result = _calibrate_result_for_records(current_result, ordered_records)
+
         if not _save_analysis_to_db(current_dt, current_result):
             return v1_error_response(message="保存最新交易日分析失败")
 
@@ -1275,6 +1278,21 @@ def refresh_current_emotion_analysis():
 
 
 # ---------- 4. 全量情绪周期分析（为每一天生成分析） ----------
+
+def _calibrate_result_for_records(item: dict, all_records: list) -> dict:
+    """按记录在完整序列中的位置，对 AI 研判做阶段校准。"""
+    if not isinstance(item, dict):
+        return item
+    dt = _record_date_key(item)
+    ordered = sorted(
+        [r for r in all_records if isinstance(r, dict) and _record_date_key(r)],
+        key=_record_date_key,
+    )
+    idx = next((i for i, r in enumerate(ordered) if _record_date_key(r) == dt), None)
+    if idx is None:
+        return item
+    return calibrate_analysis_stage(item, ordered[idx], ordered[max(0, idx - 5):idx])
+
 
 def _fix_json_quotes(text):
     """修复 AI 返回的 JSON 中字符串值内未转义的双引号"""
@@ -1414,7 +1432,7 @@ def _call_claude_single(context_records: list, target_record: dict) -> dict:
 
     if not isinstance(result, dict):
         raise Exception("AI 返回格式异常")
-    return result
+    return calibrate_analysis_stage(result, target_record, context_records)
 
 
 def analyze_one_date(target_dt: str, all_records: list, force: bool = False) -> str:
@@ -1532,6 +1550,7 @@ def run_batch_emotion_analysis(records: list, force_mode: str = "missing") -> di
         for item in results:
             if not isinstance(item, dict) or "date" not in item:
                 continue
+            item = _calibrate_result_for_records(item, records)
             dt = item["date"].replace("-", "")
             if dt in need_analysis_dates:
                 _save_analysis_to_db(dt, item)

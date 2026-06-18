@@ -1,12 +1,24 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { AutoComplete, Input, Tooltip } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { SearchOutlined, ThunderboltOutlined, LoadingOutlined, RobotOutlined } from '@ant-design/icons';
+import {
+  SearchOutlined,
+  ThunderboltOutlined,
+  LoadingOutlined,
+  RobotOutlined,
+  LeftOutlined,
+  RightOutlined,
+} from '@ant-design/icons';
 import { useAtom } from 'jotai';
 import {
   stockCodeAtom,
   stockBasicDataAtom,
+  selectedDateAtom,
+  getLatestTradingDay,
+  getMinTradingDay,
+  offsetTradingDay,
+  STOCK_DASHBOARD_MAX_TRADING_DAYS,
 } from '../../../store/atoms';
 import LimitUpMonitorPanel from './LimitUpMonitorPanel';
 import { apiRequest } from '../../../config/api';
@@ -15,10 +27,26 @@ const fmtWan = (v) => (v != null && Number.isFinite(v) ? (v / 10000).toFixed(2) 
 const fmtYi = (v) => (v != null && Number.isFinite(v) ? (v / 100000000).toFixed(2) : '--');
 const fmtPrice = (v) => (v != null && Number.isFinite(Number(v)) ? Number(v) : '--');
 
-const StockBasicInfo = ({ onStockCodeChange }) => {
+const StockBasicInfo = ({ onStockCodeChange, onDateChange }) => {
   const navigate = useNavigate();
   const [stockCode, setStockCode] = useAtom(stockCodeAtom);
   const [stockBasicData] = useAtom(stockBasicDataAtom);
+  const [selectedDate, setSelectedDate] = useAtom(selectedDateAtom);
+  const latestTradingDay = useMemo(() => getLatestTradingDay(), [selectedDate]);
+  const minTradingDay = useMemo(
+    () => getMinTradingDay(STOCK_DASHBOARD_MAX_TRADING_DAYS),
+    [latestTradingDay]
+  );
+  const canGoPrev = selectedDate > minTradingDay;
+  const canGoNext = selectedDate < latestTradingDay;
+
+  const shiftTradingDay = (delta) => {
+    const nextDate = offsetTradingDay(selectedDate, delta);
+    if (delta < 0 && nextDate < minTradingDay) return;
+    if (delta > 0 && nextDate > latestTradingDay) return;
+    setSelectedDate(nextDate);
+    onDateChange?.(nextDate);
+  };
   const [_innerCode, setInnerCode] = useState(stockCode);
   const [isEditingSearch, setIsEditingSearch] = useState(false);
   const [themeTags, setThemeTags] = useState([]);
@@ -130,7 +158,29 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
 
               {/* <span className="stock-code">{stockBasicData.code}</span> */}
             </div>
-            <div className="search-box">
+            <div className="stock-header-end">
+              <div className="page-date-nav stock-date-nav">
+                <button
+                  type="button"
+                  className="date-nav-btn"
+                  onClick={() => shiftTradingDay(-1)}
+                  disabled={!canGoPrev}
+                >
+                  <LeftOutlined /> 前一天
+                </button>
+                <div className="page-date-nav-end">
+                  <button
+                    type="button"
+                    className="date-nav-btn"
+                    onClick={() => shiftTradingDay(1)}
+                    disabled={!canGoNext}
+                  >
+                    后一天 <RightOutlined />
+                  </button>
+                  <span className="date-nav-label">{selectedDate}</span>
+                </div>
+              </div>
+              <div className="search-box">
               <AutoComplete
                 value={_innerCode}
                 options={searchOptions}
@@ -170,6 +220,7 @@ const StockBasicInfo = ({ onStockCodeChange }) => {
                   loading={searchLoading}
                 />
               </AutoComplete>
+              </div>
             </div>
           </div>
 

@@ -30,6 +30,7 @@ import {
   applySimulatedDataAtom,
   selectedDateAtom,
   timeshareLoadingAtom,
+  getLatestTradingDay,
 } from '../../store/atoms';
 
 const L2_POLL_INTERVAL = 10000;
@@ -69,8 +70,10 @@ const StockDashboard = () => {
   const [timeshareData, setTimeshareData] = useAtom(timeshareDataAtom);
   const [, fetchL2Dashboard] = useAtom(fetchL2DashboardAtom);
   const [, fetchLimitUpThemes] = useAtom(fetchLimitUpThemesAtom);
-  const [selectedDate] = useAtom(selectedDateAtom);
+  const [selectedDate, setSelectedDate] = useAtom(selectedDateAtom);
   const [, setTimeshareLoading] = useAtom(timeshareLoadingAtom);
+  const latestTradingDay = useMemo(() => getLatestTradingDay(), [selectedDate]);
+  const isHistoricalView = selectedDate !== latestTradingDay;
 
   // URL 参数变化时同步 stockCode，同时清空旧分时数据触发图表区 loading
   useEffect(() => {
@@ -80,6 +83,7 @@ const StockDashboard = () => {
       setTimeshareLoading(true);
       setStockBasicData(null);
       setLargeOrdersData(null);
+      setSelectedDate(getLatestTradingDay());
       setStockCode(urlCode);
       scrollPageToTop();
     }
@@ -134,11 +138,22 @@ const StockDashboard = () => {
     setTimeshareLoading(true);
     setStockBasicData(null);
     setLargeOrdersData(null);
+    setSelectedDate(getLatestTradingDay());
     setStockCode(newCode);
     setSearchParams({ code: newCode }, { replace: true });
     simulationIndexRef.current = 1;
     setSimulationIndex(1);
     scrollPageToTop();
+  };
+
+  const handleDateChange = () => {
+    setTimeshareData(null);
+    setTimeshareLoading(true);
+    setStockBasicData(null);
+    setLargeOrdersData(null);
+    setSimulationEnabled(false);
+    simulationIndexRef.current = 1;
+    setSimulationIndex(1);
   };
 
   const handleSimulationToggle = (checked) => {
@@ -162,14 +177,17 @@ const StockDashboard = () => {
   }, [stockCode, fetchLimitUpThemes]);
 
   useEffect(() => {
+    if (!stockCode) return undefined;
+
     fetchL2Data();
+    fetchThemeData();
 
     if (l2TimerRef.current) {
       clearInterval(l2TimerRef.current);
     }
 
     l2TimerRef.current = setInterval(() => {
-      if (!simulationEnabled && isTradeTime()) {
+      if (!simulationEnabled && !isHistoricalView && isTradeTime()) {
         fetchL2Data();
       }
     }, L2_POLL_INTERVAL);
@@ -179,7 +197,7 @@ const StockDashboard = () => {
         clearInterval(l2TimerRef.current);
       }
     };
-  }, [fetchL2Data, simulationEnabled]);
+  }, [stockCode, selectedDate, fetchL2Data, fetchThemeData, simulationEnabled, isHistoricalView]);
 
   useEffect(() => {
     fetchThemeData();
@@ -189,7 +207,7 @@ const StockDashboard = () => {
     }
 
     themeTimerRef.current = setInterval(() => {
-      if (isTradeTime() || simulationEnabled) {
+      if ((isTradeTime() || simulationEnabled) && !isHistoricalView) {
         fetchThemeData();
       }
     }, THEME_POLL_INTERVAL);
@@ -199,7 +217,7 @@ const StockDashboard = () => {
         clearInterval(themeTimerRef.current);
       }
     };
-  }, [fetchThemeData, simulationEnabled]);
+  }, [fetchThemeData, simulationEnabled, isHistoricalView]);
 
   useEffect(() => {
     if (simulationTimerRef.current) {
@@ -207,7 +225,7 @@ const StockDashboard = () => {
       simulationTimerRef.current = null;
     }
 
-    if (!simulationEnabled) {
+    if (!simulationEnabled || isHistoricalView) {
       fullSimDataRef.current = null;
       fullMoneyFlowRef.current = null;
       return undefined;
@@ -265,11 +283,11 @@ const StockDashboard = () => {
         simulationTimerRef.current = null;
       }
     };
-  }, [simulationEnabled, stockCode, tradingAxis, simulationInterval, applySimulatedData]);
+  }, [simulationEnabled, isHistoricalView, stockCode, selectedDate, tradingAxis, simulationInterval, applySimulatedData]);
 
   // WebSocket 连接管理
   useEffect(() => {
-    if (simulationEnabled) {
+    if (simulationEnabled || isHistoricalView) {
       stockWS.disconnect();
       setWsConnected(false);
       return;
@@ -412,7 +430,7 @@ const StockDashboard = () => {
       removeConnect();
       removeDisconnect();
     };
-  }, [stockCode, simulationEnabled]);
+  }, [stockCode, simulationEnabled, isHistoricalView]);
 
   return (
     <div className='stock-dashboard-container' style={{ minHeight: '100vh' }}>
@@ -424,7 +442,12 @@ const StockDashboard = () => {
         {wsConnected && <span className="ws-status">WS</span>}
         <span className="toolbar-divider" />
         <span className="simulation-title">模拟开盘</span>
-        <Switch size="small" checked={simulationEnabled} onChange={handleSimulationToggle} />
+        <Switch
+          size="small"
+          checked={simulationEnabled}
+          onChange={handleSimulationToggle}
+          disabled={isHistoricalView}
+        />
         {simulationEnabled && (
           <>
             <Radio.Group
@@ -443,7 +466,10 @@ const StockDashboard = () => {
       </div>
       <div className="dashboard-layout">
         <div className="dashboard-main">
-          <StockBasicInfo onStockCodeChange={handleStockCodeChange} />
+          <StockBasicInfo
+            onStockCodeChange={handleStockCodeChange}
+            onDateChange={handleDateChange}
+          />
           <StockChart />
           <ThemeLimitUpPanel />
           <StockOrderDetails />

@@ -1705,6 +1705,29 @@ code {
   align-items: center;
 }
 
+.stock-header-end {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.stock-date-nav {
+  margin-bottom: 0;
+  padding: 8px 12px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.stock-date-nav .date-nav-btn {
+  padding: 8px 16px;
+}
+
+.stock-date-nav .date-nav-label {
+  min-width: 96px;
+}
+
 .search-box input {
   background-color: transparent;
   color: var(--text-primary);
@@ -2968,6 +2991,15 @@ code {
 
   .search-box {
     width: 100%;
+  }
+
+  .stock-header-end {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .stock-date-nav {
+    max-width: none;
   }
 
   .search-box .ant-select {

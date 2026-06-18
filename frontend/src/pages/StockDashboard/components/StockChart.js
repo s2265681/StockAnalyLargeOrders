@@ -1231,8 +1231,8 @@ const StockChart = () => {
 
   const dataValidation = validateData();
   const chartOption = useMemo(
-    () => (isTimeshareStale ? {} : getTimeshareChartOption()),
-    [timeshareData, stockBasicData, largeOrdersData, filterAmount, filterThreshold, isDark, textColor, textMuted, borderColor, isTimeshareStale]
+    () => getTimeshareChartOption(),
+    [timeshareData, stockBasicData, largeOrdersData, filterAmount, filterThreshold, isDark, textColor, textMuted, borderColor]
   );
 
   return (
@@ -1338,7 +1338,7 @@ const StockChart = () => {
               图表配置: {Object.keys(getTimeshareChartOption()).length > 0 ? '已生成' : '未生成'}
             </div>
           </div> */}
-        {!timeshareLoading && timeshareData && (!hasTimesharePoints || isTimeshareStale) && (
+        {!timeshareLoading && timeshareData && !hasTimesharePoints && (
           <div
             className="chart-empty-hint"
             style={{
@@ -1352,7 +1352,26 @@ const StockChart = () => {
               zIndex: 5,
             }}
           >
-            {isTimeshareStale ? '分时数据同步中，请稍候…' : '暂无分时数据'}
+            暂无分时数据
+          </div>
+        )}
+        {!timeshareLoading && hasTimesharePoints && isTimeshareStale && (
+          <div
+            className="chart-sync-hint"
+            style={{
+              position: 'absolute',
+              top: 8,
+              right: 12,
+              padding: '2px 8px',
+              borderRadius: 4,
+              background: 'rgba(0,0,0,0.45)',
+              color: 'var(--text-muted)',
+              fontSize: 11,
+              zIndex: 6,
+              pointerEvents: 'none',
+            }}
+          >
+            分时同步中…
           </div>
         )}
         <ReactEChartsCore

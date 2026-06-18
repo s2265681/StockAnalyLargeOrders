@@ -35,12 +35,9 @@ _emotion_records_cache: dict[str, Any] = {}
 
 
 def _normalize_stage(stage: str) -> str:
-    if not stage:
-        return ""
-    for key in _STAGE_SCORE:
-        if key in stage:
-            return key if key.endswith("期") else f"{key}期"
-    return stage
+    from utils.emotion_stage import normalize_stage
+
+    return normalize_stage(stage)
 
 
 def _get_emotion_record(trade_date_dash: str):
@@ -61,26 +58,11 @@ def _get_emotion_record(trade_date_dash: str):
     return None
 
 
-def _infer_stage_from_metrics(record: dict) -> str:
-    """无 AI 研判时，用指标粗判阶段"""
-    limit_up = int(record.get("limit_up_count") or 0)
-    limit_down = int(record.get("limit_down_count") or 0)
-    big_loss = float(record.get("big_loss_mood") or 0)
-    big_profit = float(record.get("big_profit_mood") or 0)
-    board_hit = float(record.get("board_hit_rate") or 0)
-    latest_h = int(record.get("latest_height") or 0)
+def _infer_stage_from_metrics(record: dict, context_records=None) -> str:
+    """无 AI 研判时，用指标 + 趋势粗判阶段"""
+    from utils.emotion_stage import infer_stage_from_metrics
 
-    if limit_up < 30 and limit_down > 50:
-        return "冰点期"
-    if limit_up > 100 and big_profit > 80 and board_hit > 65:
-        return "高潮期"
-    if big_loss > 15 and limit_up < 50:
-        return "退潮期"
-    if 50 <= limit_up <= 100 and latest_h >= 5 and big_profit > 60:
-        return "升温期"
-    if 30 <= limit_up < 55 and limit_down < 30:
-        return "修复期"
-    return "修复期"
+    return infer_stage_from_metrics(record, context_records)
 
 
 def _get_emotion_context(trade_date_compact: str, trade_date_dash: str) -> dict:

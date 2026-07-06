@@ -5,6 +5,7 @@
 import json
 import logging
 import subprocess
+import threading
 import time
 from datetime import datetime, timedelta
 
@@ -28,6 +29,8 @@ _STOCKAPI_HEADERS = [
 
 _SECTORS_CACHE: dict = {}
 _STOCKS_CACHE: dict = {}
+_STOCKS_ENRICH_IN_PROGRESS: set = set()
+_STOCKS_STALE_SEC = 90
 
 
 def _get_last_trading_day() -> str:
@@ -134,31 +137,47 @@ def _fetch_sectors_live(trade_date_compact: str) -> list[dict]:
     return []
 
 
-def _fetch_stocks_live(gn_code: str, sector_name: str = '') -> list[dict]:
+def _fetch_stocks_live(gn_code: str, sector_name: str = '') -> tuple[list[dict], dict]:
     url = f"http://user.stockapi.com.cn/v1/gnDataCodeAi?gnCode={gn_code}"
-    resp = _curl_json(url)
+    resp = _curl_json(url, timeout=10)
+    meta = {"masked_limited": False, "total_raw": 0}
     if not resp or resp.get("code") != 20000:
-        return []
+        return [], meta
     data = resp.get("data") or {}
     stocks_raw = data.get("stocks") if isinstance(data, dict) else []
+    meta["total_raw"] = len(stocks_raw or [])
+    if not stocks_raw:
+        return [], meta
+
     from services.auction_unmask import unmask_stockapi_rows
+
+    has_masked = sg_store.stocks_have_masked(
+        [{"code": r.get("code")} for r in stocks_raw]
+    )
+    if has_masked:
+        stocks_raw, limited = sg_store.limit_masked_by_change_pct(stocks_raw)
+        meta["masked_limited"] = limited or len(stocks_raw) < meta["total_raw"]
 
     unmasked = unmask_stockapi_rows(
         stocks_raw or [],
         sector_name=sector_name or gn_code,
-        use_ai_fallback=True,
+        use_ai_fallback=False,
     )
     stocks = []
     for raw in unmasked:
         item = sg_store.normalize_stock(raw, gn_code)
         if item:
             stocks.append(item)
+
+    if has_masked and stocks:
+        stocks, _ = sg_store.limit_masked_by_change_pct(stocks)
+
     if not stocks and stocks_raw:
         logger.warning(
             "板块个股去脱敏后为空 gnCode=%s raw=%s unmasked=%s",
             gn_code, len(stocks_raw), len(unmasked),
         )
-    return stocks
+    return stocks, meta
 
 
 def _get_cached_sectors(date_compact: str, is_today: bool) -> tuple[list[dict] | None, str | None]:
@@ -199,7 +218,7 @@ def fetch_and_cache_sectors(trade_date_dash: str) -> list[dict]:
 
 def fetch_and_cache_stocks(trade_date_dash: str, gn_code: str) -> list[dict]:
     date_compact = sg_store.to_compact_date(trade_date_dash)
-    stocks = _fetch_stocks_live(gn_code)
+    stocks, _meta = _fetch_stocks_live(gn_code)
     if stocks:
         sg_store.replace_stocks(date_compact, gn_code, stocks)
         _set_cached_stocks(date_compact, gn_code, stocks)
@@ -277,14 +296,19 @@ def get_sector_grab_stocks():
 
     items = None if force else _get_cached_stocks(date_compact, gn_code, is_today)
     source = "cache"
+    stock_meta = {"masked_limited": False, "total_raw": len(items or [])}
     if items is None:
         db_items = None if force else sg_store.load_stocks(date_compact, gn_code)
         if db_items and not (is_today and _is_market_hours()):
             items = db_items
             source = "db"
+            if sg_store.stocks_have_masked(items):
+                items, stock_meta["masked_limited"] = sg_store.limit_masked_by_change_pct(db_items)
+                stock_meta["total_raw"] = len(db_items)
         else:
             sector_name = _resolve_sector_name(date_compact, gn_code)
-            live = _fetch_stocks_live(gn_code, sector_name)
+            live, live_meta = _fetch_stocks_live(gn_code, sector_name)
+            stock_meta.update(live_meta)
             if live:
                 items = live
                 source = "api"
@@ -292,12 +316,19 @@ def get_sector_grab_stocks():
                 _set_cached_stocks(date_compact, gn_code, items)
             elif db_items:
                 items = db_items
+                if sg_store.stocks_have_masked(items):
+                    items, stock_meta["masked_limited"] = sg_store.limit_masked_by_change_pct(db_items)
+                    stock_meta["total_raw"] = len(db_items)
                 source = "db_fallback"
                 _set_cached_stocks(date_compact, gn_code, items)
             else:
                 return v1_error_response(
                     "个股数据暂不可用（接口返回脱敏数据且反查失败，请稍后重试）"
                 )
+    elif items and sg_store.stocks_have_masked(items):
+        limited_items, stock_meta["masked_limited"] = sg_store.limit_masked_by_change_pct(items)
+        stock_meta["total_raw"] = len(items)
+        items = limited_items
 
     sector_name = _resolve_sector_name(date_compact, gn_code)
 
@@ -308,4 +339,6 @@ def get_sector_grab_stocks():
         "sector_name": sector_name,
         "date": dt,
         "source": source,
+        "masked_limited": stock_meta.get("masked_limited", False),
+        "total_raw": stock_meta.get("total_raw", len(items or [])),
     })

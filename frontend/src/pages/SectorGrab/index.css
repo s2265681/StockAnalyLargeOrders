@@ -63,11 +63,23 @@
   border-bottom: 1px solid var(--border-secondary);
 }
 
+.sg-stocks-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 120px;
+}
+
+.sg-masked-hint {
+  padding: 0 16px 8px;
+  font-size: 12px;
+  color: var(--color-warning);
+}
+
 .sg-stocks-header .sg-panel-title {
   border-bottom: none;
   text-align: left;
-  flex: 1;
-  min-width: 120px;
 }
 
 .sg-board-tabs {

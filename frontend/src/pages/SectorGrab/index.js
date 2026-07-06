@@ -40,6 +40,15 @@ const BOARD_TABS = [
   { key: 'bond', label: '可转债' },
 ];
 
+const isMaskedCode = (code) => String(code || '').includes('*');
+
+const limitMaskedStocks = (stocks, limit = 8) => {
+  if (!stocks?.length || !stocks.some((s) => isMaskedCode(s.code))) return stocks;
+  return [...stocks]
+    .sort((a, b) => (parseFloat(b.change_pct) || 0) - (parseFloat(a.change_pct) || 0))
+    .slice(0, limit);
+};
+
 const matchBoard = (code, board) => {
   const c = String(code || '').padStart(6, '0');
   if (board === 'gem') return c.startsWith('30');
@@ -78,7 +87,7 @@ function SectorGrab() {
   const [sectors, setSectors] = useState([]);
   const [sectorsLoading, setSectorsLoading] = useState(true);
   const [selectedSector, setSelectedSector] = useState(null);
-  const [stocks, setStocks] = useState([]);
+  const [stocksMeta, setStocksMeta] = useState({ maskedLimited: false, totalRaw: 0 });
   const [stocksLoading, setStocksLoading] = useState(false);
   const [activeBoard, setActiveBoard] = useState('main');
   const [refreshInterval, setRefreshInterval] = useState(null);
@@ -130,8 +139,13 @@ function SectorGrab() {
       if (fetchId !== fetchIdRef.current) return;
       const payload = res?.data;
       if (payload?.stocks) {
-        stocksCache.current[cacheKey] = payload;
-        setStocks(payload.stocks);
+        const nextStocks = limitMaskedStocks(payload.stocks);
+        stocksCache.current[cacheKey] = { ...payload, stocks: nextStocks };
+        setStocks(nextStocks);
+        setStocksMeta({
+          maskedLimited: Boolean(payload.masked_limited) || nextStocks.length < (payload.stocks?.length || 0),
+          totalRaw: payload.total_raw || payload.stocks?.length || nextStocks.length,
+        });
       }
     } catch (err) {
       console.error('Failed to fetch sector grab stocks:', err);
@@ -280,8 +294,16 @@ function SectorGrab() {
 
         <div className="sg-stocks-panel">
           <div className="sg-stocks-header">
-            <div className="sg-panel-title">
-              {selectedSector ? `${selectedSector.name} · 抢筹个股` : '抢筹个股'}
+            <div className="sg-stocks-title-wrap">
+              <div className="sg-panel-title">
+                {selectedSector ? `${selectedSector.name} · 抢筹个股` : '抢筹个股'}
+              </div>
+              {stocksMeta.maskedLimited ? (
+                <div className="sg-masked-hint">
+                  脱敏数据仅展示涨幅前 8 条
+                  {stocksMeta.totalRaw > 8 ? `（共 ${stocksMeta.totalRaw} 条）` : ''}
+                </div>
+              ) : null}
             </div>
             <div className="sg-board-tabs">
               {BOARD_TABS.map((tab) => (

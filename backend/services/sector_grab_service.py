@@ -48,10 +48,40 @@ def normalize_sector(raw: dict, idx: int = 0) -> dict | None:
     }
 
 
-def normalize_stock(raw: dict, gn_code: str) -> dict | None:
-    code = str(raw.get("code", "")).zfill(6)
+_MASKED_STOCK_LIMIT = 8
+
+
+def is_masked_code(code: str) -> bool:
+    return "*" in str(code or "")
+
+
+def stocks_have_masked(stocks: list[dict]) -> bool:
+    return any(is_masked_code(s.get("code")) for s in stocks or [])
+
+
+def limit_masked_by_change_pct(stocks: list[dict], limit: int = _MASKED_STOCK_LIMIT) -> tuple[list[dict], bool]:
+    """脱敏个股仅保留涨幅靠前 limit 条；返回 (列表, 是否发生截断)"""
+    if not stocks or not stocks_have_masked(stocks):
+        return stocks, False
+
+    def _chg(item: dict) -> float:
+        try:
+            return float(item.get("change_pct") if "change_pct" in item else item.get("zf") or 0)
+        except (TypeError, ValueError):
+            return 0.0
+
+    sorted_rows = sorted(stocks, key=_chg, reverse=True)
+    if len(sorted_rows) <= limit:
+        return sorted_rows, False
+    return sorted_rows[:limit], True
+
+
+def normalize_stock(raw: dict, gn_code: str, *, allow_masked: bool = False) -> dict | None:
+    code_raw = str(raw.get("code", "")).strip()
+    code = code_raw.zfill(6) if code_raw.isdigit() else code_raw
     if not is_valid_stock_code(code):
-        return None
+        if not (allow_masked and "*" in code_raw):
+            return None
     return {
         "gn_code": gn_code,
         "code": code,

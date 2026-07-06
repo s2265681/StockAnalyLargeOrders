@@ -5,6 +5,7 @@ import json
 import logging
 import re
 import subprocess
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
 from urllib.parse import quote
 
@@ -46,9 +47,9 @@ def _is_masked_code(code: str) -> bool:
 def _curl(url: str, ref: str = 'https://gu.qq.com/') -> str:
     try:
         r = subprocess.run(
-            ['curl', '-s', '--max-time', '12', '-H', f'Referer: {ref}',
+            ['curl', '-s', '--max-time', '6', '-H', f'Referer: {ref}',
              '-H', 'User-Agent: Mozilla/5.0', url],
-            capture_output=True, timeout=15,
+            capture_output=True, timeout=8,
         )
         return r.stdout.decode('utf-8', errors='replace')
     except Exception:
@@ -479,7 +480,8 @@ def unmask_stockapi_rows(
     rows: list[dict],
     *,
     sector_name: str = '',
-    use_ai_fallback: bool = True,
+    use_ai_fallback: bool = False,
+    max_workers: int = 8,
 ) -> list[dict]:
     """批量去脱敏，保留原有竞价字段"""
     if not rows:
@@ -492,8 +494,30 @@ def unmask_stockapi_rows(
     failed: list[dict] = []
     ok = 0
 
-    for row in rows:
-        fixed = resolve_masked_row(row)
+    masked_rows = [row for row in rows if _is_masked_code(str(row.get('code', '')))]
+    unmasked_rows = [row for row in rows if not _is_masked_code(str(row.get('code', '')))]
+
+    for row in unmasked_rows:
+        code = str(row.get('code', '')).zfill(6)
+        if code in seen:
+            continue
+        seen.add(code)
+        out.append(row)
+        ok += 1
+
+    resolved_map: dict[int, dict | None] = {}
+    if masked_rows:
+        workers = min(max_workers, max(1, len(masked_rows)))
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            futures = {
+                executor.submit(resolve_masked_row, row): i
+                for i, row in enumerate(masked_rows)
+            }
+            for future in as_completed(futures):
+                resolved_map[futures[future]] = future.result()
+
+    for i, row in enumerate(masked_rows):
+        fixed = resolved_map.get(i)
         if not fixed:
             failed.append(row)
             continue

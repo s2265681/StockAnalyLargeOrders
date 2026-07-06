@@ -12,6 +12,7 @@ import {
   ThunderboltOutlined,
   DashboardOutlined,
   ClockCircleOutlined,
+  AppstoreOutlined,
   SafetyCertificateOutlined,
   BellOutlined,
 } from '@ant-design/icons';
@@ -21,6 +22,7 @@ import StockDashboard from './pages/StockDashboard';
 import EmotionCycle from './pages/EmotionCycle';
 import LimitUpEchelon from './pages/LimitUpEchelon';
 import AuctionGrab from './pages/AuctionGrab';
+import SectorGrab from './pages/SectorGrab';
 import DragonTiger from './pages/DragonTiger';
 import AiDiagnosis from './pages/AiDiagnosis';
 import Login from './pages/Login';
@@ -54,6 +56,7 @@ const NAV_ITEMS = [
   { key: '/dragon-tiger', icon: <ThunderboltOutlined />, label: '核心游资' },
   { key: '/emotion-cycle', icon: <DashboardOutlined />, label: '情绪周期' },
   { key: '/auction-grab', icon: <ClockCircleOutlined />, label: '竞价抢筹' },
+  { key: '/sector-grab', icon: <AppstoreOutlined />, label: '板块抢筹' },
   { key: '/ai-diagnosis', icon: <RobotOutlined />, label: 'AI诊股' },
   { key: '/alert', icon: <BellOutlined />, label: '条件预警' },
   { key: '/permission-center', icon: <SafetyCertificateOutlined />, label: '权限中心' },
@@ -319,6 +322,16 @@ function AppInner() {
               <RequireAuth>
                 <PermissionGuard>
                   <AuctionGrab />
+                </PermissionGuard>
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/sector-grab"
+            element={
+              <RequireAuth>
+                <PermissionGuard>
+                  <SectorGrab />
                 </PermissionGuard>
               </RequireAuth>
             }

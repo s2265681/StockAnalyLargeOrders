@@ -21,6 +21,7 @@ JOB_LABELS: dict[str, str] = {
     "intraday": "盘中刷新（梯队 + 情绪周期 + 买卖指导）",
     "dragon_tiger": "龙虎榜 AI 补全",
     "auction_grab": "竞价抢筹同步",
+    "sector_grab": "板块抢筹同步",
     "echelon_intraday": "涨停梯队盘中刷新",
     "market_brief": "盘前资讯（海外指数 + 多源快讯 + AI 摘要）",
     "unknown": "未知任务",

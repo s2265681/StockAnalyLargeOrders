@@ -87,6 +87,7 @@ function SectorGrab() {
   const [sectors, setSectors] = useState([]);
   const [sectorsLoading, setSectorsLoading] = useState(true);
   const [selectedSector, setSelectedSector] = useState(null);
+  const [stocks, setStocks] = useState([]);
   const [stocksMeta, setStocksMeta] = useState({ maskedLimited: false, totalRaw: 0 });
   const [stocksLoading, setStocksLoading] = useState(false);
   const [activeBoard, setActiveBoard] = useState('main');

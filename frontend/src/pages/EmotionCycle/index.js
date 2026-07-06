@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Button, Spin, Tag } from 'antd';
 import { LeftOutlined, RightOutlined, ReloadOutlined } from '@ant-design/icons';
 import ReactEChartsCore from 'echarts-for-react/lib/core';
@@ -83,8 +83,8 @@ const formatDateDisplay = (dateStr) => {
   return `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
 };
 
-/** 暂时隐藏盘中「生成/刷新」入口，恢复时改为 true */
-const SHOW_INTRADAY_REFRESH_BTN = false;
+/** 登录用户可见「生成/刷新」；进入页面时缓存缺失会自动补生成 */
+const SHOW_PANEL_REFRESH_BTN = true;
 
 const getLatestRecordDate = (items) => {
   if (!items || items.length === 0) return null;
@@ -252,10 +252,12 @@ function EmotionCycle() {
 
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [intradayLoading, setIntradayLoading] = useState(false);
+  const [panelRefreshing, setPanelRefreshing] = useState(false);
+  const [cacheChecked, setCacheChecked] = useState(false);
   const [cycleAnalysis, setCycleAnalysis] = useState(null);
   const [intradayAnalysis, setIntradayAnalysis] = useState(null);
   const [selectedDate, setSelectedDate] = useState(() => getLastTradingDayStr());
+  const autoRefreshAttemptedRef = useRef(new Set());
 
   const minDate = records.length > 0 ? records[0].date.replace(/-/g, '') : '20000101';
   const latestDate = getLatestRecordDate(records);
@@ -292,47 +294,80 @@ function EmotionCycle() {
   }, [fetchData]);
 
   useEffect(() => {
-    const loadCycleCache = async () => {
+    const loadCaches = async () => {
+      setCacheChecked(false);
       setCycleAnalysis(null);
-      try {
-        const res = await apiRequest(`/api/v1/emotion-analysis-cache?date=${selectedDate}`);
-        if (res?.data) setCycleAnalysis(res.data);
-      } catch (_) { /* ignore */ }
-    };
-    if (records.length > 0) loadCycleCache();
-  }, [selectedDate, records.length]);
-
-  useEffect(() => {
-    const loadIntradayCache = async () => {
       setIntradayAnalysis(null);
-      if (!hasSelectedRecord) return;
+      if (records.length === 0) {
+        setCacheChecked(true);
+        return;
+      }
       try {
-        const res = await apiRequest(`/api/v1/emotion-intraday-cache?date=${selectedDate}`);
-        if (res?.data) setIntradayAnalysis(res.data);
-      } catch (_) { /* ignore */ }
+        const [cycleRes, intradayRes] = await Promise.all([
+          apiRequest(`/api/v1/emotion-analysis-cache?date=${selectedDate}`),
+          hasSelectedRecord
+            ? apiRequest(`/api/v1/emotion-intraday-cache?date=${selectedDate}`)
+            : Promise.resolve(null),
+        ]);
+        if (cycleRes?.data) setCycleAnalysis(cycleRes.data);
+        if (intradayRes?.data) setIntradayAnalysis(intradayRes.data);
+      } catch (_) { /* ignore */ } finally {
+        setCacheChecked(true);
+      }
     };
-    if (records.length > 0) loadIntradayCache();
+    loadCaches();
   }, [selectedDate, records.length, hasSelectedRecord]);
 
-  const handleIntradayRefresh = async () => {
+  const handlePanelRefresh = useCallback(async (options = {}) => {
+    const { force = true, silent = false } = options;
     if (!hasSelectedRecord) return;
-    setIntradayLoading(true);
-    setIntradayAnalysis(null);
+    if (!localStorage.getItem('niuniu_token')) return;
+
+    if (!silent) setPanelRefreshing(true);
+    if (force) {
+      setCycleAnalysis(null);
+      setIntradayAnalysis(null);
+    }
     try {
-      const res = await apiRequest('/api/v1/emotion-intraday-refresh', {
+      const res = await apiRequest('/api/v1/emotion-cycle-refresh', {
         method: 'POST',
-        body: JSON.stringify({ date: selectedDate, force: true }),
+        body: JSON.stringify({ date: selectedDate, force }),
         timeout: 300000,
       });
-      const daily = res?.data?.daily || res?.data?.intraday;
-      if (daily) setIntradayAnalysis(daily);
+      if (res?.data?.cycle) setCycleAnalysis(res.data.cycle);
+      if (res?.data?.daily || res?.data?.intraday) {
+        setIntradayAnalysis(res.data.daily || res.data.intraday);
+      }
       if (res?.data?.records) setRecords(res.data.records);
     } catch (err) {
-      console.error('Failed to refresh daily analysis:', err);
+      console.error('Failed to refresh emotion cycle panels:', err);
     } finally {
-      setIntradayLoading(false);
+      if (!silent) setPanelRefreshing(false);
     }
-  };
+  }, [hasSelectedRecord, selectedDate]);
+
+  useEffect(() => {
+    if (loading || !cacheChecked || !hasSelectedRecord || panelRefreshing) return;
+    if (cycleAnalysis && intradayAnalysis) return;
+    if (!localStorage.getItem('niuniu_token')) return;
+    if (autoRefreshAttemptedRef.current.has(selectedDate)) return;
+
+    autoRefreshAttemptedRef.current.add(selectedDate);
+    handlePanelRefresh({ force: true, silent: false });
+  }, [
+    loading,
+    cacheChecked,
+    hasSelectedRecord,
+    selectedDate,
+    cycleAnalysis,
+    intradayAnalysis,
+    panelRefreshing,
+    handlePanelRefresh,
+  ]);
+
+  useEffect(() => {
+    autoRefreshAttemptedRef.current.delete(selectedDate);
+  }, [selectedDate]);
 
   const getChartOption = () => {
     const isLightTheme =
@@ -474,35 +509,46 @@ function EmotionCycle() {
         </div>
 
         <div className="emotion-right-column">
+          {SHOW_PANEL_REFRESH_BTN && hasSelectedRecord && (
+            <div className="emotion-panel-actions">
+              <Button
+                size="small"
+                icon={<ReloadOutlined />}
+                onClick={() => handlePanelRefresh({ force: true })}
+                loading={panelRefreshing}
+                disabled={records.length === 0 || !localStorage.getItem('niuniu_token')}
+                className="ai-refresh-btn"
+              >
+                生成/刷新分析
+              </Button>
+            </div>
+          )}
           <AnalysisBlock
             title="周期研判"
             accent="cycle"
             result={cycleAnalysis}
-            emptyHint="还未生成，由每日定时任务生成"
+            loading={panelRefreshing}
+            emptyHint={
+              panelRefreshing
+                ? '分析生成中，请稍候…'
+                : (localStorage.getItem('niuniu_token')
+                  ? '暂无分析，点击上方「生成/刷新分析」'
+                  : '请登录后查看，或由每日定时任务生成')
+            }
           />
           <AnalysisBlock
             title="盘中买卖指导"
             accent="intraday"
             result={hasSelectedRecord ? intradayAnalysis : null}
-            loading={intradayLoading}
+            loading={panelRefreshing}
             emptyHint={
-              hasSelectedRecord
-                ? '暂无盘中分析，由定时任务生成（含买卖点与昨日复盘）'
-                : '该日期暂无行情数据'
-            }
-            extra={
-              SHOW_INTRADAY_REFRESH_BTN && hasSelectedRecord ? (
-                <Button
-                  size="small"
-                  icon={<ReloadOutlined />}
-                  onClick={handleIntradayRefresh}
-                  loading={intradayLoading}
-                  disabled={records.length === 0}
-                  className="ai-refresh-btn"
-                >
-                  生成/刷新
-                </Button>
-              ) : null
+              !hasSelectedRecord
+                ? '该日期暂无行情数据'
+                : panelRefreshing
+                  ? '分析生成中，请稍候…'
+                  : (localStorage.getItem('niuniu_token')
+                    ? '暂无分析，点击上方「生成/刷新分析」'
+                    : '请登录后查看，或由定时任务生成（含买卖点与昨日复盘）')
             }
           />
         </div>

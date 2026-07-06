@@ -1166,6 +1166,65 @@ def get_emotion_intraday_cache():
     return v1_success_response(data=None)
 
 
+@emotion_cycle_bp.route('/api/v1/emotion-cycle-refresh', methods=['POST'])
+@login_required
+def refresh_emotion_cycle_panels():
+    """登录用户刷新指定日期的周期研判 + 盘中买卖指导（缓存缺失时前端自动调用）"""
+    try:
+        body = request.get_json(silent=True) or {}
+        force = str(body.get("force") or "1").lower() in ("1", "true", "yes")
+        records = _fetch_emotion_records()
+        if not records:
+            return v1_error_response(message="未获取到情绪周期数据")
+
+        ordered = sorted(records, key=_record_date_key)
+        req_date = (body.get("date") or request.args.get("date") or "").replace("-", "")
+        if not req_date:
+            req_date = _record_date_key(ordered[-1])
+
+        target_record = next(
+            (r for r in ordered if _record_date_key(r) == req_date),
+            None,
+        )
+        if not target_record:
+            return v1_error_response(message=f"日期 {req_date} 无情绪数据")
+
+        records = inject_fallback_if_missing(records, req_date)
+        ordered = sorted(records, key=_record_date_key)
+        target_record = next(r for r in ordered if _record_date_key(r) == req_date)
+        save_intraday_snapshot(target_record)
+
+        cycle_status = analyze_one_date(req_date, ordered, force=force)
+        if cycle_status == "failed":
+            return v1_error_response(message="周期研判生成失败")
+
+        daily_status = analyze_daily_one_date(req_date, ordered, force=force)
+        if daily_status == "failed":
+            return v1_error_response(message="盘中买卖指导生成失败")
+
+        cycle = _get_analysis_from_db(req_date)
+        if cycle and _is_placeholder_analysis(cycle):
+            cycle = None
+        daily = _get_intraday_from_db(req_date)
+        if daily and _is_empty_daily_analysis(daily):
+            daily = None
+
+        return v1_success_response(
+            data={
+                "cycle": cycle,
+                "daily": daily,
+                "intraday": daily,
+                "records": records,
+                "cycle_status": cycle_status,
+                "daily_status": daily_status,
+            },
+            message=f"已刷新 {req_date} 分析",
+        )
+    except Exception as e:
+        logger.error(f"情绪周期面板刷新异常: {e}")
+        return v1_error_response(message=f"刷新异常: {str(e)}")
+
+
 @emotion_cycle_bp.route('/api/v1/emotion-intraday-refresh', methods=['POST'])
 @login_required
 def refresh_emotion_intraday():

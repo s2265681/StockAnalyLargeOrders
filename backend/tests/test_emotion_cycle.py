@@ -127,6 +127,66 @@ class EmotionIntradayRefreshTest(unittest.TestCase):
         self.assertEqual(payload["data"]["records"], records)
         analyze_daily.assert_called_once_with("20260515", records, force=True)
 
+    def test_cycle_panels_refresh_requires_login(self):
+        response = self.client.post(
+            "/api/v1/emotion-cycle-refresh",
+            json={"date": "20260515"},
+        )
+        self.assertEqual(response.status_code, 401)
+
+    def test_cycle_panels_refresh_generates_cycle_and_daily(self):
+        records = [
+            {"date": "2026-05-14", "limit_up_count": 40},
+            {"date": "2026-05-15", "limit_up_count": 35},
+        ]
+        cycle_result = {
+            "date": "2026-05-15",
+            "stage": "退潮期",
+            "analysis": "情绪走弱",
+            "advice": "控制仓位",
+            "recommendations": [],
+        }
+        intraday_result = {
+            "date": "2026-05-15",
+            "stage": "退潮期",
+            "analysis": "盘中分歧",
+            "advice": "观望",
+            "trade_plans": [],
+        }
+
+        with patch("routes.emotion_cycle._fetch_emotion_records", return_value=records):
+            with patch("routes.emotion_cycle.inject_fallback_if_missing", return_value=records):
+                with patch("routes.emotion_cycle.save_intraday_snapshot"):
+                    with patch(
+                        "routes.emotion_cycle.analyze_one_date",
+                        return_value="saved",
+                    ) as analyze_cycle:
+                        with patch(
+                            "routes.emotion_cycle.analyze_daily_one_date",
+                            return_value="saved",
+                        ) as analyze_daily:
+                            with patch(
+                                "routes.emotion_cycle._get_analysis_from_db",
+                                return_value=cycle_result,
+                            ):
+                                with patch(
+                                    "routes.emotion_cycle._get_intraday_from_db",
+                                    return_value=intraday_result,
+                                ):
+                                    response = self.client.post(
+                                        "/api/v1/emotion-cycle-refresh",
+                                        headers=_auth_headers("user"),
+                                        json={"date": "20260515", "force": True},
+                                    )
+
+        payload = response.get_json()
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(payload["success"])
+        self.assertEqual(payload["data"]["cycle"], cycle_result)
+        self.assertEqual(payload["data"]["daily"], intraday_result)
+        analyze_cycle.assert_called_once()
+        analyze_daily.assert_called_once()
+
     def test_batch_storage_requires_admin(self):
         with patch("routes.emotion_cycle._call_claude_batch", return_value=[]):
             response = self.client.post(

@@ -32,6 +32,11 @@
   overflow-y: auto;
 }
 
+.emotion-panel-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .analysis-panel-block {
   flex: none;
   background: var(--bg-tooltip);

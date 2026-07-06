@@ -329,16 +329,31 @@ function EmotionCycle() {
       setIntradayAnalysis(null);
     }
     try {
-      const res = await apiRequest('/api/v1/emotion-cycle-refresh', {
-        method: 'POST',
-        body: JSON.stringify({ date: selectedDate, force }),
-        timeout: 300000,
-      });
+      let res = null;
+      try {
+        res = await apiRequest('/api/v1/emotion-cycle-refresh', {
+          method: 'POST',
+          body: JSON.stringify({ date: selectedDate, force }),
+          timeout: 300000,
+        });
+      } catch (err) {
+        if (err?.status !== 404) throw err;
+        res = await apiRequest('/api/v1/emotion-intraday-refresh', {
+          method: 'POST',
+          body: JSON.stringify({ date: selectedDate, force }),
+          timeout: 300000,
+        });
+      }
       if (res?.data?.cycle) setCycleAnalysis(res.data.cycle);
       if (res?.data?.daily || res?.data?.intraday) {
         setIntradayAnalysis(res.data.daily || res.data.intraday);
       }
       if (res?.data?.records) setRecords(res.data.records);
+
+      if (!res?.data?.cycle) {
+        const cycleRes = await apiRequest(`/api/v1/emotion-analysis-cache?date=${selectedDate}`);
+        if (cycleRes?.data) setCycleAnalysis(cycleRes.data);
+      }
     } catch (err) {
       console.error('Failed to refresh emotion cycle panels:', err);
     } finally {
@@ -348,12 +363,12 @@ function EmotionCycle() {
 
   useEffect(() => {
     if (loading || !cacheChecked || !hasSelectedRecord || panelRefreshing) return;
-    if (cycleAnalysis && intradayAnalysis) return;
     if (!localStorage.getItem('niuniu_token')) return;
     if (autoRefreshAttemptedRef.current.has(selectedDate)) return;
+    if (cycleAnalysis && intradayAnalysis) return;
 
     autoRefreshAttemptedRef.current.add(selectedDate);
-    handlePanelRefresh({ force: true, silent: false });
+    handlePanelRefresh({ force: !cycleAnalysis || !intradayAnalysis, silent: false });
   }, [
     loading,
     cacheChecked,

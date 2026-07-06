@@ -1248,12 +1248,25 @@ def refresh_emotion_intraday():
             if not current_record:
                 return v1_error_response(message=f"日期 {req_date} 无情绪数据")
             current_dt = req_date
-            idx = ordered.index(current_record)
-            context_records = ordered[max(0, idx - 5):idx]
         else:
             current_record = ordered[-1]
             current_dt = _record_date_key(current_record)
-            context_records = ordered[max(0, len(ordered) - 6):-1]
+
+        records = inject_fallback_if_missing(records, current_dt)
+        ordered = sorted(records, key=_record_date_key)
+        target_record = next(
+            (r for r in ordered if _record_date_key(r) == current_dt),
+            None,
+        )
+        if target_record:
+            save_intraday_snapshot(target_record)
+
+        existing_cycle = _get_analysis_from_db(current_dt)
+        need_cycle = force or not existing_cycle or _is_placeholder_analysis(existing_cycle)
+        if need_cycle:
+            cycle_status = analyze_one_date(current_dt, ordered, force=force)
+            if cycle_status == "failed":
+                logger.warning("%s 周期研判生成失败，继续当天分析", current_dt)
 
         if force:
             status = analyze_daily_one_date(current_dt, ordered, force=True)
@@ -1269,13 +1282,18 @@ def refresh_emotion_intraday():
         if not result:
             return v1_error_response(message="当天分析结果为空")
 
+        cycle = _get_analysis_from_db(current_dt)
+        if cycle and _is_placeholder_analysis(cycle):
+            cycle = None
+
         return v1_success_response(
             data={
                 "intraday": result,
                 "daily": result,
+                "cycle": cycle,
                 "records": records,
             },
-            message=f"已刷新 {current_dt} 当天分析",
+            message=f"已刷新 {current_dt} 分析",
         )
     except (IOError, TimeoutError) as e:
         logger.error(f"当天分析拉取行情失败: {e}")

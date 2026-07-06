@@ -105,19 +105,29 @@ class EmotionIntradayRefreshTest(unittest.TestCase):
         }
 
         with patch("routes.emotion_cycle._fetch_emotion_records", return_value=records):
-            with patch(
-                "routes.emotion_cycle.analyze_daily_one_date",
-                return_value="saved",
-            ) as analyze_daily:
-                with patch(
-                    "routes.emotion_cycle._get_intraday_from_db",
-                    return_value=intraday_result,
-                ):
-                    response = self.client.post(
-                        "/api/v1/emotion-intraday-refresh",
-                        headers=_auth_headers("user"),
-                        json={"date": "20260515", "force": True},
-                    )
+            with patch("routes.emotion_cycle.inject_fallback_if_missing", return_value=records):
+                with patch("routes.emotion_cycle.save_intraday_snapshot"):
+                    with patch(
+                        "routes.emotion_cycle.analyze_one_date",
+                        return_value="skipped",
+                    ):
+                        with patch(
+                            "routes.emotion_cycle.analyze_daily_one_date",
+                            return_value="saved",
+                        ) as analyze_daily:
+                            with patch(
+                                "routes.emotion_cycle._get_analysis_from_db",
+                                return_value=None,
+                            ):
+                                with patch(
+                                    "routes.emotion_cycle._get_intraday_from_db",
+                                    return_value=intraday_result,
+                                ):
+                                    response = self.client.post(
+                                        "/api/v1/emotion-intraday-refresh",
+                                        headers=_auth_headers("user"),
+                                        json={"date": "20260515", "force": True},
+                                    )
 
         payload = response.get_json()
         self.assertEqual(response.status_code, 200)

@@ -293,7 +293,7 @@ def _scan_by_price_board(
     return tuple((code, name) for _, code, name in hits[:5])
 
 
-def resolve_masked_row(row: dict) -> dict | None:
+def resolve_masked_row(row: dict, *, context: dict | None = None) -> dict | None:
     """单条 stockapi 脱敏记录 → 补全 code/name；失败返回 None"""
     code_raw = str(row.get('code', '')).zfill(6)
     if _is_valid_stock_code(code_raw):
@@ -326,7 +326,161 @@ def resolve_masked_row(row: dict) -> dict | None:
     return resolved
 
 
-def unmask_stockapi_rows(rows: list[dict]) -> list[dict]:
+def _board_label(board_key: str) -> str:
+    return {
+        '60': '沪市主板',
+        '00': '深市主板',
+        '30': '创业板',
+        '68': '科创板',
+    }.get(board_key, 'A股')
+
+
+def _parse_ai_unmask_json(content: str) -> list[dict]:
+    if not content or not str(content).strip():
+        return []
+    clean = str(content).strip()
+    if clean.startswith('```'):
+        clean = clean.split('\n', 1)[-1]
+        clean = clean.rsplit('```', 1)[0].strip()
+    try:
+        parsed = json.loads(clean)
+    except json.JSONDecodeError:
+        match = re.search(r'[\[{][\s\S]*[\]}]', content)
+        if not match:
+            return []
+        try:
+            parsed = json.loads(match.group())
+        except json.JSONDecodeError:
+            return []
+
+    if isinstance(parsed, dict):
+        items = parsed.get('items') or parsed.get('stocks') or parsed.get('results') or []
+        if not items and parsed.get('code'):
+            items = [parsed]
+    elif isinstance(parsed, list):
+        items = parsed
+    else:
+        return []
+
+    out = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        code = str(item.get('code') or '').zfill(6)
+        name = str(item.get('name') or '').strip()
+        if not _is_valid_stock_code(code) or not name:
+            continue
+        idx = item.get('idx')
+        try:
+            idx = int(idx) if idx is not None else None
+        except (TypeError, ValueError):
+            idx = None
+        out.append({'idx': idx, 'code': code, 'name': name})
+    return out
+
+
+def _ai_unmask_enabled() -> bool:
+    try:
+        from utils.claude_client import get_claude_api_key
+        return bool(get_claude_api_key())
+    except Exception:
+        return False
+
+
+def _validate_ai_hit(row: dict, hit: dict) -> bool:
+    code = str(hit.get('code') or '').zfill(6)
+    if not _is_valid_stock_code(code):
+        return False
+    board_key = _board_key(str(row.get('code', '')))
+    if board_key and not _code_matches_board(code, board_key):
+        return False
+
+    target_zf = float(row.get('qczf') or row.get('zf') or 0)
+    target_price = float(row.get('price') or 0)
+    if target_price > 0 or target_zf != 0:
+        score = _candidate_score(code, target_zf, target_price)
+        if score is None:
+            return False
+    return True
+
+
+def _ai_unmask_rows(
+    rows: list[dict],
+    *,
+    sector_name: str = '',
+    resolved_samples: list[dict] | None = None,
+) -> dict[int, dict]:
+    if not rows or not _ai_unmask_enabled():
+        return {}
+
+    from utils.claude_client import call_claude_for_scenario
+
+    payload = []
+    for i, row in enumerate(rows):
+        payload.append({
+            'idx': i,
+            'code_mask': row.get('code'),
+            'name_mask': row.get('name'),
+            'zf': row.get('zf') if row.get('zf') is not None else row.get('qczf'),
+            'price': row.get('price'),
+            'bk': row.get('bk'),
+            'board': _board_label(_board_key(str(row.get('code', '')))),
+            'leader': row.get('lz'),
+            'board_label': row.get('lb'),
+            'popularity': row.get('rqRank'),
+        })
+
+    samples = resolved_samples or []
+    sample_lines = [
+        f"- {s.get('code')} {s.get('name')} zf={s.get('zf')}% price={s.get('price')}"
+        for s in samples[:8]
+        if s.get('code') and s.get('name')
+    ]
+    prompt = (
+        '你是A股短线数据助手。stockapi 返回了脱敏股票，请根据线索推断真实 6 位代码和股票全称。\n\n'
+        f"板块：{sector_name or '未知'}\n"
+    )
+    if sample_lines:
+        prompt += '同板块已识别股票（参考）：\n' + '\n'.join(sample_lines) + '\n\n'
+    prompt += (
+        '待识别数据：\n'
+        f'{json.dumps(payload, ensure_ascii=False)}\n\n'
+        '规则：\n'
+        '1. code_mask 前缀 60=沪市主板，00=深市主板，30=创业板，68=科创板\n'
+        '2. 优先用 name_mask 片段 + price 现价 + zf 涨跌幅 + bk 题材 交叉验证\n'
+        '3. 只返回 JSON 数组，不要 markdown，不要解释\n'
+        '4. 格式：[{"idx":0,"code":"600562","name":"国睿科技"}]\n'
+        '5. 不确定的条目直接省略，禁止编造'
+    )
+
+    try:
+        content = call_claude_for_scenario('stock_unmask', prompt)
+    except Exception as e:
+        logger.warning('AI 去脱敏调用失败: %s', e)
+        return {}
+
+    hits: dict[int, dict] = {}
+    for item in _parse_ai_unmask_json(content):
+        idx = item.get('idx')
+        if idx is None or idx < 0 or idx >= len(rows):
+            continue
+        row = rows[idx]
+        if not _validate_ai_hit(row, item):
+            logger.debug('AI 去脱敏结果未通过校验 idx=%s code=%s', idx, item.get('code'))
+            continue
+        hits[idx] = {'code': item['code'], 'name': item['name']}
+
+    if hits:
+        logger.info('AI 去脱敏成功: %s/%s 条', len(hits), len(rows))
+    return hits
+
+
+def unmask_stockapi_rows(
+    rows: list[dict],
+    *,
+    sector_name: str = '',
+    use_ai_fallback: bool = True,
+) -> list[dict]:
     """批量去脱敏，保留原有竞价字段"""
     if not rows:
         return []
@@ -335,10 +489,13 @@ def unmask_stockapi_rows(rows: list[dict]) -> list[dict]:
 
     out: list[dict] = []
     seen: set[str] = set()
+    failed: list[dict] = []
     ok = 0
+
     for row in rows:
         fixed = resolve_masked_row(row)
         if not fixed:
+            failed.append(row)
             continue
         code = str(fixed.get('code', '')).zfill(6)
         if code in seen:
@@ -346,6 +503,24 @@ def unmask_stockapi_rows(rows: list[dict]) -> list[dict]:
         seen.add(code)
         out.append(fixed)
         ok += 1
+
+    if use_ai_fallback and failed and _ai_unmask_enabled():
+        ai_hits = _ai_unmask_rows(
+            failed,
+            sector_name=sector_name,
+            resolved_samples=out[:12],
+        )
+        for local_idx, hit in ai_hits.items():
+            row = failed[local_idx]
+            code = str(hit['code']).zfill(6)
+            if code in seen:
+                continue
+            resolved = dict(row)
+            resolved['code'] = code
+            resolved['name'] = hit['name']
+            seen.add(code)
+            out.append(resolved)
+            ok += 1
 
     if ok:
         logger.info("stockapi 去脱敏: %s/%s 条", ok, len(rows))

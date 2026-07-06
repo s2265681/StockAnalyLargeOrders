@@ -12,6 +12,7 @@ AI 配置表 — 场景 → 模型档位 / token / 超时。
 │ dragon_tiger               │ sonnet │ gpt-5.4  龙虎榜解读         │
 │ ai_diagnosis_chat          │ sonnet │ gpt-5.4  诊股追问           │
 │ limit_up_*                 │ sonnet │ gpt-5.4  题材分组(JSON)     │
+│ stock_unmask               │ haiku  │ 脱敏股票反查(JSON)          │
 └────────────────────────────┴────────┴─────────────────────────────┘
 """
 from __future__ import annotations
@@ -42,6 +43,7 @@ _SCENARIO_TEMPLATES: dict[str, tuple[str, int, int, str]] = {
     "ai_diagnosis_chat": ("sonnet", 1024, 60, "诊股追问"),
     "dragon_tiger": ("sonnet", 2048, 90, "龙虎榜解读"),
     "market_brief": ("sonnet", 1024, 90, "盘前摘要"),
+    "stock_unmask": ("haiku", 512, 45, "脱敏股票反查"),
 }
 
 

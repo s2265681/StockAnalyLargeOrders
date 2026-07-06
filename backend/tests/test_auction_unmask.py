@@ -1,10 +1,12 @@
 import unittest
+import unittest.mock
 
 from services.auction_unmask import (
     is_valid_stock_code,
     resolve_masked_row,
     unmask_stockapi_rows,
     _decode_smartbox_name,
+    _parse_ai_unmask_json,
     _pick_best_candidate,
 )
 
@@ -39,6 +41,22 @@ class AuctionUnmaskTest(unittest.TestCase):
         self.assertIsNotNone(fixed)
         self.assertEqual(fixed["code"], "600562")
         self.assertIn("国睿", fixed["name"])
+
+    def test_parse_ai_unmask_json(self):
+        raw = '```json\n[{"idx":0,"code":"600562","name":"国睿科技"}]\n```'
+        items = _parse_ai_unmask_json(raw)
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]["code"], "600562")
+
+    @unittest.mock.patch("services.auction_unmask._ai_unmask_enabled", return_value=True)
+    @unittest.mock.patch("services.auction_unmask._ai_unmask_rows")
+    @unittest.mock.patch("services.auction_unmask.resolve_masked_row", return_value=None)
+    def test_unmask_ai_fallback(self, _resolve, ai_rows, _enabled):
+        ai_rows.return_value = {0: {"code": "300308", "name": "中际旭创"}}
+        rows = [{"code": "00****", "name": "中****", "zf": -3.62, "price": 151.29}]
+        out = unmask_stockapi_rows(rows, sector_name="算力", use_ai_fallback=True)
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]["code"], "300308")
 
     def test_pick_best_candidate_prefers_price_match(self):
         candidates = [

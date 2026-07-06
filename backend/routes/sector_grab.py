@@ -134,7 +134,7 @@ def _fetch_sectors_live(trade_date_compact: str) -> list[dict]:
     return []
 
 
-def _fetch_stocks_live(gn_code: str) -> list[dict]:
+def _fetch_stocks_live(gn_code: str, sector_name: str = '') -> list[dict]:
     url = f"http://user.stockapi.com.cn/v1/gnDataCodeAi?gnCode={gn_code}"
     resp = _curl_json(url)
     if not resp or resp.get("code") != 20000:
@@ -143,7 +143,11 @@ def _fetch_stocks_live(gn_code: str) -> list[dict]:
     stocks_raw = data.get("stocks") if isinstance(data, dict) else []
     from services.auction_unmask import unmask_stockapi_rows
 
-    unmasked = unmask_stockapi_rows(stocks_raw or [])
+    unmasked = unmask_stockapi_rows(
+        stocks_raw or [],
+        sector_name=sector_name or gn_code,
+        use_ai_fallback=True,
+    )
     stocks = []
     for raw in unmasked:
         item = sg_store.normalize_stock(raw, gn_code)
@@ -246,6 +250,16 @@ def get_sector_grab_sectors():
     })
 
 
+def _resolve_sector_name(date_compact: str, gn_code: str) -> str:
+    for s in (_SECTORS_CACHE.get(date_compact) or {}).get("items") or []:
+        if s.get("gn_code") == gn_code:
+            return s.get("name") or ""
+    for s in sg_store.load_sectors(date_compact) or []:
+        if s.get("gn_code") == gn_code:
+            return s.get("name") or ""
+    return ""
+
+
 @sector_grab_bp.route("/api/v1/sector-grab/stocks", methods=["GET"])
 def get_sector_grab_stocks():
     """
@@ -269,7 +283,8 @@ def get_sector_grab_stocks():
             items = db_items
             source = "db"
         else:
-            live = _fetch_stocks_live(gn_code)
+            sector_name = _resolve_sector_name(date_compact, gn_code)
+            live = _fetch_stocks_live(gn_code, sector_name)
             if live:
                 items = live
                 source = "api"
@@ -284,17 +299,7 @@ def get_sector_grab_stocks():
                     "个股数据暂不可用（接口返回脱敏数据且反查失败，请稍后重试）"
                 )
 
-    sector_name = ""
-    for s in (_SECTORS_CACHE.get(date_compact) or {}).get("items") or []:
-        if s.get("gn_code") == gn_code:
-            sector_name = s.get("name") or ""
-            break
-    if not sector_name:
-        db_sectors = sg_store.load_sectors(date_compact) or []
-        for s in db_sectors:
-            if s.get("gn_code") == gn_code:
-                sector_name = s.get("name") or ""
-                break
+    sector_name = _resolve_sector_name(date_compact, gn_code)
 
     return v1_success_response(data={
         "stocks": items,

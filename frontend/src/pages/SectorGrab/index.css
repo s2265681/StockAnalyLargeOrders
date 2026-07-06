@@ -106,7 +106,8 @@
 
 .sg-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 13px;
 }
 
@@ -124,7 +125,8 @@
   background: var(--bg-subtle);
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: 2;
+  box-shadow: 0 1px 0 var(--border-secondary);
 }
 
 .sg-table td {
@@ -248,16 +250,34 @@
   }
 
   .sg-sector-panel {
-    max-height: 42vh;
-    overflow: hidden;
     display: flex;
     flex-direction: column;
+    max-height: 42vh;
+    overflow: hidden;
+  }
+
+  .sg-sector-panel .sg-panel-title {
+    flex-shrink: 0;
+  }
+
+  .sg-sector-panel .ant-spin-nested-loading,
+  .sg-sector-panel .ant-spin-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .sg-sector-table-wrap {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
-    max-height: calc(42vh - 44px);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .sg-sector-table th {
+    background: var(--bg-card);
   }
 
   .sg-stocks-panel {

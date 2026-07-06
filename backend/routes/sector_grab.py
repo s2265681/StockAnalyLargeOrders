@@ -141,11 +141,19 @@ def _fetch_stocks_live(gn_code: str) -> list[dict]:
         return []
     data = resp.get("data") or {}
     stocks_raw = data.get("stocks") if isinstance(data, dict) else []
+    from services.auction_unmask import unmask_stockapi_rows
+
+    unmasked = unmask_stockapi_rows(stocks_raw or [])
     stocks = []
-    for raw in stocks_raw or []:
+    for raw in unmasked:
         item = sg_store.normalize_stock(raw, gn_code)
         if item:
             stocks.append(item)
+    if not stocks and stocks_raw:
+        logger.warning(
+            "板块个股去脱敏后为空 gnCode=%s raw=%s unmasked=%s",
+            gn_code, len(stocks_raw), len(unmasked),
+        )
     return stocks
 
 
@@ -272,7 +280,9 @@ def get_sector_grab_stocks():
                 source = "db_fallback"
                 _set_cached_stocks(date_compact, gn_code, items)
             else:
-                return v1_error_response("个股数据暂不可用，请稍后重试")
+                return v1_error_response(
+                    "个股数据暂不可用（接口返回脱敏数据且反查失败，请稍后重试）"
+                )
 
     sector_name = ""
     for s in (_SECTORS_CACHE.get(date_compact) or {}).get("items") or []:

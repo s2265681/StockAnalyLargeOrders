@@ -252,8 +252,10 @@
   .sg-sector-panel {
     display: flex;
     flex-direction: column;
-    max-height: 42vh;
-    overflow: hidden;
+    /* max-height: 42vh;
+    overflow: hidden; */
+    max-height: 640px;
+    overflow-y: auto;
   }
 
   .sg-sector-panel .sg-panel-title {

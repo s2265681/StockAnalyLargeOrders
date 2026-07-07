@@ -1,21 +1,414 @@
-.placeholder-card {
-  background: var(--bg-card);
-  border-radius: 20rpx;
-  padding: 80rpx 40rpx;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: 120rpx;
+.sd-page {
+  padding: 16rpx;
+  box-sizing: border-box;
+  min-height: 100vh;
 }
 
-.placeholder-title {
-  font-size: 40rpx;
+.sd-top {
+  background: var(--bg-card);
+  border-radius: 14rpx;
+  padding: 16rpx 20rpx;
+  margin-bottom: 16rpx;
+}
+
+.sd-search {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.sd-search-input {
+  flex: 1;
+  background: var(--bg-primary);
+  border-radius: 10rpx;
+  padding: 12rpx 16rpx;
+  font-size: 28rpx;
+  color: var(--text-primary);
+}
+
+.sd-search-btn {
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 26rpx;
+  border-radius: 10rpx;
+  padding: 12rpx 28rpx;
+}
+
+.sd-date-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16rpx;
+}
+
+.sd-nav-btn {
+  font-size: 26rpx;
+  color: var(--color-accent);
+  padding: 6rpx 10rpx;
+}
+
+.sd-nav-btn.disabled {
+  color: var(--text-muted);
+  opacity: 0.4;
+}
+
+.sd-nav-label {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.sd-loading,
+.sd-empty {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 28rpx;
+  padding: 100rpx 40rpx;
+}
+
+.sd-card {
+  background: var(--bg-card);
+  border-radius: 14rpx;
+  padding: 20rpx;
+  margin-bottom: 16rpx;
+}
+
+.sd-card-title {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 14rpx;
+  display: block;
+}
+
+.sd-card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14rpx;
+}
+
+.sd-card-title-row .sd-card-title {
+  margin-bottom: 0;
+}
+
+.sd-card-sub {
+  font-size: 22rpx;
+  color: var(--text-muted);
+}
+
+/* 头部 */
+.sd-header-top {
+  display: flex;
+  align-items: baseline;
+  gap: 14rpx;
+}
+
+.sd-name {
+  font-size: 34rpx;
   font-weight: 700;
   color: var(--text-primary);
 }
 
-.placeholder-sub {
-  font-size: 28rpx;
+.sd-code {
+  font-size: 24rpx;
   color: var(--text-muted);
-  margin-top: 20rpx;
+}
+
+.sd-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 20rpx;
+  margin: 12rpx 0;
+}
+
+.sd-price {
+  font-size: 48rpx;
+  font-weight: 700;
+}
+
+.sd-change {
+  font-size: 26rpx;
+  font-weight: 600;
+}
+
+.sd-stats-grid {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 8rpx;
+}
+
+.sd-stat {
+  width: 33.33%;
+  display: flex;
+  align-items: baseline;
+  gap: 8rpx;
+  margin-bottom: 12rpx;
+}
+
+.sd-stat-l {
+  font-size: 22rpx;
+  color: var(--text-muted);
+}
+
+.sd-stat-v {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* 涨停监控 */
+.sd-monitor-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-bottom: 12rpx;
+}
+
+.sd-tag-red {
+  font-size: 22rpx;
+  color: #fff;
+  background: var(--up);
+  border-radius: 6rpx;
+  padding: 2rpx 14rpx;
+}
+
+.sd-tag-orange {
+  font-size: 22rpx;
+  color: #fff;
+  background: #f59e0b;
+  border-radius: 6rpx;
+  padding: 2rpx 14rpx;
+}
+
+.sd-monitor-price {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--up);
+}
+
+.sd-monitor-time {
+  font-size: 22rpx;
+  color: var(--text-muted);
+}
+
+.sd-monitor-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24rpx;
+}
+
+.sd-monitor-item {
+  font-size: 24rpx;
+  color: var(--text-primary);
+}
+
+/* 分时图 */
+.sd-chart-legend {
+  display: flex;
+  gap: 24rpx;
+  margin-top: 12rpx;
+  justify-content: center;
+}
+
+.sd-legend-item {
+  font-size: 22rpx;
+}
+
+/* 资金流 */
+.sd-mf-hero {
+  display: flex;
+  align-items: baseline;
+  gap: 16rpx;
+  margin-bottom: 16rpx;
+}
+
+.sd-mf-hero-l {
+  font-size: 24rpx;
+  color: var(--text-muted);
+}
+
+.sd-mf-hero-v {
+  font-size: 36rpx;
+  font-weight: 700;
+}
+
+.sd-mf-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 12rpx;
+}
+
+.sd-mf-label {
+  width: 90rpx;
+  font-size: 24rpx;
+  color: var(--text-primary);
+}
+
+.sd-mf-bar {
+  flex: 1;
+  display: flex;
+  height: 16rpx;
+  border-radius: 8rpx;
+  overflow: hidden;
+  background: var(--bg-primary);
+}
+
+.sd-mf-bar-in {
+  background: var(--up);
+  opacity: 0.85;
+}
+
+.sd-mf-bar-out {
+  background: var(--down);
+  opacity: 0.85;
+}
+
+.sd-mf-net {
+  width: 130rpx;
+  text-align: right;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+/* 五档 */
+.sd-book {
+  display: flex;
+  gap: 16rpx;
+}
+
+.sd-book-col {
+  flex: 1;
+}
+
+.sd-book-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8rpx 0;
+}
+
+.sd-book-lv {
+  font-size: 22rpx;
+  color: var(--text-muted);
+  width: 60rpx;
+}
+
+.sd-book-px {
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.sd-book-amt {
+  font-size: 22rpx;
+  color: var(--text-muted);
+}
+
+/* 大单分布 */
+.sd-level {
+  margin-bottom: 16rpx;
+}
+
+.sd-level-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6rpx;
+}
+
+.sd-level-label {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.sd-level-cnt {
+  font-size: 22rpx;
+  color: var(--text-muted);
+}
+
+.sd-level-bar {
+  display: flex;
+  height: 14rpx;
+  border-radius: 7rpx;
+  overflow: hidden;
+  background: var(--bg-primary);
+}
+
+.sd-level-bar-buy {
+  background: var(--up);
+  opacity: 0.8;
+}
+
+.sd-level-bar-sell {
+  background: var(--down);
+  opacity: 0.8;
+}
+
+.sd-level-detail {
+  display: flex;
+  justify-content: space-between;
+  font-size: 22rpx;
+  margin-top: 4rpx;
+}
+
+/* 大单明细 */
+.sd-filter {
+  display: flex;
+  gap: 8rpx;
+}
+
+.sd-filter-btn {
+  font-size: 22rpx;
+  color: var(--text-muted);
+  background: var(--bg-primary);
+  border-radius: 8rpx;
+  padding: 6rpx 14rpx;
+}
+
+.sd-filter-btn.active {
+  color: #fff;
+  background: var(--color-accent);
+}
+
+.sd-trade-head {
+  display: flex;
+  padding: 8rpx 0;
+  border-bottom: 1rpx solid var(--border);
+}
+
+.sd-trade-c {
+  flex: 1;
+  text-align: center;
+  font-size: 22rpx;
+  color: var(--text-primary);
+}
+
+.sd-trade-head .sd-trade-c {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.sd-trade-time {
+  flex: 1.2;
+}
+
+.sd-trade-scroll {
+  max-height: 560rpx;
+}
+
+.sd-trade-row {
+  display: flex;
+  padding: 10rpx 0;
+  border-bottom: 1rpx solid var(--border);
+}
+
+.sd-trade-empty {
+  display: block;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 24rpx;
+  padding: 40rpx 0;
 }

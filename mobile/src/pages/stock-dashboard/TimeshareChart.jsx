@@ -35,6 +35,7 @@ export default function TimeshareChart({ timeshare, prevClose, limitUp, limitDow
   const sizeRef = useRef({ w: 0, h: 0 })
 
   useEffect(() => {
+    const draw = () => {
     const sys = Taro.getSystemInfoSync()
     const pxPerRpx = sys.windowWidth / 750
     const w = Math.round(718 * pxPerRpx)
@@ -163,6 +164,11 @@ export default function TimeshareChart({ timeshare, prevClose, limitUp, limitDow
     ctx.stroke()
 
     ctx.draw()
+    }
+    // weapp 下 canvas 节点可能晚于 effect 就绪：nextTick + 延时兜底重绘
+    if (Taro.nextTick) Taro.nextTick(draw); else draw()
+    const timer = setTimeout(draw, 150)
+    return () => clearTimeout(timer)
   }, [timeshare, prevClose, limitUp, limitDown, canvasId])
 
   return (

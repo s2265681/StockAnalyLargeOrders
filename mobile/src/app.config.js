@@ -19,10 +19,10 @@ export default defineAppConfig({
     backgroundColor: '#ffffff',
     borderStyle: 'black',
     list: [
-      { pagePath: 'pages/stock-dashboard/index', text: '个股' },
-      { pagePath: 'pages/limit-up-echelon/index', text: '梯队' },
-      { pagePath: 'pages/emotion-cycle/index', text: '情绪' },
-      { pagePath: 'pages/auction-grab/index', text: '竞价' },
+      { pagePath: 'pages/stock-dashboard/index', text: '个股', iconPath: 'assets/tabbar/stock.png', selectedIconPath: 'assets/tabbar/stock_on.png' },
+      { pagePath: 'pages/limit-up-echelon/index', text: '梯队', iconPath: 'assets/tabbar/echelon.png', selectedIconPath: 'assets/tabbar/echelon_on.png' },
+      { pagePath: 'pages/emotion-cycle/index', text: '情绪', iconPath: 'assets/tabbar/emotion.png', selectedIconPath: 'assets/tabbar/emotion_on.png' },
+      { pagePath: 'pages/auction-grab/index', text: '竞价', iconPath: 'assets/tabbar/auction.png', selectedIconPath: 'assets/tabbar/auction_on.png' },
     ],
   },
 })

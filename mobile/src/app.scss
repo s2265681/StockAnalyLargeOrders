@@ -1,0 +1,21 @@
+page {
+  --color-accent: #d97706;
+  --color-accent2: #f59e0b;
+  --text-primary: #1f2937;
+  --text-muted: #6b7280;
+  --bg-primary: #f5f6f8;
+  --bg-card: #ffffff;
+  --border: #e5e7eb;
+  --up: #e5484d;
+  --down: #12a150;
+
+  background: var(--bg-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'PingFang SC', sans-serif;
+  color: var(--text-primary);
+}
+
+.page-wrap {
+  min-height: 100vh;
+  padding: 24rpx;
+  box-sizing: border-box;
+}

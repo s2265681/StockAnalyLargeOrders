@@ -29,13 +29,13 @@ export const removeToken = () => Taro.removeStorageSync(TOKEN_KEY)
  * 统一请求封装。后端返回 { success, data, message } 结构，直接透传 res.data。
  * 非 2xx 抛错，供调用方 catch。
  */
-export async function request(path, { method = 'GET', data, header } = {}) {
+export async function request(path, { method = 'GET', data, header, timeout = 45000 } = {}) {
   const token = getToken()
   const res = await Taro.request({
     url: `${BASE}${path}`,
     method,
     data,
-    timeout: 45000,
+    timeout,
     header: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),

@@ -1,0 +1,95 @@
+.brief-card {
+  background: var(--bg-card);
+  border-radius: 14rpx;
+  padding: 20rpx;
+  margin-bottom: 16rpx;
+}
+
+.brief-state {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.brief-badge {
+  font-size: 22rpx;
+  color: #fff;
+  background: var(--color-accent);
+  border-radius: 6rpx;
+  padding: 2rpx 14rpx;
+}
+
+.brief-state-text {
+  font-size: 26rpx;
+  color: var(--text-muted);
+}
+
+.brief-gen-btn {
+  font-size: 26rpx;
+  color: var(--color-accent);
+  margin-left: auto;
+}
+
+.brief-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14rpx;
+}
+
+.brief-time {
+  font-size: 22rpx;
+  color: var(--text-muted);
+}
+
+.brief-indices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-bottom: 14rpx;
+}
+
+.brief-chip {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  background: var(--bg-primary);
+  border-radius: 999rpx;
+  padding: 6rpx 16rpx;
+}
+
+.brief-chip-flag { font-size: 24rpx; }
+.brief-chip-name { font-size: 22rpx; color: var(--text-primary); }
+.brief-chip-pct { font-size: 22rpx; font-weight: 600; }
+.brief-chip-pct.up { color: var(--up); }
+.brief-chip-pct.down { color: var(--down); }
+
+.brief-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  background: var(--bg-primary);
+  border-radius: 10rpx;
+  padding: 16rpx;
+}
+
+.brief-summary-tag {
+  font-size: 22rpx;
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.brief-summary-text {
+  flex: 1;
+  min-width: 400rpx;
+  font-size: 24rpx;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.brief-summary-action {
+  font-size: 22rpx;
+  color: var(--color-accent);
+  margin-left: auto;
+}

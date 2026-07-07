@@ -4,6 +4,7 @@ import { View, Text, ScrollView } from '@tarojs/components'
 import { api, getToken } from '../../config/api'
 import { ensureAuth } from '../../services/auth'
 import MarketBriefBar from '../../components/MarketBriefBar'
+import EmotionChart from './EmotionChart'
 import './index.scss'
 
 const stageColorMap = {
@@ -271,6 +272,11 @@ export default function EmotionCycle() {
     return filtered.slice(-8).reverse()
   }, [records, selectedDate])
 
+  const chartRecords = useMemo(() => {
+    const filtered = records.filter((r) => r.date.replace(/-/g, '') <= selectedDate)
+    return filtered.slice(-20)
+  }, [records, selectedDate])
+
   const fmtMetric = (val, pct) => {
     if (val == null || val === '') return '--'
     return pct ? `${val}%` : val
@@ -294,6 +300,17 @@ export default function EmotionCycle() {
         >
           {'后一天 >'}
         </View>
+      </View>
+
+      <View className='metrics-card'>
+        <Text className='card-title'>情绪趋势</Text>
+        {loading ? (
+          <Text className='metrics-empty'>加载中…</Text>
+        ) : chartRecords.length === 0 ? (
+          <Text className='metrics-empty'>暂无数据</Text>
+        ) : (
+          <EmotionChart records={chartRecords} />
+        )}
       </View>
 
       <View className='metrics-card'>

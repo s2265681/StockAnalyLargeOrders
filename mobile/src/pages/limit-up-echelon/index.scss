@@ -1,1 +1,250 @@
-@import '../stock-dashboard/index.scss';
+.echelon-page {
+  padding: 16rpx;
+  box-sizing: border-box;
+  min-height: 100vh;
+}
+
+.date-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-card);
+  border-radius: 14rpx;
+  padding: 16rpx 24rpx;
+  margin-bottom: 16rpx;
+}
+
+.date-nav-btn {
+  font-size: 26rpx;
+  color: var(--color-accent);
+  padding: 8rpx 12rpx;
+}
+
+.date-nav-btn.disabled {
+  color: var(--text-muted);
+  opacity: 0.4;
+}
+
+.date-nav-label {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.echelon-loading,
+.echelon-empty {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 28rpx;
+  padding: 120rpx 40rpx;
+}
+
+.summary-scroll {
+  white-space: nowrap;
+  margin-bottom: 16rpx;
+}
+
+.summary-row {
+  display: inline-flex;
+  gap: 12rpx;
+  padding: 4rpx;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--bg-card);
+  border-radius: 12rpx;
+  padding: 16rpx 22rpx;
+  min-width: 96rpx;
+}
+
+.summary-label {
+  font-size: 22rpx;
+  color: var(--text-muted);
+}
+
+.summary-value {
+  font-size: 32rpx;
+  font-weight: 700;
+  margin-top: 6rpx;
+  color: var(--text-primary);
+}
+
+.summary-value.red { color: var(--up); }
+.summary-value.blue { color: #3b82f6; }
+.summary-value.orange { color: #f97316; }
+.summary-value.purple { color: #a855f7; }
+.summary-value.teal { color: #14b8a6; }
+.summary-value.amber { color: #f59e0b; }
+.summary-value.green { color: var(--down); }
+.summary-value.down { color: var(--up); }
+
+.theme-scroll {
+  white-space: nowrap;
+  margin-bottom: 16rpx;
+}
+
+.theme-row {
+  display: inline-flex;
+  gap: 12rpx;
+  padding: 4rpx;
+}
+
+.theme-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  background: var(--bg-card);
+  border: 1rpx solid var(--border);
+  border-radius: 999rpx;
+  padding: 10rpx 20rpx;
+}
+
+.theme-chip-name {
+  font-size: 24rpx;
+  color: var(--text-primary);
+}
+
+.theme-chip-count {
+  font-size: 22rpx;
+  color: #fff;
+  background: var(--color-accent);
+  border-radius: 999rpx;
+  padding: 0 12rpx;
+  line-height: 32rpx;
+}
+
+.echelon-group {
+  background: var(--bg-card);
+  border-radius: 14rpx;
+  border-left: 6rpx solid var(--border);
+  padding: 20rpx;
+  margin-bottom: 20rpx;
+}
+
+.echelon-header {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 16rpx;
+}
+
+.echelon-tag {
+  color: #fff;
+  font-size: 24rpx;
+  padding: 4rpx 18rpx;
+  border-radius: 8rpx;
+}
+
+.echelon-count {
+  font-size: 26rpx;
+  color: var(--text-muted);
+}
+
+.stock-card {
+  border-top: 1rpx solid var(--border);
+  padding: 20rpx 0;
+}
+
+.stock-card:first-of-type {
+  border-top: none;
+}
+
+.stock-line1 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stock-name-box {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex: 1;
+  min-width: 0;
+}
+
+.stock-name {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.ths-rank {
+  font-size: 22rpx;
+  color: var(--up);
+}
+
+.stock-code {
+  font-size: 22rpx;
+  color: var(--text-muted);
+}
+
+.quality-badge {
+  font-size: 24rpx;
+  font-weight: 700;
+  border: 2rpx solid;
+  border-radius: 8rpx;
+  padding: 0 14rpx;
+  line-height: 40rpx;
+}
+
+.stock-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin-top: 12rpx;
+}
+
+.theme-tag {
+  font-size: 22rpx;
+  color: var(--text-muted);
+  background: var(--bg-primary);
+  border-radius: 6rpx;
+  padding: 4rpx 14rpx;
+}
+
+.theme-tag.ai-theme {
+  color: var(--color-accent);
+  background: rgba(217, 119, 6, 0.1);
+}
+
+.theme-tag.ths {
+  color: var(--up);
+  background: rgba(229, 72, 77, 0.1);
+}
+
+.stock-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 16rpx;
+}
+
+.metric {
+  width: 33.33%;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 14rpx;
+}
+
+.metric-label {
+  font-size: 22rpx;
+  color: var(--text-muted);
+}
+
+.metric-value {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 4rpx;
+}
+
+.stock-reason {
+  display: block;
+  font-size: 24rpx;
+  color: var(--text-muted);
+  margin-top: 8rpx;
+  line-height: 1.5;
+}

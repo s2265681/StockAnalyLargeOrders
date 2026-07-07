@@ -1,18 +1,10 @@
 import Taro from '@tarojs/taro'
 
-// 生产：小程序端直连线上域名；H5 端同源走 Nginx 反代（BASE 为空）。
-// 通过 TARO_ENV 区分：weapp 必须带域名（且需在小程序后台配置 request 合法域名）。
+// 统一直连线上域名（已在小程序后台配置 request 合法域名）。
+// 本地开发也走线上，不区分环境。
 const PROD_WEAPP_BASE = 'https://www.stockai.xin'
 
-function resolveBase() {
-  if (process.env.NODE_ENV !== 'production') {
-    // 本地调试：H5 直接打到后端；小程序调试需勾选「不校验合法域名」
-    return 'http://localhost:9001'
-  }
-  return process.env.TARO_ENV === 'h5' ? '' : PROD_WEAPP_BASE
-}
-
-const BASE = resolveBase()
+const BASE = PROD_WEAPP_BASE
 const TOKEN_KEY = 'niuniu_token'
 
 export const getToken = () => {

@@ -46,6 +46,17 @@ export const createOrder = (plan_type) =>
     body: JSON.stringify({ plan_type }),
   });
 
+export const getPaymentConfig = () => authFetch('/api/orders/payment-config');
+
+export const wechatPrepay = (order_no) =>
+  authFetch('/api/orders/wechat-prepay', {
+    method: 'POST',
+    body: JSON.stringify({ order_no }),
+  });
+
+export const getOrderStatus = (order_no) =>
+  authFetch(`/api/orders/status?order_no=${encodeURIComponent(order_no)}`);
+
 export const mockPay = (order_no) =>
   authFetch('/api/orders/mock-pay', {
     method: 'POST',

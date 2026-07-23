@@ -62,6 +62,13 @@ report/
 logs
 *.log
 
+# 微信支付证书（勿提交）
+docs/apiclient*.pem
+docs/apiclient*.p12
+backend/certs/*.pem
+backend/certs/*.p12
+scripts/wechat-pay.deploy.env
+
 # 环境变量文件
 .env
 .env.local

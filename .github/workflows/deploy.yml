@@ -101,7 +101,9 @@ jobs:
               migrations/20260520_alter_market_brief_news.sql \
               migrations/20260520_create_page_daily_activity.sql \
               migrations/20260522_add_users_default_email.sql \
-              migrations/20260522_alert_rules_cooldown_wechat.sql
+              migrations/20260522_alert_rules_cooldown_wechat.sql \
+              migrations/20260723_wechat_pay_orders.sql \
+              migrations/20260723_test_pay_plans.sql
             do
               if [ -f "$migration" ]; then
                 echo "Applying $migration"

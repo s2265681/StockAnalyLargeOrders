@@ -1,29 +1,33 @@
 """订单管理 API"""
 import logging
 import random
-from datetime import datetime, timedelta
-from flask import Blueprint, request
+from datetime import datetime
+from flask import Blueprint, request, jsonify
 from utils.response import v1_success_response, v1_error_response
 from utils.db import execute_query, execute_write
 from utils.auth_middleware import login_required
+from services.order_service import PLANS, get_plan, mark_order_paid
+from config.wechat_pay import get_wechat_pay_config
+from utils.wechat_pay_client import get_wechat_pay_client, is_wechat_pay_enabled, WeChatPayError
 
 logger = logging.getLogger(__name__)
 
 orders_bp = Blueprint('orders', __name__)
-
-PLANS = {
-    'daily':     {'name': '日度VIP',  'amount': 0.01,   'days': 1},
-    'monthly':   {'name': '月度VIP',  'amount': 380.00, 'days': 30},
-    'quarterly': {'name': '季度VIP',  'amount': 900.00, 'days': 90},
-    'semi':      {'name': '半年VIP',  'amount': 1600.00, 'days': 180},
-    'annual':    {'name': '年度VIP',  'amount': 2500.00, 'days': 365},
-}
 
 
 def _gen_order_no():
     now = datetime.now().strftime('%Y%m%d%H%M%S')
     rand = f'{random.randint(0, 999999):06d}'
     return f'NN{now}{rand}'
+
+
+@orders_bp.route('/api/orders/payment-config', methods=['GET'])
+def payment_config():
+    config = get_wechat_pay_config()
+    return v1_success_response(data={
+        'wechat_enabled': config['enabled'],
+        'mock_enabled': not config['enabled'],
+    })
 
 
 @orders_bp.route('/api/orders', methods=['GET'])
@@ -38,7 +42,7 @@ def list_orders():
     total = total_row[0]['cnt'] if total_row else 0
 
     rows = execute_query(
-        'SELECT order_no, plan_type, amount, status, created_at '
+        'SELECT order_no, plan_type, amount, status, payment_channel, paid_at, created_at '
         'FROM orders WHERE user_id = %s ORDER BY created_at DESC LIMIT %s OFFSET %s',
         (user_id, page_size, offset)
     )
@@ -51,6 +55,8 @@ def list_orders():
             'plan_type': r['plan_type'],
             'amount': float(r['amount']),
             'status': r['status'],
+            'payment_channel': r.get('payment_channel'),
+            'paid_at': r['paid_at'].strftime('%Y-%m-%d %H:%M') if r.get('paid_at') else None,
             'created_at': r['created_at'].strftime('%Y-%m-%d %H:%M') if r['created_at'] else None,
         })
 
@@ -82,9 +88,122 @@ def create_order():
     }, message='订单创建成功')
 
 
+@orders_bp.route('/api/orders/wechat-prepay', methods=['POST'])
+@login_required
+def wechat_prepay():
+    if not is_wechat_pay_enabled():
+        return v1_error_response('微信支付未配置，请联系管理员')
+
+    body = request.get_json(silent=True) or {}
+    order_no = body.get('order_no', '')
+    user_id = request.current_user['user_id']
+
+    if not order_no:
+        return v1_error_response('缺少订单号')
+
+    order_rows = execute_query(
+        'SELECT plan_type, amount, status FROM orders WHERE order_no = %s AND user_id = %s',
+        (order_no, user_id)
+    )
+    if not order_rows:
+        return v1_error_response('订单不存在')
+    order = order_rows[0]
+    if order['status'] == 'paid':
+        return v1_error_response('订单已支付')
+
+    plan = get_plan(order['plan_type']) or PLANS['daily']
+    client = get_wechat_pay_client()
+    try:
+        code_url = client.create_native_order(
+            order_no=order_no,
+            description=f'牛牛股票分析 - {plan["name"]}',
+            amount_yuan=order['amount'],
+        )
+    except WeChatPayError as exc:
+        logger.exception('WeChat prepay failed order=%s', order_no)
+        return v1_error_response(f'创建支付失败: {exc}')
+
+    return v1_success_response(data={
+        'order_no': order_no,
+        'code_url': code_url,
+        'amount': float(order['amount']),
+        'plan_name': plan['name'],
+    })
+
+
+@orders_bp.route('/api/orders/status', methods=['GET'])
+@login_required
+def order_status():
+    order_no = request.args.get('order_no', '')
+    user_id = request.current_user['user_id']
+
+    if not order_no:
+        return v1_error_response('缺少订单号')
+
+    order_rows = execute_query(
+        'SELECT status, plan_type, amount, payment_channel, paid_at FROM orders '
+        'WHERE order_no = %s AND user_id = %s',
+        (order_no, user_id)
+    )
+    if not order_rows:
+        return v1_error_response('订单不存在')
+
+    order = order_rows[0]
+    if order['status'] == 'pending' and is_wechat_pay_enabled():
+        client = get_wechat_pay_client()
+        try:
+            wx_order = client.query_order(order_no)
+            if wx_order.get('trade_state') == 'SUCCESS':
+                transaction_id = wx_order.get('transaction_id')
+                mark_order_paid(order_no, 'wechat', transaction_id)
+                order['status'] = 'paid'
+                order['payment_channel'] = 'wechat'
+                order['paid_at'] = datetime.now()
+        except WeChatPayError:
+            logger.debug('WeChat query pending for order=%s', order_no, exc_info=True)
+
+    return v1_success_response(data={
+        'order_no': order_no,
+        'status': order['status'],
+        'payment_channel': order.get('payment_channel'),
+        'paid_at': order['paid_at'].strftime('%Y-%m-%d %H:%M:%S') if order.get('paid_at') else None,
+    })
+
+
+@orders_bp.route('/api/payments/wechat/notify', methods=['POST'])
+def wechat_notify():
+    if not is_wechat_pay_enabled():
+        return jsonify({'code': 'FAIL', 'message': '微信支付未启用'}), 500
+
+    body = request.get_data(as_text=True)
+    client = get_wechat_pay_client()
+    try:
+        client.verify_notify_signature(request.headers, body)
+        payload = request.get_json(silent=True) or {}
+        resource = payload.get('resource') or {}
+        data = client.decrypt_notify_resource(resource)
+    except WeChatPayError as exc:
+        logger.warning('WeChat notify verify failed: %s', exc)
+        return jsonify({'code': 'FAIL', 'message': str(exc)}), 400
+
+    if data.get('trade_state') != 'SUCCESS':
+        return jsonify({'code': 'SUCCESS', 'message': '成功'})
+
+    order_no = data.get('out_trade_no')
+    transaction_id = data.get('transaction_id')
+    if not order_no:
+        return jsonify({'code': 'FAIL', 'message': '缺少订单号'}), 400
+
+    mark_order_paid(order_no, 'wechat', transaction_id)
+    return jsonify({'code': 'SUCCESS', 'message': '成功'})
+
+
 @orders_bp.route('/api/orders/mock-pay', methods=['POST'])
 @login_required
 def mock_pay():
+    if is_wechat_pay_enabled():
+        return v1_error_response('生产环境请使用微信支付')
+
     body = request.get_json(silent=True) or {}
     order_no = body.get('order_no', '')
     user_id = request.current_user['user_id']
@@ -101,30 +220,5 @@ def mock_pay():
     if order[0]['status'] == 'paid':
         return v1_error_response('订单已支付')
 
-    plan_type = order[0]['plan_type']
-    plan = PLANS.get(plan_type, PLANS['daily'])
-
-    execute_write('UPDATE orders SET status = %s WHERE order_no = %s', ('paid', order_no))
-
-    now = datetime.now()
-    existing_sub = execute_query(
-        'SELECT id, end_time FROM user_subscriptions '
-        'WHERE user_id = %s AND is_active = 1 AND end_time > NOW() '
-        'ORDER BY end_time DESC LIMIT 1',
-        (user_id,)
-    )
-    if existing_sub:
-        start = existing_sub[0]['end_time']
-        end = start + timedelta(days=plan['days'])
-        execute_write(
-            'UPDATE user_subscriptions SET end_time = %s, plan_type = %s WHERE id = %s',
-            (end, plan_type, existing_sub[0]['id'])
-        )
-    else:
-        end = now + timedelta(days=plan['days'])
-        execute_write(
-            'INSERT INTO user_subscriptions (user_id, plan_type, start_time, end_time) VALUES (%s, %s, %s, %s)',
-            (user_id, plan_type, now, end)
-        )
-
+    mark_order_paid(order_no, 'mock', None)
     return v1_success_response(message='支付成功，VIP 已激活')

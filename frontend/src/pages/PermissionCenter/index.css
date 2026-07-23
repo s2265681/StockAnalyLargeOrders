@@ -76,6 +76,54 @@
   color: var(--color-accent);
 }
 
+.pc-pay-hint {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.pc-pay-modal {
+  text-align: center;
+  padding: 8px 0 4px;
+}
+
+.pc-pay-amount {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--color-accent);
+  margin-bottom: 4px;
+}
+
+.pc-pay-plan {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+.pc-pay-qrcode {
+  display: inline-flex;
+  padding: 12px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid var(--border-primary);
+  margin-bottom: 16px;
+}
+
+.pc-pay-order {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  word-break: break-all;
+}
+
+.pc-pay-status {
+  font-size: 13px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 @media (max-width: 768px) {
   .permission-center-container {
     padding: 16px 12px;

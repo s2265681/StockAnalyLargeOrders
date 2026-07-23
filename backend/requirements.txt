@@ -10,3 +10,4 @@ curl_cffi>=0.6.0
 playwright>=1.40.0
 pymysql>=1.1.0
 PyJWT>=2.8.0
+cryptography>=42.0.0

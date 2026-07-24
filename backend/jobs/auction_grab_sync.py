@@ -14,6 +14,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from routes.auction_grab import fetch_and_cache_day
+from services import auction_grab_service as ag_store
 from utils.date_utils import get_valid_trading_date
 
 logging.basicConfig(
@@ -33,6 +34,16 @@ def sync_period(trade_date: str, period: int) -> int:
     label = "早盘" if period == 0 else "尾盘"
     items = fetch_and_cache_day(trade_date, period)
     count = len(items) if items else 0
+    if count == 0:
+        logger.warning("%s period=%s 未取到数据（接口空/超限/异常）", label, period)
+        return 0
+    # 校验确实落库：DB 故障时 replace_snapshot 会静默返回 0，
+    # 仅靠 len(items) 会误报「入库成功」，故此处直查 DB 兜底。
+    date_compact = ag_store.to_compact_date(trade_date)
+    if not ag_store.snapshot_exists(date_compact, period):
+        logger.error("%s period=%s 取到 %s 条但未落库（DB 写入失败？请检查 MySQL）",
+                     label, period, count)
+        return 0
     logger.info("%s period=%s 入库 %s 条", label, period, count)
     return count
 

@@ -7,6 +7,8 @@ logger = logging.getLogger(__name__)
 
 # 正式版：各档权益完全一致，区别仅在有效时长（时长越长即“高级”档）
 PLANS = {
+    # 测试档：微信支付最低 1 分，仅用于联调真机支付，上线前删除
+    'daily':     {'name': '测试VIP·1分',   'amount': 0.01,    'days': 1},
     'monthly':   {'name': '正式版·月卡',   'amount': 380.00,  'days': 30},
     'quarterly': {'name': '正式版·季卡',   'amount': 900.00,  'days': 90},
     'semi':      {'name': '正式版·半年卡', 'amount': 1600.00, 'days': 180},

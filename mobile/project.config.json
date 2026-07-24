@@ -2,14 +2,29 @@
   "miniprogramRoot": "dist/",
   "projectname": "stockai-mobile",
   "description": "AI炒股指南 移动端",
-  "appid": "touristappid",
+  "appid": "wxdd386a2c323cecf9",
   "setting": {
     "urlCheck": true,
     "es6": false,
     "enhance": false,
     "postcss": false,
-    "minified": false
+    "minified": false,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
   },
   "compileType": "miniprogram",
-  "libVersion": "2.19.4"
+  "libVersion": "3.16.2",
+  "srcMiniprogramRoot": "dist/",
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "condition": {},
+  "editorSetting": {
+    "tabIndent": "insertSpaces",
+    "tabSize": 2
+  }
 }

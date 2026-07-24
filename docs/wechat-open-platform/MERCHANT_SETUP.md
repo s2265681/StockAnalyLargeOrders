@@ -106,13 +106,13 @@ WECHAT_PRIVATE_KEY_PATH=certs/apiclient_key.pem
 WECHAT_PAY_PUBLIC_KEY_PATH=certs/pub_key.pem
 WECHAT_PAY_PUBLIC_KEY_ID=PUB_KEY_ID_0117485710982026072300181620002803
 
-# 网站应用审核通过后再填 AppID
-WECHAT_APP_ID=wx待填写的网站应用AppID
+# 小程序 AppID（个体工商户 wxdd386a2c323cecf9，需在商户平台关联）
+WECHAT_APP_ID=wxdd386a2c323cecf9
 ```
 
 **说明：**
-- `WECHAT_APP_ID` 需等开放平台网站应用审核通过后才能填
-- 在 AppID 关联完成前，可先 `WECHAT_PAY_ENABLED=0`，或保持 `1` 但支付会因缺 AppID 无法下单
+- `WECHAT_APP_ID` 填 **小程序 AppID**，不是开放平台网站应用 AppID
+- 商户平台关联完成前，保持 `WECHAT_PAY_ENABLED=0`
 
 ---
 
@@ -149,14 +149,12 @@ python3 scripts/check_wechat_pay_config.py
 
 ---
 
-## 七、网站应用审核通过后再做
+## 七、小程序 AppID 关联商户号
 
-1. 复制开放平台网站应用 **AppID**
-2. 商户平台 → **产品中心 → AppID 账号管理** → 新增授权
-3. 开放平台 → 网站应用 → **微信支付** → 确认关联
-4. 把 AppID 写入 `WECHAT_APP_ID`
-5. 重启后端
-6. 用 **日度 VIP ¥0.01** 测试一笔真实支付
+1. 商户平台 → **产品中心 → AppID 账号管理** → 新增授权 → 填 `wxdd386a2c323cecf9`
+2. 小程序后台 → **微信支付 → 商户号管理** → 确认授权
+3. 服务器 `backend/.env` 设 `WECHAT_PAY_ENABLED=1`，重启后端
+4. 用 **日度 VIP ¥0.01** 测试一笔真实支付
 
 ---
 
@@ -171,4 +169,4 @@ python3 scripts/check_wechat_pay_config.py
 | 微信支付公钥 | API 安全 → 微信支付公钥 | `WECHAT_PAY_PUBLIC_KEY_PATH` |
 | 公钥 ID | 同页面复制 | `WECHAT_PAY_PUBLIC_KEY_ID` |
 | 回调地址 | 自行填写 | `WECHAT_NOTIFY_URL` |
-| AppID | 开放平台网站应用 | `WECHAT_APP_ID` |
+| AppID | 公众平台小程序（wxdd386a2c323cecf9） | `WECHAT_APP_ID` |

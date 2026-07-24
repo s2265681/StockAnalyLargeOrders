@@ -390,6 +390,78 @@ def _should_skip_enrich(date_compact: str, period_int: int, is_today: bool) -> b
     return False
 
 
+def _run_enrich(date_compact: str, period_int: int, items_copy: list, trade_date: str, is_today: bool) -> dict:
+    """同步计算涨幅+评分，写库并更新内存缓存。返回 rec_meta。
+
+    供后台线程 (_trigger_background_enrich) 与离线补录 (jobs/backfill_auction_grab.py) 共用。
+    """
+    rec_meta = {"stage": "", "hint": ""}
+    try:
+        # 1. 昨日/今日实时涨幅
+        if is_today:
+            _enrich_live_quotes(items_copy, trade_date, is_today)
+        else:
+            _enrich_prev_day_change(items_copy, trade_date)
+
+        # 昨日涨幅算好后立即落库（COALESCE 保证不覆盖已有值）
+        try:
+            ag_store.update_return_fields(date_compact, period_int, items_copy)
+        except Exception as e:
+            logger.warning(f"昨日涨幅写库失败（跳过）{date_compact}: {e}")
+
+        # 2. 收盘/次日涨幅（历史日或收盘后补全）
+        if not is_today or not _is_market_hours():
+            if ag_store.items_need_return_enrich(items_copy):
+                _enrich_close_and_next_change(items_copy, trade_date)
+                try:
+                    ag_store.update_return_fields(date_compact, period_int, items_copy)
+                except Exception as e:
+                    logger.warning(f"涨幅写库失败（跳过）{date_compact}: {e}")
+
+        # 3. 行业/题材元数据（补全缺失的 stock_meta 缓存）
+        try:
+            codes = [str(x.get('code', '')).zfill(6) for x in items_copy if x.get('code')]
+            existing_meta = ag_store.load_stock_meta(codes)
+            missing_meta = [c for c in codes if c not in existing_meta or not existing_meta[c].get('industry')]
+            if missing_meta:
+                ag_store.populate_stock_meta_from_pool(missing_meta)
+        except Exception as e:
+            logger.warning(f"stock_meta populate 失败（跳过）{date_compact}: {e}")
+
+        # 4. 推荐评分（情绪+题材+抢筹；排除竞价时已涨停）
+        try:
+            from services.auction_grab_recommendation import enrich_auction_recommendations
+            live_changes = {
+                str(x.get('code', '')).zfill(6): x.get('today_change_pct')
+                for x in items_copy if x.get('code')
+            }
+            # period=0 早盘竞价不用盘中涨幅做涨停判定（用竞价涨幅），此处传 live_changes 仅供尾盘期间使用
+            for x in items_copy:
+                c = str(x.get('code', '')).zfill(6)
+                if live_changes.get(c) is None:
+                    live_changes[c] = x.get('close_change_pct') or x.get('grab_change_pct')
+            rec_meta = enrich_auction_recommendations(
+                items_copy, trade_date, period_int, live_change_by_code=live_changes,
+            )
+        except Exception as e:
+            logger.warning(f"评分计算失败（跳过）{date_compact}: {e}")
+
+        _set_processed_payload(date_compact, period_int, items_copy, rec_meta)
+
+        try:
+            ag_store.update_score_fields(date_compact, period_int, items_copy)
+            if not is_today or not _is_market_hours():
+                ag_store.update_return_fields(date_compact, period_int, items_copy)
+            ag_store.save_score_meta(date_compact, period_int, rec_meta)
+        except Exception as e:
+            logger.warning(f"评分写库失败（跳过）{date_compact}: {e}")
+
+        logger.info(f"富化完成 {date_compact} period={period_int}")
+    except Exception as e:
+        logger.error(f"富化意外失败 {date_compact}/{period_int}: {e}")
+    return rec_meta
+
+
 def _trigger_background_enrich(date_compact: str, period_int: int, items: list, trade_date: str, is_today: bool, *, force: bool = False):
     """触发后台线程：异步计算涨幅+评分，写库并更新内存缓存"""
     key = _processed_cache_key(date_compact, period_int)
@@ -403,70 +475,8 @@ def _trigger_background_enrich(date_compact: str, period_int: int, items: list, 
     items_copy = [dict(x) for x in items]
 
     def _do_enrich():
-        rec_meta = {"stage": "", "hint": ""}
         try:
-            # 1. 昨日/今日实时涨幅
-            if is_today:
-                _enrich_live_quotes(items_copy, trade_date, is_today)
-            else:
-                _enrich_prev_day_change(items_copy, trade_date)
-
-            # 昨日涨幅算好后立即落库（COALESCE 保证不覆盖已有值）
-            try:
-                ag_store.update_return_fields(date_compact, period_int, items_copy)
-            except Exception as e:
-                logger.warning(f"昨日涨幅写库失败（跳过）{date_compact}: {e}")
-
-            # 2. 收盘/次日涨幅（历史日或收盘后补全）
-            if not is_today or not _is_market_hours():
-                if ag_store.items_need_return_enrich(items_copy):
-                    _enrich_close_and_next_change(items_copy, trade_date)
-                    try:
-                        ag_store.update_return_fields(date_compact, period_int, items_copy)
-                    except Exception as e:
-                        logger.warning(f"涨幅写库失败（跳过）{date_compact}: {e}")
-
-            # 3. 行业/题材元数据（补全缺失的 stock_meta 缓存）
-            try:
-                codes = [str(x.get('code', '')).zfill(6) for x in items_copy if x.get('code')]
-                existing_meta = ag_store.load_stock_meta(codes)
-                missing_meta = [c for c in codes if c not in existing_meta or not existing_meta[c].get('industry')]
-                if missing_meta:
-                    ag_store.populate_stock_meta_from_pool(missing_meta)
-            except Exception as e:
-                logger.warning(f"stock_meta populate 失败（跳过）{date_compact}: {e}")
-
-            # 4. 推荐评分（情绪+题材+抢筹；排除竞价时已涨停）
-            try:
-                from services.auction_grab_recommendation import enrich_auction_recommendations
-                live_changes = {
-                    str(x.get('code', '')).zfill(6): x.get('today_change_pct')
-                    for x in items_copy if x.get('code')
-                }
-                # period=0 早盘竞价不用盘中涨幅做涨停判定（用竞价涨幅），此处传 live_changes 仅供尾盘期间使用
-                for x in items_copy:
-                    c = str(x.get('code', '')).zfill(6)
-                    if live_changes.get(c) is None:
-                        live_changes[c] = x.get('close_change_pct') or x.get('grab_change_pct')
-                rec_meta = enrich_auction_recommendations(
-                    items_copy, trade_date, period_int, live_change_by_code=live_changes,
-                )
-            except Exception as e:
-                logger.warning(f"评分计算失败（跳过）{date_compact}: {e}")
-
-            _set_processed_payload(date_compact, period_int, items_copy, rec_meta)
-
-            try:
-                ag_store.update_score_fields(date_compact, period_int, items_copy)
-                if not is_today or not _is_market_hours():
-                    ag_store.update_return_fields(date_compact, period_int, items_copy)
-                ag_store.save_score_meta(date_compact, period_int, rec_meta)
-            except Exception as e:
-                logger.warning(f"评分写库失败（跳过）{date_compact}: {e}")
-
-            logger.info(f"后台富化完成 {date_compact} period={period_int}")
-        except Exception as e:
-            logger.error(f"后台富化意外失败 {date_compact}/{period_int}: {e}")
+            _run_enrich(date_compact, period_int, items_copy, trade_date, is_today)
         finally:
             _enrich_in_progress.discard(key)
 

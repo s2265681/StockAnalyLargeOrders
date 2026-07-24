@@ -203,6 +203,12 @@ export default function StockDashboard() {
             onConfirm={handleSearch}
           />
           <View className='sd-search-btn' onClick={handleSearch}>查询</View>
+          <View
+            className='sd-vip-btn'
+            onClick={() => Taro.navigateTo({ url: '/pages/membership/index' })}
+          >
+            会员
+          </View>
         </View>
         <View className='sd-date-nav'>
           <Text

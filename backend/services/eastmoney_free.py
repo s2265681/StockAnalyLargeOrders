@@ -766,9 +766,13 @@ class EastMoneyFreeSource:
         is_today = (dt is None or dt == today)
 
         if not is_today:
+            # 历史日期的昨收必须取自日K线（上一交易日收盘价），
+            # 否则 _chart_stock_info_from_timeshare 会退化成用当日开盘价当昨收，
+            # 涨停（尤其一字板）会被画成 0% / 小涨幅，坐标基线错位。
+            hist_kline = self.get_daily_kline(code, dt)
             return {
                 'timeshare': self._get_history_timeshare(code, dt),
-                'pre_close': None,
+                'pre_close': hist_kline.get('preclose') if hist_kline else None,
                 'name': None,
             }
 

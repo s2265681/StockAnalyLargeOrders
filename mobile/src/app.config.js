@@ -6,6 +6,7 @@ export default defineAppConfig({
     'pages/limit-up-echelon/index',
     'pages/emotion-cycle/index',
     'pages/auction-grab/index',
+    'pages/membership/index',
   ],
   window: {
     backgroundTextStyle: 'light',

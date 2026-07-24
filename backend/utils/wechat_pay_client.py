@@ -116,6 +116,54 @@ class WeChatPayClient:
             raise WeChatPayError('未获取到支付二维码链接')
         return code_url
 
+    def create_jsapi_order(self, order_no, description, amount_yuan, openid, expire_minutes=30):
+        """小程序/JSAPI 下单，返回 prepay_id。"""
+        total_fen = int(round(float(amount_yuan) * 100))
+        if total_fen <= 0:
+            raise WeChatPayError('支付金额必须大于 0')
+        if not openid:
+            raise WeChatPayError('缺少支付用户 openid')
+
+        expire_time = time.strftime(
+            '%Y-%m-%dT%H:%M:%S+08:00',
+            time.localtime(time.time() + expire_minutes * 60),
+        )
+        payload = {
+            'appid': self.config['app_id'],
+            'mchid': self.config['mch_id'],
+            'description': description,
+            'out_trade_no': order_no,
+            'notify_url': self.config['notify_url'],
+            'time_expire': expire_time,
+            'amount': {
+                'total': total_fen,
+                'currency': 'CNY',
+            },
+            'payer': {
+                'openid': openid,
+            },
+        }
+        result = self._request('POST', '/v3/pay/transactions/jsapi', payload)
+        prepay_id = result.get('prepay_id')
+        if not prepay_id:
+            raise WeChatPayError('未获取到 prepay_id')
+        return prepay_id
+
+    def build_miniprogram_pay_params(self, prepay_id):
+        """由 prepay_id 生成 wx.requestPayment 所需参数（RSA 签名）。"""
+        timestamp = str(int(time.time()))
+        nonce = secrets.token_hex(16)
+        package = f'prepay_id={prepay_id}'
+        message = '\n'.join([self.config['app_id'], timestamp, nonce, package, ''])
+        pay_sign = _sign(self.private_key, message)
+        return {
+            'timeStamp': timestamp,
+            'nonceStr': nonce,
+            'package': package,
+            'signType': 'RSA',
+            'paySign': pay_sign,
+        }
+
     def query_order(self, order_no):
         url_path = f'/v3/pay/transactions/out-trade-no/{order_no}?mchid={self.config["mch_id"]}'
         return self._request('GET', url_path)

@@ -6,9 +6,10 @@ from flask import Blueprint, request, jsonify
 from utils.response import v1_success_response, v1_error_response
 from utils.db import execute_query, execute_write
 from utils.auth_middleware import login_required
-from services.order_service import PLANS, get_plan, mark_order_paid
+from services.order_service import PLANS, DEFAULT_PLAN_TYPE, get_plan, mark_order_paid
 from config.wechat_pay import get_wechat_pay_config
 from utils.wechat_pay_client import get_wechat_pay_client, is_wechat_pay_enabled, WeChatPayError
+from utils.wechat_mp import code2session, WeChatMpError
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +112,7 @@ def wechat_prepay():
     if order['status'] == 'paid':
         return v1_error_response('订单已支付')
 
-    plan = get_plan(order['plan_type']) or PLANS['daily']
+    plan = get_plan(order['plan_type']) or PLANS[DEFAULT_PLAN_TYPE]
     client = get_wechat_pay_client()
     try:
         code_url = client.create_native_order(
@@ -128,6 +129,60 @@ def wechat_prepay():
         'code_url': code_url,
         'amount': float(order['amount']),
         'plan_name': plan['name'],
+    })
+
+
+@orders_bp.route('/api/orders/wechat-miniprogram-prepay', methods=['POST'])
+@login_required
+def wechat_miniprogram_prepay():
+    if not is_wechat_pay_enabled():
+        return v1_error_response('微信支付未配置，请联系管理员')
+
+    body = request.get_json(silent=True) or {}
+    order_no = body.get('order_no', '')
+    code = body.get('code', '')
+    user_id = request.current_user['user_id']
+
+    if not order_no:
+        return v1_error_response('缺少订单号')
+    if not code:
+        return v1_error_response('缺少微信登录 code')
+
+    order_rows = execute_query(
+        'SELECT plan_type, amount, status FROM orders WHERE order_no = %s AND user_id = %s',
+        (order_no, user_id)
+    )
+    if not order_rows:
+        return v1_error_response('订单不存在')
+    order = order_rows[0]
+    if order['status'] == 'paid':
+        return v1_error_response('订单已支付')
+
+    try:
+        openid = code2session(code)
+    except WeChatMpError as exc:
+        logger.warning('miniprogram code2session failed order=%s: %s', order_no, exc)
+        return v1_error_response(f'获取微信身份失败: {exc}')
+
+    plan = get_plan(order['plan_type']) or PLANS[DEFAULT_PLAN_TYPE]
+    client = get_wechat_pay_client()
+    try:
+        prepay_id = client.create_jsapi_order(
+            order_no=order_no,
+            description=f'牛牛股票分析 - {plan["name"]}',
+            amount_yuan=order['amount'],
+            openid=openid,
+        )
+        pay_params = client.build_miniprogram_pay_params(prepay_id)
+    except WeChatPayError as exc:
+        logger.exception('WeChat miniprogram prepay failed order=%s', order_no)
+        return v1_error_response(f'创建支付失败: {exc}')
+
+    return v1_success_response(data={
+        'order_no': order_no,
+        'amount': float(order['amount']),
+        'plan_name': plan['name'],
+        'pay_params': pay_params,
     })
 
 

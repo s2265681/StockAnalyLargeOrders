@@ -316,6 +316,30 @@ class EastMoneyFreeSourceParseTest(unittest.TestCase):
         self.assertEqual(parsed['name'], '宏昌电子')
         self.assertEqual(len(parsed['timeshare']), 1)
 
+    def test_history_bundle_pre_close_from_daily_kline(self):
+        # 历史涨停日：昨收必须来自日K线（上一交易日收盘），而非当日开盘价，
+        # 否则前端会把 +10% 涨停画成小涨幅、坐标基线错位。
+        source = EastMoneyFreeSource()
+        history_ts = [
+            {'time': '09:31', 'price': 10.71, 'volume': 100, 'amount': 1071000},
+            {'time': '09:32', 'price': 11.01, 'volume': 200, 'amount': 2202000},
+        ]
+        kline = {'preclose': 10.01, 'close': 11.01, 'open': 10.71,
+                 'high': 11.01, 'low': 10.71, 'change_percent': 9.99}
+        with patch.object(source, '_get_history_timeshare', return_value=history_ts), \
+                patch.object(source, 'get_daily_kline', return_value=kline) as mock_kline:
+            bundle = source.get_timeshare_bundle('001258', '2026-07-22')
+        mock_kline.assert_called_once_with('001258', '2026-07-22')
+        self.assertEqual(bundle['pre_close'], 10.01)
+        self.assertEqual(bundle['timeshare'], history_ts)
+
+    def test_history_bundle_pre_close_none_when_kline_missing(self):
+        source = EastMoneyFreeSource()
+        with patch.object(source, '_get_history_timeshare', return_value=[]), \
+                patch.object(source, 'get_daily_kline', return_value=None):
+            bundle = source.get_timeshare_bundle('001258', '2026-07-22')
+        self.assertIsNone(bundle['pre_close'])
+
     def test_akshare_minute_fallback_filters_target_date(self):
         rows = EastMoneyFreeSource._build_timeshare_from_minute_records([
             {'day': '2026-05-14 15:00:00', 'close': 10.8, 'volume': 1000},

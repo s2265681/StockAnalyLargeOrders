@@ -86,6 +86,61 @@ const formatDateDisplay = (dateStr) => {
 /** 登录用户可见「生成/刷新」；进入页面时缓存缺失会自动补生成 */
 const SHOW_PANEL_REFRESH_BTN = true;
 
+const buildMockRecords = () => {
+  const base = getLastTradingDayStr();
+  const stages = ['冰点期', '修复期', '升温期', '高潮期', '退潮期'];
+  const rows = [];
+  for (let i = 19; i >= 0; i -= 1) {
+    const d = offsetDate(base, -i);
+    const phase = (19 - i) / 19;
+    const wave = Math.sin(phase * Math.PI);
+    rows.push({
+      date: formatDateDisplay(d),
+      stage: stages[Math.min(stages.length - 1, Math.floor(phase * stages.length))],
+      rise_ratio: Math.round(30 + wave * 45),
+      consec_limit: Math.round(2 + wave * 6),
+      pressure_height: Math.round(3 + wave * 5),
+      latest_height: Math.round(2 + wave * 6),
+      big_loss_mood: Math.round(20 + (1 - wave) * 40),
+      big_profit_mood: Math.round(25 + wave * 50),
+      limit_up_count: Math.round(20 + wave * 60),
+      board_hit_rate: Math.round(35 + wave * 40),
+      limit_down_count: Math.round(15 - wave * 10),
+    });
+  }
+  return rows;
+};
+
+const MOCK_CYCLE_ANALYSIS = {
+  stage: '升温期',
+  updated_at: '2026-01-01 09:30',
+  analysis: '市场情绪逐步回暖，连板高度抬升，赚钱效应扩散，资金开始向强势主线集中。上涨比例回升至中枢上方，短线情绪进入良性循环。',
+  advice: '可逢低参与主线龙头及首板卡位，控制仓位，注意分歧转一致的节奏，避免追高低位补涨股。',
+  trade_plans: [
+    {
+      stock: '示例龙头 000000',
+      technique: '低吸',
+      position: '3成',
+      entry: '分时回踩均价线企稳',
+      exit: '尾盘冲高或次日高开兑现',
+      timing: '早盘弱转强',
+      reason: '主线人气标的，承接情绪扩散。数据为演示样例。',
+    },
+  ],
+  recommendations: [
+    { stock: '示例标的 000001', position: '2成', reason: '板块补涨候选，演示数据。' },
+    { stock: '示例标的 000002', position: '1成', reason: '低位首板卡位，演示数据。' },
+  ],
+};
+
+const MOCK_INTRADAY_ANALYSIS = {
+  stage: '升温期',
+  updated_at: '2026-01-01 13:00',
+  analysis: '盘中量能温和放大，热点轮动加快，指数震荡上行。打板成功率维持在中性偏强区间。',
+  prev_day_review: '昨日高潮标的分歧后修复，验证情绪仍在升温通道，节奏未破坏。',
+  advice: '盘中可等回踩低吸主线，急拉不追，尾盘视情绪强弱决定是否加仓。以上为演示样例。',
+};
+
 const getLatestRecordDate = (items) => {
   if (!items || items.length === 0) return null;
   const sortedDates = items
@@ -247,15 +302,15 @@ function AnalysisBlock({ title, accent, result, loading, emptyHint, extra, child
   );
 }
 
-function EmotionCycle() {
+function EmotionCycle({ preview = false }) {
   const todayStr = useMemo(() => getLastTradingDayStr(), []);
 
-  const [records, setRecords] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [records, setRecords] = useState(() => (preview ? buildMockRecords() : []));
+  const [loading, setLoading] = useState(!preview);
   const [panelRefreshing, setPanelRefreshing] = useState(false);
-  const [cacheChecked, setCacheChecked] = useState(false);
-  const [cycleAnalysis, setCycleAnalysis] = useState(null);
-  const [intradayAnalysis, setIntradayAnalysis] = useState(null);
+  const [cacheChecked, setCacheChecked] = useState(preview);
+  const [cycleAnalysis, setCycleAnalysis] = useState(preview ? MOCK_CYCLE_ANALYSIS : null);
+  const [intradayAnalysis, setIntradayAnalysis] = useState(preview ? MOCK_INTRADAY_ANALYSIS : null);
   const [selectedDate, setSelectedDate] = useState(() => getLastTradingDayStr());
   const autoRefreshAttemptedRef = useRef(new Set());
 
@@ -276,6 +331,7 @@ function EmotionCycle() {
   }, [records, latestDate, selectedDate]);
 
   const fetchData = useCallback(async () => {
+    if (preview) return;
     setLoading(true);
     try {
       const res = await apiRequest('/api/v1/emotion-cycle');
@@ -287,13 +343,14 @@ function EmotionCycle() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [preview]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
   useEffect(() => {
+    if (preview) return;
     const loadCaches = async () => {
       setCacheChecked(false);
       setCycleAnalysis(null);
@@ -316,7 +373,7 @@ function EmotionCycle() {
       }
     };
     loadCaches();
-  }, [selectedDate, records.length, hasSelectedRecord]);
+  }, [selectedDate, records.length, hasSelectedRecord, preview]);
 
   const handlePanelRefresh = useCallback(async (options = {}) => {
     const { force = true, silent = false } = options;
@@ -362,6 +419,7 @@ function EmotionCycle() {
   }, [hasSelectedRecord, selectedDate]);
 
   useEffect(() => {
+    if (preview) return;
     if (loading || !cacheChecked || !hasSelectedRecord || panelRefreshing) return;
     if (!localStorage.getItem('niuniu_token')) return;
     if (autoRefreshAttemptedRef.current.has(selectedDate)) return;
@@ -378,6 +436,7 @@ function EmotionCycle() {
     intradayAnalysis,
     panelRefreshing,
     handlePanelRefresh,
+    preview,
   ]);
 
   useEffect(() => {
@@ -524,7 +583,7 @@ function EmotionCycle() {
         </div>
 
         <div className="emotion-right-column">
-          {SHOW_PANEL_REFRESH_BTN && hasSelectedRecord && (
+          {SHOW_PANEL_REFRESH_BTN && !preview && hasSelectedRecord && (
             <div className="emotion-panel-actions">
               <Button
                 size="small"

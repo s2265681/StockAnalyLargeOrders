@@ -386,6 +386,26 @@
   background: var(--auth-card-border);
 }
 
+.wx-qr-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.wx-qr-frame {
+  width: 100%;
+  min-height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wx-qr-frame iframe {
+  border: 0;
+  width: 300px;
+  max-width: 100%;
+}
+
 .auth-card-footer {
   text-align: center;
   margin-top: 20px;

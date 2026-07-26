@@ -170,7 +170,12 @@ def wechat_qrcode():
         'state': state,
     }
     authorize_url = f'{WECHAT_AUTHORIZE_URL}?{urlencode(params)}#wechat_redirect'
-    return v1_success_response(data={'authorize_url': authorize_url, 'state': state})
+    return v1_success_response(data={
+        'authorize_url': authorize_url,
+        'state': state,
+        'app_id': cfg['app_id'],
+        'redirect_uri': cfg['redirect_uri'],
+    })
 
 
 @auth_bp.route('/api/auth/wechat/callback', methods=['GET'])

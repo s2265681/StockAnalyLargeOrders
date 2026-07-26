@@ -25,12 +25,35 @@ export default function WechatCallback() {
     handled.current = true;
 
     const err = searchParams.get('error');
+    const ticket = searchParams.get('ticket');
+
+    // 内嵌二维码场景：本页运行在 WxLogin 的 iframe 内，把结果回传父窗口，由父窗口完成登录
+    const inIframe = window.top !== window.self;
+    if (inIframe && window.parent) {
+      if (err) {
+        window.parent.postMessage(
+          { source: 'wx-login-callback', error: ERROR_TEXT[err] || '微信登录失败' },
+          window.location.origin
+        );
+      } else if (ticket) {
+        window.parent.postMessage(
+          { source: 'wx-login-callback', ticket },
+          window.location.origin
+        );
+      } else {
+        window.parent.postMessage(
+          { source: 'wx-login-callback', error: '缺少登录凭证' },
+          window.location.origin
+        );
+      }
+      return;
+    }
+
     if (err) {
       setError(ERROR_TEXT[err] || '微信登录失败');
       return;
     }
 
-    const ticket = searchParams.get('ticket');
     if (!ticket) {
       setError('缺少登录凭证');
       return;

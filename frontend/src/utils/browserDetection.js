@@ -15,6 +15,12 @@ export const isTdxBrowser = () => {
   return /TdxW/.test(window.navigator.userAgent);
 };
 
+// 检测是否在微信内置浏览器中（含 PC 客户端 WindowsWechat / MacWechat）
+export const isWeChatBrowser = () => {
+  if (typeof window === 'undefined') return false;
+  return /MicroMessenger/i.test(window.navigator.userAgent);
+};
+
 // 检测Chrome版本
 export const getChromeVersion = () => {
   if (typeof window === 'undefined') return null;

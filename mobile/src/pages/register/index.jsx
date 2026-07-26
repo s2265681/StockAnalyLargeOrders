@@ -44,7 +44,7 @@ export default function Register() {
     <View className='auth-page'>
       <View className='auth-card'>
         <Text className='auth-title'>创建账号</Text>
-        <Text className='auth-subtitle'>加入 AI炒股指南，开启智能炒股之旅</Text>
+        <Text className='auth-subtitle'>加入 重阳市场看板助手，开启智能看盘之旅</Text>
         <Input
           className='auth-input'
           placeholder='用户名（2-20个字符）'

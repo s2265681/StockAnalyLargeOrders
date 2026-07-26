@@ -53,6 +53,16 @@ export function AuthProvider({ children }) {
     return { success: false, message: res.message || '注册失败' };
   };
 
+  const loginWithTicket = async (ticket) => {
+    const res = await api.post('/api/auth/wechat/exchange', { ticket });
+    if (res.success && res.data?.token) {
+      localStorage.setItem('niuniu_token', res.data.token);
+      await refreshUser();
+      return { success: true };
+    }
+    return { success: false, message: res.message || '微信登录失败' };
+  };
+
   const logout = () => {
     localStorage.removeItem('niuniu_token');
     setUser(null);
@@ -61,7 +71,7 @@ export function AuthProvider({ children }) {
   const isVip = !!(user?.vip?.end_time && new Date(user.vip.end_time) > new Date());
 
   return (
-    <AuthContext.Provider value={{ user, loading, isVip, login, register, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, isVip, login, register, loginWithTicket, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

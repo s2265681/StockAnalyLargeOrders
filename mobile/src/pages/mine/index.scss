@@ -1,0 +1,180 @@
+.mine-page {
+  min-height: 100vh;
+  padding: 20rpx 24rpx 60rpx;
+  box-sizing: border-box;
+}
+
+.mine-top {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.mine-brand {
+  flex: 1;
+  text-align: center;
+  font-size: 34rpx;
+  font-weight: 800;
+  color: var(--color-accent);
+}
+
+.mine-top-spacer {
+  width: 56rpx;
+}
+
+.mine-section {
+  background: var(--bg-card);
+  border: 1rpx solid var(--border);
+  border-radius: 18rpx;
+  padding: 28rpx 28rpx 32rpx;
+  margin-bottom: 24rpx;
+}
+
+.mine-section-title {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 20rpx;
+}
+
+.mine-section-desc {
+  display: block;
+  font-size: 22rpx;
+  color: var(--text-muted);
+  margin-top: -8rpx;
+  margin-bottom: 20rpx;
+}
+
+.mine-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid var(--border);
+}
+
+.mine-label {
+  font-size: 26rpx;
+  color: var(--text-muted);
+}
+
+.mine-value {
+  font-size: 26rpx;
+  color: var(--text-primary);
+}
+
+.mine-vip {
+  font-size: 24rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 8rpx;
+}
+
+.mine-vip.on {
+  color: #fff;
+  background: var(--color-accent);
+}
+
+.mine-vip.off {
+  color: var(--text-muted);
+  background: var(--bg-primary);
+}
+
+.mine-vip-btn {
+  margin-top: 24rpx;
+  height: 80rpx;
+  line-height: 80rpx;
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 28rpx;
+  border-radius: 12rpx;
+}
+
+.mine-vip-btn::after { border: none; }
+
+.mine-input {
+  height: 84rpx;
+  background: var(--bg-primary);
+  border: 1rpx solid var(--border);
+  border-radius: 12rpx;
+  padding: 0 24rpx;
+  font-size: 28rpx;
+  margin-bottom: 20rpx;
+  color: var(--text-primary);
+}
+
+.mine-btn {
+  height: 84rpx;
+  line-height: 84rpx;
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 28rpx;
+  border-radius: 12rpx;
+  margin-top: 4rpx;
+}
+
+.mine-btn::after { border: none; }
+
+.mine-empty {
+  display: block;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 26rpx;
+  padding: 24rpx 0;
+}
+
+.mine-orders {
+  max-height: 520rpx;
+}
+
+.mine-order {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid var(--border);
+}
+
+.mine-order-plan {
+  display: block;
+  font-size: 26rpx;
+  color: var(--text-primary);
+}
+
+.mine-order-no {
+  display: block;
+  font-size: 20rpx;
+  color: var(--text-muted);
+  margin-top: 6rpx;
+}
+
+.mine-order-r {
+  text-align: right;
+}
+
+.mine-order-amt {
+  display: block;
+  font-size: 26rpx;
+  color: var(--text-primary);
+}
+
+.mine-order-status {
+  display: block;
+  font-size: 22rpx;
+  margin-top: 6rpx;
+}
+
+.mine-order-status.paid { color: var(--down); }
+.mine-order-status.pending { color: var(--color-accent); }
+
+.mine-logout {
+  height: 88rpx;
+  line-height: 88rpx;
+  background: var(--bg-card);
+  color: var(--up);
+  font-size: 30rpx;
+  border: 1rpx solid var(--border);
+  border-radius: 14rpx;
+}
+
+.mine-logout::after { border: none; }

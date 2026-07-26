@@ -27,11 +27,13 @@ import DragonTiger from './pages/DragonTiger';
 import AiDiagnosis from './pages/AiDiagnosis';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import WechatCallback from './pages/WechatCallback';
 import UserCenter from './pages/UserCenter';
 import PermissionCenter from './pages/PermissionCenter';
 import StockAlert from './pages/StockAlert';
 import PermissionGuard from './components/PermissionGuard';
 import ThemeToggle, { useTheme } from './components/ThemeToggle';
+import WeChatMiniProgram from './components/WeChatMiniProgram';
 import { useAuth } from './context/AuthContext';
 import { errorAtom } from './store/atoms';
 
@@ -152,6 +154,7 @@ function AppInner() {
               flexShrink: 0,
             }}
           >
+            <WeChatMiniProgram />
             <ThemeToggle theme={theme} onToggle={toggleTheme} />
             {/* 桌面端用户操作 */}
             <div className="desktop-user-actions">
@@ -227,6 +230,7 @@ function AppInner() {
             marginTop: 8,
           }}
         >
+          <WeChatMiniProgram compact onNavigate={() => setDrawerOpen(false)} />
           {user ? (
             <>
               <div
@@ -288,6 +292,7 @@ function AppInner() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/wechat-callback" element={<WechatCallback />} />
           <Route path="/" element={<Navigate to="/stock-dashboard" replace />} />
           <Route path="/home" element={<RequireAuth><Home /></RequireAuth>} />
           <Route

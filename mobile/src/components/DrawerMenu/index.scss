@@ -1,0 +1,100 @@
+.drawer-trigger {
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8rpx;
+  padding: 8rpx;
+  box-sizing: border-box;
+}
+
+.drawer-trigger-bar {
+  width: 40rpx;
+  height: 4rpx;
+  background: var(--text-primary);
+  border-radius: 2rpx;
+}
+
+.drawer-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+}
+
+.drawer-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 560rpx;
+  background: var(--bg-card);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 4rpx 0 24rpx rgba(0, 0, 0, 0.12);
+}
+
+.drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 40rpx 32rpx 28rpx;
+  border-bottom: 1rpx solid var(--border);
+}
+
+.drawer-logo {
+  font-size: 34rpx;
+  font-weight: 800;
+  color: var(--color-accent);
+}
+
+.drawer-close {
+  font-size: 34rpx;
+  color: var(--text-muted);
+  padding: 0 12rpx;
+}
+
+.drawer-list {
+  flex: 1;
+  padding: 12rpx 0;
+  overflow-y: auto;
+}
+
+.drawer-item {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding: 26rpx 32rpx;
+}
+
+.drawer-item:active {
+  background: var(--bg-primary);
+}
+
+.drawer-item-icon {
+  font-size: 34rpx;
+  width: 44rpx;
+  text-align: center;
+}
+
+.drawer-item-label {
+  font-size: 30rpx;
+  color: var(--text-primary);
+}
+
+.drawer-foot {
+  border-top: 1rpx solid var(--border);
+  padding: 12rpx 0 32rpx;
+}
+
+.drawer-item-user .drawer-item-label {
+  color: var(--color-accent);
+}
+
+.drawer-item-logout .drawer-item-label {
+  color: var(--up);
+}

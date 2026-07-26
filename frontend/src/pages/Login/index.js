@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link, useLocation, useSearchParams } from 'react-router-dom';
 import { Input, Button, message } from 'antd';
-import { UserOutlined, LockOutlined } from '@ant-design/icons';
+import { UserOutlined, LockOutlined, WechatOutlined } from '@ant-design/icons';
 import { useAuth } from '../../context/AuthContext';
 import AuthLayout from '../../components/AuthLayout';
+import { getWechatQrcode } from '../../services/auth';
 
 function getPostLoginPath(location, searchParams) {
   const next = searchParams.get('next');
@@ -22,6 +23,7 @@ export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [wxLoading, setWxLoading] = useState(false);
   const passwordRef = useRef(null);
   const { user, loading: authLoading, login } = useAuth();
   const navigate = useNavigate();
@@ -52,6 +54,24 @@ export default function Login() {
       navigate(getPostLoginPath(location, searchParams), { replace: true });
     } else {
       message.error(result.message);
+    }
+  };
+
+  const handleWechatLogin = async () => {
+    setWxLoading(true);
+    try {
+      const res = await getWechatQrcode();
+      if (res.success && res.data?.authorize_url) {
+        // 记录登录后目标路径，回调页读取后跳转
+        sessionStorage.setItem('wx_login_next', getPostLoginPath(location, searchParams));
+        window.location.href = res.data.authorize_url;
+      } else {
+        message.error(res.message || '微信登录暂不可用');
+        setWxLoading(false);
+      }
+    } catch {
+      message.error('微信登录暂不可用');
+      setWxLoading(false);
     }
   };
 
@@ -91,6 +111,17 @@ export default function Login() {
           登录
         </Button>
       </form>
+
+      <div className="auth-divider"><span>或</span></div>
+
+      <Button
+        block
+        icon={<WechatOutlined style={{ color: '#07c160' }} />}
+        loading={wxLoading}
+        onClick={handleWechatLogin}
+      >
+        微信扫码登录
+      </Button>
     </AuthLayout>
   );
 }

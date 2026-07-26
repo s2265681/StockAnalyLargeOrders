@@ -82,10 +82,8 @@ function AnalysisBlock({ title, result, loading, emptyHint }) {
     )
   }
   const {
-    stage, analysis, advice,
+    stage, analysis,
     prev_day_review: prevDayReview,
-    recommendations,
-    trade_plans: tradePlans,
     updated_at: updatedAt,
   } = result
   return (
@@ -109,44 +107,6 @@ function AnalysisBlock({ title, result, loading, emptyHint }) {
           <Text className='section-text'>{prevDayReview}</Text>
         </View>
       )}
-      {advice && (
-        <View className='analysis-section'>
-          <Text className='section-title'>操作建议</Text>
-          <Text className='section-text advice'>{advice}</Text>
-        </View>
-      )}
-      {tradePlans && tradePlans.length > 0 && (
-        <View className='analysis-section'>
-          <Text className='section-title'>买卖点与进出场</Text>
-          {tradePlans.map((plan, idx) => (
-            <View className='rec-item' key={idx}>
-              <View className='rec-header'>
-                <Text className='rec-stock'>{plan.stock}</Text>
-                {plan.technique && <Text className='rec-tag volcano'>{plan.technique}</Text>}
-                {plan.position && <Text className='rec-tag blue'>{plan.position}</Text>}
-              </View>
-              {plan.entry && <Text className='rec-row'>买点：{plan.entry}</Text>}
-              {plan.exit && <Text className='rec-row'>卖点：{plan.exit}</Text>}
-              {plan.timing && <Text className='rec-row'>时机：{plan.timing}</Text>}
-              {plan.reason && <Text className='rec-reason'>{plan.reason}</Text>}
-            </View>
-          ))}
-        </View>
-      )}
-      {recommendations && recommendations.length > 0 && (
-        <View className='analysis-section'>
-          <Text className='section-title'>备选标的</Text>
-          {recommendations.map((rec, idx) => (
-            <View className='rec-item' key={idx}>
-              <View className='rec-header'>
-                <Text className='rec-stock'>{rec.stock}</Text>
-                {rec.position && <Text className='rec-tag blue'>{rec.position}</Text>}
-              </View>
-              <Text className='rec-reason'>{rec.reason}</Text>
-            </View>
-          ))}
-        </View>
-      )}
     </View>
   )
 }
@@ -158,7 +118,6 @@ export default function EmotionCycle() {
   const [panelRefreshing, setPanelRefreshing] = useState(false)
   const [cacheChecked, setCacheChecked] = useState(false)
   const [cycleAnalysis, setCycleAnalysis] = useState(null)
-  const [intradayAnalysis, setIntradayAnalysis] = useState(null)
   const [selectedDate, setSelectedDate] = useState(() => getLastTradingDayStr())
   const autoRefreshAttemptedRef = useRef(new Set())
 
@@ -197,20 +156,13 @@ export default function EmotionCycle() {
     const loadCaches = async () => {
       setCacheChecked(false)
       setCycleAnalysis(null)
-      setIntradayAnalysis(null)
       if (records.length === 0) {
         setCacheChecked(true)
         return
       }
       try {
-        const [cycleRes, intradayRes] = await Promise.all([
-          api.get(`/api/v1/emotion-analysis-cache?date=${selectedDate}`),
-          hasSelectedRecord
-            ? api.get(`/api/v1/emotion-intraday-cache?date=${selectedDate}`)
-            : Promise.resolve(null),
-        ])
+        const cycleRes = await api.get(`/api/v1/emotion-analysis-cache?date=${selectedDate}`)
         if (cycleRes?.data) setCycleAnalysis(cycleRes.data)
-        if (intradayRes?.data) setIntradayAnalysis(intradayRes.data)
       } catch (e) {
         /* ignore */
       } finally {
@@ -228,7 +180,6 @@ export default function EmotionCycle() {
     if (!silent) setPanelRefreshing(true)
     if (force) {
       setCycleAnalysis(null)
-      setIntradayAnalysis(null)
     }
     try {
       let res = null
@@ -239,9 +190,6 @@ export default function EmotionCycle() {
         res = await api.post('/api/v1/emotion-intraday-refresh', { date: selectedDate, force }, { timeout: 300000 })
       }
       if (res?.data?.cycle) setCycleAnalysis(res.data.cycle)
-      if (res?.data?.daily || res?.data?.intraday) {
-        setIntradayAnalysis(res.data.daily || res.data.intraday)
-      }
       if (res?.data?.records) setRecords(res.data.records)
       if (!res?.data?.cycle) {
         const cycleRes = await api.get(`/api/v1/emotion-analysis-cache?date=${selectedDate}`)
@@ -258,10 +206,10 @@ export default function EmotionCycle() {
     if (loading || !cacheChecked || !hasSelectedRecord || panelRefreshing) return
     if (!getToken()) return
     if (autoRefreshAttemptedRef.current.has(selectedDate)) return
-    if (cycleAnalysis && intradayAnalysis) return
+    if (cycleAnalysis) return
     autoRefreshAttemptedRef.current.add(selectedDate)
-    handlePanelRefresh({ force: !cycleAnalysis || !intradayAnalysis, silent: false })
-  }, [loading, cacheChecked, hasSelectedRecord, selectedDate, cycleAnalysis, intradayAnalysis, panelRefreshing, handlePanelRefresh])
+    handlePanelRefresh({ force: !cycleAnalysis, silent: false })
+  }, [loading, cacheChecked, hasSelectedRecord, selectedDate, cycleAnalysis, panelRefreshing, handlePanelRefresh])
 
   useEffect(() => {
     autoRefreshAttemptedRef.current.delete(selectedDate)
@@ -355,12 +303,6 @@ export default function EmotionCycle() {
         result={cycleAnalysis}
         loading={panelRefreshing}
         emptyHint={panelRefreshing ? '分析生成中，请稍候…' : (getToken() ? '暂无分析，点击上方「生成/刷新分析」' : '请登录后查看，或由每日定时任务生成')}
-      />
-      <AnalysisBlock
-        title='盘中买卖指导'
-        result={hasSelectedRecord ? intradayAnalysis : null}
-        loading={panelRefreshing}
-        emptyHint={!hasSelectedRecord ? '该日期暂无行情数据' : (panelRefreshing ? '分析生成中，请稍候…' : (getToken() ? '暂无分析，点击上方「生成/刷新分析」' : '请登录后查看，或由定时任务生成（含买卖点与昨日复盘）'))}
       />
     </View>
   )

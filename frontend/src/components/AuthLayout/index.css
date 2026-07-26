@@ -369,6 +369,23 @@
   gap: 16px;
 }
 
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+  color: var(--auth-text3);
+  font-size: 13px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--auth-card-border);
+}
+
 .auth-card-footer {
   text-align: center;
   margin-top: 20px;

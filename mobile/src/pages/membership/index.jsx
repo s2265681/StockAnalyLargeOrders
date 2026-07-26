@@ -37,7 +37,7 @@ export default function Membership() {
   return (
     <View className='vip-page'>
       <View className='vip-header'>
-        <Text className='vip-title'>AI炒股指南 · 会员</Text>
+        <Text className='vip-title'>重阳市场看板助手 · 会员</Text>
         {vipEnd ? (
           <Text className='vip-status'>会员有效期至 {String(vipEnd).slice(0, 10)}</Text>
         ) : (

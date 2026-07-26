@@ -40,7 +40,7 @@ export default function Login() {
     <View className='auth-page'>
       <View className='auth-card'>
         <Text className='auth-title'>欢迎回来</Text>
-        <Text className='auth-subtitle'>登录你的 AI炒股指南 账号</Text>
+        <Text className='auth-subtitle'>登录你的 重阳市场看板助手 账号</Text>
         <Input
           className='auth-input'
           placeholder='用户名'

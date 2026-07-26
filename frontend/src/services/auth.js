@@ -62,3 +62,11 @@ export const mockPay = (order_no) =>
     method: 'POST',
     body: JSON.stringify({ order_no }),
   });
+
+export const getWechatQrcode = () => authFetch('/api/auth/wechat/qrcode');
+
+export const wechatExchange = (ticket) =>
+  authFetch('/api/auth/wechat/exchange', {
+    method: 'POST',
+    body: JSON.stringify({ ticket }),
+  });

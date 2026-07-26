@@ -320,7 +320,7 @@ export default function AuctionGrab() {
           {analyzeLoading && !analyzeData && <Text className='ag-analyze-loading'>AI 复盘分析中…</Text>}
           {analyzeData?.pnl_summary && (
             <View className='ag-pnl'>
-              <Text className='ag-pnl-title'>今日等权买入复盘</Text>
+              <Text className='ag-pnl-title'>今日等权收益复盘</Text>
               <Text className='ag-pnl-avg' style={{ color: getChangeColor(analyzeData.pnl_summary.avg_pct) }}>
                 平均 {analyzeData.pnl_summary.avg_pct > 0 ? '+' : ''}{analyzeData.pnl_summary.avg_pct}%
               </Text>
@@ -333,12 +333,6 @@ export default function AuctionGrab() {
               </Text>
             </View>
           )}
-          {analyzeData?.ai_analysis && (
-            <View className='ag-ai'>
-              <Text className='ag-ai-title'>AI 复盘建议</Text>
-              <Text className='ag-ai-content'>{analyzeData.ai_analysis}</Text>
-            </View>
-          )}
         </View>
       )}
 
@@ -349,13 +343,6 @@ export default function AuctionGrab() {
         >
           {backtestLoading ? '回测计算中（约1分钟）…' : '参数回测（近10日）'}
         </View>
-
-        {backtestData?.ai_recommend && (
-          <View className='ag-ai'>
-            <Text className='ag-ai-title'>AI 参数优化建议</Text>
-            <Text className='ag-ai-content'>{backtestData.ai_recommend}</Text>
-          </View>
-        )}
 
         {backtestData?.results?.length > 0 && (
           <View className='ag-bt-wrap'>

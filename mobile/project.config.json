@@ -1,7 +1,7 @@
 {
   "miniprogramRoot": "dist/",
   "projectname": "stockai-mobile",
-  "description": "AI炒股指南 移动端",
+  "description": "重阳市场看板助手 移动端",
   "appid": "wxdd386a2c323cecf9",
   "setting": {
     "urlCheck": true,

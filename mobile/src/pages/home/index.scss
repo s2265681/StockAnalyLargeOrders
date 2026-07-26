@@ -1,0 +1,66 @@
+.home-page {
+  min-height: 100vh;
+  padding: 20rpx 24rpx 40rpx;
+  box-sizing: border-box;
+}
+
+.home-top {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.home-brand {
+  flex: 1;
+  text-align: center;
+  font-size: 34rpx;
+  font-weight: 800;
+  color: var(--color-accent);
+  letter-spacing: 1rpx;
+}
+
+.home-top-spacer {
+  width: 56rpx;
+}
+
+.home-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+  margin-top: 24rpx;
+}
+
+.home-cell {
+  width: calc((100% - 40rpx) / 3);
+  box-sizing: border-box;
+  background: var(--bg-card);
+  border: 1rpx solid var(--border);
+  border-radius: 18rpx;
+  padding: 28rpx 12rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.home-cell:active {
+  background: var(--bg-primary);
+}
+
+.home-cell-icon {
+  font-size: 52rpx;
+  line-height: 1;
+}
+
+.home-cell-label {
+  margin-top: 16rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.home-cell-desc {
+  margin-top: 8rpx;
+  font-size: 20rpx;
+  color: var(--text-muted);
+  text-align: center;
+}

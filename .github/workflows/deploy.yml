@@ -124,9 +124,9 @@ jobs:
             chmod +x backend/scripts/ensure_single_backend.sh
             bash backend/scripts/ensure_single_backend.sh
 
-            echo "===> Frontend: wipe stale build directory before upload"
-            rm -rf /www/StockAnalyLargeOrders/frontend/build
-            mkdir -p /www/StockAnalyLargeOrders/frontend/build
+            echo "===> Frontend: prepare clean staging dir (keep live build intact)"
+            rm -rf /www/StockAnalyLargeOrders/frontend/build.new
+            mkdir -p /www/StockAnalyLargeOrders/frontend/build.new
 
       - name: Upload frontend build
         uses: appleboy/scp-action@v0.1.7
@@ -136,7 +136,7 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: 22
           source: frontend/build/**
-          target: /www/StockAnalyLargeOrders/frontend/build
+          target: /www/StockAnalyLargeOrders/frontend/build.new
           strip_components: 2
           rm: true
 
@@ -151,6 +151,27 @@ jobs:
           script: |
             set -e
             cd /www/StockAnalyLargeOrders
+
+            echo "===> Frontend: verify staged build, then atomically swap live"
+            STAGING=/www/StockAnalyLargeOrders/frontend/build.new
+            LIVE=/www/StockAnalyLargeOrders/frontend/build
+            if [ ! -f "$STAGING/index.html" ]; then
+              echo "ERROR: staged build missing index.html; aborting without touching live site"
+              exit 1
+            fi
+            STAGED_MAIN_COUNT=$(grep -oE 'static/js/main\.[a-f0-9]+\.js' "$STAGING/index.html" | sort -u | wc -l | tr -d ' ')
+            if [ "$STAGED_MAIN_COUNT" != "1" ]; then
+              echo "ERROR: staged index.html references $STAGED_MAIN_COUNT main.js bundles (expected 1); aborting"
+              grep -oE 'static/js/main\.[a-f0-9]+\.js' "$STAGING/index.html" || true
+              exit 1
+            fi
+            rm -rf "${LIVE}.old"
+            if [ -d "$LIVE" ]; then
+              mv "$LIVE" "${LIVE}.old"
+            fi
+            mv "$STAGING" "$LIVE"
+            rm -rf "${LIVE}.old"
+            echo "Frontend swapped live with verified index.html"
 
             echo "===> Configure Nginx"
             mkdir -p /var/www/letsencrypt

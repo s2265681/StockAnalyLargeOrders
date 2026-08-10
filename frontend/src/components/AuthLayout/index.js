@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { LeftOutlined } from '@ant-design/icons';
 import ThemeToggle, { useTheme } from '../ThemeToggle';
 import './index.css';
 
@@ -32,7 +33,15 @@ function AuthLogo({ onClick }) {
   );
 }
 
-export default function AuthLayout({ title, subtitle, children, footer }) {
+export default function AuthLayout({
+  title,
+  subtitle,
+  children,
+  footer,
+  aside,
+  onBack,
+  wechatOnly = false,
+}) {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
 
@@ -103,20 +112,32 @@ export default function AuthLayout({ title, subtitle, children, footer }) {
         </section>
 
         <section className="auth-form-section">
-          <div className="auth-card">
-            <div className="auth-card-icon" aria-hidden>
-              <svg width="48" height="48" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="18" cy="18" r="17" fill="var(--auth-gold-bg)" stroke="var(--auth-gold)" strokeWidth="1.5" />
-                <rect x="14" y="13" width="8" height="14" rx="2" fill="var(--auth-gold)" />
-                <polygon points="11,13 25,13 23,7 13,7" fill="var(--auth-gold2)" />
-                <circle cx="18" cy="10" r="3.5" fill="#fff" opacity="0.95" />
-                <circle cx="18" cy="10" r="2" fill="var(--auth-gold2)" />
-              </svg>
-            </div>
-            <h2 className="auth-card-title">{title}</h2>
-            {subtitle && <p className="auth-card-subtitle">{subtitle}</p>}
-            <div className="auth-card-body">{children}</div>
-            {footer && <div className="auth-card-footer">{footer}</div>}
+          <div className={`auth-card${wechatOnly ? ' auth-card--wechat-only' : ''}`}>
+            {onBack && (
+              <button type="button" className="auth-card-back" onClick={onBack}>
+                <LeftOutlined />
+                <span>返回</span>
+              </button>
+            )}
+            {wechatOnly ? (
+              <div className="auth-card-aside">{aside}</div>
+            ) : (
+              <div className="auth-card-content">
+                <div className="auth-card-icon" aria-hidden>
+                  <svg width="48" height="48" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="18" cy="18" r="17" fill="var(--auth-gold-bg)" stroke="var(--auth-gold)" strokeWidth="1.5" />
+                    <rect x="14" y="13" width="8" height="14" rx="2" fill="var(--auth-gold)" />
+                    <polygon points="11,13 25,13 23,7 13,7" fill="var(--auth-gold2)" />
+                    <circle cx="18" cy="10" r="3.5" fill="#fff" opacity="0.95" />
+                    <circle cx="18" cy="10" r="2" fill="var(--auth-gold2)" />
+                  </svg>
+                </div>
+                <h2 className="auth-card-title">{title}</h2>
+                {subtitle && <p className="auth-card-subtitle">{subtitle}</p>}
+                <div className="auth-card-body">{children}</div>
+                {footer && <div className="auth-card-footer">{footer}</div>}
+              </div>
+            )}
           </div>
         </section>
       </main>

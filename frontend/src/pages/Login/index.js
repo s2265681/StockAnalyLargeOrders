@@ -8,6 +8,7 @@ import { getWechatQrcode } from '../../services/auth';
 
 const WXLOGIN_SRC = 'https://res.wx.qq.com/connect/zh_CN/htmledition/js/wxLogin.js';
 const QR_CONTAINER_ID = 'wx-qrcode-container';
+const MOBILE_QUERY = '(max-width: 960px)';
 
 function getPostLoginPath(location, searchParams) {
   const next = searchParams.get('next');
@@ -45,13 +46,25 @@ export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [wxLoading, setWxLoading] = useState(false);
-  const [showQr, setShowQr] = useState(false);
+  const [loginMode, setLoginMode] = useState('password');
+  const [qrReady, setQrReady] = useState(false);
+  const [qrError, setQrError] = useState('');
+  const [wxAvailable, setWxAvailable] = useState(true);
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia(MOBILE_QUERY).matches,
+  );
   const passwordRef = useRef(null);
   const { user, loading: authLoading, login, loginWithTicket } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const mq = window.matchMedia(MOBILE_QUERY);
+    const onChange = (e) => setIsMobile(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -87,13 +100,10 @@ export default function Login() {
       navigate(getPostLoginPath(location, searchParams), { replace: true });
     } else {
       message.error(res.message || '微信登录失败');
-      setShowQr(false);
     }
   }, [loginWithTicket, navigate, location, searchParams]);
 
-  // 监听内嵌回调页(iframe)通过 postMessage 回传的 ticket/error
   useEffect(() => {
-    if (!showQr) return undefined;
     const onMessage = (event) => {
       if (event.origin !== window.location.origin) return;
       const data = event.data;
@@ -102,31 +112,34 @@ export default function Login() {
         finishWithTicket(data.ticket);
       } else if (data.error) {
         message.error(data.error);
-        setShowQr(false);
       }
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [showQr, finishWithTicket]);
+  }, [finishWithTicket]);
 
-  const handleWechatLogin = async () => {
-    setWxLoading(true);
-    try {
-      const res = await getWechatQrcode();
-      if (!res.success || !res.data?.app_id || !res.data?.redirect_uri) {
-        message.error(res.message || '微信登录暂不可用');
-        setWxLoading(false);
-        return;
-      }
-      sessionStorage.setItem('wx_login_next', getPostLoginPath(location, searchParams));
-      await loadWxLoginScript();
-      setShowQr(true);
-      // 等容器挂载后再渲染二维码
-      setTimeout(() => {
+  useEffect(() => {
+    if (authLoading || user || loginMode !== 'wechat' || isMobile) return undefined;
+    let cancelled = false;
+    setQrReady(false);
+    setQrError('');
+    const container = document.getElementById(QR_CONTAINER_ID);
+    if (container) container.innerHTML = '';
+
+    (async () => {
+      try {
+        const res = await getWechatQrcode();
+        if (cancelled) return;
+        if (!res.success || !res.data?.app_id || !res.data?.redirect_uri) {
+          setWxAvailable(false);
+          setQrError(res.message || '微信登录暂不可用');
+          return;
+        }
+        sessionStorage.setItem('wx_login_next', getPostLoginPath(location, searchParams));
+        await loadWxLoginScript();
+        if (cancelled) return;
         if (!window.WxLogin) {
-          message.error('微信登录组件加载失败');
-          setShowQr(false);
-          setWxLoading(false);
+          setQrError('微信登录组件加载失败');
           return;
         }
         /* eslint-disable no-new */
@@ -140,14 +153,38 @@ export default function Login() {
           style: 'black',
           href: '',
         });
-        setWxLoading(false);
-      }, 0);
-    } catch {
-      message.error('微信登录暂不可用');
-      setShowQr(false);
-      setWxLoading(false);
-    }
-  };
+        setQrReady(true);
+      } catch {
+        if (!cancelled) setQrError('微信登录暂不可用');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [authLoading, user, loginMode, isMobile, location, searchParams]);
+
+  const qrAside = (
+    <>
+      <h3 className="auth-aside-title">微信扫码登录</h3>
+      <div className="auth-aside-qr">
+        <div id={QR_CONTAINER_ID} className="auth-aside-qr-slot" />
+        {!qrReady && (
+          <div className="auth-aside-qr-mask">
+            {qrError ? <span className="auth-aside-qr-err">{qrError}</span> : <Spin />}
+          </div>
+        )}
+      </div>
+      <p className="auth-aside-hint">使用微信扫一扫登录<br />"AI炒股指南"</p>
+    </>
+  );
+
+  if (loginMode === 'wechat' && !isMobile) {
+    return (
+      <AuthLayout
+        aside={qrAside}
+        onBack={() => setLoginMode('password')}
+        wechatOnly
+      />
+    );
+  }
 
   return (
     <AuthLayout
@@ -186,26 +223,17 @@ export default function Login() {
         </Button>
       </form>
 
-      <div className="auth-divider"><span>或</span></div>
-
-      {showQr ? (
-        <div className="wx-qr-wrap">
-          <div id={QR_CONTAINER_ID} className="wx-qr-frame">
-            <Spin />
-          </div>
-          <Button type="link" block onClick={() => setShowQr(false)}>
-            使用账号密码登录
+      {!isMobile && wxAvailable && (
+        <>
+          <div className="auth-divider"><span>或</span></div>
+          <Button
+            block
+            icon={<WechatOutlined style={{ color: '#07c160' }} />}
+            onClick={() => setLoginMode('wechat')}
+          >
+            微信扫码登录
           </Button>
-        </div>
-      ) : (
-        <Button
-          block
-          icon={<WechatOutlined style={{ color: '#07c160' }} />}
-          loading={wxLoading}
-          onClick={handleWechatLogin}
-        >
-          微信扫码登录
-        </Button>
+        </>
       )}
     </AuthLayout>
   );

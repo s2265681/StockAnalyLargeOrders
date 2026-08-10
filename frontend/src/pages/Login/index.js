@@ -9,6 +9,7 @@ import { getWechatQrcode } from '../../services/auth';
 const WXLOGIN_SRC = 'https://res.wx.qq.com/connect/zh_CN/htmledition/js/wxLogin.js';
 const QR_CONTAINER_ID = 'wx-qrcode-container';
 const MOBILE_QUERY = '(max-width: 960px)';
+const WX_LOGIN_CSS_HREF = 'data:text/css;base64,LmltcG93ZXJCb3ggLnRpdGxlIHsgZGlzcGxheTogbm9uZSAhaW1wb3J0YW50OyB9Ci5pbXBvd2VyQm94IC5pbmZvIHsgZGlzcGxheTogbm9uZSAhaW1wb3J0YW50OyB9Ci5pbXBvd2VyQm94IC5xcmNvZGUgeyB3aWR0aDogMjIwcHg7IG1hcmdpbi10b3A6IDA7IGJvcmRlcjogbm9uZTsgfQouaW1wb3dlckJveCB7IHdpZHRoOiAyMjBweDsgYm9yZGVyOiBub25lOyBtYXJnaW46IDAgYXV0bzsgfQouc3RhdHVzX2ljb24geyBkaXNwbGF5OiBub25lICFpbXBvcnRhbnQ7IH0KLmltcG93ZXJCb3ggLnN0YXR1cyB7IGRpc3BsYXk6IG5vbmUgIWltcG9ydGFudDsgfQo=';
 
 function getPostLoginPath(location, searchParams) {
   const next = searchParams.get('next');
@@ -151,7 +152,7 @@ export default function Login() {
           redirect_uri: encodeURIComponent(res.data.redirect_uri),
           state: res.data.state || '',
           style: 'black',
-          href: '',
+          href: WX_LOGIN_CSS_HREF,
         });
         setQrReady(true);
       } catch {

@@ -455,26 +455,28 @@
 
 .auth-aside-qr {
   position: relative;
-  width: 200px;
-  height: 200px;
+  width: 240px;
+  min-height: 240px;
   background: #fff;
   border-radius: 14px;
   padding: 10px;
   box-shadow: 0 4px 20px rgba(217, 119, 6, 0.12);
+  overflow: visible;
 }
 
 .auth-aside-qr-slot {
-  width: 100%;
-  height: 100%;
+  width: 220px;
+  min-height: 220px;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: visible;
 }
 
 .auth-aside-qr-slot iframe {
   border: 0;
-  width: 180px;
-  height: 180px;
+  width: 220px !important;
+  height: 220px !important;
 }
 
 .auth-aside-qr-slot img {

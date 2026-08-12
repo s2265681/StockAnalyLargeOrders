@@ -4,6 +4,8 @@ import * as http from 'http';
 export interface StockQuote {
   code: string;
   name: string;
+  /** 行情接口未返回数据时的占位项 */
+  isPlaceholder?: boolean;
   price: number;
   open: number;
   yestClose: number;

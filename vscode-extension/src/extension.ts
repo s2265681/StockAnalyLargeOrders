@@ -4,7 +4,8 @@ import { StatusBarManager } from './statusBar';
 import { AlertManager } from './alertManager';
 import { fetchQuotes, searchStock, StockQuote } from './sinaApi';
 import { openPanel, buildViewStockUrl } from './panel';
-import { ExtensionConfig, readExtensionConfig, toStatusDisplayConfig } from './config';
+import { ExtensionConfig, normalizeStockCode, readExtensionConfig, toStatusDisplayConfig } from './config';
+import { StockItem } from './stockManager';
 
 export function activate(ctx: vscode.ExtensionContext): void {
   const log = vscode.window.createOutputChannel('AI炒股看盘');
@@ -31,19 +32,55 @@ export function activate(ctx: vscode.ExtensionContext): void {
     }
   }
 
+  function placeholderQuote(stock: StockItem): StockQuote {
+    return {
+      code: stock.code,
+      name: stock.name,
+      isPlaceholder: true,
+      price: 0,
+      open: 0,
+      yestClose: 0,
+      high: 0,
+      low: 0,
+      percent: 0,
+      updown: 0,
+      volume: 0,
+      amount: 0,
+      buy1Vol: 0,
+      buy1Price: 0,
+      sell1Vol: 0,
+      sell1Price: 0,
+      time: '',
+      isLimitUp: false,
+      isLimitDown: false,
+    };
+  }
+
+  function mergeQuotesWithStocks(stocks: StockItem[], fetched: StockQuote[]): StockQuote[] {
+    const map = new Map(fetched.filter(q => !q.isPlaceholder).map(q => [q.code, q]));
+    return stocks.map(s => map.get(s.code) ?? placeholderQuote(s));
+  }
+
   async function refresh(): Promise<void> {
     const cfg = applyConfig();
     const stocks = stockManager.getAll();
     if (stocks.length === 0) { statusBar.update([]); return; }
+
+    let fetched: StockQuote[] = [];
     try {
-      const quotes = await fetchQuotes(stocks.map(s => s.code));
-      if (quotes.length > 0) {
-        lastQuotes = quotes;
-        await stockManager.updateNames(new Map(quotes.map(q => [q.code, q.name])));
-        statusBar.update(quotes);
-        await alertManager.check(quotes, cfg);
-      }
-    } catch { /* keep last display on network error */ }
+      fetched = await fetchQuotes(stocks.map(s => s.code));
+    } catch {
+      fetched = lastQuotes.filter(q => !q.isPlaceholder);
+    }
+
+    const quotes = mergeQuotesWithStocks(stocks, fetched);
+    lastQuotes = quotes;
+
+    if (fetched.length > 0) {
+      await stockManager.updateNames(new Map(fetched.map(q => [q.code, q.name])));
+      await alertManager.check(fetched, cfg);
+    }
+    statusBar.update(quotes);
   }
 
   function startTimer(): void {
@@ -108,12 +145,13 @@ export function activate(ctx: vscode.ExtensionContext): void {
     let selected: { code: string; name: string } | undefined;
 
     if (/^\d{6}$/.test(keyword)) {
-      const prefix = /^[56]/.test(keyword) ? 'sh' : 'sz';
+      const normalized = normalizeStockCode(keyword)!;
       const results = await searchStock(keyword);
-      selected = results[0] ?? { code: `${prefix}${keyword}`, name: keyword };
+      selected = results[0] ?? { code: normalized, name: keyword };
     } else if (/^(sh|sz|bj)\d{6}$/i.test(keyword)) {
+      const normalized = normalizeStockCode(keyword)!;
       const results = await searchStock(keyword.slice(2));
-      selected = results[0] ?? { code: keyword.toLowerCase(), name: keyword.slice(2) };
+      selected = results[0] ?? { code: normalized, name: keyword.slice(2) };
     } else {
       await vscode.window.withProgress(
         { location: vscode.ProgressLocation.Notification, title: `搜索 "${keyword}"...`, cancellable: false },
@@ -135,6 +173,8 @@ export function activate(ctx: vscode.ExtensionContext): void {
     }
 
     if (!selected) return;
+    const normalizedCode = normalizeStockCode(selected.code);
+    if (normalizedCode) selected = { ...selected, code: normalizedCode };
     const added = await stockManager.add(selected);
     await refresh();
     vscode.window.showInformationMessage(
@@ -284,6 +324,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
         description: '切换状态栏股票信息显示',
         fn: () => {
           const now = statusBar.toggle();
+          if (now) void refresh();
           vscode.window.showInformationMessage(now ? '✓ 已显示状态栏' : '✓ 已隐藏状态栏');
         },
       },

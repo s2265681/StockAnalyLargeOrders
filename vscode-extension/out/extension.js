@@ -62,6 +62,33 @@ function activate(ctx) {
             await stockManager.syncFromSettings(cfg.stocks, cfg.priceAlarms);
         }
     }
+    function placeholderQuote(stock) {
+        return {
+            code: stock.code,
+            name: stock.name,
+            isPlaceholder: true,
+            price: 0,
+            open: 0,
+            yestClose: 0,
+            high: 0,
+            low: 0,
+            percent: 0,
+            updown: 0,
+            volume: 0,
+            amount: 0,
+            buy1Vol: 0,
+            buy1Price: 0,
+            sell1Vol: 0,
+            sell1Price: 0,
+            time: '',
+            isLimitUp: false,
+            isLimitDown: false,
+        };
+    }
+    function mergeQuotesWithStocks(stocks, fetched) {
+        const map = new Map(fetched.filter(q => !q.isPlaceholder).map(q => [q.code, q]));
+        return stocks.map(s => map.get(s.code) ?? placeholderQuote(s));
+    }
     async function refresh() {
         const cfg = applyConfig();
         const stocks = stockManager.getAll();
@@ -69,16 +96,20 @@ function activate(ctx) {
             statusBar.update([]);
             return;
         }
+        let fetched = [];
         try {
-            const quotes = await (0, sinaApi_1.fetchQuotes)(stocks.map(s => s.code));
-            if (quotes.length > 0) {
-                lastQuotes = quotes;
-                await stockManager.updateNames(new Map(quotes.map(q => [q.code, q.name])));
-                statusBar.update(quotes);
-                await alertManager.check(quotes, cfg);
-            }
+            fetched = await (0, sinaApi_1.fetchQuotes)(stocks.map(s => s.code));
         }
-        catch { /* keep last display on network error */ }
+        catch {
+            fetched = lastQuotes.filter(q => !q.isPlaceholder);
+        }
+        const quotes = mergeQuotesWithStocks(stocks, fetched);
+        lastQuotes = quotes;
+        if (fetched.length > 0) {
+            await stockManager.updateNames(new Map(fetched.map(q => [q.code, q.name])));
+            await alertManager.check(fetched, cfg);
+        }
+        statusBar.update(quotes);
     }
     function startTimer() {
         if (timer)
@@ -134,13 +165,14 @@ function activate(ctx) {
         const keyword = input.trim();
         let selected;
         if (/^\d{6}$/.test(keyword)) {
-            const prefix = /^[56]/.test(keyword) ? 'sh' : 'sz';
+            const normalized = (0, config_1.normalizeStockCode)(keyword);
             const results = await (0, sinaApi_1.searchStock)(keyword);
-            selected = results[0] ?? { code: `${prefix}${keyword}`, name: keyword };
+            selected = results[0] ?? { code: normalized, name: keyword };
         }
         else if (/^(sh|sz|bj)\d{6}$/i.test(keyword)) {
+            const normalized = (0, config_1.normalizeStockCode)(keyword);
             const results = await (0, sinaApi_1.searchStock)(keyword.slice(2));
-            selected = results[0] ?? { code: keyword.toLowerCase(), name: keyword.slice(2) };
+            selected = results[0] ?? { code: normalized, name: keyword.slice(2) };
         }
         else {
             await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: `搜索 "${keyword}"...`, cancellable: false }, async () => {
@@ -161,6 +193,9 @@ function activate(ctx) {
         }
         if (!selected)
             return;
+        const normalizedCode = (0, config_1.normalizeStockCode)(selected.code);
+        if (normalizedCode)
+            selected = { ...selected, code: normalizedCode };
         const added = await stockManager.add(selected);
         await refresh();
         vscode.window.showInformationMessage(added ? `✓ 已添加: ${selected.name} (${selected.code.toUpperCase()})` : `${selected.name} 已在列表中`);
@@ -295,6 +330,8 @@ function activate(ctx) {
                 description: '切换状态栏股票信息显示',
                 fn: () => {
                     const now = statusBar.toggle();
+                    if (now)
+                        void refresh();
                     vscode.window.showInformationMessage(now ? '✓ 已显示状态栏' : '✓ 已隐藏状态栏');
                 },
             },

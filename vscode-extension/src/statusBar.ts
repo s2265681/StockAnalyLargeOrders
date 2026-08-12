@@ -35,6 +35,7 @@ export class StatusBarManager {
 
   private formatStatusSegment(q: StockQuote): string {
     const name = this.displayName(q);
+    if (q.isPlaceholder) return `${name} —`;
     const arrow = q.percent >= 0 ? '↗' : '↘';
     const sign = q.percent >= 0 ? '+' : '';
     const tag = q.isLimitUp ? '[涨停]' : q.isLimitDown ? '[跌停]' : '';
@@ -103,6 +104,16 @@ export class StatusBarManager {
   }
 
   private buildStockCardHtml(q: StockQuote): string {
+    if (q.isPlaceholder) {
+      const name = this.escapeHtml(this.displayName(q));
+      const code = this.escapeHtml(q.code.toUpperCase());
+      return (
+        `<div style="min-width:168px;font-size:12px;line-height:1.6;">` +
+        `<div style="font-weight:600;margin-bottom:4px;white-space:nowrap;">${name} <code>${code}</code></div>` +
+        `<div style="opacity:0.75;">行情加载中…</div>` +
+        `</div>`
+      );
+    }
     const sign = q.percent >= 0 ? '+' : '';
     const sealVol = q.isLimitUp && q.buy1Vol > 0
       ? `${(q.buy1Vol / 1e6).toFixed(2)}万手`

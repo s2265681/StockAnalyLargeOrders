@@ -64,3 +64,13 @@
 2. 选择「添加股票」，输入股票代码或名称
 3. 股票行情会自动出现在状态栏，hover 查看封单详情
 4. 选择「查看股票」打开完整分析系统
+
+发布者管理后台（上传/更新扩展）
+https://marketplace.visualstudio.com/manage
+你的 Publisher 页面
+https://marketplace.visualstudio.com/manage/publishers/stockanalysis
+扩展市场首页
+https://marketplace.visualstudio.com/vscode
+
+Cursor 用户补充： Cursor 也支持 Open VSX 分发（可选）
+https://open-vsx.org/extension/stockanalysis/stock-analysis

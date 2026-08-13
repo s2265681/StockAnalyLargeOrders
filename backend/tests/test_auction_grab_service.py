@@ -86,6 +86,25 @@ class AuctionGrabServiceTest(unittest.TestCase):
         self.assertEqual(n, 1)
         mock_write.assert_called_once()
 
+    @patch("services.auction_grab_service.execute_write")
+    def test_save_and_load_screen_cache(self, mock_write):
+        mock_write.return_value = 1
+        items = [{"code": "000001", "name": "平安", "auction_change_pct": 3.2}]
+        limit_up = {"银行": 2}
+        ag_store.save_screen_cache("20260813", 0, items, limit_up)
+
+    @patch("services.auction_grab_service.execute_query")
+    def test_load_screen_cache(self, mock_query):
+        mock_query.return_value = [{
+            "items_json": '[{"code":"000001","name":"平安"}]',
+            "limit_up_by_industry_json": '{"银行":1}',
+            "item_count": 1,
+            "updated_at": None,
+        }]
+        cached = ag_store.load_screen_cache("20260813", 0)
+        self.assertEqual(len(cached["items"]), 1)
+        self.assertEqual(cached["limit_up_by_industry"]["银行"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

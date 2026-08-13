@@ -103,7 +103,8 @@ jobs:
               migrations/20260522_add_users_default_email.sql \
               migrations/20260522_alert_rules_cooldown_wechat.sql \
               migrations/20260723_wechat_pay_orders.sql \
-              migrations/20260723_test_pay_plans.sql
+              migrations/20260723_test_pay_plans.sql \
+              migrations/20260813_auction_grab_screen_cache.sql
             do
               if [ -f "$migration" ]; then
                 echo "Applying $migration"

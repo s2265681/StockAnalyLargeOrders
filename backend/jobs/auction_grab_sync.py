@@ -45,6 +45,14 @@ def sync_period(trade_date: str, period: int) -> int:
                      label, period, count)
         return 0
     logger.info("%s period=%s 入库 %s 条", label, period, count)
+
+    try:
+        from services.auction_screen_service import build_screen_cache
+        screen_count = build_screen_cache(trade_date, period, prefer_db=True)
+        logger.info("%s period=%s 高级筛选缓存 %s 条", label, period, screen_count)
+    except Exception as e:
+        logger.warning("%s period=%s 高级筛选缓存失败: %s", label, period, e)
+
     return count
 
 

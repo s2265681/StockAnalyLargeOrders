@@ -138,6 +138,8 @@ def get_main_board_top_auction(
     trade_date: str,
     period: int = 0,
     top_n: int = 60,
+    *,
+    prefer_db: bool = False,
 ) -> list[dict]:
     """
     从全市场竞价金额前 N 支中，筛选沪深A股主板票（排除ST），按委托额降序返回。
@@ -147,11 +149,28 @@ def get_main_board_top_auction(
         trade_date  — YYYY-MM-DD 或 YYYYMMDD
         period      — 0=早盘竞价 1=尾盘
         top_n       — 目标主板股票数量（实际数量受数据源限制，通常40-45支）
+        prefer_db   — True 时优先读 auction_grab_stocks（cron 刚同步后更快）
     """
     from datetime import date as _date
 
     if len(trade_date) == 8:
         trade_date = f"{trade_date[:4]}-{trade_date[4:6]}-{trade_date[6:]}"
+
+    if prefer_db:
+        db_stocks = _load_from_db(trade_date, period)
+        if db_stocks:
+            db_stocks.sort(key=lambda x: x.get('auction_order_amt', 0), reverse=True)
+            result = []
+            for s in db_stocks:
+                name = s.get('name') or ''
+                if 'ST' in name.upper():
+                    continue
+                result.append(dict(s))
+                if len(result) >= top_n:
+                    break
+            if result:
+                logger.info(f"高级筛选候选池 DB 直读 {trade_date} period={period}: {len(result)} 支")
+                return result
 
     today_str = _date.today().strftime('%Y-%m-%d')
     is_today = (trade_date == today_str)
@@ -429,7 +448,26 @@ def _count_limit_up_and_prev_vol(
     return cnt, prev_vol, close_price, prev_close, prev_prev_close, next_close, open_price
 
 
-def run_advanced_screen(trade_date: str, period: int = 0) -> list[dict]:
+def collect_limit_up_by_industry(date_compact: str) -> dict[str, int]:
+    """当日涨停梯队：各行业涨停家数"""
+    limit_up_by_industry: dict[str, int] = {}
+    try:
+        from services.theme_service import get_limit_up_stocks_by_date
+        for s in (get_limit_up_stocks_by_date(date_compact) or []):
+            ind = (s.get('industry') or '').strip()
+            if ind:
+                limit_up_by_industry[ind] = limit_up_by_industry.get(ind, 0) + 1
+    except Exception as e:
+        logger.warning(f"获取涨停行业数据失败: {e}")
+    return limit_up_by_industry
+
+
+def run_advanced_screen(
+    trade_date: str,
+    period: int = 0,
+    *,
+    prefer_db: bool = False,
+) -> list[dict]:
     """
     完整高级筛选流程，返回通过所有条件的股票列表。
 
@@ -446,7 +484,7 @@ def run_advanced_screen(trade_date: str, period: int = 0) -> list[dict]:
         td_dash = trade_date
 
     # 1. 全市场主板非ST
-    step1 = get_main_board_top_auction(trade_date, period=period, top_n=60)
+    step1 = get_main_board_top_auction(trade_date, period=period, top_n=60, prefer_db=prefer_db)
     if not step1:
         return []
 
@@ -533,6 +571,30 @@ def run_advanced_screen(trade_date: str, period: int = 0) -> list[dict]:
     merge_stock_meta(step6)
 
     return step6
+
+
+def build_screen_cache(trade_date: str, period: int = 0, *, prefer_db: bool = True) -> int:
+    """
+    运行高级筛选并写入 DB 缓存（供 cron 9:25/9:30 预计算）。
+    返回通过筛选的股票数量。
+    """
+    from services import auction_grab_service as ag_store
+
+    if len(trade_date) == 8:
+        date_compact = trade_date
+        trade_date_dash = f"{trade_date[:4]}-{trade_date[4:6]}-{trade_date[6:]}"
+    else:
+        trade_date_dash = trade_date
+        date_compact = trade_date.replace('-', '')
+
+    stocks = run_advanced_screen(trade_date_dash, period, prefer_db=prefer_db)
+    limit_up_by_industry = collect_limit_up_by_industry(date_compact)
+    ag_store.save_screen_cache(date_compact, period, stocks, limit_up_by_industry)
+    logger.info(
+        "高级筛选缓存已写入 date=%s period=%s count=%s",
+        date_compact, period, len(stocks),
+    )
+    return len(stocks)
 
 
 # ─── 回测优化 ────────────────────────────────────────────────────────────────

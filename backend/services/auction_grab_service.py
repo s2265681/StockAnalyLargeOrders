@@ -1,6 +1,7 @@
 """
 竞价抢筹数据持久化：日快照入库，供接口缓存与历史回测。
 """
+import json
 import logging
 from typing import Any
 
@@ -453,3 +454,85 @@ def merge_stock_meta(items: list[dict]) -> None:
         m = meta.get(item.get("code", ""), {})
         item.setdefault("industry", m.get("industry", ""))
         item.setdefault("concepts", m.get("concepts", ""))
+
+
+_SCREEN_CACHE_TABLE = "auction_grab_screen_cache"
+
+
+def save_screen_cache(
+    date_compact: str,
+    period: int,
+    items: list[dict],
+    limit_up_by_industry: dict | None = None,
+) -> int:
+    """持久化高级筛选结果，供 cron 预计算与 API 直读。"""
+    try:
+        sql = f"""
+            INSERT INTO {_SCREEN_CACHE_TABLE}
+                (date, period, items_json, limit_up_by_industry_json, item_count)
+            VALUES (%s, %s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+                items_json = VALUES(items_json),
+                limit_up_by_industry_json = VALUES(limit_up_by_industry_json),
+                item_count = VALUES(item_count),
+                updated_at = CURRENT_TIMESTAMP
+        """
+        return execute_write(sql, (
+            date_compact,
+            int(period),
+            json.dumps(items or [], ensure_ascii=False),
+            json.dumps(limit_up_by_industry or {}, ensure_ascii=False),
+            len(items or []),
+        ))
+    except Exception as e:
+        logger.warning(f"写入高级筛选缓存失败: {e}")
+        return 0
+
+
+def load_screen_cache(date_compact: str, period: int) -> dict | None:
+    """读取高级筛选缓存；无数据返回 None。"""
+    try:
+        rows = execute_query(
+            f"""
+            SELECT items_json, limit_up_by_industry_json, item_count, updated_at
+            FROM {_SCREEN_CACHE_TABLE}
+            WHERE date = %s AND period = %s
+            LIMIT 1
+            """,
+            (date_compact, int(period)),
+        )
+    except Exception as e:
+        logger.warning(f"读取高级筛选缓存失败: {e}")
+        return None
+
+    if not rows:
+        return None
+
+    row = rows[0]
+    try:
+        items = json.loads(row.get("items_json") or "[]")
+    except (TypeError, ValueError):
+        items = []
+    try:
+        limit_up_by_industry = json.loads(row.get("limit_up_by_industry_json") or "{}")
+    except (TypeError, ValueError):
+        limit_up_by_industry = {}
+
+    return {
+        "items": items,
+        "limit_up_by_industry": limit_up_by_industry,
+        "item_count": int(row.get("item_count") or len(items)),
+        "updated_at": row.get("updated_at"),
+    }
+
+
+def screen_cache_exists(date_compact: str, period: int) -> bool:
+    try:
+        rows = execute_query(
+            f"SELECT 1 FROM {_SCREEN_CACHE_TABLE} WHERE date = %s AND period = %s LIMIT 1",
+            (date_compact, int(period)),
+        )
+        return bool(rows)
+    except Exception as e:
+        logger.warning(f"查询高级筛选缓存失败: {e}")
+        return False

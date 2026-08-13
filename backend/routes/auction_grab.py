@@ -647,10 +647,116 @@ def get_auction_grab_score():
     })
 
 
-# 高级筛选结果缓存
+# 高级筛选结果缓存（进程内 + DB 持久化）
 _screen_cache: dict = {}
-_SCREEN_CACHE_TTL_LIVE = 120    # 盘中
-_SCREEN_CACHE_TTL_HIST = 3600   # 历史
+_SCREEN_CACHE_TTL_LIVE = 120    # 盘中内存缓存
+_SCREEN_CACHE_TTL_HIST = 3600   # 历史内存缓存
+
+
+def _screen_cache_key(date_compact: str, period_int: int) -> str:
+    return f'screen_{date_compact}_{period_int}'
+
+
+def _screen_memory_ttl(is_today: bool) -> int:
+    return _SCREEN_CACHE_TTL_LIVE if (is_today and _is_market_hours()) else _SCREEN_CACHE_TTL_HIST
+
+
+def _attach_market_sentiment(payload: dict, is_today: bool) -> dict:
+    """当日盘中附加实时大盘情绪（轻量，不影响筛选结果缓存）。"""
+    if not is_today:
+        return payload
+    try:
+        from services.auction_screen_service import get_market_sentiment
+        payload['market_sentiment'] = get_market_sentiment()
+    except Exception as e:
+        logger.warning(f"获取大盘情绪失败: {e}")
+    return payload
+
+
+def _build_screen_payload(
+    dt: str,
+    period_int: int,
+    stocks: list[dict],
+    limit_up_by_industry: dict,
+    *,
+    is_today: bool,
+    include_market_sentiment: bool = True,
+) -> dict:
+    payload = {
+        'items': stocks,
+        'total': len(stocks),
+        'date': dt,
+        'period': period_int,
+        'limit_up_by_industry': limit_up_by_industry,
+        'market_sentiment': None,
+    }
+    if include_market_sentiment:
+        _attach_market_sentiment(payload, is_today)
+    return payload
+
+
+def _resolve_screen_stocks(
+    trade_date: str,
+    period_int: int,
+    date_compact: str,
+    is_today: bool,
+) -> tuple[list[dict], dict]:
+    """
+    解析高级筛选结果：内存 → DB 缓存 → 现场计算并写库。
+    返回 (stocks, limit_up_by_industry)。
+    """
+    from services.auction_screen_service import (
+        collect_limit_up_by_industry,
+        run_advanced_screen,
+    )
+
+    cache_key = _screen_cache_key(date_compact, period_int)
+    ttl = _screen_memory_ttl(is_today)
+    cached = _screen_cache.get(cache_key)
+    if cached and (time.time() - cached['ts']) < ttl:
+        payload = cached['payload']
+        return payload.get('items') or [], payload.get('limit_up_by_industry') or {}
+
+    db_cached = ag_store.load_screen_cache(date_compact, period_int)
+    if db_cached is not None:
+        stocks = db_cached.get('items') or []
+        limit_up_by_industry = db_cached.get('limit_up_by_industry') or {}
+        return stocks, limit_up_by_industry
+
+    stocks = run_advanced_screen(
+        trade_date,
+        period_int,
+        prefer_db=ag_store.snapshot_exists(date_compact, period_int),
+    )
+    limit_up_by_industry = collect_limit_up_by_industry(date_compact)
+    ag_store.save_screen_cache(date_compact, period_int, stocks, limit_up_by_industry)
+    return stocks, limit_up_by_industry
+
+
+def _get_screen_payload(
+    dt: str,
+    trade_date: str,
+    date_compact: str,
+    period_int: int,
+    is_today: bool,
+) -> dict:
+    cache_key = _screen_cache_key(date_compact, period_int)
+    ttl = _screen_memory_ttl(is_today)
+    cached = _screen_cache.get(cache_key)
+    if cached and (time.time() - cached['ts']) < ttl:
+        payload = dict(cached['payload'])
+        if is_today:
+            _attach_market_sentiment(payload, is_today=True)
+        return payload
+
+    stocks, limit_up_by_industry = _resolve_screen_stocks(
+        trade_date, period_int, date_compact, is_today,
+    )
+    payload = _build_screen_payload(
+        dt, period_int, stocks, limit_up_by_industry, is_today=is_today,
+    )
+    _screen_cache[cache_key] = {'ts': time.time(), 'payload': payload}
+    return payload
 
 
 @auction_grab_bp.route('/api/v1/auction-grab/screen', methods=['GET'])
@@ -659,8 +765,6 @@ def get_auction_grab_screen():
     高级筛选：全市场竞价金额前N主板非ST → 竞价涨幅2-7% → 流通市值30-300亿 → 近1年涨停>2次
     返回通过所有条件的股票，含 vol_ratio（竞价委托量/昨日成交量）
     """
-    from services.auction_screen_service import run_advanced_screen
-
     period = request.args.get('period', '0')
     dt = request.args.get('dt', _get_last_trading_day())
     trade_date = _format_date(dt)
@@ -668,47 +772,12 @@ def get_auction_grab_screen():
     period_int = int(period)
     is_today = _is_today_trading_date(date_compact)
 
-    cache_key = f'screen_{date_compact}_{period_int}'
-    ttl = _SCREEN_CACHE_TTL_LIVE if (is_today and _is_market_hours()) else _SCREEN_CACHE_TTL_HIST
-    cached = _screen_cache.get(cache_key)
-    if cached and (time.time() - cached['ts']) < ttl:
-        return v1_success_response(data=cached['payload'])
-
     try:
-        stocks = run_advanced_screen(trade_date, period_int)
+        payload = _get_screen_payload(dt, trade_date, date_compact, period_int, is_today)
     except Exception as e:
         logger.error(f"高级筛选失败: {e}")
         return v1_error_response('高级筛选暂时不可用，请稍后重试')
 
-    # 同行业涨停数量（来自当日涨停梯队库）
-    limit_up_by_industry = {}
-    try:
-        from services.theme_service import get_limit_up_stocks_by_date
-        for s in (get_limit_up_stocks_by_date(date_compact) or []):
-            ind = (s.get('industry') or '').strip()
-            if ind:
-                limit_up_by_industry[ind] = limit_up_by_industry.get(ind, 0) + 1
-    except Exception as e:
-        logger.warning(f"获取涨停行业数据失败: {e}")
-
-    # 大盘情绪（仅当日实时拉取，历史日期跳过）
-    market_sentiment = None
-    if is_today:
-        try:
-            from services.auction_screen_service import get_market_sentiment
-            market_sentiment = get_market_sentiment()
-        except Exception as e:
-            logger.warning(f"获取大盘情绪失败: {e}")
-
-    payload = {
-        'items': stocks,
-        'total': len(stocks),
-        'date': dt,
-        'period': period_int,
-        'limit_up_by_industry': limit_up_by_industry,
-        'market_sentiment': market_sentiment,
-    }
-    _screen_cache[cache_key] = {'ts': time.time(), 'payload': payload}
     return v1_success_response(data=payload)
 
 
@@ -788,7 +857,6 @@ _ANALYZE_CACHE_TTL_HIST = 86400  # 历史 24h
 @auction_grab_bp.route('/api/v1/auction-grab/screen/analyze', methods=['GET'])
 def get_auction_grab_screen_analyze():
     """高级筛选复盘分析：P&L 汇总 + AI 建议（独立接口，异步加载）"""
-    from services.auction_screen_service import run_advanced_screen
     from utils.claude_client import call_claude_for_scenario
 
     dt = request.args.get('dt', _get_last_trading_day())
@@ -804,18 +872,11 @@ def get_auction_grab_screen_analyze():
     if cached and (time.time() - cached['ts']) < analyze_ttl:
         return v1_success_response(data=cached['payload'])
 
-    # 复用 screen 缓存，避免重复拉取
-    screen_key = f'screen_{date_compact}_{period_int}'
-    screen_ttl = _SCREEN_CACHE_TTL_LIVE if (is_today and _is_market_hours()) else _SCREEN_CACHE_TTL_HIST
-    sc = _screen_cache.get(screen_key)
-    if sc and (time.time() - sc['ts']) < screen_ttl:
-        stocks = sc['payload']['items']
-    else:
-        try:
-            stocks = run_advanced_screen(trade_date, period_int)
-        except Exception as e:
-            logger.error(f"analyze: 筛选失败: {e}")
-            stocks = []
+    try:
+        stocks, _ = _resolve_screen_stocks(trade_date, period_int, date_compact, is_today)
+    except Exception as e:
+        logger.error(f"analyze: 筛选失败: {e}")
+        stocks = []
 
     if not stocks:
         return v1_success_response(data={'ai_analysis': '暂无筛选结果。', 'pnl_summary': None})

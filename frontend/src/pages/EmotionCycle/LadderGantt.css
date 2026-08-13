@@ -4,50 +4,174 @@
   min-height: 0;
   color: var(--text-primary);
   font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+
+  /* dark (default) */
+  --lb-grid: #1c2431;
+  --lb-text: #e9edf5;
+  --lb-muted: #7b869c;
+  --lb-head: #c8d2e2;
+  --lb-daybg: rgba(16, 21, 29, .55);
+  --lb-cardbg: rgba(16, 21, 29, .35);
+  --lb-pending-bd: #3a4356;
+  --lb-broken-bd: #3a4356;
+  --lb-broken-bg: rgba(20, 26, 36, .5);
 }
 
-.ladder-head {
-  display: flex;
-  align-items: baseline;
-  gap: 14px;
+[data-theme="light"] .ladder-gantt {
+  --lb-grid: #e2e8f0;
+  --lb-text: #1f2a3a;
+  --lb-muted: #64748b;
+  --lb-head: #334155;
+  --lb-daybg: rgba(255, 255, 255, .82);
+  --lb-cardbg: rgba(255, 255, 255, .9);
+  --lb-pending-bd: #c2ccd8;
+  --lb-broken-bd: #c2ccd8;
+  --lb-broken-bg: rgba(238, 242, 247, .8);
 }
 
+.ladder-head { display: flex; align-items: baseline; gap: 14px; }
 .ladder-title { font-size: 17px; font-weight: 700; letter-spacing: 1px; }
-
 .ladder-badge {
   font-size: 12px; color: #8aa0c8; border: 1px solid #33507e;
   border-radius: 10px; padding: 1px 8px;
 }
-
 .ladder-switch { margin-left: auto; display: flex; gap: 6px; }
-
 .ladder-switch span {
   font-size: 12px; padding: 3px 12px; border-radius: 6px;
   background: #1a2130; color: #9aa7bd; cursor: pointer; user-select: none;
 }
-
 .ladder-switch span.on { background: #1f4bd8; color: #fff; }
-
-.ladder-sub { color: #7b869c; font-size: 12px; margin: 6px 0 10px; }
+.ladder-sub { color: var(--lb-muted); font-size: 12px; margin: 6px 0 10px; }
 
 .ladder-scroll { flex: 1; min-height: 0; overflow: auto; }
-
 .ladder-loading, .ladder-empty {
-  padding: 40px; text-align: center; color: #7b869c; font-size: 13px;
+  padding: 40px; text-align: center; color: var(--lb-muted); font-size: 13px;
 }
+
+/* ── 天梯网格 ── */
+.ladder-board { display: inline-flex; flex-direction: column; min-width: 100%; }
+
+/* 列宽变量 */
+.ladder-board { --lb-daycol-w: 78px; --lb-col-w: 128px; --lb-rail-w: 130px; }
+
+.lb-colhead {
+  display: flex;
+  position: sticky; top: 0; z-index: 4;
+  background: var(--lb-daybg);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--lb-grid);
+}
+.lb-corner {
+  width: var(--lb-daycol-w); flex: none;
+  position: sticky; left: 0; z-index: 5;
+  background: var(--lb-daybg);
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 6px 8px; gap: 2px;
+  border-right: 1px solid var(--lb-grid);
+}
+.lb-corner-x { font-size: 10px; color: var(--lb-muted); }
+.lb-corner-y { font-size: 10px; color: var(--lb-muted); }
+
+.lb-bh {
+  width: var(--lb-col-w); flex: none;
+  display: flex; align-items: center; justify-content: center;
+  padding: 10px 4px; font-size: 13px; font-weight: 700;
+  color: var(--lb-head); border-left: 1px solid var(--lb-grid);
+}
+.lb-bh-top { color: #fbbf24; }
+
+.lb-rail-head {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; color: var(--lb-muted); font-weight: 600;
+}
+
+.lb-row { display: flex; border-bottom: 1px solid var(--lb-grid); min-height: 84px; }
+
+.lb-daycol {
+  width: var(--lb-daycol-w); flex: none;
+  position: sticky; left: 0; z-index: 2;
+  background: var(--lb-daybg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; padding: 8px 4px;
+  border-right: 1px solid var(--lb-grid);
+}
+.lb-date { font-size: 14px; font-weight: 700; color: var(--lb-text); }
+.lb-wd { font-size: 10.5px; color: var(--lb-muted); }
+.lb-stage {
+  font-size: 10.5px; font-weight: 600; padding: 1px 8px; border-radius: 8px;
+}
+
+.lb-col {
+  width: var(--lb-col-w); flex: none;
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 8px 7px; border-left: 1px solid var(--lb-grid);
+}
+
+.lb-card {
+  border: 1px solid var(--lb-cardbg-bd, var(--lb-grid));
+  background: var(--lb-cardbg);
+  border-radius: 9px; padding: 5px 8px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.lb-name {
+  font-size: 12.5px; font-weight: 700; line-height: 1.2;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lb-mk-main { color: var(--lb-text); }
+.lb-mk-cyb { color: #fb923c; }
+.lb-mk-kcb { color: #c084fc; }
+[data-theme="light"] .lb-mk-cyb { color: #d97706; }
+[data-theme="light"] .lb-mk-kcb { color: #9333ea; }
+
+.lb-mktag {
+  display: inline-block; font-style: normal; font-size: 9px; font-weight: 700;
+  margin-left: 4px; padding: 0 3px; border-radius: 3px;
+  background: rgba(148, 163, 184, .22); color: var(--lb-muted);
+  vertical-align: middle;
+}
+
+.lb-meta { display: flex; align-items: baseline; gap: 6px; }
+.lb-b { font-size: 11px; font-weight: 700; color: var(--lb-text); }
+.lb-prem { font-size: 12px; font-weight: 800; margin-left: auto; }
+
+.lb-broken {
+  border-style: dashed; border-color: var(--lb-broken-bd);
+  background: var(--lb-broken-bg); opacity: .78;
+}
+.lb-broken .lb-name { color: var(--lb-muted); font-weight: 600; }
+.lb-brk { font-size: 11px; font-weight: 700; color: #ff8a5b; }
+
+.lb-limitdown { background: #0a0a0a; border-color: #ff4d4f; }
+.lb-limitdown .lb-name { color: #ffd0d0; }
+.lb-limitdown .lb-b { color: #ffb3b3; }
+.lb-ld { font-size: 11px; font-weight: 800; color: #ff6b6b; margin-left: auto; }
+
+.lb-rail {
+  width: var(--lb-rail-w); flex: none;
+  display: flex; flex-direction: column; justify-content: center;
+  gap: 3px; padding: 8px 10px;
+  border-left: 1px solid var(--lb-grid);
+}
+.lb-s { font-size: 11.5px; font-weight: 600; }
+.lb-s-max { color: #c084fc; }
+.lb-s-up { color: #ff5a63; }
+.lb-s-cs { color: #fa9f3c; }
+.lb-s-ad { color: #38e07b; }
 
 .ladder-legend {
   margin-top: 10px; display: flex; gap: 16px; flex-wrap: wrap;
   font-size: 11.5px; color: #93a1b8; align-items: center; flex-shrink: 0;
 }
-
 .ladder-legend .lg-sw {
   display: inline-block; width: 20px; height: 11px; border-radius: 3px;
   vertical-align: middle; margin-right: 4px;
 }
+.ladder-legend .lg-ld { background: #0a0a0a; border: 1px solid #ff4d4f; }
+.ladder-legend .lg-brk { background: var(--lb-broken-bg); border: 1px dashed var(--lb-broken-bd); }
 
 @media (max-width: 768px) {
   .ladder-title { font-size: 15px; }
   .ladder-sub { font-size: 11px; }
   .ladder-legend { gap: 10px; font-size: 11px; }
+  .ladder-board { --lb-col-w: 110px; --lb-daycol-w: 64px; --lb-rail-w: 108px; }
 }

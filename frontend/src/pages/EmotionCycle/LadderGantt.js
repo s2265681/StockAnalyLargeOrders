@@ -3,25 +3,7 @@ import { Spin } from 'antd';
 import { apiRequest } from '../../config/api';
 import './LadderGantt.css';
 
-const NAME_COLOR = {
-  dark: { main: '#e9edf5', cyb: '#fb923c', kcb: '#c084fc' },
-  light: { main: '#1f2a3a', cyb: '#d97706', kcb: '#9333ea' },
-};
-
-const PALETTE = {
-  dark: {
-    text: '#e9edf5', textMuted: '#7b869c', axisFaint: '#5b6678',
-    boardHead: '#c8d2e2', grid: '#1c2431', rowAlpha: 0.06,
-    namePillFill: 'rgba(16,21,29,.92)',
-    brokenFill: '#141a24', brokenStroke: '#3a4356',
-  },
-  light: {
-    text: '#1f2a3a', textMuted: '#64748b', axisFaint: '#94a3b8',
-    boardHead: '#334155', grid: '#e2e8f0', rowAlpha: 0.10,
-    namePillFill: 'rgba(255,255,255,.96)',
-    brokenFill: '#eef2f7', brokenStroke: '#c2ccd8',
-  },
-};
+const MARKET_LABEL = { cyb: '创', kcb: '科', main: '' };
 
 const readThemeMode = () =>
   (typeof document !== 'undefined' &&
@@ -40,12 +22,6 @@ function useThemeMode() {
   }, []);
   return mode;
 }
-
-const BAND_COLORS = [
-  '#ef4444', '#f97316', '#a855f7', '#c084fc', '#fb923c',
-  '#eab308', '#3b82f6', '#ec4899', '#14b8a6', '#38bdf8',
-  '#f43f5e', '#84cc16', '#22d3ee', '#e879f9', '#fbbf24',
-];
 
 const STAGE_COLOR = {
   '冰点': '#1677ff', '修复': '#13c2c2', '升温': '#fa8c16',
@@ -66,21 +42,16 @@ const hexToRgba = (hex, a) => {
   return `rgba(${r},${g},${b},${a})`;
 };
 
-const heat = (pm) => {
-  if (pm >= 8) return { fill: '#0e7a3d', stroke: '#1fbf6b' };
-  if (pm >= 4) return { fill: '#1f9e57', stroke: '#37d98a' };
-  if (pm > 0) return { fill: 'rgba(46,199,122,.32)', stroke: '#37d98a' };
-  if (pm > -3) return { fill: 'rgba(239,68,68,.40)', stroke: '#ff6b6b' };
-  if (pm > -7) return { fill: '#a83b3b', stroke: '#ff6b6b' };
-  return { fill: '#cf3636', stroke: '#ff8a8a' };
+// 卡片底色/描边/溢价文字色，按次日溢价强弱分档
+const premiumTint = (pm) => {
+  if (pm >= 8) return { bg: 'rgba(31,158,87,.34)', bd: '#37d98a', pv: '#4ade80' };
+  if (pm >= 4) return { bg: 'rgba(31,158,87,.22)', bd: 'rgba(55,217,138,.6)', pv: '#37d98a' };
+  if (pm > 0) return { bg: 'rgba(46,199,122,.13)', bd: 'rgba(55,217,138,.42)', pv: '#37d98a' };
+  if (pm > -3) return { bg: 'rgba(239,68,68,.13)', bd: 'rgba(255,107,107,.42)', pv: '#ff8080' };
+  if (pm > -7) return { bg: 'rgba(207,54,54,.24)', bd: 'rgba(255,107,107,.6)', pv: '#ff6b6b' };
+  return { bg: 'rgba(207,54,54,.34)', bd: '#ff6b6b', pv: '#ff8a8a' };
 };
 
-const PAD_L = 104;
-const PAD_T = 72;
-const PAD_R = 250;
-const COL_W = 150;
-const ROW_H = 118;
-const NODE_R = 19;
 const MIN_BOARD = 2;
 
 const PREVIEW = {
@@ -116,10 +87,48 @@ const PREVIEW = {
   })(),
 };
 
+// 单只票在某天某板位的卡片
+function LadderCard({ name, market, cell }) {
+  const marketTag = MARKET_LABEL[market] || '';
+  const nameCls = `lb-name lb-mk-${market || 'main'}`;
+
+  if (cell.status === 'broken') {
+    return (
+      <div className="lb-card lb-broken" title={`${name} 断板`}>
+        <div className={nameCls}>{name}</div>
+        <div className="lb-meta"><span className="lb-brk">断板</span></div>
+      </div>
+    );
+  }
+  if (cell.status === 'limit_down') {
+    return (
+      <div className="lb-card lb-limitdown" title={`${name} 跌停`}>
+        <div className={nameCls}>{name}</div>
+        <div className="lb-meta">
+          <span className="lb-b">{cell.boards}板</span>
+          <span className="lb-ld">跌停</span>
+        </div>
+      </div>
+    );
+  }
+  const pending = cell.status === 'pending' || cell.premium == null;
+  const tint = pending ? { bg: 'transparent', bd: 'var(--lb-pending-bd)', pv: 'var(--lb-muted)' } : premiumTint(cell.premium);
+  return (
+    <div className="lb-card" style={{ background: tint.bg, borderColor: tint.bd }}
+      title={`${name} ${cell.boards}板 ${pending ? '待揭晓' : (cell.premium > 0 ? '+' : '') + cell.premium + '%'}`}>
+      <div className={nameCls}>{name}{marketTag && <i className="lb-mktag">{marketTag}</i>}</div>
+      <div className="lb-meta">
+        <span className="lb-b">{cell.boards}板</span>
+        <span className="lb-prem" style={{ color: tint.pv }}>
+          {pending ? '待' : (cell.premium > 0 ? '+' : '') + cell.premium}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function LadderGantt({ preview = false }) {
   const mode = useThemeMode();
-  const pal = PALETTE[mode];
-  const nameColor = NAME_COLOR[mode];
   const [days, setDays] = useState(5);
   const [data, setData] = useState(preview ? PREVIEW : null);
   const [loading, setLoading] = useState(!preview);
@@ -143,17 +152,19 @@ function LadderGantt({ preview = false }) {
   const dates = data?.dates || [];
   const stocks = data?.stocks || [];
 
-  const ganttStocks = useMemo(() => stocks
+  // 只保留 >=2板 或断板的格子
+  const cleanStocks = useMemo(() => stocks
     .map((s) => ({
       ...s,
       cells: s.cells.filter((c) => c.boards >= MIN_BOARD || c.status === 'broken'),
     }))
     .filter((s) => s.cells.some((c) => c.boards >= MIN_BOARD)), [stocks]);
 
-  const boards = useMemo(() => {
+  // 板位列：从高到低（龙头梯队在左）
+  const boardsDesc = useMemo(() => {
     let lo = MIN_BOARD;
     let hi = MIN_BOARD;
-    ganttStocks.forEach((s) => s.cells.forEach((c) => {
+    cleanStocks.forEach((s) => s.cells.forEach((c) => {
       if (c.boards >= MIN_BOARD) {
         lo = Math.min(lo, c.boards);
         hi = Math.max(hi, c.boards);
@@ -161,52 +172,37 @@ function LadderGantt({ preview = false }) {
     }));
     if (hi < lo) hi = lo;
     const list = [];
-    for (let b = lo; b <= hi; b += 1) list.push(b);
+    for (let b = hi; b >= lo; b -= 1) list.push(b);
     return list;
-  }, [ganttStocks]);
+  }, [cleanStocks]);
 
-  const loBoard = boards[0] || MIN_BOARD;
-
-  const dtIndex = useMemo(() => {
+  // 索引：`${dt}_${board}` -> 该格个股列表
+  const grid = useMemo(() => {
     const map = {};
-    dates.forEach((d, i) => { map[d.dt] = i; });
+    cleanStocks.forEach((s) => s.cells.forEach((c) => {
+      if (c.boards < MIN_BOARD && c.status !== 'broken') return;
+      const key = `${c.dt}_${c.boards}`;
+      (map[key] || (map[key] = [])).push({ name: s.name, market: s.market, cell: c });
+    }));
+    // 每格内排序：溢价高在上，断板/待揭晓沉底
+    const rank = (item) => {
+      const { cell } = item;
+      if (cell.status === 'broken') return -1e6;
+      if (cell.status === 'limit_down') return -1e5;
+      if (cell.status === 'pending' || cell.premium == null) return -1e4;
+      return cell.premium;
+    };
+    Object.values(map).forEach((arr) => arr.sort((a, b) => rank(b) - rank(a)));
     return map;
-  }, [dates]);
+  }, [cleanStocks]);
 
-  const plotW = boards.length * COL_W;
-  const plotH = dates.length * ROW_H;
-  const W = PAD_L + plotW + PAD_R;
-  const H = PAD_T + plotH + 34;
-
-  const xc = (b) => PAD_L + (b - loBoard) * COL_W + COL_W / 2;
-  const yc = (r) => PAD_T + r * ROW_H + ROW_H / 2;
-
-  const groupCount = {};
-  const groupSeen = {};
-  ganttStocks.forEach((s) => s.cells.forEach((c) => {
-    if (c.boards < MIN_BOARD && c.status !== 'broken') return;
-    const r = dtIndex[c.dt];
-    if (r == null) return;
-    const k = `${r}_${c.boards}`;
-    groupCount[k] = (groupCount[k] || 0) + 1;
-  }));
-
-  const nodeDx = (r, b) => {
-    const k = `${r}_${b}`;
-    const n = groupCount[k] || 1;
-    if (n <= 1) return 0;
-    const idx = groupSeen[k] || 0;
-    groupSeen[k] = idx + 1;
-    return (idx - (n - 1) / 2) * 42;
-  };
-
-  const renderReady = !loading && dates.length > 0;
+  const renderReady = !loading && dates.length > 0 && boardsDesc.length > 0;
 
   return (
     <div className="ladder-gantt">
       <div className="ladder-head">
         <span className="ladder-title">连板情绪溢价表</span>
-        <span className="ladder-badge">情绪周期 · 天梯甘特</span>
+        <span className="ladder-badge">情绪周期 · 连板天梯</span>
         {!preview && (
           <span className="ladder-switch">
             {[5, 10].map((d) => (
@@ -220,8 +216,8 @@ function LadderGantt({ preview = false }) {
         )}
       </div>
       <div className="ladder-sub">
-        纵轴＝时间（上旧下新，带周期）· 横轴＝连板板数（2板起，左低→右越高）· 一只票一条斜带 ·
-        节点色＝次日溢价（绿赚 红亏 黑跌停）· 名字色：白主板 橙创业板 紫科创板
+        每行一天（上旧下新，底色＝情绪周期）· 每列一个板位（左高→右低，龙头梯队在左）·
+        卡片＝个股次日溢价（绿赚 红亏 黑跌停 虚线断板）· 名字色：白主板 橙创业板 紫科创板
       </div>
 
       {loading && (
@@ -233,156 +229,64 @@ function LadderGantt({ preview = false }) {
 
       {renderReady && (
         <div className="ladder-scroll">
-          <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
-            {dates.map((dt, r) => (
-              <rect key={`bg${r}`} x={PAD_L} y={PAD_T + r * ROW_H} width={plotW} height={ROW_H}
-                fill={hexToRgba(stageBaseColor(dt.stage), pal.rowAlpha)} />
-            ))}
+          <div className="ladder-board">
+            <div className="lb-colhead">
+              <div className="lb-corner">
+                <span className="lb-corner-x">板位 →</span>
+                <span className="lb-corner-y">日期 ↓</span>
+              </div>
+              {boardsDesc.map((b, i) => (
+                <div key={b} className={`lb-bh${i === 0 ? ' lb-bh-top' : ''}`}>
+                  {i === 0 ? `${b}板 龙头` : `${b}板`}
+                </div>
+              ))}
+              <div className="lb-rail lb-rail-head">当日盘口</div>
+            </div>
 
-            {boards.map((b, i) => (
-              <line key={`v${i}`} x1={PAD_L + i * COL_W} y1={PAD_T} x2={PAD_L + i * COL_W}
-                y2={PAD_T + plotH} stroke={pal.grid} strokeWidth={1} />
-            ))}
-            <line x1={PAD_L + plotW} y1={PAD_T} x2={PAD_L + plotW} y2={PAD_T + plotH}
-              stroke={pal.grid} strokeWidth={1} />
-            {dates.map((dt, r) => (
-              <line key={`h${r}`} x1={PAD_L} y1={PAD_T + r * ROW_H} x2={PAD_L + plotW}
-                y2={PAD_T + r * ROW_H} stroke={pal.grid} strokeWidth={1} />
-            ))}
-            <line x1={PAD_L} y1={PAD_T + plotH} x2={PAD_L + plotW} y2={PAD_T + plotH}
-              stroke={pal.grid} strokeWidth={1} />
-
-            {boards.map((b) => (
-              <text key={`bh${b}`} x={xc(b)} y={PAD_T - 26} fill={pal.boardHead} fontSize={14}
-                fontWeight={700} textAnchor="middle">{b}板</text>
-            ))}
-            <text x={PAD_L + plotW - 4} y={PAD_T - 46} fill={pal.axisFaint} fontSize={11}
-              textAnchor="end">板数越高 →</text>
-            <text x={20} y={PAD_T - 46} fill={pal.axisFaint} fontSize={11}>时间</text>
-
-            {dates.map((dt, r) => {
-              const y = yc(r);
+            {dates.map((dt) => {
               const col = stageBaseColor(dt.stage);
-              const label = (dt.stage || '').replace(/期$/, '') || '—';
-              const pillW = label.length * 11 + 12;
+              const stageLabel = (dt.stage || '').replace(/期$/, '') || '—';
+              const bandAlpha = mode === 'light' ? 0.09 : 0.05;
               return (
-                <g key={`dl${r}`}>
-                  <text x={52} y={y - 14} fill={pal.text} fontSize={14} fontWeight={700}
-                    textAnchor="middle">{dt.display}</text>
-                  <text x={52} y={y + 2} fill={pal.textMuted} fontSize={10.5}
-                    textAnchor="middle">{dt.weekday}</text>
-                  <rect x={52 - pillW / 2} y={y + 11} width={pillW} height={16} rx={8}
-                    fill={hexToRgba(col, 0.14)} />
-                  <text x={52} y={y + 22} fill={col} fontSize={10.5} fontWeight={600}
-                    textAnchor="middle">{label}</text>
-                </g>
-              );
-            })}
-
-            {dates.map((dt, r) => {
-              const y = yc(r);
-              const sx = PAD_L + plotW + 18;
-              return (
-                <g key={`st${r}`}>
-                  <text x={sx} y={y - 16} fill="#c084fc" fontSize={12.5} fontWeight={700}>
-                    最高 {dt.max_boards}板
-                  </text>
-                  <text x={sx} y={y + 4} fill="#38e07b" fontSize={11.5}>
-                    晋级 {dt.advance_count == null ? '—' : dt.advance_count} 家
-                  </text>
-                  <text x={sx + 92} y={y + 4} fill="#fa9f3c" fontSize={11.5}>
-                    连板 {dt.consec_count}
-                  </text>
-                  <text x={sx} y={y + 22} fill="#ff5a63" fontSize={11.5}>
-                    涨停 {dt.limit_up_count} 家
-                  </text>
-                </g>
-              );
-            })}
-
-            {ganttStocks.map((s, si) => {
-              const color = BAND_COLORS[si % BAND_COLORS.length];
-              const pts = s.cells
-                .map((c) => {
-                  const r = dtIndex[c.dt];
-                  if (r == null) return null;
-                  if (c.boards < MIN_BOARD && c.status !== 'broken') return null;
-                  return { c, r, x: xc(c.boards) + nodeDx(r, c.boards), y: yc(r) };
-                })
-                .filter(Boolean);
-              if (!pts.length) return null;
-              const polyStr = pts.map((p) => `${p.x},${p.y}`).join(' ');
-              const last = pts[pts.length - 1];
-              const topBoard = (s.cells.filter((c) => c.status !== 'broken').slice(-1)[0] || {}).boards || s.max_boards;
-              const lastBroken = last.c.status === 'broken';
-              const label = `${s.name} 【${lastBroken ? '断板' : `${topBoard}板`}】`;
-              const pillW = label.length * 12.6 + 16;
-              const nameY = last.y - 34;
-              return (
-                <g key={s.code}>
-                  <polyline points={polyStr} fill="none" stroke={color} strokeWidth={4}
-                    strokeLinejoin="round" strokeLinecap="round" opacity={0.4} />
-                  {pts.map((p, pi) => {
-                    const { c, x, y } = p;
-                    if (c.status === 'broken') {
-                      return (
-                        <g key={pi}>
-                          <circle cx={x} cy={y} r={17} fill={pal.brokenFill} stroke={pal.brokenStroke}
-                            strokeWidth={1.5} strokeDasharray="3 3" />
-                          <text x={x} y={y + 4} fill="#ff8a5b" fontSize={12} fontWeight={700}
-                            textAnchor="middle">断</text>
-                        </g>
-                      );
-                    }
-                    if (c.status === 'limit_down') {
-                      return (
-                        <g key={pi}>
-                          <circle cx={x} cy={y} r={NODE_R} fill="#0a0a0a" stroke="#ff4d4f"
-                            strokeWidth={2} />
-                          <text x={x} y={y + 4} fill="#ff6b6b" fontSize={10} fontWeight={800}
-                            textAnchor="middle">跌停</text>
-                        </g>
-                      );
-                    }
-                    const pending = c.status === 'pending' || c.premium == null;
-                    const h = pending
-                      ? { fill: 'rgba(120,130,150,.22)', stroke: '#6b7688' }
-                      : heat(c.premium);
+                <div key={dt.dt} className="lb-row"
+                  style={{ background: hexToRgba(col, bandAlpha) }}>
+                  <div className="lb-daycol">
+                    <div className="lb-date">{dt.display}</div>
+                    <div className="lb-wd">{dt.weekday}</div>
+                    <div className="lb-stage" style={{ color: col, background: hexToRgba(col, 0.16) }}>
+                      {stageLabel}
+                    </div>
+                  </div>
+                  {boardsDesc.map((b) => {
+                    const items = grid[`${dt.dt}_${b}`] || [];
                     return (
-                      <g key={pi}>
-                        <circle cx={x} cy={y} r={NODE_R} fill={h.fill} stroke={h.stroke}
-                          strokeWidth={2} />
-                        <text x={x} y={y - 1} fill="#fff" fontSize={15} fontWeight={800}
-                          textAnchor="middle">{c.boards}</text>
-                        <text x={x} y={y + 11} fill="#dbe4f0" fontSize={8}
-                          textAnchor="middle">板</text>
-                        {!pending && (
-                          <text x={x + 22} y={y + 3} fill={c.premium > 0 ? '#7CFFB0' : '#ffb3b3'}
-                            fontSize={10} fontWeight={700}>
-                            {(c.premium > 0 ? '+' : '') + c.premium}
-                          </text>
-                        )}
-                      </g>
+                      <div key={b} className="lb-col">
+                        {items.map((it, idx) => (
+                          <LadderCard key={idx} name={it.name} market={it.market} cell={it.cell} />
+                        ))}
+                      </div>
                     );
                   })}
-                  <rect x={last.x - pillW / 2} y={nameY - 14} width={pillW} height={20} rx={9}
-                    fill={pal.namePillFill} stroke={color} strokeWidth={1.2} />
-                  <text x={last.x} y={nameY} fill={nameColor[s.market] || nameColor.main}
-                    fontSize={12.5} fontWeight={700} textAnchor="middle">{label}</text>
-                </g>
+                  <div className="lb-rail">
+                    <span className="lb-s lb-s-max">最高 {dt.max_boards}板</span>
+                    <span className="lb-s lb-s-up">涨停 {dt.limit_up_count}</span>
+                    <span className="lb-s lb-s-cs">连板 {dt.consec_count}</span>
+                    <span className="lb-s lb-s-ad">晋级 {dt.advance_count == null ? '—' : dt.advance_count}</span>
+                  </div>
+                </div>
               );
             })}
-          </svg>
+          </div>
         </div>
       )}
 
       <div className="ladder-legend">
         <span><i className="lg-sw" style={{ background: '#1f9e57' }} />赚钱效应（次日上涨）</span>
-        <span><i className="lg-sw" style={{ background: '#a83b3b' }} />亏钱效应（次日下跌）</span>
-        <span><i className="lg-sw" style={{ background: '#0a0a0a', border: '1px solid #ff4d4f' }} />跌停·吹哨</span>
+        <span><i className="lg-sw" style={{ background: '#cf3636' }} />亏钱效应（次日下跌）</span>
+        <span><i className="lg-sw lg-ld" />跌停·吹哨</span>
+        <span><i className="lg-sw lg-brk" />断板出局</span>
         <span style={{ color: '#fb923c' }}>橙＝创业板</span>
         <span style={{ color: '#c084fc' }}>紫＝科创板</span>
-        <span>斜带越长＝连板越高</span>
       </div>
     </div>
   );

@@ -13,6 +13,7 @@ import {
   DashboardOutlined,
   ClockCircleOutlined,
   AppstoreOutlined,
+  BarChartOutlined,
   SafetyCertificateOutlined,
   BellOutlined,
 } from '@ant-design/icons';
@@ -20,6 +21,7 @@ import { useAtom } from 'jotai';
 import Home from './pages/Home';
 import StockDashboard from './pages/StockDashboard';
 import EmotionCycle from './pages/EmotionCycle';
+import LadderPremium from './pages/LadderPremium';
 import LimitUpEchelon from './pages/LimitUpEchelon';
 import AuctionGrab from './pages/AuctionGrab';
 import SectorGrab from './pages/SectorGrab';
@@ -57,6 +59,7 @@ const NAV_ITEMS = [
   { key: '/limit-up-echelon', icon: <FireOutlined />, label: '涨停梯队' },
   { key: '/dragon-tiger', icon: <ThunderboltOutlined />, label: '核心游资' },
   { key: '/emotion-cycle', icon: <DashboardOutlined />, label: '情绪周期' },
+  { key: '/ladder-premium', icon: <BarChartOutlined />, label: '连板溢价' },
   { key: '/auction-grab', icon: <ClockCircleOutlined />, label: '竞价抢筹' },
   { key: '/sector-grab', icon: <AppstoreOutlined />, label: '板块抢筹' },
   { key: '/ai-diagnosis', icon: <RobotOutlined />, label: 'AI诊股' },
@@ -317,6 +320,16 @@ function AppInner() {
               <RequireAuth>
                 <PermissionGuard>
                   <EmotionCycle />
+                </PermissionGuard>
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/ladder-premium"
+            element={
+              <RequireAuth>
+                <PermissionGuard>
+                  <LadderPremium />
                 </PermissionGuard>
               </RequireAuth>
             }

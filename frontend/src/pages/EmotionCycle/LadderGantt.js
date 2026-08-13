@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Spin } from 'antd';
 import { apiRequest } from '../../config/api';
+import './LadderGantt.css';
 
 // 板块名字色
 const NAME_COLOR = { main: '#e9edf5', cyb: '#fb923c', kcb: '#c084fc' };

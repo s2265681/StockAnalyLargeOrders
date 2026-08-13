@@ -17,6 +17,21 @@ if ! command -v node &> /dev/null; then
     exit 1
 fi
 
+# 检查数据库隧道（本地 .env 默认 3307 -> 服务器 MySQL）
+DB_PORT="${MYSQL_PORT:-3307}"
+if [ -f backend/.env ]; then
+    set -a
+    # shellcheck source=/dev/null
+    . backend/.env
+    set +a
+    DB_PORT="${MYSQL_PORT:-3307}"
+fi
+if ! nc -z 127.0.0.1 "$DB_PORT" 2>/dev/null; then
+    echo "⚠️  数据库隧道未连接 (127.0.0.1:${DB_PORT})"
+    echo "   本地开发需先连服务器库: ./scripts/db-tunnel.sh start"
+    echo "   配置 SSH: cp scripts/local.deploy.env.example scripts/local.deploy.env"
+fi
+
 # 检查pnpm
 if ! command -v pnpm &> /dev/null; then
     echo "❌ pnpm 未安装，请先安装 pnpm: npm install -g pnpm"

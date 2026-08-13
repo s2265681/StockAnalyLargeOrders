@@ -68,6 +68,7 @@ docs/apiclient*.p12
 backend/certs/*.pem
 backend/certs/*.p12
 scripts/wechat-pay.deploy.env
+scripts/local.deploy.env
 
 # 环境变量文件
 .env

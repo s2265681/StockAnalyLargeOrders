@@ -1652,6 +1652,220 @@ def _build_echelon_response(stocks, ths_hot_list, dt, theme_ranking, ai_meta):
     }
 
 
+# ============ 多日连板天梯甘特（情绪周期页） ============
+LADDER_MIN_DT = "20260511"
+_WEEKDAY_CN = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+
+
+def _weekday_cn(dt_clean: str) -> str:
+    try:
+        return _WEEKDAY_CN[datetime.strptime(dt_clean, "%Y%m%d").weekday()]
+    except (ValueError, IndexError):
+        return ""
+
+
+def _classify_market(code: str) -> str:
+    code = str(code or "")
+    if code.startswith(("300", "301", "302")):
+        return "cyb"
+    if code.startswith(("688", "689")):
+        return "kcb"
+    return "main"
+
+
+def _premium_status(prem, is_newest: bool) -> str:
+    if prem is None:
+        return "pending"
+    if prem <= -9.8:
+        return "limit_down"
+    if prem <= 0:
+        return "down"
+    return "up"
+
+
+def _previous_em_change_map(dt_next: str) -> dict:
+    """次日 dt_next 的「昨日涨停池」→ {代码: 当日涨跌幅}，即前一交易日涨停股的次日溢价"""
+    try:
+        import akshare as ak
+        df = ak.stock_zt_pool_previous_em(date=dt_next)
+    except Exception as e:
+        logger.debug("stock_zt_pool_previous_em 不可用 date=%s: %s", dt_next, e)
+        return {}
+    if df is None or df.empty:
+        return {}
+    code_col = next((c for c in df.columns if "代码" in str(c)), None)
+    change_col = next((c for c in df.columns if "涨跌幅" in str(c)), None)
+    if not code_col or not change_col:
+        return {}
+    out = {}
+    for _, row in df.iterrows():
+        code = str(row[code_col]).zfill(6)
+        val = row[change_col]
+        try:
+            if val is None or val != val:  # NaN
+                continue
+            out[code] = round(float(val), 2)
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
+def _collect_ladder_window(days: int) -> list:
+    """回溯凑够 days 个有梯队数据的交易日，返回 [(dt_clean, stocks)]，旧→新"""
+    window = []
+    cur = _default_echelon_dt()
+    guard = 0
+    while len(window) < days and guard < 60 and cur:
+        guard += 1
+        if cur < LADDER_MIN_DT:
+            break
+        stocks = get_limit_up_stocks_by_date(cur)
+        if stocks:
+            window.append((cur, stocks))
+        cur = _prev_trading_date(cur)
+    window.reverse()
+    return window
+
+
+def _build_ladder(days: int) -> dict:
+    window = _collect_ladder_window(days)
+    if not window:
+        return {"days": days, "dates": [], "stocks": []}
+    n = len(window)
+
+    # 逐日代码映射
+    day_maps = []
+    for _dt, stocks in window:
+        m = {}
+        for s in stocks:
+            code = str(s.get("code") or "").zfill(6)
+            if not code or code == "000000":
+                continue
+            m[code] = {
+                "boards": int(s.get("boards") or 0),
+                "name": s.get("name") or "",
+                "theme": s.get("tag_name") or s.get("theme") or "",
+            }
+        day_maps.append(m)
+
+    # 次日溢价映射：第 i 天的次日溢价来自窗口内下一交易日 window[i+1]
+    prem_maps = [None] * n
+    for i in range(n - 1):
+        prem_maps[i] = _previous_em_change_map(window[i + 1][0])
+
+    # 逐日统计
+    dates_out = []
+    for i, (dt, stocks) in enumerate(window):
+        m = day_maps[i]
+        max_boards = max((v["boards"] for v in m.values()), default=0)
+        consec = sum(1 for v in m.values() if v["boards"] >= 2)
+        advance = None
+        if i >= 1:
+            prev = day_maps[i - 1]
+            advance = sum(
+                1 for c, v in m.items()
+                if v["boards"] >= 2 and (prev.get(c) or {}).get("boards") == v["boards"] - 1
+            )
+        rec = _get_emotion_record(dt)
+        stage = None
+        limit_up = None
+        if rec:
+            stage = rec.get("stage")
+            lu = rec.get("limit_up_count")
+            if lu is not None:
+                try:
+                    limit_up = int(lu)
+                except (TypeError, ValueError):
+                    limit_up = None
+        if limit_up is None:
+            limit_up = len(stocks)
+        dates_out.append({
+            "dt": dt,
+            "display": f"{dt[4:6]}-{dt[6:8]}",
+            "weekday": _weekday_cn(dt),
+            "stage": stage,
+            "max_boards": max_boards,
+            "advance_count": advance,
+            "consec_count": consec,
+            "limit_up_count": limit_up,
+        })
+
+    # 跨日拼接梯队（峰值 ≥ 2 板）
+    codes = set()
+    for m in day_maps:
+        for c, v in m.items():
+            if v["boards"] >= 2:
+                codes.add(c)
+
+    stocks_out = []
+    for code in codes:
+        # 连续出现段
+        segments = []
+        seg = []
+        for i in range(n):
+            if code in day_maps[i]:
+                seg.append(i)
+            elif seg:
+                segments.append(seg)
+                seg = []
+        if seg:
+            segments.append(seg)
+        best = None
+        for s in segments:
+            peak = max(day_maps[i][code]["boards"] for i in s)
+            if peak >= 2 and (best is None or peak >= best[1]):
+                best = (s, peak)
+        if not best:
+            continue
+        seg, peak = best
+
+        name = ""
+        theme = ""
+        cells = []
+        for i in seg:
+            info = day_maps[i][code]
+            name = info["name"] or name
+            theme = info["theme"] or theme
+            prem = prem_maps[i].get(code) if prem_maps[i] is not None else None
+            cells.append({
+                "dt": window[i][0],
+                "boards": info["boards"],
+                "premium": prem,
+                "status": _premium_status(prem, is_newest=(i == n - 1)),
+            })
+        # 断板终止格
+        last_i = seg[-1]
+        if last_i + 1 < n and code not in day_maps[last_i + 1]:
+            cells.append({
+                "dt": window[last_i + 1][0],
+                "boards": day_maps[last_i][code]["boards"],
+                "premium": None,
+                "status": "broken",
+            })
+        stocks_out.append({
+            "code": code,
+            "name": name,
+            "theme": theme,
+            "market": _classify_market(code),
+            "max_boards": peak,
+            "cells": cells,
+        })
+
+    stocks_out.sort(key=lambda s: (-s["max_boards"], s["cells"][0]["dt"]))
+    return {"days": n, "dates": dates_out, "stocks": stocks_out}
+
+
+@limit_up_echelon_bp.route('/api/v1/limit-up-ladder', methods=['GET'])
+def get_limit_up_ladder():
+    """多日连板天梯（情绪周期页甘特图）"""
+    try:
+        days = int(request.args.get('days', 5))
+    except (TypeError, ValueError):
+        days = 5
+    days = max(3, min(15, days))
+    return v1_success_response(data=_build_ladder(days))
+
+
 @limit_up_echelon_bp.route('/api/v1/limit-up-echelon', methods=['GET'])
 def get_limit_up_echelon():
     """获取涨停板梯队（只读库，分组由收盘后离线任务写入）"""

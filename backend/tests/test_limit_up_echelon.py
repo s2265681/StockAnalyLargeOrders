@@ -291,5 +291,101 @@ class MarketStatsTest(unittest.TestCase):
         self.assertEqual(result["consec_board_premium_pct"], 4.0)
 
 
+def _lu(code, name, boards, tag="题材"):
+    return {"code": code, "name": name, "boards": boards, "tag_name": tag}
+
+
+class LadderTest(unittest.TestCase):
+    DAY_DATA = {
+        "20260806": [_lu("600501", "航天晨光", 3, "军工"), _lu("000001", "首板股", 1)],
+        "20260807": [_lu("600501", "航天晨光", 4, "军工"), _lu("002413", "雷科防务", 2, "军工"),
+                     _lu("000001", "首板股", 1)],
+        "20260810": [_lu("600501", "航天晨光", 5, "军工"), _lu("002413", "雷科防务", 3, "军工"),
+                     _lu("001259", "利仁科技", 2, "大消费"), _lu("000001", "首板股", 1)],
+        "20260811": [_lu("600501", "航天晨光", 6, "军工"), _lu("002413", "雷科防务", 4, "军工"),
+                     _lu("001259", "利仁科技", 3, "大消费"), _lu("301029", "华丰科技", 2, "机器人"),
+                     _lu("000001", "首板股", 1)],
+        # 利仁科技 缺席 -> 断板；航天 7 板仍在（最新日）
+        "20260812": [_lu("600501", "航天晨光", 7, "军工"), _lu("002413", "雷科防务", 5, "军工"),
+                     _lu("301029", "华丰科技", 3, "机器人"), _lu("000001", "首板股", 1)],
+    }
+    # 次日溢价：measured on window[i+1]
+    PREV_EM = {
+        "20260807": {"600501": 9.9},
+        "20260810": {"600501": 9.9, "002413": 9.9},
+        "20260811": {"600501": 9.9, "002413": 9.9, "001259": 0.6},
+        "20260812": {"600501": -4.8, "002413": -3.9, "001259": -10.0, "301029": 9.9},
+    }
+
+    def _run(self):
+        import pandas as pd
+        from routes.limit_up_echelon import _build_ladder
+
+        def prev_side(date=None):
+            d = self.PREV_EM.get(date, {})
+            return pd.DataFrame({"代码": list(d.keys()), "涨跌幅": list(d.values())})
+
+        mock_ak = MagicMock()
+        mock_ak.stock_zt_pool_previous_em.side_effect = prev_side
+        with patch("routes.limit_up_echelon._default_echelon_dt", return_value="20260812"), \
+             patch("routes.limit_up_echelon.get_limit_up_stocks_by_date",
+                   side_effect=lambda d: self.DAY_DATA.get(d, [])), \
+             patch("routes.limit_up_echelon._get_emotion_record",
+                   return_value={"stage": "高潮期", "limit_up_count": 68}), \
+             patch.dict("sys.modules", {"akshare": mock_ak}):
+            return _build_ladder(5)
+
+    def test_dates_axis(self):
+        res = self._run()
+        self.assertEqual(res["days"], 5)
+        self.assertEqual([d["display"] for d in res["dates"]],
+                         ["08-06", "08-07", "08-10", "08-11", "08-12"])
+        self.assertEqual(res["dates"][0]["weekday"], "周四")
+        self.assertEqual(res["dates"][0]["max_boards"], 3)
+        self.assertEqual(res["dates"][-1]["max_boards"], 7)
+        self.assertEqual(res["dates"][0]["stage"], "高潮期")
+        self.assertEqual(res["dates"][0]["limit_up_count"], 68)
+
+    def test_advance_count(self):
+        res = self._run()
+        self.assertIsNone(res["dates"][0]["advance_count"])
+        self.assertEqual(res["dates"][1]["advance_count"], 1)   # 航天 3->4
+        self.assertEqual(res["dates"][4]["advance_count"], 3)   # 航天/雷科/华丰 全晋级
+        self.assertEqual(res["dates"][0]["consec_count"], 1)    # 首板股不计
+
+    def test_first_board_excluded(self):
+        res = self._run()
+        codes = {s["code"] for s in res["stocks"]}
+        self.assertNotIn("000001", codes)
+        self.assertEqual(codes, {"600501", "002413", "001259", "301029"})
+
+    def test_leader_cells_and_pending(self):
+        res = self._run()
+        lead = next(s for s in res["stocks"] if s["code"] == "600501")
+        self.assertEqual(lead["max_boards"], 7)
+        self.assertEqual(len(lead["cells"]), 5)
+        self.assertEqual([c["boards"] for c in lead["cells"]], [3, 4, 5, 6, 7])
+        self.assertEqual(lead["cells"][-1]["status"], "pending")   # 最新日无次日
+        self.assertIsNone(lead["cells"][-1]["premium"])
+        self.assertEqual(lead["cells"][3]["status"], "down")       # 0811 溢价 -4.8
+        self.assertEqual(res["stocks"][0]["code"], "600501")       # 峰值最高排最前
+
+    def test_broken_and_limit_down(self):
+        res = self._run()
+        li = next(s for s in res["stocks"] if s["code"] == "001259")
+        self.assertEqual(li["cells"][-1]["status"], "broken")      # 0812 断板终止格
+        self.assertEqual(li["cells"][-1]["dt"], "20260812")
+        # 0811 溢价 -10.0 -> 跌停
+        c0811 = next(c for c in li["cells"] if c["dt"] == "20260811")
+        self.assertEqual(c0811["status"], "limit_down")
+
+    def test_market_classify(self):
+        res = self._run()
+        hf = next(s for s in res["stocks"] if s["code"] == "301029")
+        self.assertEqual(hf["market"], "cyb")
+        lead = next(s for s in res["stocks"] if s["code"] == "600501")
+        self.assertEqual(lead["market"], "main")
+
+
 if __name__ == "__main__":
     unittest.main()

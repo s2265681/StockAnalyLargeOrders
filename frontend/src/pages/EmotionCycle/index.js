@@ -15,6 +15,7 @@ import {
 import { CanvasRenderer } from 'echarts/renderers';
 import { apiRequest } from '../../config/api';
 import MarketBriefBar from '../../components/MarketBriefBar';
+import LadderGantt from './LadderGantt';
 import './index.css';
 
 
@@ -562,6 +563,10 @@ function EmotionCycle({ preview = false }) {
           </button>
           <span className="date-nav-label">{formatDateDisplay(selectedDate)}</span>
         </div>
+      </div>
+
+      <div className="emotion-ladder-card">
+        <LadderGantt preview={preview} />
       </div>
 
       <div className="emotion-main-layout">

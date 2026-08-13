@@ -160,8 +160,8 @@ function LadderGantt({ preview = false }) {
     }))
     .filter((s) => s.cells.some((c) => c.boards >= MIN_BOARD)), [stocks]);
 
-  // 板位列：从高到低（龙头梯队在左）
-  const boardsDesc = useMemo(() => {
+  // 板位列：从低到高（首板→2板→…→龙头，向右递增）
+  const boardsAsc = useMemo(() => {
     let lo = MIN_BOARD;
     let hi = MIN_BOARD;
     cleanStocks.forEach((s) => s.cells.forEach((c) => {
@@ -172,7 +172,7 @@ function LadderGantt({ preview = false }) {
     }));
     if (hi < lo) hi = lo;
     const list = [];
-    for (let b = hi; b >= lo; b -= 1) list.push(b);
+    for (let b = lo; b <= hi; b += 1) list.push(b);
     return list;
   }, [cleanStocks]);
 
@@ -196,7 +196,13 @@ function LadderGantt({ preview = false }) {
     return map;
   }, [cleanStocks]);
 
-  const renderReady = !loading && dates.length > 0 && boardsDesc.length > 0;
+  const renderReady = !loading && dates.length > 0 && boardsAsc.length > 0;
+
+  // 首板数（涨停总数 - 连板数），无法计算则显示 —
+  const firstBoardCount = (dt) => {
+    if (dt.limit_up_count == null || dt.consec_count == null) return null;
+    return Math.max(0, dt.limit_up_count - dt.consec_count);
+  };
 
   return (
     <div className="ladder-gantt">
@@ -216,7 +222,7 @@ function LadderGantt({ preview = false }) {
         )}
       </div>
       <div className="ladder-sub">
-        每行一天（上旧下新，底色＝情绪周期）· 每列一个板位（左高→右低，龙头梯队在左）·
+        每行一天（上旧下新，底色＝情绪周期）· 横向：当日盘口 → 首板 → 2板 → … → 高板（向右递增，龙头在右）·
         卡片＝个股次日溢价（绿赚 红亏 黑跌停 虚线断板）· 名字色：白主板 橙创业板 紫科创板
       </div>
 
@@ -235,18 +241,20 @@ function LadderGantt({ preview = false }) {
                 <span className="lb-corner-x">板位 →</span>
                 <span className="lb-corner-y">日期 ↓</span>
               </div>
-              {boardsDesc.map((b, i) => (
-                <div key={b} className={`lb-bh${i === 0 ? ' lb-bh-top' : ''}`}>
-                  {i === 0 ? `${b}板 龙头` : `${b}板`}
+              <div className="lb-rail lb-rail-head">当日盘口</div>
+              <div className="lb-bh lb-bh-first">首板</div>
+              {boardsAsc.map((b, i) => (
+                <div key={b} className={`lb-bh${i === boardsAsc.length - 1 ? ' lb-bh-top' : ''}`}>
+                  {i === boardsAsc.length - 1 ? `${b}板 龙头` : `${b}板`}
                 </div>
               ))}
-              <div className="lb-rail lb-rail-head">当日盘口</div>
             </div>
 
             {dates.map((dt) => {
               const col = stageBaseColor(dt.stage);
               const stageLabel = (dt.stage || '').replace(/期$/, '') || '—';
               const bandAlpha = mode === 'light' ? 0.09 : 0.05;
+              const fb = firstBoardCount(dt);
               return (
                 <div key={dt.dt} className="lb-row"
                   style={{ background: hexToRgba(col, bandAlpha) }}>
@@ -257,7 +265,17 @@ function LadderGantt({ preview = false }) {
                       {stageLabel}
                     </div>
                   </div>
-                  {boardsDesc.map((b) => {
+                  <div className="lb-rail">
+                    <span className="lb-s lb-s-max">最高 {dt.max_boards}板</span>
+                    <span className="lb-s lb-s-up">涨停 {dt.limit_up_count}</span>
+                    <span className="lb-s lb-s-cs">连板 {dt.consec_count}</span>
+                    <span className="lb-s lb-s-ad">晋级 {dt.advance_count == null ? '—' : dt.advance_count}</span>
+                  </div>
+                  <div className="lb-col lb-firstcol">
+                    <div className="lb-fb-num">{fb == null ? '—' : fb}</div>
+                    <div className="lb-fb-unit">首板</div>
+                  </div>
+                  {boardsAsc.map((b) => {
                     const items = grid[`${dt.dt}_${b}`] || [];
                     return (
                       <div key={b} className="lb-col">
@@ -267,12 +285,6 @@ function LadderGantt({ preview = false }) {
                       </div>
                     );
                   })}
-                  <div className="lb-rail">
-                    <span className="lb-s lb-s-max">最高 {dt.max_boards}板</span>
-                    <span className="lb-s lb-s-up">涨停 {dt.limit_up_count}</span>
-                    <span className="lb-s lb-s-cs">连板 {dt.consec_count}</span>
-                    <span className="lb-s lb-s-ad">晋级 {dt.advance_count == null ? '—' : dt.advance_count}</span>
-                  </div>
                 </div>
               );
             })}

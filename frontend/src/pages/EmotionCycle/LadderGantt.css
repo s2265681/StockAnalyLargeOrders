@@ -79,6 +79,15 @@
   color: var(--lb-head); border-left: 1px solid var(--lb-grid);
 }
 .lb-bh-top { color: #fbbf24; }
+.lb-bh-first { color: #9fb0c8; }
+
+/* 首板计数列 */
+.lb-firstcol {
+  align-items: center; justify-content: center;
+  background: rgba(120, 130, 150, .06);
+}
+.lb-fb-num { font-size: 22px; font-weight: 800; color: var(--lb-text); line-height: 1.1; }
+.lb-fb-unit { font-size: 11px; color: var(--lb-muted); }
 
 .lb-rail-head {
   display: flex; align-items: center; justify-content: center;

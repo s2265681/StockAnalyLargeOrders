@@ -1779,6 +1779,21 @@ def _build_ladder(days: int) -> dict:
                     limit_up = None
         if limit_up is None:
             limit_up = len(stocks)
+        first_boards = []
+        prem_map = prem_maps[i]
+        for code, v in m.items():
+            if v["boards"] != 1:
+                continue
+            prem = prem_map.get(code) if prem_map is not None else None
+            first_boards.append({
+                "code": code,
+                "name": v["name"],
+                "theme": v["theme"],
+                "market": _classify_market(code),
+                "premium": prem,
+                "status": _premium_status(prem, is_newest=(i == n - 1)),
+            })
+        first_boards.sort(key=lambda x: x["name"])
         dates_out.append({
             "dt": dt,
             "display": f"{dt[4:6]}-{dt[6:8]}",
@@ -1788,6 +1803,7 @@ def _build_ladder(days: int) -> dict:
             "advance_count": advance,
             "consec_count": consec,
             "limit_up_count": limit_up,
+            "first_boards": first_boards,
         })
 
     # 跨日拼接梯队（峰值 ≥ 2 板）

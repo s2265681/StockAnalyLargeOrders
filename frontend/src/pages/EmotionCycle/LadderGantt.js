@@ -1,18 +1,52 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Spin } from 'antd';
 import { apiRequest } from '../../config/api';
 import './LadderGantt.css';
 
-// 板块名字色
-const NAME_COLOR = { main: '#e9edf5', cyb: '#fb923c', kcb: '#c084fc' };
-// 每只票的本色调色板（按排序 index 取）
+const NAME_COLOR = {
+  dark: { main: '#e9edf5', cyb: '#fb923c', kcb: '#c084fc' },
+  light: { main: '#1f2a3a', cyb: '#d97706', kcb: '#9333ea' },
+};
+
+const PALETTE = {
+  dark: {
+    text: '#e9edf5', textMuted: '#7b869c', axisFaint: '#5b6678',
+    boardHead: '#c8d2e2', grid: '#1c2431', rowAlpha: 0.06,
+    namePillFill: 'rgba(16,21,29,.92)',
+    brokenFill: '#141a24', brokenStroke: '#3a4356',
+  },
+  light: {
+    text: '#1f2a3a', textMuted: '#64748b', axisFaint: '#94a3b8',
+    boardHead: '#334155', grid: '#e2e8f0', rowAlpha: 0.10,
+    namePillFill: 'rgba(255,255,255,.96)',
+    brokenFill: '#eef2f7', brokenStroke: '#c2ccd8',
+  },
+};
+
+const readThemeMode = () =>
+  (typeof document !== 'undefined' &&
+    document.documentElement.getAttribute('data-theme') === 'light')
+    ? 'light'
+    : 'dark';
+
+function useThemeMode() {
+  const [mode, setMode] = useState(readThemeMode);
+  useEffect(() => {
+    const el = document.documentElement;
+    const obs = new MutationObserver(() => setMode(readThemeMode()));
+    obs.observe(el, { attributes: true, attributeFilter: ['data-theme'] });
+    setMode(readThemeMode());
+    return () => obs.disconnect();
+  }, []);
+  return mode;
+}
+
 const BAND_COLORS = [
   '#ef4444', '#f97316', '#a855f7', '#c084fc', '#fb923c',
   '#eab308', '#3b82f6', '#ec4899', '#14b8a6', '#38bdf8',
   '#f43f5e', '#84cc16', '#22d3ee', '#e879f9', '#fbbf24',
 ];
 
-// 情绪周期阶段配色（与折线图一致）
 const STAGE_COLOR = {
   '冰点': '#1677ff', '修复': '#13c2c2', '升温': '#fa8c16',
   '高潮': '#f5222d', '退潮': '#52c41a',
@@ -23,6 +57,7 @@ const stageBaseColor = (stage) => {
   const key = String(stage).replace(/期$/, '');
   return STAGE_COLOR[key] || '#5b6678';
 };
+
 const hexToRgba = (hex, a) => {
   const h = hex.replace('#', '');
   const r = parseInt(h.slice(0, 2), 16);
@@ -31,7 +66,6 @@ const hexToRgba = (hex, a) => {
   return `rgba(${r},${g},${b},${a})`;
 };
 
-// 次日溢价热力（与已批准 mockup 同阈值）
 const heat = (pm) => {
   if (pm >= 8) return { fill: '#0e7a3d', stroke: '#1fbf6b' };
   if (pm >= 4) return { fill: '#1f9e57', stroke: '#37d98a' };
@@ -41,11 +75,14 @@ const heat = (pm) => {
   return { fill: '#cf3636', stroke: '#ff8a8a' };
 };
 
-// 布局常量
-const PAD_L = 104, PAD_T = 72, PAD_R = 250;
-const COL_W = 150, ROW_H = 118, NODE_R = 19;
+const PAD_L = 104;
+const PAD_T = 72;
+const PAD_R = 250;
+const COL_W = 150;
+const ROW_H = 118;
+const NODE_R = 19;
+const MIN_BOARD = 2;
 
-// ===== 预览假数据（无 API 时渲染，忠实还原 mockup5）=====
 const PREVIEW = {
   days: 5,
   dates: [
@@ -80,6 +117,9 @@ const PREVIEW = {
 };
 
 function LadderGantt({ preview = false }) {
+  const mode = useThemeMode();
+  const pal = PALETTE[mode];
+  const nameColor = NAME_COLOR[mode];
   const [days, setDays] = useState(5);
   const [data, setData] = useState(preview ? PREVIEW : null);
   const [loading, setLoading] = useState(!preview);
@@ -103,35 +143,54 @@ function LadderGantt({ preview = false }) {
   const dates = data?.dates || [];
   const stocks = data?.stocks || [];
 
-  // 板数轴范围
-  let loBoard = 2, hiBoard = 2;
-  stocks.forEach((s) => s.cells.forEach((c) => {
-    loBoard = Math.min(loBoard, c.boards);
-    hiBoard = Math.max(hiBoard, c.boards);
-  }));
-  if (hiBoard < loBoard) hiBoard = loBoard;
-  const boards = [];
-  for (let b = loBoard; b <= hiBoard; b += 1) boards.push(b);
+  const ganttStocks = useMemo(() => stocks
+    .map((s) => ({
+      ...s,
+      cells: s.cells.filter((c) => c.boards >= MIN_BOARD || c.status === 'broken'),
+    }))
+    .filter((s) => s.cells.some((c) => c.boards >= MIN_BOARD)), [stocks]);
 
-  const dtIndex = {};
-  dates.forEach((d, i) => { dtIndex[d.dt] = i; });
+  const boards = useMemo(() => {
+    let lo = MIN_BOARD;
+    let hi = MIN_BOARD;
+    ganttStocks.forEach((s) => s.cells.forEach((c) => {
+      if (c.boards >= MIN_BOARD) {
+        lo = Math.min(lo, c.boards);
+        hi = Math.max(hi, c.boards);
+      }
+    }));
+    if (hi < lo) hi = lo;
+    const list = [];
+    for (let b = lo; b <= hi; b += 1) list.push(b);
+    return list;
+  }, [ganttStocks]);
+
+  const loBoard = boards[0] || MIN_BOARD;
+
+  const dtIndex = useMemo(() => {
+    const map = {};
+    dates.forEach((d, i) => { map[d.dt] = i; });
+    return map;
+  }, [dates]);
 
   const plotW = boards.length * COL_W;
   const plotH = dates.length * ROW_H;
   const W = PAD_L + plotW + PAD_R;
   const H = PAD_T + plotH + 34;
+
   const xc = (b) => PAD_L + (b - loBoard) * COL_W + COL_W / 2;
   const yc = (r) => PAD_T + r * ROW_H + ROW_H / 2;
 
-  // 节点碰撞偏移：同一 (行,板) 多只票时横向散开
   const groupCount = {};
   const groupSeen = {};
-  stocks.forEach((s) => s.cells.forEach((c) => {
+  ganttStocks.forEach((s) => s.cells.forEach((c) => {
+    if (c.boards < MIN_BOARD && c.status !== 'broken') return;
     const r = dtIndex[c.dt];
     if (r == null) return;
     const k = `${r}_${c.boards}`;
     groupCount[k] = (groupCount[k] || 0) + 1;
   }));
+
   const nodeDx = (r, b) => {
     const k = `${r}_${b}`;
     const n = groupCount[k] || 1;
@@ -161,7 +220,7 @@ function LadderGantt({ preview = false }) {
         )}
       </div>
       <div className="ladder-sub">
-        纵轴＝时间（上旧下新，带周期）· 横轴＝板数（左低→右越高）· 一只票一条斜带，走得越高越长 ·
+        纵轴＝时间（上旧下新，带周期）· 横轴＝连板板数（2板起，左低→右越高）· 一只票一条斜带 ·
         节点色＝次日溢价（绿赚 红亏 黑跌停）· 名字色：白主板 橙创业板 紫科创板
       </div>
 
@@ -175,35 +234,32 @@ function LadderGantt({ preview = false }) {
       {renderReady && (
         <div className="ladder-scroll">
           <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
-            {/* 行周期背景 */}
             {dates.map((dt, r) => (
               <rect key={`bg${r}`} x={PAD_L} y={PAD_T + r * ROW_H} width={plotW} height={ROW_H}
-                fill={hexToRgba(stageBaseColor(dt.stage), 0.06)} />
+                fill={hexToRgba(stageBaseColor(dt.stage), pal.rowAlpha)} />
             ))}
-            {/* 网格 */}
+
             {boards.map((b, i) => (
               <line key={`v${i}`} x1={PAD_L + i * COL_W} y1={PAD_T} x2={PAD_L + i * COL_W}
-                y2={PAD_T + plotH} stroke="#1c2431" strokeWidth={1} />
+                y2={PAD_T + plotH} stroke={pal.grid} strokeWidth={1} />
             ))}
             <line x1={PAD_L + plotW} y1={PAD_T} x2={PAD_L + plotW} y2={PAD_T + plotH}
-              stroke="#1c2431" strokeWidth={1} />
+              stroke={pal.grid} strokeWidth={1} />
             {dates.map((dt, r) => (
               <line key={`h${r}`} x1={PAD_L} y1={PAD_T + r * ROW_H} x2={PAD_L + plotW}
-                y2={PAD_T + r * ROW_H} stroke="#1c2431" strokeWidth={1} />
+                y2={PAD_T + r * ROW_H} stroke={pal.grid} strokeWidth={1} />
             ))}
             <line x1={PAD_L} y1={PAD_T + plotH} x2={PAD_L + plotW} y2={PAD_T + plotH}
-              stroke="#1c2431" strokeWidth={1} />
+              stroke={pal.grid} strokeWidth={1} />
 
-            {/* 板数表头 */}
             {boards.map((b) => (
-              <text key={`bh${b}`} x={xc(b)} y={PAD_T - 26} fill="#c8d2e2" fontSize={14}
+              <text key={`bh${b}`} x={xc(b)} y={PAD_T - 26} fill={pal.boardHead} fontSize={14}
                 fontWeight={700} textAnchor="middle">{b}板</text>
             ))}
-            <text x={PAD_L + plotW - 4} y={PAD_T - 46} fill="#5b6678" fontSize={11}
+            <text x={PAD_L + plotW - 4} y={PAD_T - 46} fill={pal.axisFaint} fontSize={11}
               textAnchor="end">板数越高 →</text>
-            <text x={20} y={PAD_T - 46} fill="#5b6678" fontSize={11}>时间</text>
+            <text x={20} y={PAD_T - 46} fill={pal.axisFaint} fontSize={11}>时间</text>
 
-            {/* 左侧日期 + 周期 pill */}
             {dates.map((dt, r) => {
               const y = yc(r);
               const col = stageBaseColor(dt.stage);
@@ -211,9 +267,9 @@ function LadderGantt({ preview = false }) {
               const pillW = label.length * 11 + 12;
               return (
                 <g key={`dl${r}`}>
-                  <text x={52} y={y - 14} fill="#e9edf5" fontSize={14} fontWeight={700}
+                  <text x={52} y={y - 14} fill={pal.text} fontSize={14} fontWeight={700}
                     textAnchor="middle">{dt.display}</text>
-                  <text x={52} y={y + 2} fill="#7b869c" fontSize={10.5}
+                  <text x={52} y={y + 2} fill={pal.textMuted} fontSize={10.5}
                     textAnchor="middle">{dt.weekday}</text>
                   <rect x={52 - pillW / 2} y={y + 11} width={pillW} height={16} rx={8}
                     fill={hexToRgba(col, 0.14)} />
@@ -223,7 +279,6 @@ function LadderGantt({ preview = false }) {
               );
             })}
 
-            {/* 右侧每日统计 */}
             {dates.map((dt, r) => {
               const y = yc(r);
               const sx = PAD_L + plotW + 18;
@@ -245,13 +300,13 @@ function LadderGantt({ preview = false }) {
               );
             })}
 
-            {/* 每只票的斜带 + 节点 + 名字 */}
-            {stocks.map((s, si) => {
+            {ganttStocks.map((s, si) => {
               const color = BAND_COLORS[si % BAND_COLORS.length];
               const pts = s.cells
                 .map((c) => {
                   const r = dtIndex[c.dt];
                   if (r == null) return null;
+                  if (c.boards < MIN_BOARD && c.status !== 'broken') return null;
                   return { c, r, x: xc(c.boards) + nodeDx(r, c.boards), y: yc(r) };
                 })
                 .filter(Boolean);
@@ -265,14 +320,14 @@ function LadderGantt({ preview = false }) {
               const nameY = last.y - 34;
               return (
                 <g key={s.code}>
-                  <polyline points={polyStr} fill="none" stroke={color} strokeWidth={10}
-                    strokeLinejoin="round" strokeLinecap="round" opacity={0.3} />
+                  <polyline points={polyStr} fill="none" stroke={color} strokeWidth={4}
+                    strokeLinejoin="round" strokeLinecap="round" opacity={0.4} />
                   {pts.map((p, pi) => {
                     const { c, x, y } = p;
                     if (c.status === 'broken') {
                       return (
                         <g key={pi}>
-                          <circle cx={x} cy={y} r={17} fill="#141a24" stroke="#3a4356"
+                          <circle cx={x} cy={y} r={17} fill={pal.brokenFill} stroke={pal.brokenStroke}
                             strokeWidth={1.5} strokeDasharray="3 3" />
                           <text x={x} y={y + 4} fill="#ff8a5b" fontSize={12} fontWeight={700}
                             textAnchor="middle">断</text>
@@ -310,10 +365,9 @@ function LadderGantt({ preview = false }) {
                       </g>
                     );
                   })}
-                  {/* 名字 pill */}
                   <rect x={last.x - pillW / 2} y={nameY - 14} width={pillW} height={20} rx={9}
-                    fill="rgba(16,21,29,.92)" stroke={color} strokeWidth={1.2} />
-                  <text x={last.x} y={nameY} fill={NAME_COLOR[s.market] || NAME_COLOR.main}
+                    fill={pal.namePillFill} stroke={color} strokeWidth={1.2} />
+                  <text x={last.x} y={nameY} fill={nameColor[s.market] || nameColor.main}
                     fontSize={12.5} fontWeight={700} textAnchor="middle">{label}</text>
                 </g>
               );

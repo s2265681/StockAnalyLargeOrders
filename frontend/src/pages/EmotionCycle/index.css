@@ -14,19 +14,6 @@
   min-height: 0;
 }
 
-.emotion-ladder-card {
-  background: #0e1116;
-  border: 1px solid var(--border-secondary);
-  border-radius: 8px;
-  padding: 16px 18px 14px;
-  margin-bottom: 14px;
-  flex-shrink: 0;
-  max-height: 48vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
 .emotion-chart-card {
   flex: 1;
   background: var(--bg-tooltip);

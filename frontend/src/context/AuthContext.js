@@ -34,23 +34,31 @@ export function AuthProvider({ children }) {
   }, [refreshUser]);
 
   const login = async (username, password) => {
-    const res = await api.post('/api/auth/login', { username, password });
-    if (res.success && res.data?.token) {
-      localStorage.setItem('niuniu_token', res.data.token);
-      await refreshUser();
-      return { success: true };
+    try {
+      const res = await api.post('/api/auth/login', { username, password });
+      if (res.success && res.data?.token) {
+        localStorage.setItem('niuniu_token', res.data.token);
+        await refreshUser();
+        return { success: true };
+      }
+      return { success: false, message: res.message || '登录失败' };
+    } catch (err) {
+      return { success: false, message: err?.message || '登录失败，请稍后重试' };
     }
-    return { success: false, message: res.message || '登录失败' };
   };
 
   const register = async (username, password, phone) => {
-    const res = await api.post('/api/auth/register', { username, password, phone });
-    if (res.success && res.data?.token) {
-      localStorage.setItem('niuniu_token', res.data.token);
-      await refreshUser();
-      return { success: true };
+    try {
+      const res = await api.post('/api/auth/register', { username, password, phone });
+      if (res.success && res.data?.token) {
+        localStorage.setItem('niuniu_token', res.data.token);
+        await refreshUser();
+        return { success: true };
+      }
+      return { success: false, message: res.message || '注册失败' };
+    } catch (err) {
+      return { success: false, message: err?.message || '注册失败，请稍后重试' };
     }
-    return { success: false, message: res.message || '注册失败' };
   };
 
   const loginWithTicket = async (ticket) => {

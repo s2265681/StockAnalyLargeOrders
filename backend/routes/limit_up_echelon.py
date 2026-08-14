@@ -1879,7 +1879,11 @@ def get_limit_up_ladder():
     except (TypeError, ValueError):
         days = 5
     days = max(3, min(15, days))
-    return v1_success_response(data=_build_ladder(days))
+    try:
+        return v1_success_response(data=_build_ladder(days))
+    except Exception as e:
+        logger.error("连板天梯数据获取失败: %s", e, exc_info=True)
+        return v1_success_response(data={"days": days, "dates": [], "stocks": []})
 
 
 @limit_up_echelon_bp.route('/api/v1/limit-up-echelon', methods=['GET'])

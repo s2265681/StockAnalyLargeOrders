@@ -1,0 +1,109 @@
+.lb-hover-overlay .ant-popover-inner {
+  background: var(--bg-tooltip);
+  border: 1px solid var(--border-secondary, #3a4356);
+  border-radius: 10px;
+  padding: 0;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+}
+
+.lb-hover-overlay .ant-popover-arrow::before,
+.lb-hover-overlay .ant-popover-arrow::after {
+  background: var(--bg-tooltip);
+}
+
+.lb-hover-trigger {
+  display: block;
+  cursor: default;
+}
+
+.lb-hover-pop {
+  width: 284px;
+  padding: 10px 12px 12px;
+  color: var(--text-primary);
+}
+
+.lb-hover-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.lb-hover-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.lb-hover-code {
+  font-size: 11px;
+  color: var(--lb-hover-muted, #7b869c);
+  font-variant-numeric: tabular-nums;
+}
+
+.lb-hover-loading {
+  display: flex;
+  justify-content: center;
+  padding: 28px 0;
+}
+
+.lb-hover-quote {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.lb-hover-price {
+  font-size: 20px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.lb-hover-chg,
+.lb-hover-amt {
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.lb-hover-chart {
+  width: 100%;
+  height: 96px;
+  display: block;
+  background: rgba(120, 130, 150, 0.06);
+  border-radius: 6px;
+}
+
+.lb-hover-ref {
+  stroke: rgba(148, 163, 184, 0.55);
+  stroke-dasharray: 4 3;
+  stroke-width: 1;
+}
+
+.lb-hover-axis {
+  fill: var(--lb-hover-muted, #7b869c);
+  font-size: 9px;
+}
+
+.lb-hover-meta {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--lb-hover-muted, #7b869c);
+  font-variant-numeric: tabular-nums;
+}
+
+.lb-hover-nochart {
+  padding: 24px 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--lb-hover-muted, #7b869c);
+}
+
+[data-theme="light"] .lb-hover-chart {
+  background: rgba(15, 23, 42, 0.04);
+}

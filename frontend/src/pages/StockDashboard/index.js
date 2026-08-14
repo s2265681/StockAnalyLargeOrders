@@ -173,7 +173,7 @@ const StockDashboard = () => {
 
   const fetchThemeData = useCallback(() => {
     if (stockCode) {
-      fetchLimitUpThemes(stockCode);
+      fetchLimitUpThemes(stockCode).catch(() => {});
     }
   }, [stockCode, fetchLimitUpThemes]);
 

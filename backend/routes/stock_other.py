@@ -168,10 +168,15 @@ def _build_market_sentiment_from_emotion(
 
 def _resolve_echelon_theme(code: str, trade_date_compact: str, industry: str = '') -> Optional[dict]:
     """解析个股在涨停梯队中的题材归属及该题材涨停家数"""
-    from services.theme_service import load_echelon_from_db
     from routes.limit_up_echelon import BROAD_TAG_ALIASES, _coerce_general_broad_label
 
-    db_data = load_echelon_from_db(trade_date_compact)
+    try:
+        from services.theme_service import load_echelon_from_db
+        db_data = load_echelon_from_db(trade_date_compact)
+    except Exception as e:
+        logger.warning("读取涨停梯队失败，跳过梯队题材: %s", e)
+        return None
+
     if not db_data:
         return None
 

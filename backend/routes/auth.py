@@ -67,9 +67,14 @@ def login():
     if not username or not password:
         return v1_error_response('请输入用户名和密码')
 
-    user = execute_query(
-        'SELECT id, username, password_hash, role FROM users WHERE username = %s', (username,)
-    )
+    try:
+        user = execute_query(
+            'SELECT id, username, password_hash, role FROM users WHERE username = %s', (username,)
+        )
+    except Exception as e:
+        logger.error('登录查询用户失败: %s', e)
+        return v1_error_response('服务暂不可用，请确认数据库连接后重试')
+
     if not user:
         return v1_error_response('用户名或密码错误')
 

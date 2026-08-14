@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Spin } from 'antd';
 import { apiRequest } from '../../config/api';
+import { LadderHoverPopover } from './LadderHoverPopover';
 import './LadderGantt.css';
 
 const MARKET_LABEL = { cyb: '创', kcb: '科', main: '' };
@@ -88,32 +89,38 @@ const PREVIEW = {
 };
 
 // 单只票在某天某板位的卡片
-function LadderCard({ name, market, cell }) {
+function LadderCard({ code, name, market, cell, preview = false }) {
   const marketTag = MARKET_LABEL[market] || '';
   const nameCls = `lb-name lb-mk-${market || 'main'}`;
 
+  const wrap = (card) => (
+    <LadderHoverPopover code={code} name={name} disabled={preview}>
+      {card}
+    </LadderHoverPopover>
+  );
+
   if (cell.status === 'broken') {
-    return (
+    return wrap(
       <div className="lb-card lb-broken" title={`${name} 断板`}>
         <div className={nameCls}>{name}</div>
         <div className="lb-meta"><span className="lb-brk">断板</span></div>
-      </div>
+      </div>,
     );
   }
   if (cell.status === 'limit_down') {
-    return (
+    return wrap(
       <div className="lb-card lb-limitdown" title={`${name} 跌停`}>
         <div className={nameCls}>{name}</div>
         <div className="lb-meta">
           <span className="lb-b">{cell.boards}板</span>
           <span className="lb-ld">跌停</span>
         </div>
-      </div>
+      </div>,
     );
   }
   const pending = cell.status === 'pending' || cell.premium == null;
   const tint = pending ? { bg: 'transparent', bd: 'var(--lb-pending-bd)', pv: 'var(--lb-muted)' } : premiumTint(cell.premium);
-  return (
+  return wrap(
     <div className="lb-card" style={{ background: tint.bg, borderColor: tint.bd }}
       title={`${name} ${cell.boards}板 ${pending ? '待揭晓' : (cell.premium > 0 ? '+' : '') + cell.premium + '%'}`}>
       <div className={nameCls}>{name}{marketTag && <i className="lb-mktag">{marketTag}</i>}</div>
@@ -123,7 +130,7 @@ function LadderCard({ name, market, cell }) {
           {pending ? '待' : (cell.premium > 0 ? '+' : '') + cell.premium}
         </span>
       </div>
-    </div>
+    </div>,
   );
 }
 
@@ -182,7 +189,7 @@ function LadderGantt({ preview = false }) {
     cleanStocks.forEach((s) => s.cells.forEach((c) => {
       if (c.boards < MIN_BOARD && c.status !== 'broken') return;
       const key = `${c.dt}_${c.boards}`;
-      (map[key] || (map[key] = [])).push({ name: s.name, market: s.market, cell: c });
+      (map[key] || (map[key] = [])).push({ code: s.code, name: s.name, market: s.market, cell: c });
     }));
     // 每格内排序：溢价高在上，断板/待揭晓沉底
     const rank = (item) => {
@@ -280,7 +287,14 @@ function LadderGantt({ preview = false }) {
                     return (
                       <div key={b} className="lb-col">
                         {items.map((it, idx) => (
-                          <LadderCard key={idx} name={it.name} market={it.market} cell={it.cell} />
+                          <LadderCard
+                            key={`${it.code}-${idx}`}
+                            code={it.code}
+                            name={it.name}
+                            market={it.market}
+                            cell={it.cell}
+                            preview={preview}
+                          />
                         ))}
                       </div>
                     );

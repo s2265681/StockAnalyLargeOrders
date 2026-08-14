@@ -110,15 +110,22 @@ async function searchStock(keyword) {
         const match = text.match(/suggestvalue="([^"]*)"/);
         if (!match?.[1])
             return [];
+        // 新浪 suggest 字段：p[0]/p[3]=带前缀代码，p[2]=6位代码，p[4]=名称（p[1] 不再表示 sh/sz）
         return match[1]
             .split(';')
             .filter(Boolean)
             .slice(0, 8)
             .map(item => {
             const p = item.split(',');
-            if (p.length < 4 || !/^\d{6}$/.test(p[2]))
+            if (p.length < 5 || !/^\d{6}$/.test(p[2]))
                 return null;
-            return { code: `${p[1] === '11' ? 'sh' : 'sz'}${p[2]}`, name: p[0] };
+            const code = (p[3] || p[0] || '').trim().toLowerCase();
+            if (!/^(sh|sz|bj)\d{6}$/.test(code))
+                return null;
+            const name = (p[4] || p[6] || p[2]).trim();
+            if (!name)
+                return null;
+            return { code, name };
         })
             .filter((r) => r !== null);
     }

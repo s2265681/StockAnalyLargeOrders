@@ -118,5 +118,37 @@ try {
   console.error('  ✗ API 请求失败:', e.message);
 }
 
+console.log('\n=== 4. searchStock 解析（002437 应显示誉衡药业 + sz002437）===');
+function parseSearchSuggest(text) {
+  const match = text.match(/suggestvalue="([^"]*)"/);
+  if (!match?.[1]) return [];
+  return match[1].split(';').filter(Boolean).slice(0, 8).map(item => {
+    const p = item.split(',');
+    if (p.length < 5 || !/^\d{6}$/.test(p[2])) return null;
+    const code = (p[3] || p[0] || '').trim().toLowerCase();
+    if (!/^(sh|sz|bj)\d{6}$/.test(code)) return null;
+    const name = (p[4] || p[6] || p[2]).trim();
+    return name ? { code, name } : null;
+  }).filter(Boolean);
+}
+
+try {
+  const suggestBuf = await new Promise((resolve, reject) => {
+    https.get('https://suggest3.sinajs.cn/suggest/type=11,12&key=002437', { headers: { Referer: 'https://finance.sina.com.cn' } }, res => {
+      const chunks = [];
+      res.on('data', c => chunks.push(c));
+      res.on('end', () => resolve(Buffer.concat(chunks)));
+    }).on('error', reject);
+  });
+  const suggestText = new TextDecoder('gbk').decode(suggestBuf);
+  const parsed = parseSearchSuggest(suggestText);
+  assert(parsed.length >= 1, '002437 搜索有结果');
+  assert(parsed[0].code === 'sz002437', '002437 → sz002437');
+  assert(parsed[0].name === '誉衡药业', '名称应为誉衡药业');
+} catch (e) {
+  failed++;
+  console.error('  ✗ search 请求失败:', e.message);
+}
+
 console.log(`\n=== 结果: ${passed} passed, ${failed} failed ===\n`);
 process.exit(failed > 0 ? 1 : 0);

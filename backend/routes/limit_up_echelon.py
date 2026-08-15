@@ -18,6 +18,7 @@ from typing import Optional
 from flask import Blueprint, request
 
 from utils.response import v1_success_response, v1_error_response
+from utils.date_utils import is_market_hours
 from services.theme_service import (
     get_recent_tags,
     get_tags_by_date,
@@ -1655,6 +1656,84 @@ def _build_echelon_response(stocks, ths_hot_list, dt, theme_ranking, ai_meta):
 # ============ 多日连板天梯甘特（情绪周期页） ============
 LADDER_MIN_DT = "20260511"
 _WEEKDAY_CN = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+_ladder_prem_cache: dict = {}  # dt_next -> (ts, map)
+_LADDER_PREM_CACHE_TTL = 3600
+
+
+def _secid_for_code(code: str) -> str:
+    code = str(code or "").zfill(6)
+    if code.startswith(("0", "3")):
+        return f"0.{code}"
+    return f"1.{code}"
+
+
+def _fetch_live_change_map(codes: list) -> dict:
+    """批量拉取 A 股实时/收盘涨跌幅 → {code: pct}"""
+    uniq = []
+    seen = set()
+    for raw in codes or []:
+        code = str(raw or "").zfill(6)
+        if not code or code in seen:
+            continue
+        seen.add(code)
+        uniq.append(code)
+    if not uniq:
+        return {}
+
+    out = {}
+    for i in range(0, len(uniq), 40):
+        chunk = uniq[i:i + 40]
+        secids = ",".join(_secid_for_code(c) for c in chunk)
+        url = (
+            "https://push2.eastmoney.com/api/qt/ulist.np/get"
+            f"?fltt=2&secids={secids}&fields=f12,f3"
+            "&ut=fa5fd1943c7b386f172d6893dbfba10b"
+        )
+        try:
+            proc = subprocess.run(
+                ["curl", "-s", "-k", "--max-time", "8", url],
+                capture_output=True, text=True, timeout=10,
+            )
+            if proc.returncode != 0 or not proc.stdout:
+                continue
+            body = json.loads(proc.stdout)
+            for row in (body.get("data") or {}).get("diff") or []:
+                code = str(row.get("f12") or "").zfill(6)
+                try:
+                    pct = float(row.get("f3"))
+                except (TypeError, ValueError):
+                    continue
+                if code:
+                    out[code] = round(pct, 2)
+        except Exception as e:
+            logger.debug("连板天梯批量行情失败: %s", e)
+    return out
+
+
+def _cached_previous_em_change_map(dt_next: str) -> dict:
+    """历史日次日溢价缓存；当日始终实时拉取。"""
+    today = _default_echelon_dt()
+    if dt_next == today:
+        return _previous_em_change_map(dt_next)
+    cached = _ladder_prem_cache.get(dt_next)
+    if cached and time.time() - cached[0] < _LADDER_PREM_CACHE_TTL:
+        return cached[1]
+    result = _previous_em_change_map(dt_next)
+    _ladder_prem_cache[dt_next] = (time.time(), result)
+    return result
+
+
+def _change_from_stocks(stocks: list, code: str):
+    for s in stocks or []:
+        if str(s.get("code") or "").zfill(6) == code:
+            val = s.get("change_pct")
+            if val is None:
+                return None
+            try:
+                return round(float(val), 2)
+            except (TypeError, ValueError):
+                return None
+    return None
 
 
 def _weekday_cn(dt_clean: str) -> str:
@@ -1727,15 +1806,21 @@ def _collect_ladder_window(days: int) -> list:
     return window
 
 
-def _build_ladder(days: int) -> dict:
+def _build_ladder(days: int, *, live: bool = False) -> dict:
     window = _collect_ladder_window(days)
     if not window:
-        return {"days": days, "dates": [], "stocks": []}
+        return {"days": days, "dates": [], "stocks": [], "is_newest_today": False, "market_hours": is_market_hours()}
     n = len(window)
+    today_dt = _default_echelon_dt()
+    newest_dt = window[-1][0]
+    is_newest_today = newest_dt == today_dt
+    market_open = is_market_hours()
 
     # 逐日代码映射
     day_maps = []
+    raw_stocks_by_day = []
     for _dt, stocks in window:
+        raw_stocks_by_day.append(stocks)
         m = {}
         for s in stocks:
             code = str(s.get("code") or "").zfill(6)
@@ -1751,7 +1836,40 @@ def _build_ladder(days: int) -> dict:
     # 次日溢价映射：第 i 天的次日溢价来自窗口内下一交易日 window[i+1]
     prem_maps = [None] * n
     for i in range(n - 1):
-        prem_maps[i] = _previous_em_change_map(window[i + 1][0])
+        prem_maps[i] = _cached_previous_em_change_map(window[i + 1][0])
+
+    live_change_map = {}
+    if is_newest_today:
+        codes_needed = set()
+        for code, v in day_maps[-1].items():
+            if v["boards"] >= 2:
+                codes_needed.add(code)
+        if n >= 2:
+            codes_needed.update(day_maps[-2].keys())
+            for code in day_maps[-2]:
+                if code not in day_maps[-1]:
+                    codes_needed.add(code)
+        live_change_map = _fetch_live_change_map(list(codes_needed))
+
+    def _resolve_same_day_change(code: str, day_idx: int):
+        prem = live_change_map.get(code)
+        if prem is not None:
+            return prem, market_open
+        prem = _change_from_stocks(raw_stocks_by_day[day_idx], code)
+        if prem is not None:
+            return prem, False
+        return None, False
+
+    def _cell_premium(day_idx: int, code: str):
+        is_last = day_idx == n - 1
+        if is_last and is_newest_today:
+            prem, is_live = _resolve_same_day_change(code, day_idx)
+            return prem, _premium_status(prem, is_newest=False) if prem is not None else "pending", is_live
+        prem = prem_maps[day_idx].get(code) if prem_maps[day_idx] is not None else None
+        if day_idx == n - 2 and is_newest_today and code in live_change_map:
+            prem = live_change_map[code]
+            return prem, _premium_status(prem, is_newest=False), True
+        return prem, _premium_status(prem, is_newest=is_last), False
 
     # 逐日统计
     dates_out = []
@@ -1769,6 +1887,9 @@ def _build_ladder(days: int) -> dict:
         rec = _get_emotion_record(dt)
         stage = None
         limit_up = None
+        rise_count = None
+        fall_count = None
+        broken_board_count = None
         if rec:
             stage = rec.get("stage")
             lu = rec.get("limit_up_count")
@@ -1777,21 +1898,39 @@ def _build_ladder(days: int) -> dict:
                     limit_up = int(lu)
                 except (TypeError, ValueError):
                     limit_up = None
+
+            def _rec_int(key):
+                val = rec.get(key)
+                if val is None:
+                    return None
+                try:
+                    return int(val)
+                except (TypeError, ValueError):
+                    return None
+
+            rise_count = _rec_int("rise_count")
+            fall_count = _rec_int("fall_count")
+            broken_board_count = _rec_int("broken_board_count")
         if limit_up is None:
             limit_up = len(stocks)
         first_boards = []
-        prem_map = prem_maps[i]
         for code, v in m.items():
             if v["boards"] != 1:
                 continue
-            prem = prem_map.get(code) if prem_map is not None else None
+            if i == n - 1 and is_newest_today:
+                prem, st, is_live = _cell_premium(i, code)
+            else:
+                prem = prem_maps[i].get(code) if prem_maps[i] is not None else None
+                st = _premium_status(prem, is_newest=(i == n - 1))
+                is_live = False
             first_boards.append({
                 "code": code,
                 "name": v["name"],
                 "theme": v["theme"],
                 "market": _classify_market(code),
                 "premium": prem,
-                "status": _premium_status(prem, is_newest=(i == n - 1)),
+                "status": st,
+                "live": is_live,
             })
         first_boards.sort(key=lambda x: x["name"])
         dates_out.append({
@@ -1803,6 +1942,9 @@ def _build_ladder(days: int) -> dict:
             "advance_count": advance,
             "consec_count": consec,
             "limit_up_count": limit_up,
+            "rise_count": rise_count,
+            "fall_count": fall_count,
+            "broken_board_count": broken_board_count,
             "first_boards": first_boards,
         })
 
@@ -1842,21 +1984,31 @@ def _build_ladder(days: int) -> dict:
             info = day_maps[i][code]
             name = info["name"] or name
             theme = info["theme"] or theme
-            prem = prem_maps[i].get(code) if prem_maps[i] is not None else None
+            prem, st, is_live = _cell_premium(i, code)
             cells.append({
                 "dt": window[i][0],
                 "boards": info["boards"],
                 "premium": prem,
-                "status": _premium_status(prem, is_newest=(i == n - 1)),
+                "status": st,
+                "live": is_live,
             })
         # 断板终止格
         last_i = seg[-1]
         if last_i + 1 < n and code not in day_maps[last_i + 1]:
+            broken_dt = window[last_i + 1][0]
+            broken_prem = None
+            broken_live = False
+            if broken_dt == today_dt:
+                broken_prem, broken_live = _resolve_same_day_change(code, last_i + 1)[0:2]
+                if broken_prem is None and code in live_change_map:
+                    broken_prem = live_change_map.get(code)
+                    broken_live = market_open
             cells.append({
-                "dt": window[last_i + 1][0],
+                "dt": broken_dt,
                 "boards": day_maps[last_i][code]["boards"],
-                "premium": None,
+                "premium": broken_prem,
                 "status": "broken",
+                "live": broken_live,
             })
         stocks_out.append({
             "code": code,
@@ -1868,7 +2020,14 @@ def _build_ladder(days: int) -> dict:
         })
 
     stocks_out.sort(key=lambda s: (-s["max_boards"], s["cells"][0]["dt"]))
-    return {"days": n, "dates": dates_out, "stocks": stocks_out}
+    return {
+        "days": n,
+        "dates": dates_out,
+        "stocks": stocks_out,
+        "newest_dt": newest_dt,
+        "is_newest_today": is_newest_today,
+        "market_hours": market_open,
+    }
 
 
 @limit_up_echelon_bp.route('/api/v1/limit-up-ladder', methods=['GET'])
@@ -1879,8 +2038,9 @@ def get_limit_up_ladder():
     except (TypeError, ValueError):
         days = 5
     days = max(3, min(15, days))
+    live = request.args.get("live", "").lower() in ("1", "true", "yes")
     try:
-        return v1_success_response(data=_build_ladder(days))
+        return v1_success_response(data=_build_ladder(days, live=live))
     except Exception as e:
         logger.error("连板天梯数据获取失败: %s", e, exc_info=True)
         return v1_success_response(data={"days": days, "dates": [], "stocks": []})

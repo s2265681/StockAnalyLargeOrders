@@ -1,0 +1,42 @@
+---
+description: 本地开发启动后端时先拉 SSH 数据库隧道，再启 Flask
+alwaysApply: true
+---
+
+# 本地开发启动流程
+
+用户要求「启动后端 / 启动服务端 / 本地开发」时，按顺序执行：
+
+## 1. 数据库 SSH 隧道（必须先做）
+
+本地连线上 MySQL **不走 VPN**，走 SSH 隧道：
+
+```bash
+./scripts/db-tunnel.sh status   # 未运行则 start
+./scripts/db-tunnel.sh start    # 127.0.0.1:3307 -> 服务器 MySQL
+```
+
+- 配置见 `backend/.env`（`MYSQL_HOST=127.0.0.1`, `MYSQL_PORT=3307`）
+- SSH 凭据可选：`scripts/local.deploy.env`（从 `local.deploy.env.example` 复制）
+- `/health` 不检查数据库；隧道未开时后端仍可能显示 healthy，但业务接口会失败
+
+## 2. 启动 Flask 后端
+
+```bash
+cd backend
+source venv/bin/activate
+python app.py   # 端口 9001
+```
+
+或使用项目脚本 `./start.sh`（会同时启前后端）。
+
+## 3. 验证
+
+- 隧道：`nc -z 127.0.0.1 3307` 或 `./scripts/db-tunnel.sh status`
+- 后端：`curl http://localhost:9001/health`
+- 可选：用 backend venv 测 MySQL `SELECT 1`
+
+## 4. 已有进程时
+
+- 9001 已在监听：告知用户已在运行；若有 backend 代码改动，提示需重启
+- 隧道已运行：跳过 start，勿重复建连

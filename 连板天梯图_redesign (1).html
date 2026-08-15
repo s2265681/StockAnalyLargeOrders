@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>连板天梯图 · 龙头能量线</title>
+<style>
+  :root{
+    --bg:#F6F7FA;
+    --panel:#FFFFFF;
+    --line:#E7E9F0;
+    --ink:#171A26;
+    --ink-soft:#6B7280;
+    --ink-faint:#9AA1B2;
+    --blue:#2F5CED;
+    --blue-soft:#EEF2FF;
+    --green:#0F9D58;
+    --green-bg:#E4F7EC;
+    --green-line:#BCEBD1;
+    --red:#D9364A;
+    --red-bg:#FDEAEC;
+    --red-line:#F6C6CC;
+    --thread:#6D28D9;
+    --thread-glow:#A78BFA;
+    --zhaban:#1F2937;
+    --zhaban-bg:#EEF0F3;
+    --mono: 'SFMono-Regular', 'JetBrains Mono', 'Consolas', ui-monospace, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ max-width:1440px; margin:0 auto; padding:28px 28px 60px; }
+
+  .eyebrow{
+    font-family:var(--mono); font-size:11px; letter-spacing:.14em; color:var(--thread);
+    text-transform:uppercase; font-weight:600; margin-bottom:8px;
+  }
+  h1{ font-size:26px; margin:0 0 6px; letter-spacing:-.01em; }
+  .sub{ color:var(--ink-soft); font-size:13.5px; margin:0 0 20px; line-height:1.6; max-width:720px;}
+  .sub b{ color:var(--ink); font-weight:600; }
+
+  .legend{
+    display:flex; flex-wrap:wrap; gap:16px; align-items:center; font-size:12px; color:var(--ink-soft);
+    padding:12px 16px; background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    margin-bottom:10px;
+  }
+  .legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .dot{width:9px;height:9px;border-radius:3px;display:inline-block;}
+
+  .cycle-legend{
+    display:flex; flex-wrap:wrap; gap:10px; align-items:center; font-size:11.5px; color:var(--ink-soft);
+    padding:10px 16px; background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    margin-bottom:20px;
+  }
+  .cycle-chip{
+    display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:999px;
+    font-weight:600; font-size:11px;
+  }
+  .cycle-chip .dot{width:7px;height:7px;border-radius:50%;}
+
+  .stage{ position:relative; background:var(--panel); border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+  .stage-inner{ position:relative; }
+  .scrollzone{ overflow-x:auto; scroll-behavior:smooth; }
+  .scrollzone::-webkit-scrollbar{ height:9px; }
+  .scrollzone::-webkit-scrollbar-track{ background:var(--bg); }
+  .scrollzone::-webkit-scrollbar-thumb{ background:#D6D9E3; border-radius:6px; }
+  .scrollzone::-webkit-scrollbar-thumb:hover{ background:#B9BECC; }
+
+  .grid{
+    position:relative;
+    display:grid;
+    grid-template-columns: 104px repeat(var(--ndates), 196px);
+    min-width: max-content;
+  }
+  .axis-cell{
+    position:sticky; left:0; z-index:6; background:var(--panel); border-right:1px solid var(--line);
+    display:flex; align-items:center; justify-content:flex-end; padding-right:14px; border-top:1px solid var(--line);
+    font-size:12px; color:var(--ink-soft); font-weight:600;
+  }
+  .axis-cell.peak-lvl{ color:var(--thread); }
+  .axis-cell.axis-zhaban{ color:var(--zhaban); }
+  .axis-cell.axis-breadth{ color:var(--blue); }
+  .axis-corner{ position:sticky; left:0; z-index:7; background:var(--panel); border-right:1px solid var(--line); border-top:4px solid var(--line); }
+
+  .row-level{ height:var(--rowh); }
+  .row-zhaban{ height:var(--rowh-z); }
+  .row-breadth{ height:var(--rowh-b); }
+  .row-foot{ height:auto; }
+
+  .cell{
+    border-left:1px solid var(--line); border-top:1px solid var(--line);
+    padding:6px 7px; display:flex; flex-direction:column; align-items:stretch; justify-content:flex-start;
+    gap:3px; overflow:hidden; position:relative; background:var(--cyc-cell, transparent);
+  }
+  .cell.lvl{ height:var(--rowh); }
+  .cell.zh{ height:var(--rowh-z); }
+  .cell.br{ height:var(--rowh-b); padding:10px 12px; justify-content:center; }
+  .cell.empty::after{
+    content:""; position:absolute; inset:0; margin:auto; width:3px;height:3px; border-radius:50%;
+    background:var(--line); top:50%; transform:translateY(-50%); left:13px;
+  }
+
+  .chip{
+    border-radius:8px; padding:4px 7px; font-size:11px; line-height:1.3;
+    display:flex; align-items:center; justify-content:space-between; gap:6px; border:1px solid transparent;
+    cursor:default;
+  }
+  .chip .name{ font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .chip .pct{ font-family:var(--mono); font-weight:700; flex-shrink:0; }
+  .chip.up{ background:var(--green-bg); color:var(--green); border-color:var(--green-line); }
+  .chip.down{ background:var(--red-bg); color:var(--red); border-color:var(--red-line); }
+  .chip.peak{ box-shadow:0 0 0 2px var(--thread-glow); }
+  .chip.count{ background:var(--blue-soft); color:var(--blue); font-family:var(--mono); font-weight:700; justify-content:center; font-size:12.5px; cursor:default;}
+  .chip.demo{ opacity:.55; border-style:dashed; }
+  .chip.zhc{ background:var(--zhaban); color:#fff; border-color:#111827; }
+  .chip.zhc .badge{ background:#EF4444; color:#fff; font-size:9px; font-weight:800; border-radius:4px; padding:0 4px; margin-right:4px; }
+  .chip.hoverable:hover{ filter:brightness(1.04); outline:1px solid rgba(109,40,217,.35); }
+
+  .more{ font-size:10px; color:var(--ink-faint); font-family:var(--mono); padding-left:2px; }
+
+  /* breadth bar */
+  .breadth-wrap{ width:100%; }
+  .breadth-nums{ display:flex; justify-content:space-between; font-family:var(--mono); font-size:10.5px; margin-bottom:5px; }
+  .breadth-nums .up{ color:var(--green); font-weight:700; }
+  .breadth-nums .down{ color:var(--red); font-weight:700; }
+  .breadth-bar{ height:10px; border-radius:6px; overflow:hidden; display:flex; background:var(--line); }
+  .breadth-bar .seg-up{ background:var(--green); }
+  .breadth-bar .seg-flat{ background:#D8DCE6; }
+  .breadth-bar .seg-down{ background:var(--red); }
+  .breadth-ratio{ margin-top:4px; font-size:9.5px; color:var(--ink-faint); font-family:var(--mono); text-align:center;}
+
+  svg.thread-layer{ position:absolute; inset:0; pointer-events:none; z-index:3; }
+  .thread-path{ fill:none; stroke:url(#threadGrad); stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; filter:drop-shadow(0 0 4px rgba(109,40,217,.35)); }
+  .thread-node{ fill:var(--panel); stroke:var(--thread); stroke-width:2.5; }
+  .thread-node.today{ fill:var(--thread); }
+  .thread-node.today-pulse{ fill:none; stroke:var(--thread); stroke-width:1.5; opacity:.5; }
+
+  /* date footer (moved to bottom) */
+  .date-foot{
+    padding:12px 12px 13px; border-left:1px solid var(--line); border-top:4px solid var(--cyc, var(--line));
+    background:var(--panel); position:relative;
+  }
+  .date-foot.today{ background:linear-gradient(0deg,#F5F1FF,var(--panel) 75%); }
+  .date-num{ font-family:var(--mono); font-size:16px; font-weight:700; letter-spacing:-.02em;}
+  .date-wk{ font-size:10.5px; color:var(--ink-faint); margin-top:1px;}
+  .cycle-tag{ display:inline-block; margin-top:6px; font-size:10px; font-weight:700; padding:2px 7px; border-radius:999px; color:var(--cyc); background:var(--cyc-bg); }
+  .date-stats{ margin-top:7px; display:flex; flex-direction:column; gap:2px; font-family:var(--mono); font-size:10.5px;}
+  .date-stats .peakline{ color:var(--thread); font-weight:700; }
+  .demo-tag{ position:absolute; top:6px; right:8px; font-size:9px; font-family:var(--mono); color:var(--ink-faint); border:1px dashed var(--line); border-radius:4px; padding:1px 5px; }
+
+  .edge-fade{ position:absolute; top:0; bottom:0; width:56px; pointer-events:none; z-index:8; }
+  .edge-fade.left{ left:104px; background:linear-gradient(90deg, var(--panel), rgba(255,255,255,0)); }
+  .edge-fade.right{ right:0; background:linear-gradient(270deg, var(--panel), rgba(255,255,255,0)); }
+
+  .navbtn{
+    position:absolute; top:50%; transform:translateY(-50%); z-index:9;
+    width:34px; height:34px; border-radius:50%; border:1px solid var(--line);
+    background:var(--panel); color:var(--ink); font-size:15px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(20,20,40,.08);
+    transition:background .15s;
+  }
+  .navbtn:hover{ background:var(--blue-soft); color:var(--blue); }
+  .navbtn.left{ left:10px; } .navbtn.right{ right:10px; }
+  .navbtn.jump{ position:static; transform:none; width:auto; height:auto; border-radius:8px; padding:6px 12px; font-size:11.5px; font-weight:600; }
+  .toolbar{ display:flex; justify-content:flex-end; margin-bottom:10px; }
+
+  footer.note{ margin-top:16px; font-size:12px; color:var(--ink-faint); line-height:1.75; }
+
+  /* intraday sparkline tooltip */
+  #sparkTip{
+    position:fixed; z-index:50; width:236px; background:#14171F; color:#F3F4F6;
+    border-radius:10px; padding:10px 12px 8px; box-shadow:0 12px 28px rgba(10,10,20,.35);
+    pointer-events:none; opacity:0; transform:translateY(4px); transition:opacity .12s, transform .12s;
+    font-family:var(--sans);
+  }
+  #sparkTip.show{ opacity:1; transform:translateY(0); }
+  #sparkTip .tt-head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:2px; }
+  #sparkTip .tt-name{ font-size:12.5px; font-weight:700; }
+  #sparkTip .tt-pct{ font-family:var(--mono); font-size:12.5px; font-weight:700; }
+  #sparkTip .tt-sub{ font-size:10px; color:#9CA3AF; margin-bottom:6px; }
+  #sparkTip svg{ display:block; }
+  #sparkTip .tt-foot{ font-size:9.5px; color:#6B7280; margin-top:4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">情绪周期 · 连板天梯 — 重新设计</div>
+  <h1>龙头能量线</h1>
+  <p class="sub">
+    日期栏挪到<b>表格底部</b>，作为时间轴 + 情绪周期阶段的坐标说明；表格主体只保留板位、炸板、大盘涨跌家数三类信息，
+    视线从上往下看数据、最后落到日期，更符合"先看盘面、再看是哪天"的阅读顺序。新增<b>炸板</b>行（触板后未能封住的个股）
+    和<b>大盘涨跌家数对比</b>行（当日全市场涨跌家数比例）。把鼠标移到任意个股卡片上，可看到该股当日模拟分时曲线。
+  </p>
+
+  <div class="legend">
+    <span><span class="dot" style="background:#0F9D58"></span>次日上涨（赚钱效应）</span>
+    <span><span class="dot" style="background:#D9364A"></span>次日下跌（亏钱效应）</span>
+    <span><span class="dot" style="background:#6D28D9"></span>当日龙头 · 能量线节点</span>
+    <span><span class="dot" style="background:#1F2937"></span>炸板（触板未封住）</span>
+    <span><span class="dot" style="background:#2F5CED"></span>首板数量 / 涨跌家数（仅计数）</span>
+  </div>
+
+  <div id="cycleLegend" class="cycle-legend"></div>
+
+  <div class="toolbar">
+    <button class="navbtn jump" id="jumpLatest">跳到最新 ›</button>
+  </div>
+
+  <div class="stage">
+    <div class="stage-inner">
+      <button class="navbtn left" id="navLeft" aria-label="向左滚动">‹</button>
+      <button class="navbtn right" id="navRight" aria-label="向右滚动">›</button>
+      <div class="edge-fade left"></div>
+      <div class="edge-fade right"></div>
+      <div class="scrollzone" id="scrollzone">
+        <div id="grid" class="grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="note">
+    说明：卡片颜色沿用原表规则（绿=次日赚钱、红=次日亏钱）。炸板行为深色徽标，展示触板时间与最终收盘涨跌幅。大盘涨跌家数为全市场涨/跌/平家数占比条，风格与本表一致（绿=上涨家数）。悬浮个股卡片出现的分时曲线为<b>按当日涨跌幅模拟生成的示意图</b>，用于演示交互效果，并非真实盘口数据；08-03 的个股名称与涨跌幅本身为原图真实数据，其余日期、炸板、涨跌家数、分时曲线均为演示占位（名称带 * 号），接入真实数据源后可直接替换。
+  </footer>
+</div>
+
+<div id="sparkTip"></div>
+
+<script>
+// ---------- sentiment cycle palette ----------
+const CYCLE = {
+  '冰点期': { c:'#94A3B8', bg:'#F1F4F8', cell:'rgba(148,163,184,.05)' },
+  '启动期': { c:'#0D9488', bg:'#E7F7F4', cell:'rgba(13,148,136,.05)' },
+  '主升期': { c:'#7C3AED', bg:'#F2ECFE', cell:'rgba(124,58,237,.06)' },
+  '分化期': { c:'#D97706', bg:'#FDF1E1', cell:'rgba(217,119,6,.05)' },
+  '退潮期': { c:'#E11D48', bg:'#FDECF0', cell:'rgba(225,29,72,.05)' },
+};
+const LEVELS = ['首板','2板','3板','4板','5板','6板','7板','8板'];
+
+// 08-03 stock names + pct are the REAL data read from the source screenshot.
+// Everything else (other dates, 炸板, 涨跌家数, intraday curves) is demo/placeholder
+// data (marked with *) to show how the layout behaves with more days — wire up your feed to replace it.
+const days = [
+  { date:'07-23', wk:'周三', demo:true, cycle:'冰点期', peak:1, stats:{limitup:22, lianban:3, zhaban:6},
+    breadth:{up:1520,down:2980,flat:180}, board:{ '首板':[{count:19}] }, zhaban:[{name:'示例光伏N',touch:'10:05',pct:-2.1,demo:true}] },
+  { date:'07-24', wk:'周四', demo:true, cycle:'冰点期', peak:1, stats:{limitup:26, lianban:4, zhaban:5},
+    breadth:{up:1680,down:2790,flat:190}, board:{ '首板':[{count:23}] }, zhaban:[{name:'示例化工O',touch:'13:20',pct:1.4,demo:true}] },
+  { date:'07-27', wk:'周一', demo:true, cycle:'启动期', peak:2, stats:{limitup:35, lianban:7, zhaban:9},
+    breadth:{up:2340,down:2120,flat:210}, board:{ '首板':[{count:30}], '2板':[{name:'示例传媒A',pct:9.6,dir:'up',demo:true,peak:true},{name:'示例材料B',pct:5.2,dir:'up',demo:true}] },
+    zhaban:[{name:'示例锂电M',touch:'11:02',pct:3.2,demo:true},{name:'示例光伏N',touch:'14:10',pct:-1.6,demo:true}] },
+  { date:'07-28', wk:'周二', demo:true, cycle:'启动期', peak:3, stats:{limitup:44, lianban:9, zhaban:11},
+    breadth:{up:2610,down:1980,flat:205}, board:{ '首板':[{count:37}], '2板':[{name:'示例材料B',pct:9.9,dir:'up',demo:true}], '3板':[{name:'示例能源C',pct:10.0,dir:'up',demo:true,peak:true}] },
+    zhaban:[{name:'示例传媒A',touch:'09:48',pct:-0.8,demo:true}] },
+  { date:'07-29', wk:'周三', demo:true, cycle:'主升期', peak:4, stats:{limitup:58, lianban:12, zhaban:14},
+    breadth:{up:2890,down:1760,flat:190}, board:{ '首板':[{count:47}], '2板':[{name:'示例军工D',pct:9.4,dir:'up',demo:true}], '3板':[{name:'示例能源C',pct:9.8,dir:'up',demo:true}], '4板':[{name:'示例军工E',pct:10.0,dir:'up',demo:true,peak:true}] },
+    zhaban:[{name:'示例教育G',touch:'10:40',pct:4.1,demo:true},{name:'示例爆破H',touch:'13:55',pct:2.0,demo:true}] },
+  { date:'07-30', wk:'周四', demo:true, cycle:'主升期', peak:5, stats:{limitup:66, lianban:15, zhaban:16},
+    breadth:{up:3010,down:1650,flat:175}, board:{ '首板':[{count:52}], '2板':[{name:'示例传媒F',pct:8.8,dir:'up',demo:true}], '3板':[{name:'示例军工D',pct:9.1,dir:'up',demo:true}], '4板':[{name:'示例军工E',pct:9.7,dir:'up',demo:true}], '5板':[{name:'示例教育G',pct:10.0,dir:'up',demo:true,peak:true}] },
+    zhaban:[{name:'示例爆破H',touch:'11:15',pct:5.6,demo:true}] },
+  { date:'07-31', wk:'周五', demo:true, cycle:'主升期', peak:6, stats:{limitup:71, lianban:16, zhaban:18},
+    breadth:{up:3120,down:1580,flat:160}, board:{ '首板':[{count:55}], '2板':[{name:'示例传媒F',pct:6.3,dir:'up',demo:true}], '4板':[{name:'示例军工E',pct:9.2,dir:'up',demo:true}], '5板':[{name:'示例教育G',pct:9.6,dir:'up',demo:true}], '6板':[{name:'示例爆破H',pct:10.0,dir:'up',demo:true,peak:true}] },
+    zhaban:[{name:'示例传媒F续',touch:'09:52',pct:-2.4,demo:true},{name:'示例科创I',touch:'13:30',pct:3.9,demo:true}] },
+  { date:'08-03', wk:'周一', demo:false, cycle:'主升期', peak:6, stats:{limitup:75, lianban:17, zhaban:19},
+    breadth:{up:3260,down:1490,flat:150},
+    board:{
+      '首板':[{count:58}],
+      '2板':[
+        {name:'新能股份',pct:10.07,dir:'up'},{name:'天娱数科',pct:10.06,dir:'up'},{name:'美利云',pct:10,dir:'up'},
+        {name:'德龙汇能',pct:9.99,dir:'up'},{name:'恒银科技',pct:9.98,dir:'up'},{name:'豪尔赛',pct:9.97,dir:'up'},
+        {name:'欧克科技',pct:9.1,dir:'up'},{name:'中大力德',pct:6.06,dir:'up'},{name:'利欧股份',pct:5.85,dir:'up'},
+        {name:'盈峰环境',pct:5.21,dir:'up'},{name:'立航科技',pct:-0.16,dir:'down'},{name:'中岩大地',pct:-1.18,dir:'down'},
+        {name:'锦和商管',pct:-3.6,dir:'down'}
+      ],
+      '3板':[{name:'神雾节能',pct:10.08,dir:'up'}],
+      '4板':[{name:'高争民爆',pct:10.01,dir:'up'}],
+      '5板':[{name:'一鸣食品',pct:1.78,dir:'up'}],
+      '6板':[{name:'传智教育',pct:10.01,dir:'up',peak:true}]
+    },
+    zhaban:[{name:'示例科创I',touch:'10:12',pct:2.7,demo:true},{name:'示例新材P',touch:'14:40',pct:-3.1,demo:true}]
+  },
+  { date:'08-04', wk:'周二', demo:true, cycle:'分化期', peak:6, stats:{limitup:63, lianban:14, zhaban:22},
+    breadth:{up:2450,down:2260,flat:190}, board:{ '首板':[{count:49}], '2板':[{name:'豪尔赛',pct:8.4,dir:'up',demo:true}], '3板':[{name:'神雾节能',pct:-2.1,dir:'down',demo:true}], '5板':[{name:'一鸣食品',pct:0,dir:'down',demo:true}], '6板':[{name:'传智教育',pct:9.5,dir:'up',demo:true,peak:true}] },
+    zhaban:[{name:'新能股份',touch:'09:40',pct:-4.5,demo:true},{name:'德龙汇能',touch:'11:20',pct:-2.0,demo:true},{name:'恒银科技',touch:'13:05',pct:1.1,demo:true}] },
+  { date:'08-05', wk:'周三', demo:true, cycle:'分化期', peak:5, stats:{limitup:54, lianban:11, zhaban:20},
+    breadth:{up:2100,down:2680,flat:200}, board:{ '首板':[{count:44}], '2板':[{name:'示例科创I',pct:-3.4,dir:'down',demo:true}], '3板':[{name:'示例军工E',pct:-1.5,dir:'down',demo:true}], '5板':[{name:'传智教育',pct:7.8,dir:'up',demo:true,peak:true}] },
+    zhaban:[{name:'示例材料J',touch:'10:50',pct:-1.9,demo:true}] },
+  { date:'08-06', wk:'周四', demo:true, cycle:'退潮期', peak:3, stats:{limitup:38, lianban:8, zhaban:17},
+    breadth:{up:1720,down:3040,flat:190}, board:{ '首板':[{count:32}], '2板':[{name:'示例材料J',pct:-4.2,dir:'down',demo:true}], '3板':[{name:'示例科创I',pct:9.5,dir:'up',demo:true,peak:true}] },
+    zhaban:[{name:'示例新能K',touch:'09:35',pct:-3.3,demo:true}] },
+  { date:'08-07', wk:'周五', demo:true, cycle:'退潮期', peak:2, stats:{limitup:29, lianban:5, zhaban:12},
+    breadth:{up:1480,down:3210,flat:175}, board:{ '首板':[{count:25}], '2板':[{name:'示例材料J',pct:-1.1,dir:'down',demo:true,peak:true}] },
+    zhaban:[{name:'示例传媒Q',touch:'13:44',pct:-2.6,demo:true}] },
+  { date:'08-10', wk:'周一', demo:true, cycle:'冰点期', peak:1, stats:{limitup:20, lianban:2, zhaban:7},
+    breadth:{up:1390,down:3280,flat:165}, board:{ '首板':[{count:18}] }, zhaban:[{name:'示例农业R',touch:'10:18',pct:-1.0,demo:true}] },
+  { date:'08-11', wk:'周二', demo:true, cycle:'冰点期', peak:2, stats:{limitup:24, lianban:4, zhaban:6},
+    breadth:{up:1610,down:3050,flat:170}, board:{ '首板':[{count:20}], '2板':[{name:'示例新能K',pct:9.3,dir:'up',demo:true,peak:true}] },
+    zhaban:[{name:'示例农业R',touch:'11:30',pct:0.6,demo:true}] },
+];
+
+const ROWH = 88, ROWH_Z = 74, ROWH_B = 78;
+document.documentElement.style.setProperty('--rowh', ROWH+'px');
+document.documentElement.style.setProperty('--rowh-z', ROWH_Z+'px');
+document.documentElement.style.setProperty('--rowh-b', ROWH_B+'px');
+document.documentElement.style.setProperty('--ndates', days.length);
+
+const grid = document.getElementById('grid');
+const AXIS_W = 104, COL_W = 196;
+
+// ---------- deterministic pseudo-random (for demo intraday curves) ----------
+function strHash(s){ let h=0; for(let i=0;i<s.length;i++){ h=(h*31+s.charCodeAt(i))|0; } return h; }
+function mulberry32(seed){
+  return function(){
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function classifyKind(item){
+  if(item.isZhaban) return 'zhaban';
+  if(item.pct >= 9.5) return Math.random() < 0.5 ? 'limit_flat' : 'limit_late'; // will be reseeded below anyway
+  if(item.pct < 0) return 'down';
+  return 'plain_up';
+}
+function genIntraday(seedKey, endPct, kind){
+  const rand = mulberry32(strHash(seedKey));
+  const n = 48;
+  const vals = [];
+  if(kind === 'limit_flat'){
+    const ramp = 4 + Math.floor(rand()*4);
+    for(let i=0;i<n;i++){
+      vals.push(i < ramp ? endPct*(i+1)/ramp + (rand()-0.5)*0.3 : endPct + (rand()-0.5)*0.06);
+    }
+  } else if(kind === 'limit_late'){
+    for(let i=0;i<n;i++){
+      const base = endPct*0.25*Math.sin(i/6) + (i/(n-1))*endPct*0.75;
+      vals.push(base + (rand()-0.5)*0.4);
+    }
+  } else if(kind === 'zhaban'){
+    const peakIdx = Math.floor(n*0.3 + rand()*n*0.2);
+    const peakVal = 9.9 + rand()*0.3;
+    for(let i=0;i<n;i++){
+      if(i < peakIdx) vals.push(peakVal*(i/peakIdx) + (rand()-0.5)*0.3);
+      else vals.push(peakVal - (peakVal-endPct)*((i-peakIdx)/(n-1-peakIdx)) + (rand()-0.5)*0.4);
+    }
+  } else if(kind === 'down'){
+    let v = 0.4;
+    for(let i=0;i<n;i++){ v += (endPct - v)/(n-i) + (rand()-0.5)*0.5; vals.push(v); }
+  } else {
+    let v = 0.1;
+    for(let i=0;i<n;i++){ v += (endPct - v)/(n-i) + (rand()-0.5)*0.4; vals.push(v); }
+  }
+  vals[n-1] = endPct;
+  return vals;
+}
+const KIND_LABEL = {
+  limit_flat:'早盘快速封板，全天封死', limit_late:'震荡反复，尾盘封板',
+  zhaban:'午前触板，随后打开回落', down:'冲高回落，尾盘走弱', plain_up:'震荡走高'
+};
+function pickKind(seedKey, item){
+  if(item.isZhaban) return 'zhaban';
+  if(item.pct < 0) return 'down';
+  if(item.pct >= 9.5){
+    const r = mulberry32(strHash(seedKey+'_k'))();
+    return r < 0.5 ? 'limit_flat' : 'limit_late';
+  }
+  return 'plain_up';
+}
+function sparkSVG(vals, kind){
+  const w=212, h=64, pad=4;
+  const min = Math.min(...vals, 0), max = Math.max(...vals, 10.2);
+  const range = (max-min) || 1;
+  const pts = vals.map((v,i)=>{
+    const x = pad + i*((w-2*pad)/(vals.length-1));
+    const y = h - pad - ((v-min)/range)*(h-2*pad);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  const lineColor = vals[vals.length-1] >= 0 ? '#34D399' : '#F87171';
+  const zeroY = h - pad - ((0-min)/range)*(h-2*pad);
+  const limitY = h - pad - ((10-min)/range)*(h-2*pad);
+  const areaPts = `${pad},${h-pad} ` + pts.join(' ') + ` ${w-pad},${h-pad}`;
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+    <line x1="${pad}" y1="${zeroY}" x2="${w-pad}" y2="${zeroY}" stroke="#374151" stroke-width="1" stroke-dasharray="2,2"/>
+    ${kind.startsWith('limit') ? `<line x1="${pad}" y1="${limitY}" x2="${w-pad}" y2="${limitY}" stroke="#6D28D9" stroke-width="1" stroke-dasharray="2,2"/>` : ''}
+    <polygon points="${areaPts}" fill="${lineColor}" opacity="0.12"/>
+    <polyline points="${pts.join(' ')}" fill="none" stroke="${lineColor}" stroke-width="1.6" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+// ---------- render helpers ----------
+function chipHTML(item, level, dateKey){
+  if(item.count !== undefined){
+    return `<div class="chip count">${level} · ${item.count}</div>`;
+  }
+  const dirClass = item.dir === 'up' ? 'up' : 'down';
+  const sign = item.pct >= 0 ? '+' : '';
+  const peakClass = item.peak ? ' peak' : '';
+  const demoClass = item.demo ? ' demo' : '';
+  const seedKey = dateKey+'_'+item.name;
+  const kind = pickKind(seedKey, item);
+  return `<div class="chip ${dirClass}${peakClass}${demoClass} hoverable" data-spark="1" data-name="${item.name}${item.demo?'*':''}" data-pct="${sign}${item.pct}" data-kind="${kind}" data-seed="${seedKey}" title="${item.name}">
+      <span class="name">${item.name}${item.demo?'*':''}</span>
+      <span class="pct">${sign}${item.pct}</span>
+    </div>`;
+}
+function zhabanChipHTML(item, dateKey){
+  const sign = item.pct >= 0 ? '+' : '';
+  const seedKey = dateKey+'_zb_'+item.name;
+  return `<div class="chip zhc hoverable" data-spark="1" data-name="${item.name}*" data-pct="${sign}${item.pct}" data-kind="zhaban" data-seed="${seedKey}" title="${item.name} 炸板">
+      <span class="name"><span class="badge">炸</span>${item.name}*</span>
+      <span class="pct">${item.touch} ${sign}${item.pct}</span>
+    </div>`;
+}
+function breadthHTML(b){
+  const total = b.up + b.down + b.flat;
+  const upPct = (b.up/total*100).toFixed(0), downPct=(b.down/total*100).toFixed(0), flatPct=(100-upPct-downPct);
+  return `<div class="breadth-wrap">
+    <div class="breadth-nums"><span class="up">涨 ${b.up}</span><span class="down">跌 ${b.down}</span></div>
+    <div class="breadth-bar">
+      <div class="seg-up" style="width:${upPct}%"></div>
+      <div class="seg-flat" style="width:${flatPct}%"></div>
+      <div class="seg-down" style="width:${downPct}%"></div>
+    </div>
+    <div class="breadth-ratio">平 ${b.flat} · 涨跌比 ${(b.up/b.down).toFixed(2)}</div>
+  </div>`;
+}
+
+let html = '';
+const rowsTopToBottom = [...LEVELS].reverse(); // 8板 ... 首板
+
+// board level rows
+rowsTopToBottom.forEach(level=>{
+  const isTopUsed = days.some(d=>d.peak === LEVELS.indexOf(level)+1);
+  html += `<div class="axis-cell peak-level ${isTopUsed?'peak-lvl':''}" style="--rowh:${ROWH}px;">${level}</div>`;
+  days.forEach(d=>{
+    const cyc = CYCLE[d.cycle];
+    const items = d.board[level];
+    const style = `style="--cyc-cell:${cyc.cell};"`;
+    if(!items || items.length===0){
+      html += `<div class="cell lvl empty" ${style}></div>`;
+    } else {
+      const shown = items.slice(0,4);
+      const rest = items.length - shown.length;
+      html += `<div class="cell lvl" ${style}>${shown.map(it=>chipHTML(it,level,d.date)).join('')}${rest>0?`<div class="more">+${rest} 更多</div>`:''}</div>`;
+    }
+  });
+});
+
+// 炸板 row
+html += `<div class="axis-cell axis-zhaban">炸板</div>`;
+days.forEach(d=>{
+  const cyc = CYCLE[d.cycle];
+  const style = `style="--cyc-cell:${cyc.cell};"`;
+  const items = d.zhaban || [];
+  if(items.length===0){
+    html += `<div class="cell zh empty" ${style}></div>`;
+  } else {
+    const shown = items.slice(0,3);
+    const rest = items.length - shown.length;
+    html += `<div class="cell zh" ${style}>${shown.map(it=>zhabanChipHTML(it,d.date)).join('')}${rest>0?`<div class="more">+${rest} 更多</div>`:''}</div>`;
+  }
+});
+
+// 涨跌家数 row
+html += `<div class="axis-cell axis-breadth">涨跌家数</div>`;
+days.forEach(d=>{
+  const cyc = CYCLE[d.cycle];
+  html += `<div class="cell br" style="--cyc-cell:${cyc.cell};">${breadthHTML(d.breadth)}</div>`;
+});
+
+// date footer row (moved to bottom, as requested)
+html += `<div class="axis-corner">日期 / 周期</div>`;
+days.forEach((d,i)=>{
+  const cyc = CYCLE[d.cycle];
+  const isLast = i === days.length-1;
+  html += `<div class="date-foot ${isLast?'today':''}" style="--cyc:${cyc.c}; --cyc-bg:${cyc.bg};">
+    ${d.demo? `<span class="demo-tag">示例</span>` : ''}
+    <div class="date-num">${d.date}</div>
+    <div class="date-wk">${d.wk}</div>
+    <div class="cycle-tag">${d.cycle}</div>
+    <div class="date-stats">
+      <span>涨停 <b style="color:var(--ink)">${d.stats.limitup}</b>　连板 <b style="color:var(--ink)">${d.stats.lianban}</b>　炸板 <b style="color:var(--ink)">${d.stats.zhaban}</b></span>
+      <span class="peakline">最高 ${d.peak}板 ▲</span>
+    </div>
+  </div>`;
+});
+
+grid.innerHTML = html;
+
+// ---------- cycle legend ----------
+document.getElementById('cycleLegend').innerHTML = '<span style="color:var(--ink-faint); margin-right:2px;">情绪周期：</span>' +
+  Object.entries(CYCLE).map(([name,v])=>
+    `<span class="cycle-chip" style="color:${v.c}; background:${v.bg};"><span class="dot" style="background:${v.c};"></span>${name}</span>`
+  ).join('<span style="color:var(--ink-faint);">→</span>');
+
+// ---------- energy line (peaks across dates) ----------
+function computeHeaderOffset(){
+  // no top header now; level rows start right at grid top (y=0)
+  return 0;
+}
+function drawThread(){
+  const old = grid.querySelector('svg.thread-layer');
+  if(old) old.remove();
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS,'svg');
+  svg.setAttribute('class','thread-layer');
+  svg.setAttribute('width', grid.scrollWidth);
+  svg.setAttribute('height', grid.scrollHeight);
+  const defs = document.createElementNS(svgNS,'defs');
+  defs.innerHTML = `<linearGradient id="threadGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#A78BFA"/><stop offset="100%" stop-color="#6D28D9"/>
+    </linearGradient>`;
+  svg.appendChild(defs);
+
+  const headerOffset = computeHeaderOffset();
+  const points = days.map((d,i)=>{
+    const peakLevel = LEVELS[d.peak-1];
+    const rowIndexFromTop = rowsTopToBottom.indexOf(peakLevel);
+    const x = AXIS_W + i*COL_W + COL_W/2;
+    const y = headerOffset + rowIndexFromTop*ROWH + ROWH/2;
+    return {x,y};
+  });
+
+  let path = `M ${points[0].x} ${points[0].y}`;
+  for(let i=1;i<points.length;i++){
+    const prev=points[i-1], cur=points[i];
+    const midX=(prev.x+cur.x)/2;
+    path += ` C ${midX} ${prev.y}, ${midX} ${cur.y}, ${cur.x} ${cur.y}`;
+  }
+  const pathEl = document.createElementNS(svgNS,'path');
+  pathEl.setAttribute('d',path); pathEl.setAttribute('class','thread-path');
+  svg.appendChild(pathEl);
+
+  points.forEach((p,i)=>{
+    const isLast = i===points.length-1;
+    const c = document.createElementNS(svgNS,'circle');
+    c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r', isLast?6:5);
+    c.setAttribute('class','thread-node'+(isLast?' today':''));
+    svg.appendChild(c);
+    if(isLast){
+      const pulse = document.createElementNS(svgNS,'circle');
+      pulse.setAttribute('cx',p.x); pulse.setAttribute('cy',p.y); pulse.setAttribute('r',6);
+      pulse.setAttribute('class','thread-node today-pulse');
+      pulse.innerHTML = `<animate attributeName="r" values="6;13;6" dur="2.2s" repeatCount="indefinite"/>
+                          <animate attributeName="opacity" values="0.6;0;0.6" dur="2.2s" repeatCount="indefinite"/>`;
+      svg.appendChild(pulse);
+    }
+  });
+  grid.appendChild(svg);
+}
+drawThread();
+window.addEventListener('resize', drawThread);
+
+// ---------- scroll controls ----------
+const scrollzone = document.getElementById('scrollzone');
+document.getElementById('navLeft').addEventListener('click', ()=> scrollzone.scrollBy({left:-COL_W*2, behavior:'smooth'}));
+document.getElementById('navRight').addEventListener('click', ()=> scrollzone.scrollBy({left:COL_W*2, behavior:'smooth'}));
+document.getElementById('jumpLatest').addEventListener('click', ()=> scrollzone.scrollTo({left:scrollzone.scrollWidth, behavior:'smooth'}));
+
+// ---------- hover intraday sparkline ----------
+const tip = document.getElementById('sparkTip');
+document.querySelectorAll('[data-spark]').forEach(el=>{
+  el.addEventListener('mouseenter', (e)=>{
+    const name = el.dataset.name, pct = el.dataset.pct, kind = el.dataset.kind, seed = el.dataset.seed;
+    const endPct = parseFloat(pct);
+    const vals = genIntraday(seed, endPct, kind);
+    tip.innerHTML = `
+      <div class="tt-head"><span class="tt-name">${name}</span><span class="tt-pct" style="color:${endPct>=0?'#34D399':'#F87171'}">${pct}%</span></div>
+      <div class="tt-sub">分时示意 · ${KIND_LABEL[kind]}</div>
+      ${sparkSVG(vals, kind)}
+      <div class="tt-foot">09:30 — 15:00（模拟数据，仅演示交互）</div>
+    `;
+    tip.classList.add('show');
+    positionTip(e);
+  });
+  el.addEventListener('mousemove', positionTip);
+  el.addEventListener('mouseleave', ()=> tip.classList.remove('show'));
+});
+function positionTip(e){
+  const pad = 14;
+  let x = e.clientX + pad, y = e.clientY + pad;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  if(x + 236 > vw) x = e.clientX - 236 - pad;
+  if(y + 150 > vh) y = e.clientY - 150 - pad;
+  tip.style.left = x+'px';
+  tip.style.top = y+'px';
+}
+</script>
+</body>
+</html>

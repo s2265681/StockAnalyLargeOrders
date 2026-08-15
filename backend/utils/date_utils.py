@@ -145,6 +145,15 @@ def is_today_trading_day() -> bool:
     return is_trading_day(None)
 
 
+def is_market_hours() -> bool:
+    """A 股交易时段（含集合竞价后至收盘，周一至周五）。"""
+    now = datetime.now()
+    if now.weekday() >= 5:
+        return False
+    t = now.hour * 100 + now.minute
+    return (925 <= t <= 1135) or (1300 <= t <= 1505)
+
+
 def validate_and_get_trading_date(date_param: str | None) -> str:
     """验证并返回有效交易日（不传则返回最近交易日）"""
     if not date_param:

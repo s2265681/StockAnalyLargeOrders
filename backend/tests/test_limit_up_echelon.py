@@ -332,6 +332,7 @@ class LadderTest(unittest.TestCase):
                    side_effect=lambda d: self.DAY_DATA.get(d, [])), \
              patch("routes.limit_up_echelon._get_emotion_record",
                    return_value={"stage": "高潮期", "limit_up_count": 68}), \
+             patch("routes.limit_up_echelon._fetch_live_change_map", return_value={}), \
              patch.dict("sys.modules", {"akshare": mock_ak}):
             return _build_ladder(5)
 
@@ -385,6 +386,42 @@ class LadderTest(unittest.TestCase):
         self.assertEqual(hf["market"], "cyb")
         lead = next(s for s in res["stocks"] if s["code"] == "600501")
         self.assertEqual(lead["market"], "main")
+
+    def test_newest_today_live_change(self):
+        import pandas as pd
+        from routes.limit_up_echelon import _build_ladder
+
+        def prev_side(date=None):
+            d = self.PREV_EM.get(date, {})
+            return pd.DataFrame({"代码": list(d.keys()), "涨跌幅": list(d.values())})
+
+        mock_ak = MagicMock()
+        mock_ak.stock_zt_pool_previous_em.side_effect = prev_side
+        live_map = {"600501": 9.98, "002413": 9.95, "301029": -2.5, "001259": -5.2}
+        with patch("routes.limit_up_echelon._default_echelon_dt", return_value="20260812"), \
+             patch("routes.limit_up_echelon.get_limit_up_stocks_by_date",
+                   side_effect=lambda d: self.DAY_DATA.get(d, [])), \
+             patch("routes.limit_up_echelon._get_emotion_record",
+                   return_value={"stage": "高潮期", "limit_up_count": 68}), \
+             patch("routes.limit_up_echelon._fetch_live_change_map", return_value=live_map), \
+             patch("routes.limit_up_echelon.is_market_hours", return_value=True), \
+             patch.dict("sys.modules", {"akshare": mock_ak}):
+            res = _build_ladder(5, live=True)
+
+        lead = next(s for s in res["stocks"] if s["code"] == "600501")
+        last = lead["cells"][-1]
+        self.assertEqual(last["dt"], "20260812")
+        self.assertEqual(last["premium"], 9.98)
+        self.assertEqual(last["status"], "up")
+        self.assertTrue(last["live"])
+
+        li = next(s for s in res["stocks"] if s["code"] == "001259")
+        broken = li["cells"][-1]
+        self.assertEqual(broken["status"], "broken")
+        self.assertEqual(broken["premium"], -5.2)
+
+        self.assertTrue(res["is_newest_today"])
+        self.assertTrue(res["market_hours"])
 
 
 if __name__ == "__main__":

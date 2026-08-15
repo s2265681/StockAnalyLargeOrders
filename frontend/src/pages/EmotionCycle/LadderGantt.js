@@ -323,8 +323,8 @@ function LadderGantt({ preview = false }) {
       </div>
 
       <div className="ladder-legend">
-        <span><i className="lg-dot" style={{ background: '#1f9e57' }} />次日上涨（赚钱效应）</span>
-        <span><i className="lg-dot" style={{ background: '#cf3636' }} />次日下跌（亏钱效应）</span>
+        <span><i className="lg-dot" style={{ background: '#cf3636' }} />次日上涨（赚钱效应）</span>
+        <span><i className="lg-dot" style={{ background: '#1f9e57' }} />次日下跌（亏钱效应）</span>
         <span><i className="lg-dot lg-thread" />当日龙头 · 能量线节点</span>
         <span><i className="lg-dot" style={{ background: '#1f2937' }} />炸板（触板未封）</span>
         <span><i className="lg-dot" style={{ background: '#2f5ced' }} />首板数 / 涨跌家数（仅计数）</span>

@@ -1342,6 +1342,32 @@ def _get_emotion_record(dt_clean: str) -> Optional[dict]:
     return None
 
 
+def _get_emotion_stage(dt_clean: str, rec: Optional[dict]) -> Optional[str]:
+    """情绪阶段：优先用记录里的 stage，缺失则按指标+近5日趋势推断（与情绪周期页一致）。"""
+    if rec and rec.get("stage"):
+        try:
+            from utils.emotion_stage import normalize_stage
+            return normalize_stage(rec.get("stage"))
+        except Exception:
+            return rec.get("stage")
+    if not rec:
+        return None
+    try:
+        from utils.emotion_stage import infer_stage_from_metrics
+        dt_display = f"{dt_clean[:4]}-{dt_clean[4:6]}-{dt_clean[6:8]}"
+        ordered = sorted(
+            [r for r in (_emotion_records_cache.get("records") or [])
+             if isinstance(r, dict) and r.get("date")],
+            key=lambda r: r.get("date"),
+        )
+        idx = next((i for i, r in enumerate(ordered) if r.get("date") == dt_display), None)
+        ctx = ordered[max(0, idx - 5):idx] if idx is not None else []
+        return infer_stage_from_metrics(rec, ctx)
+    except Exception as e:
+        logger.debug("推断情绪阶段失败 dt=%s: %s", dt_clean, e)
+        return None
+
+
 def _safe_mean_pct(values) -> Optional[float]:
     nums = []
     for v in values:
@@ -1913,6 +1939,7 @@ def _build_ladder(days: int, *, live: bool = False) -> dict:
             broken_board_count = _rec_int("broken_board_count")
         if limit_up is None:
             limit_up = len(stocks)
+        stage = _get_emotion_stage(dt, rec)
         first_boards = []
         for code, v in m.items():
             if v["boards"] != 1:

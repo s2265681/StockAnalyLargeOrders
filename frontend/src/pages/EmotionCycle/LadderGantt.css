@@ -2,26 +2,11 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  color: var(--text-primary);
+  color: var(--lb-text);
   font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
 
-  /* dark (default) */
-  --lb-grid: #1c2431;
-  --lb-text: #e9edf5;
-  --lb-muted: #7b869c;
-  --lb-head: #c8d2e2;
-  --lb-daybg: rgba(16, 21, 29, .82);
-  --lb-cardbg: rgba(16, 21, 29, .35);
-  --lb-pending-bd: #3a4356;
-  --lb-broken-bd: #3a4356;
-  --lb-broken-bg: rgba(20, 26, 36, .5);
-  --lb-axisbg: rgba(13, 17, 24, .9);
-  --lb-footbg: rgba(13, 17, 24, .72);
-  --lb-navbg: rgba(24, 31, 43, .92);
-  --lb-navbd: #2b3546;
-}
-
-[data-theme="light"] .ladder-gantt {
+  /* 固定浅色（白底），不随应用深浅主题变化 */
+  background: #fff;
   --lb-grid: #e2e8f0;
   --lb-text: #1f2a3a;
   --lb-muted: #64748b;
@@ -47,9 +32,8 @@
 .ladder-switch { margin-left: auto; display: flex; gap: 6px; }
 .ladder-switch span {
   font-size: 12px; padding: 3px 12px; border-radius: 6px;
-  background: #1a2130; color: #9aa7bd; cursor: pointer; user-select: none;
+  background: #eef2f7; color: #64748b; cursor: pointer; user-select: none;
 }
-[data-theme="light"] .ladder-switch span { background: #eef2f7; color: #64748b; }
 .ladder-switch span.on { background: #1f4bd8; color: #fff; }
 .ladder-live-hint { margin-left: 10px; font-size: 11px; color: #37d98a; letter-spacing: .3px; }
 .ladder-live-hint::before { content: '● '; animation: lb-pulse 1.4s ease-in-out infinite; }
@@ -170,10 +154,8 @@
   flex: 1; min-width: 0;
 }
 .lb-mk-main { color: var(--lb-text); }
-.lb-mk-cyb { color: #fb923c; }
-.lb-mk-kcb { color: #c084fc; }
-[data-theme="light"] .lb-mk-cyb { color: #d97706; }
-[data-theme="light"] .lb-mk-kcb { color: #9333ea; }
+.lb-mk-cyb { color: #d97706; }
+.lb-mk-kcb { color: #9333ea; }
 .lb-mktag {
   display: inline-block; font-style: normal; font-size: 9px; font-weight: 700;
   margin-left: 4px; padding: 0 3px; border-radius: 3px;

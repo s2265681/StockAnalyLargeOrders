@@ -6,24 +6,6 @@ import './LadderGantt.css';
 
 const MARKET_LABEL = { cyb: '创', kcb: '科', main: '' };
 
-const readThemeMode = () =>
-  (typeof document !== 'undefined' &&
-    document.documentElement.getAttribute('data-theme') === 'light')
-    ? 'light'
-    : 'dark';
-
-function useThemeMode() {
-  const [mode, setMode] = useState(readThemeMode);
-  useEffect(() => {
-    const el = document.documentElement;
-    const obs = new MutationObserver(() => setMode(readThemeMode()));
-    obs.observe(el, { attributes: true, attributeFilter: ['data-theme'] });
-    setMode(readThemeMode());
-    return () => obs.disconnect();
-  }, []);
-  return mode;
-}
-
 // 情绪周期配色（键与后端 stage 去「期」后一致）
 const STAGE_COLOR = {
   '冰点': '#94a3b8', '修复': '#0d9488', '升温': '#7c3aed',
@@ -32,6 +14,7 @@ const STAGE_COLOR = {
 const CYCLE_ORDER = ['冰点', '修复', '升温', '高潮', '退潮'];
 
 const stageKey = (stage) => (stage ? String(stage).replace(/期$/, '') : '');
+const stageFull = (stage) => { const k = stageKey(stage); return k ? `${k}期` : ''; };
 const stageBaseColor = (stage) => STAGE_COLOR[stageKey(stage)] || '#5b6678';
 
 const hexToRgba = (hex, a) => {
@@ -147,8 +130,7 @@ function LadderCard({ code, name, market, cell, peak = false, preview = false })
 }
 
 function LadderGantt({ preview = false }) {
-  const mode = useThemeMode();
-  const [days, setDays] = useState(5);
+  const [days, setDays] = useState(10);
   const [data, setData] = useState(preview ? PREVIEW : null);
   const [loading, setLoading] = useState(!preview);
   const pollRef = useRef(null);
@@ -300,7 +282,7 @@ function LadderGantt({ preview = false }) {
     gridTemplateColumns: `${AXIS_W}px repeat(${dates.length}, ${COL_W}px)`,
     '--lb-rowh': `${ROWH}px`,
   };
-  const bandAlpha = mode === 'light' ? 0.16 : 0.14;
+  const bandAlpha = 0.16;
   const cellTint = (stage) => hexToRgba(stageBaseColor(stage), bandAlpha);
 
   return (
@@ -310,7 +292,7 @@ function LadderGantt({ preview = false }) {
         <span className="ladder-badge">情绪周期 · 连板天梯 — 龙头能量线</span>
         {!preview && (
           <span className="ladder-switch">
-            {[5, 10, 30].map((d) => (
+            {[10, 30].map((d) => (
               <span key={d} className={days === d ? 'on' : ''} onClick={() => setDays(d)}>
                 近{d}日
               </span>
@@ -337,7 +319,7 @@ function LadderGantt({ preview = false }) {
         {CYCLE_ORDER.map((name, i) => (
           <React.Fragment key={name}>
             <span className="lb-cyc-chip" style={{ color: STAGE_COLOR[name], background: hexToRgba(STAGE_COLOR[name], 0.14) }}>
-              <i className="lg-dot" style={{ background: STAGE_COLOR[name] }} />{name}
+              <i className="lg-dot" style={{ background: STAGE_COLOR[name] }} />{name}期
             </span>
             {i < CYCLE_ORDER.length - 1 && <span className="lb-cyc-arrow">→</span>}
           </React.Fragment>
@@ -434,10 +416,18 @@ function LadderGantt({ preview = false }) {
                     <div className="lb-foot-date">{d.display}</div>
                     <div className="lb-foot-wd">{d.weekday}</div>
                     <div className="lb-foot-cyc" style={{ color: col, background: hexToRgba(col, 0.16) }}>
-                      {stageKey(d.stage) || '—'}
+                      {stageFull(d.stage) || '—'}
                     </div>
                     <div className="lb-foot-stats">
                       <span>涨停 <b>{d.limit_up_count ?? '—'}</b>　连板 <b>{d.consec_count ?? '—'}</b>　炸板 <b>{d.broken_board_count ?? '—'}</b></span>
+                      {(d.rise_count != null && d.fall_count != null) && (
+                        <span>
+                          <b style={{ color: '#cf3636' }}>涨 {d.rise_count}</b>
+                          {'　'}
+                          <b style={{ color: '#1f9e57' }}>跌 {d.fall_count}</b>
+                          {d.fall_count > 0 && `　比 ${(d.rise_count / d.fall_count).toFixed(2)}`}
+                        </span>
+                      )}
                       <span className="lb-foot-peak">最高 {d.max_boards}板 ▲</span>
                     </div>
                   </div>

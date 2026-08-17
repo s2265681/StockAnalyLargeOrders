@@ -4,6 +4,8 @@ import { apiRequest } from '../../config/api';
 import { LadderHoverPopover } from './LadderHoverPopover';
 import './LadderGantt.css';
 
+const readDarkTheme = () => document.documentElement.getAttribute('data-theme') === 'dark';
+
 const MARKET_LABEL = { cyb: '创', kcb: '科', main: '' };
 
 // 情绪周期配色（键与后端 stage 去「期」后一致）
@@ -25,23 +27,50 @@ const hexToRgba = (hex, a) => {
   return `rgba(${r},${g},${b},${a})`;
 };
 
-// 卡片底色/描边/溢价文字色，按次日溢价强弱分档（红涨绿跌）
-const premiumTint = (pm) => {
-  if (pm >= 8) return { bg: 'rgba(207,54,54,.34)', bd: '#ff6b6b', pv: '#ff8a8a' };
-  if (pm >= 4) return { bg: 'rgba(207,54,54,.24)', bd: 'rgba(255,107,107,.6)', pv: '#ff6b6b' };
-  if (pm > 0) return { bg: 'rgba(239,68,68,.13)', bd: 'rgba(255,107,107,.42)', pv: '#ff8080' };
-  if (pm > -3) return { bg: 'rgba(46,199,122,.13)', bd: 'rgba(55,217,138,.42)', pv: '#37d98a' };
-  if (pm > -7) return { bg: 'rgba(31,158,87,.22)', bd: 'rgba(55,217,138,.6)', pv: '#37d98a' };
-  return { bg: 'rgba(31,158,87,.34)', bd: '#37d98a', pv: '#4ade80' };
+// 卡片底色/描边/溢价文字色，按次日溢价强弱分档
+const CHIP_BG = 'var(--lb-chipbg)';
+const PREMIUM_TINT = {
+  light: [
+    [8, { tint: 'rgba(207,54,54,.14)', bd: '#e57373', pv: '#b91c1c' }],
+    [4, { tint: 'rgba(207,54,54,.10)', bd: '#ef9a9a', pv: '#c62828' }],
+    [0, { tint: 'rgba(239,68,68,.07)', bd: '#f5b0b0', pv: '#dc2626' }],
+    [-3, { tint: 'rgba(46,199,122,.07)', bd: '#a7d9b8', pv: '#15803d' }],
+    [-7, { tint: 'rgba(31,158,87,.10)', bd: '#81c995', pv: '#166534' }],
+    [-Infinity, { tint: 'rgba(31,158,87,.14)', bd: '#66bb6a', pv: '#14532d' }],
+  ],
+  dark: [
+    [8, { tint: 'rgba(255,90,99,.22)', bd: '#f87171', pv: '#ff6b6b' }],
+    [4, { tint: 'rgba(255,90,99,.16)', bd: '#fca5a5', pv: '#ff8787' }],
+    [0, { tint: 'rgba(255,90,99,.10)', bd: '#fecaca', pv: '#ff9a9a' }],
+    [-3, { tint: 'rgba(56,224,123,.10)', bd: '#6ee7a0', pv: '#4ade80' }],
+    [-7, { tint: 'rgba(31,224,123,.14)', bd: '#4ade80', pv: '#38e07b' }],
+    [-Infinity, { tint: 'rgba(31,224,123,.18)', bd: '#22c55e', pv: '#2dd4bf' }],
+  ],
+};
+const premiumTint = (pm, dark = false) => {
+  const table = PREMIUM_TINT[dark ? 'dark' : 'light'];
+  const row = table.find(([threshold]) => pm >= threshold);
+  return { bg: CHIP_BG, ...row[1] };
 };
 
 const MIN_BOARD = 2;
 const LIVE_POLL_SEC = 60;
 
-// 网格几何（与 CSS 变量保持一致，用于能量线定位）
+// 网格几何（用于能量线定位）
 const AXIS_W = 96;
 const COL_W = 184;
-const ROWH = 84;
+const CHIP_LINE = 26;   // 单只 chip 占用高度（含间距）
+const CELL_VPAD = 10;   // 单元格上下 padding
+const CHIP_GAP = 4;
+const MIN_ROW_H = 48;
+const MAX_ROW_H = 200;
+const FIRST_ROW_H = 48;
+
+const rowHeightForCount = (count) => {
+  const lines = Math.max(1, count);
+  const h = CELL_VPAD + lines * CHIP_LINE + (lines - 1) * CHIP_GAP;
+  return Math.max(MIN_ROW_H, Math.min(MAX_ROW_H, lines > 0 ? h : MIN_ROW_H));
+};
 
 const PREVIEW = {
   days: 5,
@@ -79,13 +108,19 @@ const PREVIEW = {
 const fmtPrem = (prem) => ((prem > 0 ? '+' : '') + prem);
 
 // 单只票在某天某板位的卡片（单行 chip：名字 + 溢价）
-function LadderCard({ code, name, market, cell, peak = false, preview = false }) {
+function LadderCard({ code, name, market, cell, peak = false, preview = false, dark = false, tradeDate = '' }) {
   const marketTag = MARKET_LABEL[market] || '';
   const nameCls = `lb-name lb-mk-${market || 'main'}`;
   const peakCls = peak ? ' lb-peak' : '';
 
   const wrap = (card) => (
-    <LadderHoverPopover code={code} name={name} disabled={preview}>
+    <LadderHoverPopover
+      code={code}
+      name={name}
+      tradeDate={tradeDate}
+      fallbackPremium={cell.premium}
+      disabled={preview}
+    >
       {card}
     </LadderHoverPopover>
   );
@@ -98,9 +133,17 @@ function LadderCard({ code, name, market, cell, peak = false, preview = false })
         <span className="lb-chip-r">
           <span className="lb-brk">断板</span>
           {hasChg && (
-            <span className="lb-prem" style={{ color: premiumTint(cell.premium).pv }}>{fmtPrem(cell.premium)}</span>
+            <span className="lb-prem" style={{ color: premiumTint(cell.premium, dark).pv }}>{fmtPrem(cell.premium)}</span>
           )}
         </span>
+      </div>,
+    );
+  }
+  if (cell.status === 'suspended') {
+    return wrap(
+      <div className={`lb-chip lb-suspended${peakCls}`} title={`${name} 停牌`}>
+        <span className={nameCls}>{name}</span>
+        <span className="lb-sus">停牌</span>
       </div>,
     );
   }
@@ -115,11 +158,14 @@ function LadderCard({ code, name, market, cell, peak = false, preview = false })
   const isLive = cell.live === true;
   const pending = !isLive && (cell.status === 'pending' || cell.premium == null);
   const tint = pending
-    ? { bg: 'transparent', bd: 'var(--lb-pending-bd)', pv: 'var(--lb-muted)' }
-    : premiumTint(cell.premium);
+    ? { bg: CHIP_BG, tint: 'transparent', bd: 'var(--lb-pending-bd)', pv: 'var(--lb-muted)' }
+    : premiumTint(cell.premium, dark);
+  const chipBg = tint.tint && tint.tint !== 'transparent'
+    ? `linear-gradient(${tint.tint}, ${tint.tint}), ${tint.bg}`
+    : tint.bg;
   const chgLabel = isLive ? '盘中' : '收盘';
   return wrap(
-    <div className={`lb-chip${peakCls}`} style={{ background: tint.bg, borderColor: tint.bd }}
+    <div className={`lb-chip${peakCls}`} style={{ background: chipBg, borderColor: tint.bd }}
       title={`${name} ${cell.boards}板 ${pending ? '待揭晓' : `${chgLabel} ${fmtPrem(cell.premium)}%`}`}>
       <span className={nameCls}>{name}{marketTag && <i className="lb-mktag">{marketTag}</i>}</span>
       <span className={`lb-prem${isLive ? ' lb-prem-live' : ''}`} style={{ color: tint.pv }}>
@@ -130,6 +176,15 @@ function LadderCard({ code, name, market, cell, peak = false, preview = false })
 }
 
 function LadderGantt({ preview = false }) {
+  const [isDark, setIsDark] = useState(readDarkTheme);
+
+  useEffect(() => {
+    const el = document.documentElement;
+    const sync = () => setIsDark(el.getAttribute('data-theme') === 'dark');
+    const observer = new MutationObserver(sync);
+    observer.observe(el, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => observer.disconnect();
+  }, []);
   const [days, setDays] = useState(10);
   const [data, setData] = useState(preview ? PREVIEW : null);
   const [loading, setLoading] = useState(!preview);
@@ -173,11 +228,11 @@ function LadderGantt({ preview = false }) {
   const dates = useMemo(() => data?.dates || [], [data]);
   const stocks = useMemo(() => data?.stocks || [], [data]);
 
-  // 只保留 >=2板 或断板的格子
+  // 只保留 >=2板 或断板/停牌格
   const cleanStocks = useMemo(() => stocks
     .map((s) => ({
       ...s,
-      cells: s.cells.filter((c) => c.boards >= MIN_BOARD || c.status === 'broken'),
+      cells: s.cells.filter((c) => c.boards >= MIN_BOARD || c.status === 'broken' || c.status === 'suspended'),
     }))
     .filter((s) => s.cells.some((c) => c.boards >= MIN_BOARD)), [stocks]);
 
@@ -206,13 +261,13 @@ function LadderGantt({ preview = false }) {
   const grid = useMemo(() => {
     const map = {};
     cleanStocks.forEach((s) => s.cells.forEach((c) => {
-      if (c.boards < MIN_BOARD && c.status !== 'broken') return;
+      if (c.boards < MIN_BOARD && c.status !== 'broken' && c.status !== 'suspended') return;
       const key = `${c.dt}_${c.boards}`;
       (map[key] || (map[key] = [])).push({ code: s.code, name: s.name, market: s.market, cell: c });
     }));
     const rank = (item) => {
       const { cell } = item;
-      if (cell.status === 'broken') return -1e6;
+      if (cell.status === 'broken' || cell.status === 'suspended') return -1e6;
       if (cell.status === 'limit_down') return -1e5;
       if (cell.status === 'pending' || cell.premium == null) return -1e4;
       if (cell.live) return cell.premium + 1e3;
@@ -235,12 +290,46 @@ function LadderGantt({ preview = false }) {
   // 峰值出现过的板位（axis 高亮）
   const peakLevels = useMemo(() => new Set(dates.map((d) => d.max_boards)), [dates]);
 
+  // 每板位行高：按全列最大个股数伸缩（2/3 板票多 → 行更高，高板票少 → 行更矮）
+  const boardMaxCounts = useMemo(() => {
+    const counts = {};
+    boardsDesc.forEach((b) => {
+      let max = 0;
+      dates.forEach((d) => {
+        max = Math.max(max, (grid[`${d.dt}_${b}`] || []).length);
+      });
+      counts[b] = max;
+    });
+    return counts;
+  }, [boardsDesc, dates, grid]);
+
+  const rowHeights = useMemo(() => {
+    const heights = boardsDesc.map((b) => rowHeightForCount(boardMaxCounts[b]));
+    heights.push(FIRST_ROW_H);
+    return heights;
+  }, [boardsDesc, boardMaxCounts]);
+
+  const rowTops = useMemo(() => {
+    const tops = [];
+    let acc = 0;
+    rowHeights.forEach((h) => {
+      tops.push(acc);
+      acc += h;
+    });
+    return tops;
+  }, [rowHeights]);
+
+  const levelRowCenterY = useCallback((boards) => {
+    const idx = levelRowIndex(boards);
+    return rowTops[idx] + rowHeights[idx] / 2;
+  }, [levelRowIndex, rowTops, rowHeights]);
+
   // 能量线路径 + 节点
   const thread = useMemo(() => {
     if (!dates.length || !nLevelRows) return null;
     const pts = dates.map((d, i) => ({
       x: AXIS_W + i * COL_W + COL_W / 2,
-      y: levelRowIndex(d.max_boards) * ROWH + ROWH / 2,
+      y: levelRowCenterY(d.max_boards),
     }));
     let path = `M ${pts[0].x} ${pts[0].y}`;
     for (let i = 1; i < pts.length; i += 1) {
@@ -253,9 +342,9 @@ function LadderGantt({ preview = false }) {
       path,
       pts,
       width: AXIS_W + dates.length * COL_W,
-      height: nLevelRows * ROWH,
+      height: rowHeights.reduce((a, b) => a + b, 0),
     };
-  }, [dates, nLevelRows, levelRowIndex]);
+  }, [dates, nLevelRows, levelRowCenterY, rowHeights]);
 
   const renderReady = !loading && dates.length > 0 && boardsDesc.length > 0;
 
@@ -280,9 +369,9 @@ function LadderGantt({ preview = false }) {
 
   const gridStyle = {
     gridTemplateColumns: `${AXIS_W}px repeat(${dates.length}, ${COL_W}px)`,
-    '--lb-rowh': `${ROWH}px`,
+    gridTemplateRows: `${rowHeights.map((h) => `${h}px`).join(' ')} auto`,
   };
-  const bandAlpha = 0.16;
+  const bandAlpha = 0.06;
   const cellTint = (stage) => hexToRgba(stageBaseColor(stage), bandAlpha);
 
   return (
@@ -318,7 +407,7 @@ function LadderGantt({ preview = false }) {
         <span className="lb-cyc-label">情绪周期：</span>
         {CYCLE_ORDER.map((name, i) => (
           <React.Fragment key={name}>
-            <span className="lb-cyc-chip" style={{ color: STAGE_COLOR[name], background: hexToRgba(STAGE_COLOR[name], 0.14) }}>
+            <span className="lb-cyc-chip" style={{ color: STAGE_COLOR[name], background: hexToRgba(STAGE_COLOR[name], 0.08) }}>
               <i className="lg-dot" style={{ background: STAGE_COLOR[name] }} />{name}期
             </span>
             {i < CYCLE_ORDER.length - 1 && <span className="lb-cyc-arrow">→</span>}
@@ -372,19 +461,20 @@ function LadderGantt({ preview = false }) {
               )}
 
               {/* 板位行：高板 → 2板 */}
-              {boardsDesc.map((b) => (
+              {boardsDesc.map((b, rowIdx) => (
                 <React.Fragment key={`row-${b}`}>
                   <div className={`lb-axis lb-axis-lvl${peakLevels.has(b) ? ' peak' : ''}`}>{b}板</div>
                   {dates.map((d) => {
                     const items = grid[`${d.dt}_${b}`] || [];
-                    const shown = items.slice(0, 4);
+                    const maxLines = Math.floor((rowHeights[rowIdx] - CELL_VPAD + CHIP_GAP) / (CHIP_LINE + CHIP_GAP));
+                    const shown = items.slice(0, Math.max(1, maxLines));
                     const rest = items.length - shown.length;
                     return (
                       <div key={`${d.dt}-${b}`} className={`lb-cell lb-cell-lvl${items.length ? '' : ' empty'}`}
                         style={{ background: cellTint(d.stage) }}>
                         {shown.map((it, idx) => (
                           <LadderCard key={`${it.code}-${idx}`} code={it.code} name={it.name}
-                            market={it.market} cell={it.cell} preview={preview}
+                            market={it.market} cell={it.cell} tradeDate={d.dt} preview={preview} dark={isDark}
                             peak={peakSet.has(`${d.dt}-${it.code}`)} />
                         ))}
                         {rest > 0 && <div className="lb-more">+{rest} 更多</div>}
@@ -415,7 +505,7 @@ function LadderGantt({ preview = false }) {
                     style={{ borderTopColor: col, background: cellTint(d.stage) }}>
                     <div className="lb-foot-date">{d.display}</div>
                     <div className="lb-foot-wd">{d.weekday}</div>
-                    <div className="lb-foot-cyc" style={{ color: col, background: hexToRgba(col, 0.16) }}>
+                    <div className="lb-foot-cyc" style={{ color: col, background: hexToRgba(col, 0.08) }}>
                       {stageFull(d.stage) || '—'}
                     </div>
                     <div className="lb-foot-stats">

@@ -5,14 +5,14 @@
   color: var(--lb-text);
   font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
 
-  /* 固定浅色（白底），不随应用深浅主题变化 */
-  background: #fff;
+  background: var(--bg-card);
   --lb-grid: #e2e8f0;
   --lb-text: #1f2a3a;
   --lb-muted: #64748b;
   --lb-head: #334155;
   --lb-daybg: rgba(255, 255, 255, .9);
   --lb-cardbg: rgba(255, 255, 255, .9);
+  --lb-chipbg: rgba(255, 255, 255, .92);
   --lb-pending-bd: #c2ccd8;
   --lb-broken-bd: #c2ccd8;
   --lb-broken-bg: rgba(238, 242, 247, .8);
@@ -20,19 +20,54 @@
   --lb-footbg: rgba(248, 250, 252, .9);
   --lb-navbg: rgba(255, 255, 255, .95);
   --lb-navbd: #d3dbe6;
+  --lb-limitdown-bg: #f1f5f9;
+  --lb-limitdown-name: #1f2937;
+  --lb-switch-bg: #eef2f7;
+  --lb-switch-text: #64748b;
+  --lb-badge-text: #8aa0c8;
+  --lb-badge-bd: #33507e;
+  --lb-foot-today: rgba(47, 92, 237, .05);
+  --lb-chip-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+}
+
+[data-theme="dark"] .ladder-gantt {
+  --lb-grid: #333;
+  --lb-text: #e8eaed;
+  --lb-muted: #9aa0a6;
+  --lb-head: #d0d5db;
+  --lb-daybg: rgba(26, 26, 26, .92);
+  --lb-cardbg: rgba(26, 26, 26, .92);
+  --lb-chipbg: rgba(34, 38, 46, .95);
+  --lb-pending-bd: #4a5568;
+  --lb-broken-bd: #555;
+  --lb-broken-bg: rgba(42, 42, 42, .85);
+  --lb-axisbg: rgba(20, 20, 20, .96);
+  --lb-footbg: rgba(20, 20, 20, .92);
+  --lb-navbg: rgba(30, 30, 30, .95);
+  --lb-navbd: #444;
+  --lb-limitdown-bg: rgba(34, 42, 38, .9);
+  --lb-limitdown-name: #c8e6c9;
+  --lb-switch-bg: #2a2a2a;
+  --lb-switch-text: #9aa0a6;
+  --lb-badge-text: #8ab4f8;
+  --lb-badge-bd: #4a6fa5;
+  --lb-foot-today: rgba(47, 92, 237, .12);
+  --lb-chip-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+  --lb-thread-stroke: #3b2d5c;
+  --lb-thread-stroke-today: #5b21b6;
 }
 
 /* ── header ── */
 .ladder-head { display: flex; align-items: baseline; gap: 14px; }
 .ladder-title { font-size: 17px; font-weight: 700; letter-spacing: 1px; }
 .ladder-badge {
-  font-size: 12px; color: #8aa0c8; border: 1px solid #33507e;
+  font-size: 12px; color: var(--lb-badge-text); border: 1px solid var(--lb-badge-bd);
   border-radius: 10px; padding: 1px 8px;
 }
 .ladder-switch { margin-left: auto; display: flex; gap: 6px; }
 .ladder-switch span {
   font-size: 12px; padding: 3px 12px; border-radius: 6px;
-  background: #eef2f7; color: #64748b; cursor: pointer; user-select: none;
+  background: var(--lb-switch-bg); color: var(--lb-switch-text); cursor: pointer; user-select: none;
 }
 .ladder-switch span.on { background: #1f4bd8; color: #fff; }
 .ladder-live-hint { margin-left: 10px; font-size: 11px; color: #37d98a; letter-spacing: .3px; }
@@ -102,7 +137,6 @@
   position: relative;
   min-width: 100%;
   align-content: start;
-  --lb-rowh: 84px;
 }
 
 .lb-axis {
@@ -114,10 +148,11 @@
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 2px; padding: 4px 6px; text-align: center;
   font-size: 12px; font-weight: 700; color: var(--lb-head);
+  min-height: 0;
 }
-.lb-axis-lvl { height: var(--lb-rowh); font-size: 13px; }
+.lb-axis-lvl { font-size: 13px; }
 .lb-axis-lvl.peak { color: #a78bfa; }
-.lb-axis-first { height: var(--lb-rowh); color: #6f9bff; }
+.lb-axis-first { color: #6f9bff; }
 .lb-axis-corner {
   font-size: 10.5px; font-weight: 600; color: var(--lb-muted);
   background: var(--lb-footbg);
@@ -129,7 +164,7 @@
   overflow: hidden;
 }
 .lb-cell-lvl {
-  height: var(--lb-rowh);
+  min-height: 0;
   display: flex; flex-direction: column; gap: 4px;
   padding: 5px 6px; overflow-y: auto;
 }
@@ -143,19 +178,21 @@
 /* ── stock chip ── */
 .lb-chip {
   border: 1px solid var(--lb-pending-bd);
-  background: var(--lb-cardbg);
+  background: var(--lb-chipbg);
   border-radius: 7px; padding: 3px 7px;
   display: flex; align-items: center; gap: 6px;
   cursor: default;
+  box-shadow: var(--lb-chip-shadow);
 }
 .lb-name {
   font-size: 12px; font-weight: 700; line-height: 1.2;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   flex: 1; min-width: 0;
+  color: var(--lb-text);
 }
 .lb-mk-main { color: var(--lb-text); }
-.lb-mk-cyb { color: #d97706; }
-.lb-mk-kcb { color: #9333ea; }
+.lb-mk-cyb { color: #b45309; }
+.lb-mk-kcb { color: #7e22ce; }
 .lb-mktag {
   display: inline-block; font-style: normal; font-size: 9px; font-weight: 700;
   margin-left: 4px; padding: 0 3px; border-radius: 3px;
@@ -172,9 +209,22 @@
 .lb-broken .lb-name { color: var(--lb-muted); font-weight: 600; }
 .lb-brk { font-size: 11px; font-weight: 700; color: #ff8a5b; }
 
-.lb-limitdown { background: #0a0a0a; border-color: #16a34a; }
-.lb-limitdown .lb-name { color: #bbf7d0; }
-.lb-ld { font-size: 11px; font-weight: 800; color: #4ade80; margin-left: auto; flex: none; }
+.lb-suspended {
+  border-style: dashed; border-color: #d4a017;
+  background: rgba(212, 160, 23, .08); opacity: .9;
+}
+.lb-suspended .lb-name { color: var(--lb-muted); font-weight: 600; }
+.lb-sus { font-size: 11px; font-weight: 700; color: #b8860b; margin-left: auto; flex: none; }
+
+[data-theme="dark"] .lb-suspended {
+  border-color: #fbbf24;
+  background: rgba(251, 191, 36, .1);
+}
+[data-theme="dark"] .lb-sus { color: #fbbf24; }
+
+.lb-limitdown { background: var(--lb-limitdown-bg); border-color: #16a34a; }
+.lb-limitdown .lb-name { color: var(--lb-limitdown-name); }
+.lb-ld { font-size: 11px; font-weight: 800; color: #15803d; margin-left: auto; flex: none; }
 
 .lb-peak {
   border-color: #a78bfa !important;
@@ -244,8 +294,8 @@
   stroke-linecap: round; stroke-linejoin: round;
   filter: drop-shadow(0 0 5px rgba(139, 92, 246, .6));
 }
-.lb-thread-node { fill: #a78bfa; stroke: #ede9fe; stroke-width: 1.2; }
-.lb-thread-node.today { fill: #6d28d9; stroke: #c4b5fd; stroke-width: 1.6; }
+.lb-thread-node { fill: #a78bfa; stroke: var(--lb-thread-stroke, #ede9fe); stroke-width: 1.2; }
+.lb-thread-node.today { fill: #6d28d9; stroke: var(--lb-thread-stroke-today, #c4b5fd); stroke-width: 1.6; }
 .lb-thread-pulse { fill: none; stroke: #a78bfa; stroke-width: 1.5; }
 
 /* ── date footer ── */
@@ -256,7 +306,7 @@
   display: flex; flex-direction: column; align-items: center; gap: 3px;
   padding: 8px 6px 10px;
 }
-.lb-foot.today { background: rgba(47, 92, 237, .1); }
+.lb-foot.today { background: var(--lb-foot-today); }
 .lb-foot-date { font-size: 14px; font-weight: 800; color: var(--lb-text); }
 .lb-foot-wd { font-size: 10.5px; color: var(--lb-muted); }
 .lb-foot-cyc { font-size: 10.5px; font-weight: 700; padding: 1px 9px; border-radius: 9px; }

@@ -387,6 +387,62 @@ class LadderTest(unittest.TestCase):
         lead = next(s for s in res["stocks"] if s["code"] == "600501")
         self.assertEqual(lead["market"], "main")
 
+    def test_multi_segment_stock_keeps_all_runs(self):
+        """断板后再起板：应保留各段连板格，不能只留峰值最高的一段"""
+        import pandas as pd
+        from routes.limit_up_echelon import _build_ladder
+
+        day_data = {
+            "20260806": [_lu("603221", "爱丽家居", 6, "AI应用"), _lu("000001", "首板股", 1)],
+            "20260807": [_lu("603221", "爱丽家居", 7, "AI应用"), _lu("000001", "首板股", 1)],
+            "20260810": [_lu("000001", "首板股", 1)],
+            "20260811": [_lu("603221", "爱丽家居", 10, "AI应用"), _lu("000001", "首板股", 1)],
+            "20260812": [_lu("000001", "首板股", 1)],
+        }
+        prev_em = {
+            "20260807": {"603221": 9.9},
+            "20260810": {"603221": -5.0},
+            "20260811": {"603221": 10.0},
+            "20260812": {"603221": -3.0},
+        }
+
+        def prev_side(date=None):
+            d = prev_em.get(date, {})
+            return pd.DataFrame({"代码": list(d.keys()), "涨跌幅": list(d.values())})
+
+        mock_ak = MagicMock()
+        mock_ak.stock_zt_pool_previous_em.side_effect = prev_side
+        with patch("routes.limit_up_echelon._default_echelon_dt", return_value="20260812"), \
+             patch("routes.limit_up_echelon.get_limit_up_stocks_by_date",
+                   side_effect=lambda d: day_data.get(d, [])), \
+             patch("routes.limit_up_echelon._get_emotion_record",
+                   return_value={"stage": "升温期", "limit_up_count": 2}), \
+             patch("routes.limit_up_echelon._fetch_live_change_map", return_value={}), \
+             patch("routes.limit_up_echelon._stock_suspended_on_date",
+                   side_effect=lambda code, dt: code == "603221" and dt == "20260810"), \
+             patch.dict("sys.modules", {"akshare": mock_ak}):
+            res = _build_ladder(5)
+
+        aili = next(s for s in res["stocks"] if s["code"] == "603221")
+        self.assertEqual(aili["max_boards"], 10)
+        boards_by_dt = {c["dt"]: c for c in aili["cells"]}
+        self.assertEqual(boards_by_dt["20260806"]["boards"], 6)
+        self.assertEqual(boards_by_dt["20260807"]["boards"], 7)
+        self.assertEqual(boards_by_dt["20260810"]["status"], "suspended")
+        self.assertEqual(boards_by_dt["20260811"]["boards"], 10)
+        self.assertEqual(boards_by_dt["20260812"]["status"], "broken")
+        for d in res["dates"]:
+            mb = d["max_boards"]
+            if mb < 2:
+                continue
+            leaders = [
+                s for s in res["stocks"]
+                for c in s["cells"]
+                if c["dt"] == d["dt"] and c["boards"] == mb
+                and c.get("status") not in ("broken", "suspended")
+            ]
+            self.assertTrue(leaders, f"{d['display']} max={mb} 应有龙头")
+
     def test_newest_today_live_change(self):
         import pandas as pd
         from routes.limit_up_echelon import _build_ladder

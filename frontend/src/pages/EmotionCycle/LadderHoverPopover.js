@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Popover, Spin } from 'antd';
-import { apiRequest } from '../../config/api';
+import { apiRequestWithRetry } from '../../config/api';
 import { alignTimeshareToTradingAxis } from '../StockDashboard/utils/l2Analysis';
 import './LadderHoverPopover.css';
 
@@ -8,6 +8,16 @@ const CACHE = new Map();
 const CACHE_TTL = 45_000;
 const inflight = new Map();
 const X_TICKS = ['09:30', '11:30', '13:00', '15:00'];
+
+const toApiDate = (dt) => {
+  if (!dt) return '';
+  const s = String(dt).trim();
+  if (s.includes('-')) return s;
+  if (s.length === 8) return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`;
+  return s;
+};
+
+const cacheKey = (code, dt) => (dt ? `${code}|${dt}` : code);
 
 const fmtPrice = (v) => {
   const n = Number(v);
@@ -60,15 +70,19 @@ function buildQuote(stockInfo, timeshare) {
   };
 }
 
-async function fetchStockPreview(code) {
-  const cached = CACHE.get(code);
+async function fetchStockPreview(code, tradeDate = '') {
+  const dt = toApiDate(tradeDate);
+  const key = cacheKey(code, dt);
+
+  const cached = CACHE.get(key);
   if (cached && Date.now() - cached.at < CACHE_TTL && cached.data?.quote) {
     return cached.data;
   }
 
-  if (inflight.has(code)) return inflight.get(code);
+  if (inflight.has(key)) return inflight.get(key);
 
-  const task = apiRequest(`/api/v1/l2_timeshare?code=${code}&chart_only=1`, { timeout: 20000 })
+  const dtQuery = dt ? `&dt=${encodeURIComponent(dt)}` : '';
+  const task = apiRequestWithRetry(`/api/v1/l2_timeshare?code=${code}&chart_only=1${dtQuery}`, { timeout: 20000 })
     .then((tsResp) => {
       const tsData = tsResp?.success && tsResp?.data ? tsResp.data : null;
       if (!tsData?.timeshare?.length) return null;
@@ -81,14 +95,14 @@ async function fetchStockPreview(code) {
         prices: aligned.fenshi || [],
         prevClose: quote?.yesterday_close ?? null,
       };
-      CACHE.set(code, { at: Date.now(), data: preview });
+      CACHE.set(key, { at: Date.now(), data: preview });
       return preview;
     })
     .finally(() => {
-      inflight.delete(code);
+      inflight.delete(key);
     });
 
-  inflight.set(code, task);
+  inflight.set(key, task);
   return task;
 }
 
@@ -208,10 +222,32 @@ function MiniTimeshareChart({ axis, prices, prevClose, changePct }) {
   );
 }
 
-function HoverContent({ code, name, loading, preview }) {
+function buildFallbackPreview(name, fallbackPremium) {
+  const pct = Number(fallbackPremium);
+  if (!Number.isFinite(pct)) return null;
+  return {
+    quote: {
+      name,
+      change_percent: pct,
+      price: null,
+      change_amount: null,
+      open: null,
+      high: null,
+      low: null,
+      yesterday_close: null,
+    },
+    axis: [],
+    prices: [],
+    prevClose: null,
+    fallback: true,
+  };
+}
+
+function HoverContent({ code, name, loading, preview, error, fallbackPremium }) {
   const quote = preview?.quote;
   const pct = quote?.change_percent;
   const amount = quote?.change_amount;
+  const hasChart = preview?.axis?.length > 0 && preview?.prices?.some((p) => Number(p) > 0);
 
   return (
     <div className="lb-hover-pop">
@@ -233,49 +269,73 @@ function HoverContent({ code, name, loading, preview }) {
               {Number.isFinite(Number(amount)) ? `${Number(amount) > 0 ? '+' : ''}${fmtPrice(amount)}` : '—'}
             </span>
           </div>
-          <MiniTimeshareChart
-            axis={preview.axis}
-            prices={preview.prices}
-            prevClose={preview.prevClose}
-            changePct={pct}
-          />
-          <div className="lb-hover-meta">
-            <span>开 {fmtPrice(quote?.open)}</span>
-            <span>高 {fmtPrice(quote?.high)}</span>
-            <span>低 {fmtPrice(quote?.low)}</span>
-            <span>昨收 {fmtPrice(quote?.yesterday_close)}</span>
-          </div>
+          {hasChart ? (
+            <MiniTimeshareChart
+              axis={preview.axis}
+              prices={preview.prices}
+              prevClose={preview.prevClose}
+              changePct={pct}
+            />
+          ) : (
+            <div className="lb-hover-nochart">
+              {preview.fallback ? '分时暂不可用（仅显示表内涨跌幅）' : '暂无分时数据'}
+            </div>
+          )}
+          {!preview.fallback && (
+            <div className="lb-hover-meta">
+              <span>开 {fmtPrice(quote?.open)}</span>
+              <span>高 {fmtPrice(quote?.high)}</span>
+              <span>低 {fmtPrice(quote?.low)}</span>
+              <span>昨收 {fmtPrice(quote?.yesterday_close)}</span>
+            </div>
+          )}
         </>
       )}
 
       {!loading && !preview && (
-        <div className="lb-hover-nochart">行情加载失败</div>
+        <div className="lb-hover-nochart">
+          {error === 'offline' ? '后端未连接，请确认 9001 服务已启动' : '行情加载失败'}
+        </div>
       )}
     </div>
   );
 }
 
-export function LadderHoverPopover({ code, name, children, disabled = false }) {
+export function LadderHoverPopover({
+  code, name, tradeDate = '', fallbackPremium = null, children, disabled = false,
+}) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState(null);
+  const [error, setError] = useState(null);
+  const dt = toApiDate(tradeDate);
+  const key = cacheKey(code, dt);
 
   const load = useCallback(async () => {
     if (!code || disabled) return;
     setLoading(true);
+    setError(null);
     try {
-      const data = await fetchStockPreview(code);
-      setPreview(data);
-    } catch {
-      setPreview(null);
+      const data = await fetchStockPreview(code, tradeDate);
+      if (data) {
+        setPreview(data);
+      } else {
+        const fb = buildFallbackPreview(name, fallbackPremium);
+        setPreview(fb);
+        if (!fb) setError('empty');
+      }
+    } catch (err) {
+      const offline = !err?.status && /fetch|network|failed/i.test(String(err?.message || ''));
+      setError(offline ? 'offline' : 'error');
+      setPreview(buildFallbackPreview(name, fallbackPremium));
     } finally {
       setLoading(false);
     }
-  }, [code, disabled]);
+  }, [code, disabled, tradeDate, name, fallbackPremium]);
 
   useEffect(() => {
     if (!open || !code || disabled) return;
-    const cached = CACHE.get(code);
+    const cached = CACHE.get(key);
     if (cached && Date.now() - cached.at < CACHE_TTL && cached.data?.quote) {
       setPreview(cached.data);
       setLoading(false);
@@ -283,7 +343,7 @@ export function LadderHoverPopover({ code, name, children, disabled = false }) {
     }
     setPreview(null);
     load();
-  }, [open, code, disabled, load]);
+  }, [open, code, disabled, key, load]);
 
   if (!code || disabled) return children;
 
@@ -303,6 +363,8 @@ export function LadderHoverPopover({ code, name, children, disabled = false }) {
           name={name}
           loading={loading}
           preview={preview}
+          error={error}
+          fallbackPremium={fallbackPremium}
         />
       )}
     >

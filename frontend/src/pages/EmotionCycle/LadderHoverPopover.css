@@ -130,3 +130,7 @@
 [data-theme="light"] .lb-hover-chart {
   background: rgba(15, 23, 42, 0.04);
 }
+
+[data-theme="dark"] .lb-hover-chart {
+  background: rgba(255, 255, 255, 0.04);
+}

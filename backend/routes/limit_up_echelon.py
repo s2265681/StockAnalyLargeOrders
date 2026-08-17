@@ -1684,6 +1684,8 @@ LADDER_MIN_DT = "20260511"
 _WEEKDAY_CN = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
 _ladder_prem_cache: dict = {}  # dt_next -> (ts, map)
 _LADDER_PREM_CACHE_TTL = 3600
+_suspend_cache: dict = {}  # code_dt -> (ts, bool)
+_SUSPEND_CACHE_TTL = 3600
 
 
 def _secid_for_code(code: str) -> str:
@@ -1734,6 +1736,40 @@ def _fetch_live_change_map(codes: list) -> dict:
         except Exception as e:
             logger.debug("连板天梯批量行情失败: %s", e)
     return out
+
+
+def _stock_suspended_on_date(code: str, dt_clean: str) -> bool:
+    """当日无日K则视为停牌（缺席涨停池不能等同断板）。"""
+    code = str(code or "").zfill(6)
+    key = f"{code}_{dt_clean}"
+    cached = _suspend_cache.get(key)
+    if cached and time.time() - cached[0] < _SUSPEND_CACHE_TTL:
+        return cached[1]
+
+    secid = _secid_for_code(code)
+    url = (
+        "https://push2his.eastmoney.com/api/qt/stock/kline/get"
+        f"?secid={secid}"
+        "&fields1=f1,f2,f3,f4,f5,f6"
+        "&fields2=f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61"
+        f"&klt=101&fqt=1&beg={dt_clean}&end={dt_clean}"
+        "&ut=fa5fd1943c7b386f172d6893dbfba10b"
+    )
+    suspended = False
+    try:
+        proc = subprocess.run(
+            ["curl", "-s", "-k", "--max-time", "8", url],
+            capture_output=True, text=True, timeout=10,
+        )
+        if proc.returncode == 0 and proc.stdout:
+            body = json.loads(proc.stdout)
+            klines = (body.get("data") or {}).get("klines") or []
+            suspended = len(klines) == 0
+    except Exception as e:
+        logger.debug("停牌检测失败 code=%s dt=%s: %s", code, dt_clean, e)
+
+    _suspend_cache[key] = (time.time(), suspended)
+    return suspended
 
 
 def _cached_previous_em_change_map(dt_next: str) -> dict:
@@ -1984,59 +2020,62 @@ def _build_ladder(days: int, *, live: bool = False) -> dict:
 
     stocks_out = []
     for code in codes:
-        # 连续出现段
-        segments = []
-        seg = []
-        for i in range(n):
-            if code in day_maps[i]:
-                seg.append(i)
-            elif seg:
-                segments.append(seg)
-                seg = []
-        if seg:
-            segments.append(seg)
-        best = None
-        for s in segments:
-            peak = max(day_maps[i][code]["boards"] for i in s)
-            if peak >= 2 and (best is None or peak >= best[1]):
-                best = (s, peak)
-        if not best:
-            continue
-        seg, peak = best
-
         name = ""
         theme = ""
         cells = []
-        for i in seg:
-            info = day_maps[i][code]
-            name = info["name"] or name
-            theme = info["theme"] or theme
-            prem, st, is_live = _cell_premium(i, code)
-            cells.append({
-                "dt": window[i][0],
-                "boards": info["boards"],
-                "premium": prem,
-                "status": st,
-                "live": is_live,
-            })
-        # 断板终止格
-        last_i = seg[-1]
-        if last_i + 1 < n and code not in day_maps[last_i + 1]:
-            broken_dt = window[last_i + 1][0]
-            broken_prem = None
-            broken_live = False
-            if broken_dt == today_dt:
-                broken_prem, broken_live = _resolve_same_day_change(code, last_i + 1)[0:2]
-                if broken_prem is None and code in live_change_map:
-                    broken_prem = live_change_map.get(code)
-                    broken_live = market_open
-            cells.append({
-                "dt": broken_dt,
-                "boards": day_maps[last_i][code]["boards"],
-                "premium": broken_prem,
-                "status": "broken",
-                "live": broken_live,
-            })
+        peak = 0
+        i = 0
+        while i < n:
+            if code not in day_maps[i]:
+                i += 1
+                continue
+            while i < n:
+                if code in day_maps[i]:
+                    info = day_maps[i][code]
+                    name = info["name"] or name
+                    theme = info["theme"] or theme
+                    peak = max(peak, info["boards"])
+                    prem, st, is_live = _cell_premium(i, code)
+                    cells.append({
+                        "dt": window[i][0],
+                        "boards": info["boards"],
+                        "premium": prem,
+                        "status": st,
+                        "live": is_live,
+                    })
+                    i += 1
+                    continue
+                absent_dt = window[i][0]
+                if _stock_suspended_on_date(code, absent_dt):
+                    last_boards = cells[-1]["boards"] if cells else 0
+                    cells.append({
+                        "dt": absent_dt,
+                        "boards": last_boards,
+                        "premium": None,
+                        "status": "suspended",
+                        "live": False,
+                    })
+                    i += 1
+                    continue
+                last_boards = cells[-1]["boards"] if cells else 0
+                broken_prem = None
+                broken_live = False
+                if absent_dt == today_dt:
+                    broken_prem, broken_live = _resolve_same_day_change(code, i)[0:2]
+                    if broken_prem is None and code in live_change_map:
+                        broken_prem = live_change_map.get(code)
+                        broken_live = market_open
+                cells.append({
+                    "dt": absent_dt,
+                    "boards": last_boards,
+                    "premium": broken_prem,
+                    "status": "broken",
+                    "live": broken_live,
+                })
+                i += 1
+                break
+        if peak < 2 or not cells:
+            continue
         stocks_out.append({
             "code": code,
             "name": name,

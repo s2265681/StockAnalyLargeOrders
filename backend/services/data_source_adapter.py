@@ -253,20 +253,13 @@ class DataSourceAdapter:
                     logger.warning('新浪分钟线回退失败 code=%s: %s', code, e)
 
         if is_today and quote:
-            stock_info = {
-                'code': code,
-                'name': quote.get('name') or bundle.get('name') or self._get_fallback_stock_name(code),
-                'price': quote.get('price'),
-                'yesterday_close': quote.get('yesterday_close'),
-                'open': quote.get('open'),
-                'high': quote.get('high'),
-                'low': quote.get('low'),
-                'volume': quote.get('volume'),
-                'turnover': quote.get('turnover'),
-                'change_percent': quote.get('change_percent'),
-            }
+            stock_info = self._stock_info_from_quote_fields(code, quote, bundle)
         else:
-            stock_info = self._chart_stock_info_from_timeshare(code, timeshare, bundle)
+            fallback = self._build_fallback_quote(code, dt, timeshare)
+            if fallback:
+                stock_info = self._stock_info_from_quote_fields(code, fallback, bundle)
+            else:
+                stock_info = self._chart_stock_info_from_timeshare(code, timeshare, bundle, dt=dt)
 
         return {
             'success': True,
@@ -279,7 +272,22 @@ class DataSourceAdapter:
             },
         }
 
-    def _chart_stock_info_from_timeshare(self, code, timeshare, bundle=None):
+    def _stock_info_from_quote_fields(self, code, quote, bundle=None):
+        bundle = bundle or {}
+        return {
+            'code': code,
+            'name': quote.get('name') or bundle.get('name') or self._get_fallback_stock_name(code),
+            'price': quote.get('price'),
+            'yesterday_close': quote.get('yesterday_close'),
+            'open': quote.get('open'),
+            'high': quote.get('high'),
+            'low': quote.get('low'),
+            'volume': quote.get('volume'),
+            'turnover': quote.get('turnover'),
+            'change_percent': quote.get('change_percent'),
+        }
+
+    def _chart_stock_info_from_timeshare(self, code, timeshare, bundle=None, dt=None):
         """从分时序列 + trends2 元数据拼最小 stock_info（供先出图）"""
         bundle = bundle or {}
         prices = [float(t['price']) for t in timeshare if t.get('price')]
@@ -291,6 +299,14 @@ class DataSourceAdapter:
                     pre_close = None
             except (TypeError, ValueError):
                 pre_close = None
+
+        if not pre_close and dt:
+            hist_kline = self.source.get_daily_kline(code, dt)
+            if hist_kline and hist_kline.get('preclose'):
+                try:
+                    pre_close = float(hist_kline['preclose'])
+                except (TypeError, ValueError):
+                    pre_close = None
 
         first = prices[0] if prices else 0
         last = prices[-1] if prices else 0

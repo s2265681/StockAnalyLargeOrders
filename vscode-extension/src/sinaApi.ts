@@ -1,5 +1,6 @@
 import * as https from 'https';
 import * as http from 'http';
+import { normalizeStockCode } from './config';
 
 export interface StockQuote {
   code: string;
@@ -69,7 +70,7 @@ export async function fetchQuotes(codes: string[]): Promise<StockQuote[]> {
     const match = line.match(/v_(\w+)="([^"]*)"/);
     if (!match || !match[2]) continue;
 
-    const code = match[1];
+    const code = normalizeStockCode(match[1]) ?? match[1];
     const f = match[2].split('~');
     if (f.length < 38 || !f[1]) continue;
 
@@ -119,8 +120,8 @@ export async function searchStock(keyword: string): Promise<SearchResult[]> {
       .map(item => {
         const p = item.split(',');
         if (p.length < 5 || !/^\d{6}$/.test(p[2])) return null;
-        const code = (p[3] || p[0] || '').trim().toLowerCase();
-        if (!/^(sh|sz|bj)\d{6}$/.test(code)) return null;
+        const code = normalizeStockCode(p[3] || p[0] || p[2] || '');
+        if (!code) return null;
         const name = (p[4] || p[6] || p[2]).trim();
         if (!name) return null;
         return { code, name };

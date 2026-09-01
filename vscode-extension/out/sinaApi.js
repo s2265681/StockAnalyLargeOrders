@@ -37,6 +37,7 @@ exports.fetchQuotes = fetchQuotes;
 exports.searchStock = searchStock;
 const https = __importStar(require("https"));
 const http = __importStar(require("http"));
+const config_1 = require("./config");
 function httpGet(url, referer) {
     return new Promise((resolve, reject) => {
         const client = url.startsWith('https') ? https : http;
@@ -70,7 +71,7 @@ async function fetchQuotes(codes) {
         const match = line.match(/v_(\w+)="([^"]*)"/);
         if (!match || !match[2])
             continue;
-        const code = match[1];
+        const code = (0, config_1.normalizeStockCode)(match[1]) ?? match[1];
         const f = match[2].split('~');
         if (f.length < 38 || !f[1])
             continue;
@@ -119,8 +120,8 @@ async function searchStock(keyword) {
             const p = item.split(',');
             if (p.length < 5 || !/^\d{6}$/.test(p[2]))
                 return null;
-            const code = (p[3] || p[0] || '').trim().toLowerCase();
-            if (!/^(sh|sz|bj)\d{6}$/.test(code))
+            const code = (0, config_1.normalizeStockCode)(p[3] || p[0] || p[2] || '');
+            if (!code)
                 return null;
             const name = (p[4] || p[6] || p[2]).trim();
             if (!name)

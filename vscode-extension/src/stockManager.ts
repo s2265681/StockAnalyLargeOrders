@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { PriceAlarmSetting } from './config';
+import { normalizeStockCode, PriceAlarmSetting } from './config';
 
 export interface StockItem {
   code: string;
@@ -23,23 +23,26 @@ export class StockManager {
     return this.ctx.globalState.get<StockItem[]>(KEY, []);
   }
 
-  /** 修正历史错误：sh0/1/2/3xxxxx → sz0/1/2/3xxxxx */
+  /** 修正历史错误前缀（如 sh002855 → sz002855） */
   async migrateWrongPrefixes(): Promise<void> {
     const list = this.getAll();
     let changed = false;
     for (const s of list) {
-      if (/^sh[0123]\d{5}$/.test(s.code)) {
-        s.code = 'sz' + s.code.slice(2);
-        if (/^(sh|sz)\d{6}$/.test(s.name) || s.name === s.code.slice(2)) {
-          s.name = s.code;
-        }
-        changed = true;
+      const fixed = normalizeStockCode(s.code);
+      if (!fixed || fixed === s.code) continue;
+      s.code = fixed;
+      if (/^(sh|sz|bj)\d{6}$/i.test(s.name) || s.name === s.code.slice(2)) {
+        s.name = fixed.slice(2);
       }
+      changed = true;
     }
     if (changed) await this.ctx.globalState.update(KEY, list);
   }
 
   async add(stock: StockItem): Promise<boolean> {
+    const code = normalizeStockCode(stock.code);
+    if (!code) return false;
+    stock = { ...stock, code };
     const list = this.getAll();
     if (list.some(s => s.code === stock.code)) return false;
     list.push(stock);

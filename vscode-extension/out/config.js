@@ -38,21 +38,29 @@ exports.readExtensionConfig = readExtensionConfig;
 exports.toStatusDisplayConfig = toStatusDisplayConfig;
 const vscode = __importStar(require("vscode"));
 const panel_1 = require("./panel");
-/** 6 位或带市场前缀的股票代码 → sh/sz/bj 前缀小写 */
+/** 根据 6 位代码推断正确市场前缀 */
+function marketPrefixForDigits(digits) {
+    if (/^[568]/.test(digits))
+        return 'sh';
+    if (/^9/.test(digits))
+        return 'bj';
+    return 'sz';
+}
+/** 6 位或带市场前缀的股票代码 → sh/sz/bj 前缀小写（会纠正错误前缀，如 sh002855 → sz002855） */
 function normalizeStockCode(raw) {
     const text = String(raw || '').trim().toLowerCase();
     if (!text)
         return null;
-    if (/^(sh|sz|bj)\d{6}$/.test(text))
-        return text;
-    if (/^\d{6}$/.test(text)) {
-        if (/^[568]/.test(text))
-            return `sh${text}`;
-        if (/^9/.test(text))
-            return `bj${text}`;
-        return `sz${text}`;
+    let digits = null;
+    if (/^(sh|sz|bj)(\d{6})$/.test(text)) {
+        digits = text.slice(2);
     }
-    return null;
+    else if (/^\d{6}$/.test(text)) {
+        digits = text;
+    }
+    if (!digits)
+        return null;
+    return `${marketPrefixForDigits(digits)}${digits}`;
 }
 function readExtensionConfig() {
     const c = vscode.workspace.getConfiguration('stockAnalysis');

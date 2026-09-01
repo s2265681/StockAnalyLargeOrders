@@ -86,7 +86,13 @@ function activate(ctx) {
         };
     }
     function mergeQuotesWithStocks(stocks, fetched) {
-        const map = new Map(fetched.filter(q => !q.isPlaceholder).map(q => [q.code, q]));
+        const map = new Map();
+        for (const q of fetched) {
+            if (q.isPlaceholder)
+                continue;
+            const code = (0, config_1.normalizeStockCode)(q.code) ?? q.code;
+            map.set(code, code === q.code ? q : { ...q, code });
+        }
         return stocks.map(s => map.get(s.code) ?? placeholderQuote(s));
     }
     async function refresh() {

@@ -57,7 +57,12 @@ export function activate(ctx: vscode.ExtensionContext): void {
   }
 
   function mergeQuotesWithStocks(stocks: StockItem[], fetched: StockQuote[]): StockQuote[] {
-    const map = new Map(fetched.filter(q => !q.isPlaceholder).map(q => [q.code, q]));
+    const map = new Map<string, StockQuote>();
+    for (const q of fetched) {
+      if (q.isPlaceholder) continue;
+      const code = normalizeStockCode(q.code) ?? q.code;
+      map.set(code, code === q.code ? q : { ...q, code });
+    }
     return stocks.map(s => map.get(s.code) ?? placeholderQuote(s));
   }
 

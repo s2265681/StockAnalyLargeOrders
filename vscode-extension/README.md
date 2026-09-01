@@ -74,3 +74,31 @@ https://marketplace.visualstudio.com/vscode
 
 Cursor 用户补充： Cursor 也支持 Open VSX 分发（可选）
 https://open-vsx.org/extension/stockanalysis/stock-analysis
+
+https://open-vsx.org/user-settings/extensions
+
+
+
+获取 Token
+打开终端里给的链接：
+https://marketplace.visualstudio.com/manage/publishers/
+确认 publisher 名称是 stockanalysis
+点 Personal Access Tokens → Create New Token
+配置建议：
+Organization: 选 All accessible organizations 或你的组织
+Expiration: 按需（如 90 天）
+Scopes: 选 Custom defined，勾选 Marketplace → Manage
+创建后 立刻复制 Token（只显示一次）
+完成登录
+回到终端，在
+Personal Access Token for publisher 'stockanalysis':
+后面 粘贴 Token 并回车（输入时不会显示字符，属正常）。
+
+登录成功后执行发布：
+
+cd ~/Github/StockAnalyLargeOrders/vscode-extension
+npx vsce publish
+若只想本地/手动分发，不必登录，直接：
+
+
+cursor --install-extension stock-analysis-0.3.17.vsix

@@ -8,13 +8,18 @@ import * as https from 'https';
 function normalizeStockCode(raw) {
   const text = String(raw || '').trim().toLowerCase();
   if (!text) return null;
-  if (/^(sh|sz|bj)\d{6}$/.test(text)) return text;
-  if (/^\d{6}$/.test(text)) {
-    if (/^[568]/.test(text)) return `sh${text}`;
-    if (/^9/.test(text)) return `bj${text}`;
-    return `sz${text}`;
+
+  let digits = null;
+  if (/^(sh|sz|bj)(\d{6})$/.test(text)) {
+    digits = text.slice(2);
+  } else if (/^\d{6}$/.test(text)) {
+    digits = text;
   }
-  return null;
+  if (!digits) return null;
+
+  if (/^[568]/.test(digits)) return `sh${digits}`;
+  if (/^9/.test(digits)) return `bj${digits}`;
+  return `sz${digits}`;
 }
 
 // ── mergeQuotesWithStocks (mirror extension.ts) ────────────────────────────
@@ -73,6 +78,8 @@ assert(normalizeStockCode('002437') === 'sz002437', '002437 → sz002437');
 assert(normalizeStockCode('603678') === 'sh603678', '603678 → sh603678');
 assert(normalizeStockCode('688001') === 'sh688001', '688001 → sh688001 (科创板)');
 assert(normalizeStockCode('920001') === 'bj920001', '920001 → bj920001 (北交所)');
+assert(normalizeStockCode('sh002855') === 'sz002855', '错误前缀 sh002855 → sz002855');
+assert(normalizeStockCode('sh002437') === 'sz002437', '错误前缀 sh002437 → sz002437');
 
 console.log('\n=== 2. mergeQuotesWithStocks (模拟增删) ===');
 const stocks = [
@@ -125,8 +132,8 @@ function parseSearchSuggest(text) {
   return match[1].split(';').filter(Boolean).slice(0, 8).map(item => {
     const p = item.split(',');
     if (p.length < 5 || !/^\d{6}$/.test(p[2])) return null;
-    const code = (p[3] || p[0] || '').trim().toLowerCase();
-    if (!/^(sh|sz|bj)\d{6}$/.test(code)) return null;
+    const code = normalizeStockCode(p[3] || p[0] || p[2] || '');
+    if (!code) return null;
     const name = (p[4] || p[6] || p[2]).trim();
     return name ? { code, name } : null;
   }).filter(Boolean);

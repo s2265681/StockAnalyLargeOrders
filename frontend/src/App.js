@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Layout, Alert, Menu, Button, Drawer } from 'antd';
 import {
@@ -38,6 +38,7 @@ import ThemeToggle, { useTheme } from './components/ThemeToggle';
 import WeChatMiniProgram from './components/WeChatMiniProgram';
 import { useAuth } from './context/AuthContext';
 import { errorAtom } from './store/atoms';
+import { trackPageView } from './utils/baiduTongji';
 
 const { Content, Header } = Layout;
 
@@ -84,6 +85,16 @@ function AppInner() {
   const { theme, toggleTheme } = useTheme();
 
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+  const isFirstPv = useRef(true);
+
+  // SPA 路由切换上报 PV（首次由 hm.js 自动上报，避免重复计数）
+  useEffect(() => {
+    if (isFirstPv.current) {
+      isFirstPv.current = false;
+      return;
+    }
+    trackPageView(location.pathname + location.search);
+  }, [location.pathname, location.search]);
 
   const handleMenuClick = ({ key }) => {
     navigate(key);

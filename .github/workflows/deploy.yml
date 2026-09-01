@@ -31,6 +31,7 @@ jobs:
           CI: "false"
           GENERATE_SOURCEMAP: "false"
           NODE_OPTIONS: --max-old-space-size=4096
+          REACT_APP_BAIDU_TONGJI_ID: ${{ secrets.REACT_APP_BAIDU_TONGJI_ID }}
         run: |
           pnpm install --no-frozen-lockfile
           pnpm run build:prod

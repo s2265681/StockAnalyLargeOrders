@@ -70,6 +70,9 @@ backend/certs/*.p12
 scripts/wechat-pay.deploy.env
 scripts/local.deploy.env
 
+# 百度统计构建产物（由 scripts/write-baidu-config.js 生成）
+frontend/public/baidu-tongji-config.js
+
 # 环境变量文件
 .env
 .env.local

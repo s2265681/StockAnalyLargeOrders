@@ -15,6 +15,9 @@ import './index.css';
 
 // 浏览器检测和错误处理
 import { checkCompatibility, setupErrorHandling } from './utils/browserDetection';
+import { initBaiduTongji } from './utils/baiduTongji';
+
+initBaiduTongji();
 
 // 设置错误处理
 setupErrorHandling();

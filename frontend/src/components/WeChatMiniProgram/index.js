@@ -5,7 +5,7 @@ import { isWeChatBrowser } from '../../utils/browserDetection';
 import './index.css';
 
 // 小程序码图片放在 public 目录下，扫码即可打开小程序
-const MP_QR_SRC = '/mp-qrcode.jpg';
+const MP_QR_SRC = '/mp-qrcode.png';
 
 export default function WeChatMiniProgram({ compact = false, onNavigate }) {
   const [open, setOpen] = useState(false);
@@ -37,7 +37,7 @@ export default function WeChatMiniProgram({ compact = false, onNavigate }) {
     <>
       {trigger}
       <Modal
-        title="AI炒股指南 · 微信小程序"
+        title="重阳市场看板助手 · 微信小程序"
         open={open}
         onCancel={() => setOpen(false)}
         footer={null}
@@ -49,7 +49,7 @@ export default function WeChatMiniProgram({ compact = false, onNavigate }) {
             <img
               className="wxmp-qr-img"
               src={MP_QR_SRC}
-              alt="AI炒股指南小程序码"
+              alt="重阳市场看板助手小程序码"
               draggable={false}
             />
           </div>

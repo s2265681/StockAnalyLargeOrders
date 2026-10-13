@@ -673,20 +673,21 @@ def save_cache(trade_date: str, code: str, snapshot: dict, report: dict) -> bool
 
 def _call_claude(prompt: str, scenario: str = "ai_diagnosis") -> str:
     """诊股 AI 调用：主账号失败时自动降级"""
-    from config.ai_accounts import get_active_account_id
+    from config.ai_accounts import ACCOUNTS, get_active_account_id
     from utils.claude_client import call_claude, call_claude_for_scenario, get_last_api_error
 
     attempts: list[tuple[str, str | None, str | None]] = [
         ("primary", None, None),
     ]
+    # 降级模型取各账号当前配置（.env 覆盖），避免硬编码已下线的模型名
     active = get_active_account_id()
     if active == "kalowave":
         attempts.extend([
-            ("kalowave-gpt54", "kalowave", "gpt-5.4"),
-            ("anyrouter-haiku", "anyrouter", "claude-haiku-4-5-20251001"),
+            ("kalowave-sonnet", "kalowave", ACCOUNTS["kalowave"].models.get("sonnet")),
+            ("anyrouter-sonnet", "anyrouter", ACCOUNTS["anyrouter"].models.get("sonnet")),
         ])
     elif active == "anyrouter":
-        attempts.append(("anyrouter-haiku", "anyrouter", "claude-haiku-4-5-20251001"))
+        attempts.append(("anyrouter-sonnet", "anyrouter", ACCOUNTS["anyrouter"].models.get("sonnet")))
 
     for label, account_id, model in attempts:
         if account_id:

@@ -67,15 +67,15 @@ ACCOUNTS: dict[str, AiAccount] = {
         models={
             "haiku": os.environ.get(
                 "AI_ACCOUNT_ANYROUTER_HAIKU",
-                "claude-haiku-4-5-20251001",
+                "claude-sonnet-5",
             ),
             "sonnet": os.environ.get(
                 "AI_ACCOUNT_ANYROUTER_SONNET",
-                os.environ.get("CLAUDE_MODEL_SONNET", "claude-haiku-4-5-20251001"),
+                os.environ.get("CLAUDE_MODEL_SONNET", "claude-sonnet-5"),
             ),
             "opus": os.environ.get(
                 "AI_ACCOUNT_ANYROUTER_OPUS",
-                os.environ.get("CLAUDE_MODEL_OPUS", "claude-haiku-4-5-20251001"),
+                os.environ.get("CLAUDE_MODEL_OPUS", "claude-opus-4-8"),
             ),
         },
         description="AnyRouter 大陆优化线；Sonnet/Opus 暂回退 Haiku",
@@ -88,16 +88,16 @@ ACCOUNTS: dict[str, AiAccount] = {
         ),
         key_env="AI_ACCOUNT_KALOWAVE_KEY",
         models={
-            # Kalowave Haiku 常返回空 thinking 块，结构化 JSON 任务走 sonnet/gpt-5.4
+            # Kalowave Haiku 常返回空 thinking 块，结构化 JSON 任务走 sonnet
             "haiku": os.environ.get(
-                "AI_ACCOUNT_KALOWAVE_HAIKU", "gpt-5.4",
+                "AI_ACCOUNT_KALOWAVE_HAIKU", "claude-sonnet-5",
             ),
             # 情绪周期、龙虎榜、诊股追问
-            "sonnet": os.environ.get("AI_ACCOUNT_KALOWAVE_SONNET", "gpt-5.4"),
+            "sonnet": os.environ.get("AI_ACCOUNT_KALOWAVE_SONNET", "claude-sonnet-5"),
             # 诊股报告、当天买卖分析
-            "opus": os.environ.get("AI_ACCOUNT_KALOWAVE_OPUS", "gpt-5.5"),
+            "opus": os.environ.get("AI_ACCOUNT_KALOWAVE_OPUS", "claude-opus-4-8"),
         },
-        description="Kalowave：分析 gpt-5.5 / 解读 gpt-5.4 / 打标签 haiku",
+        description="Kalowave 中转：分析 claude-opus-4-8 / 解读 claude-sonnet-5",
     ),
 }
 

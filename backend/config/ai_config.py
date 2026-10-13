@@ -6,12 +6,12 @@ AI 配置表 — 场景 → 模型档位 / token / 超时。
 ┌────────────────────────────┬────────┬─────────────────────────────┐
 │ scenario                   │ 档位   │ kalowave 模型               │
 ├────────────────────────────┼────────┼─────────────────────────────┤
-│ ai_diagnosis               │ opus   │ gpt-5.5  全面诊股           │
-│ emotion_cycle_daily        │ opus   │ gpt-5.5  当天买卖分析       │
-│ emotion_cycle_* (其余)     │ sonnet │ gpt-5.4  情绪周期研判       │
-│ dragon_tiger               │ sonnet │ gpt-5.4  龙虎榜解读         │
-│ ai_diagnosis_chat          │ sonnet │ gpt-5.4  诊股追问           │
-│ limit_up_*                 │ sonnet │ gpt-5.4  题材分组(JSON)     │
+│ ai_diagnosis               │ opus   │ claude-opus-4-8 全面诊股    │
+│ emotion_cycle_daily        │ opus   │ claude-opus-4-8 当天买卖    │
+│ emotion_cycle_* (其余)     │ sonnet │ claude-sonnet-5 情绪周期    │
+│ dragon_tiger               │ sonnet │ claude-sonnet-5 龙虎榜解读  │
+│ ai_diagnosis_chat          │ sonnet │ claude-sonnet-5 诊股追问    │
+│ limit_up_*                 │ sonnet │ claude-sonnet-5 题材分组    │
 │ stock_unmask               │ haiku  │ 脱敏股票反查(JSON)          │
 └────────────────────────────┴────────┴─────────────────────────────┘
 """

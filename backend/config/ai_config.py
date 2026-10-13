@@ -35,9 +35,10 @@ _SCENARIO_TEMPLATES: dict[str, tuple[str, int, int, str]] = {
     "emotion_cycle_daily": ("opus", 8192, 150, "当天分析含买卖点"),
     "emotion_cycle_batch": ("sonnet", 16000, 180, "历史批量周期研判"),
     "emotion_cycle_single": ("sonnet", 4096, 120, "单日周期研判"),
-    "limit_up_group": ("sonnet", 8192, 90, "涨停梯队分组"),
-    "limit_up_regroup": ("sonnet", 4096, 90, "其他概念重分组"),
-    "limit_up_split": ("sonnet", 8192, 90, "过大标签拆分"),
+    # 大输出任务（整日涨停池归纳/拆分），中转生成耗时可达 60-160s，超时需留足余量
+    "limit_up_group": ("sonnet", 8192, 150, "涨停梯队分组"),
+    "limit_up_regroup": ("sonnet", 4096, 120, "其他概念重分组"),
+    "limit_up_split": ("sonnet", 8192, 150, "过大标签拆分"),
     "limit_up_stock_theme": ("sonnet", 256, 60, "单股题材"),
     "ai_diagnosis": ("opus", 4096, 180, "诊股报告"),
     "ai_diagnosis_chat": ("sonnet", 1024, 60, "诊股追问"),

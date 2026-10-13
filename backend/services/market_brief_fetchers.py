@@ -71,6 +71,29 @@ def _parse_sina_overseas(text: str) -> list[dict]:
     return indices
 
 
+def _filter_valid_indices(indices: list[dict]) -> list[dict]:
+    out = []
+    for i in indices:
+        try:
+            close = float(i.get('close') or 0)
+        except (TypeError, ValueError):
+            continue
+        if close <= 0:
+            continue
+        out.append(i)
+    return out
+
+
+def _merge_overseas(primary: list[dict], fallback: list[dict]) -> list[dict]:
+    """按标准名称合并，primary 优先。"""
+    order = ('道指', '纳指', '标普', '恒指', '日经')
+    by_name = {i['name']: i for i in fallback if i.get('name')}
+    for row in primary:
+        if row.get('name'):
+            by_name[row['name']] = row
+    return [by_name[k] for k in order if k in by_name]
+
+
 def _fetch_overseas_eastmoney() -> list[dict]:
     url = (
         'https://push2.eastmoney.com/api/qt/ulist.np/get'
@@ -78,42 +101,63 @@ def _fetch_overseas_eastmoney() -> list[dict]:
     )
     text = _curl_get(url)
     data = json.loads(text)
+    if data.get('rc') not in (0, None) and not data.get('data'):
+        raise RuntimeError(f"东财接口异常 rc={data.get('rc')}")
     diff = data.get('data', {}).get('diff') or []
+    if not diff:
+        raise RuntimeError('东财接口返回空列表')
     sym_map = {'DJIA': 'gb_dji', 'NDX': 'gb_ixic', 'SPX': 'gb_inx', 'HSI': 'rt_hkHSI', 'N225': 'N225'}
     out = []
     for row in diff:
         code = row.get('f12', '')
         sym = sym_map.get(code, code)
+        try:
+            close = float(row.get('f2') or 0)
+            change_pct = round(float(row.get('f3') or 0), 2)
+        except (TypeError, ValueError):
+            continue
         out.append({
             'symbol': sym,
             'name': _OVERSEAS_NAME.get(sym, row.get('f14', code)),
-            'close': float(row.get('f2') or 0),
-            'change_pct': round(float(row.get('f3') or 0), 2),
+            'close': close,
+            'change_pct': change_pct,
         })
-    return out
+    return _filter_valid_indices(out)
+
+
+def _fetch_overseas_sina() -> list[dict]:
+    url = f'https://hq.sinajs.cn/list={_SINA_SYMBOLS}'
+    text = _curl_get(url, headers=['Referer: https://finance.sina.com.cn'])
+    return _filter_valid_indices(_parse_sina_overseas(text))
 
 
 def fetch_overseas_indices() -> list[dict]:
-    """新浪主源 + 东财补缺（日经等）。"""
-    url = f'https://hq.sinajs.cn/list={_SINA_SYMBOLS}'
-    text = _curl_get(url, headers=['Referer: https://finance.sina.com.cn'])
-    indices = _parse_sina_overseas(text)
+    """东财主源 + 新浪补缺（b_INDEX* 已下线，gb_* 作备用）。"""
+    indices: list[dict] = []
+    errors: list[str] = []
 
-    have = {i['name'] for i in indices}
+    try:
+        indices = _fetch_overseas_eastmoney()
+        logger.info('东财海外指数: %d 条', len(indices))
+    except Exception as e:
+        errors.append(f'东财:{e}')
+        logger.warning('东财指数失败: %s', e)
+
     need_names = {'道指', '纳指', '标普', '恒指', '日经'}
-    if need_names - have:
-        logger.warning('新浪指数不完整(%s)，尝试东财补缺', [i['name'] for i in indices])
+    have = {i['name'] for i in indices}
+    if need_names - have or len(indices) < 3:
         try:
-            em = _fetch_overseas_eastmoney()
-            by_name = {i['name']: i for i in indices}
-            for row in em:
-                by_name.setdefault(row['name'], row)
-            indices = [by_name[k] for k in ('道指', '纳指', '标普', '恒指', '日经') if k in by_name]
+            sina = _fetch_overseas_sina()
+            logger.info('新浪海外指数补缺: %d 条', len(sina))
+            indices = _merge_overseas(indices, sina)
         except Exception as e:
-            logger.warning('东财指数兜底失败: %s', e)
+            errors.append(f'新浪:{e}')
+            logger.warning('新浪指数补缺失败: %s', e)
 
+    indices = _filter_valid_indices(indices)
     if len(indices) < 3:
-        raise RuntimeError('未能解析海外指数（新浪 b_INDEX* 已下线，请检查网络或东财接口）')
+        logger.error('海外指数不可用 errors=%s got=%s', errors, [i.get('name') for i in indices])
+        raise RuntimeError('海外指数数据暂不可用，请稍后重试')
     return indices
 
 

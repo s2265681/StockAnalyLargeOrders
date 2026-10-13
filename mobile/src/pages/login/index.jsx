@@ -11,7 +11,7 @@ export default function Login() {
 
   useDidShow(() => {
     if (isLoggedIn()) {
-      Taro.reLaunch({ url: '/pages/stock-dashboard/index' })
+      Taro.reLaunch({ url: '/pages/home/index' })
     }
   })
 
@@ -25,7 +25,7 @@ export default function Login() {
       const result = await login(username.trim(), password)
       if (result.success) {
         Taro.showToast({ title: '登录成功', icon: 'success' })
-        Taro.reLaunch({ url: '/pages/stock-dashboard/index' })
+        Taro.reLaunch({ url: '/pages/home/index' })
       } else {
         Taro.showToast({ title: result.message, icon: 'none' })
       }

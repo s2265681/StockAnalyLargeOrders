@@ -123,7 +123,7 @@ export default function Mine() {
         </View>
         {!vip && (
           <Button className='mine-vip-btn' onClick={() => Taro.switchTab({ url: '/pages/membership/index' })}>
-            开通 VIP
+            PC 端开通 VIP
           </Button>
         )}
       </View>

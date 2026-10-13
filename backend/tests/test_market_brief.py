@@ -104,6 +104,23 @@ class TestFetchOverseasIndices(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 fetch_overseas_indices()
 
+    def test_eastmoney_primary(self):
+        from services.market_brief_fetchers import fetch_overseas_indices
+        em_json = json.dumps({
+            'rc': 0,
+            'data': {'diff': [
+                {'f12': 'DJIA', 'f14': '道琼斯', 'f2': 53061.95, 'f3': 0.56},
+                {'f12': 'NDX', 'f14': '纳斯达克', 'f2': 26217.83, 'f3': 0.45},
+                {'f12': 'SPX', 'f14': '标普500', 'f2': 7666.6, 'f3': 0.46},
+                {'f12': 'HSI', 'f14': '恒生指数', 'f2': 25317.49, 'f3': 0.02},
+                {'f12': 'N225', 'f14': '日经225', 'f2': 64471.14, 'f3': 0.23},
+            ]}
+        })
+        with patch('services.market_brief_fetchers._curl_get', return_value=em_json):
+            rows = fetch_overseas_indices()
+        self.assertEqual(len(rows), 5)
+        self.assertEqual(rows[0]['name'], '道指')
+
 
 def _make_app():
     from utils.env import load_env

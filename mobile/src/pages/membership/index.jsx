@@ -2,69 +2,80 @@ import { useState } from 'react'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { View, Text, Button } from '@tarojs/components'
 import { ensureAuth, getUser, refreshUser, isVip } from '../../services/auth'
-import { PLANS, payPlan } from '../../services/pay'
 import './index.scss'
 
+const PC_SITE = 'https://www.stockai.xin'
+
+const VIP_FEATURES = [
+  '全部统计模块无限制使用',
+  '涨停梯队、连板溢价、龙虎榜',
+  '情绪周期、竞价/板块异动',
+  '与 PC 网站同一账号同步',
+]
+
 export default function Membership() {
-  const [selected, setSelected] = useState('monthly')
-  const [paying, setPaying] = useState(false)
   const [vipEnd, setVipEnd] = useState('')
+  const [username, setUsername] = useState('')
 
   useDidShow(async () => {
     if (!ensureAuth()) return
     await refreshUser()
     const user = getUser()
-    if (isVip() && user && user.vip) setVipEnd(user.vip.end_time)
+    setUsername(user?.username || '')
+    if (isVip() && user?.vip) setVipEnd(user.vip.end_time)
+    else setVipEnd('')
   })
 
-  const handlePay = async () => {
-    if (paying) return
-    setPaying(true)
-    Taro.showLoading({ title: '正在发起支付', mask: true })
-    const res = await payPlan(selected)
-    Taro.hideLoading()
-    setPaying(false)
-    if (res.paid) {
-      Taro.showToast({ title: 'VIP 已开通', icon: 'success' })
-      await refreshUser()
-      const user = getUser()
-      if (user && user.vip) setVipEnd(user.vip.end_time)
-    } else {
-      Taro.showToast({ title: res.message, icon: 'none' })
-    }
+  const copySite = () => {
+    Taro.setClipboardData({
+      data: PC_SITE,
+      success: () => Taro.showToast({ title: '网址已复制', icon: 'success' }),
+    })
   }
 
   return (
     <View className='vip-page'>
       <View className='vip-header'>
-        <Text className='vip-title'>重阳市场看板助手 · 会员</Text>
+        <Text className='vip-title'>会员说明</Text>
         {vipEnd ? (
-          <Text className='vip-status'>会员有效期至 {String(vipEnd).slice(0, 10)}</Text>
+          <Text className='vip-status'>当前账号已开通 VIP，有效期至 {String(vipEnd).slice(0, 10)}</Text>
         ) : (
-          <Text className='vip-status'>开通后解锁全部分析功能</Text>
+          <Text className='vip-status'>
+            {username ? `${username} · ` : ''}开通后解锁全部统计功能
+          </Text>
         )}
       </View>
 
-      <View className='plan-list'>
-        {PLANS.map((p) => (
-          <View
-            key={p.type}
-            className={`plan-item ${selected === p.type ? 'plan-item--on' : ''}`}
-            onClick={() => setSelected(p.type)}
-          >
-            <View className='plan-main'>
-              <Text className='plan-name'>{p.name}</Text>
-              <Text className='plan-days'>{p.days} 天</Text>
-            </View>
-            <Text className='plan-price'>¥{p.amount}</Text>
+      <View className='vip-card'>
+        <Text className='vip-card-title'>小程序内暂不提供购买</Text>
+        <Text className='vip-card-desc'>
+          根据平台规范，VIP 会员请在电脑浏览器打开官网开通，支付成功后与本小程序账号自动同步。
+        </Text>
+        <Text className='vip-site'>{PC_SITE}</Text>
+        <Button className='vip-copy-btn' onClick={copySite}>复制官网地址</Button>
+      </View>
+
+      <View className='vip-benefits'>
+        <Text className='vip-benefits-title'>会员权益</Text>
+        {VIP_FEATURES.map((item) => (
+          <View className='vip-benefit-row' key={item}>
+            <Text className='vip-benefit-dot'>✓</Text>
+            <Text className='vip-benefit-text'>{item}</Text>
           </View>
         ))}
       </View>
 
-      <Button className='pay-btn' loading={paying} onClick={handlePay}>
-        微信支付
-      </Button>
-      <Text className='pay-note'>支付即视为同意会员服务条款，虚拟商品不支持退款</Text>
+      <View className='vip-steps'>
+        <Text className='vip-steps-title'>PC 端开通步骤</Text>
+        <Text className='vip-step'>1. 电脑浏览器打开 {PC_SITE}</Text>
+        <Text className='vip-step'>2. 使用与本小程序相同的账号登录</Text>
+        <Text className='vip-step'>3. 进入「权限中心」选择套餐并完成支付</Text>
+        <Text className='vip-step'>4. 回到小程序下拉刷新或重新进入即可</Text>
+      </View>
+
+      <Text className='vip-disclaimer'>
+        本平台仅提供公开市场统计数据查询，不构成投资建议，不提供荐股、代客理财及证券交易服务。
+      </Text>
     </View>
   )
 }

@@ -204,13 +204,9 @@ export default function DragonTiger() {
 
           <View className='dt-detail-actions'>
             <Text
-              className='dt-action-btn'
-              onClick={() => Taro.navigateTo({ url: `/pages/stock-dashboard/index?code=${selectedStock.code}` })}
-            >查看分时</Text>
-            <Text
               className='dt-action-btn ai'
               onClick={() => handleAi(selectedStock.code)}
-            >{aiLoading[selectedStock.code] ? '加载中…' : 'AI分析'}</Text>
+            >{aiLoading[selectedStock.code] ? '加载中…' : 'AI解读'}</Text>
           </View>
 
           {aiResults[selectedStock.code] && (

@@ -29,7 +29,7 @@ export default function Register() {
       const result = await register(username.trim(), password, phone.trim() || undefined)
       if (result.success) {
         Taro.showToast({ title: '注册成功', icon: 'success' })
-        Taro.reLaunch({ url: '/pages/stock-dashboard/index' })
+        Taro.reLaunch({ url: '/pages/home/index' })
       } else {
         Taro.showToast({ title: result.message, icon: 'none' })
       }

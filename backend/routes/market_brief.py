@@ -35,4 +35,7 @@ def refresh_brief():
         return v1_success_response({'available': True, **brief}, message='盘前资讯已生成')
     except Exception as e:
         logger.error('生成 market_brief 失败: %s', e, exc_info=True)
-        return v1_error_response(f'生成盘前资讯失败: {e}')
+        msg = str(e)
+        if '海外指数' in msg or '东财' in msg or '新浪' in msg:
+            msg = '海外指数获取失败，请稍后重试'
+        return v1_error_response(f'生成盘前资讯失败：{msg}')

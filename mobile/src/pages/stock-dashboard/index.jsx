@@ -75,7 +75,13 @@ export default function StockDashboard() {
   const canNext = dt < latestDay
 
   useDidShow(() => {
-    ensureAuth()
+    if (!ensureAuth()) return
+    const params = Taro.getCurrentInstance()?.router?.params
+    const qCode = params?.code
+    if (qCode && /^\d{6}$/.test(String(qCode))) {
+      setCode(String(qCode))
+      setSearchInput(String(qCode))
+    }
   })
 
   const fetchData = useCallback(async (theCode, theDt, silent) => {
@@ -205,7 +211,7 @@ export default function StockDashboard() {
           <View className='sd-search-btn' onClick={handleSearch}>查询</View>
           <View
             className='sd-vip-btn'
-            onClick={() => Taro.navigateTo({ url: '/pages/membership/index' })}
+            onClick={() => Taro.switchTab({ url: '/pages/membership/index' })}
           >
             会员
           </View>

@@ -285,7 +285,6 @@ export default function SectorGrab() {
               <View
                 className='sg-stock-row'
                 key={stock.code}
-                onClick={() => Taro.navigateTo({ url: `/pages/stock-dashboard/index?code=${stock.code}` })}
               >
                 <View className='sg-col-name'>
                   <Text className='sg-stock-name'>

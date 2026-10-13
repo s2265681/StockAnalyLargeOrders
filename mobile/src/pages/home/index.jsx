@@ -3,17 +3,8 @@ import { View, Text } from '@tarojs/components'
 import { ensureAuth, refreshUser } from '../../services/auth'
 import DrawerMenu from '../../components/DrawerMenu'
 import MarketBriefBar from '../../components/MarketBriefBar'
+import { FEATURES } from '../../config/features'
 import './index.scss'
-
-const FEATURES = [
-  { icon: '📈', label: '个股分析', desc: '分时·大单·资金流', url: '/pages/stock-dashboard/index' },
-  { icon: '🔥', label: '涨停梯队', desc: '连板高度·封单质量', url: '/pages/limit-up-echelon/index' },
-  { icon: '⚡', label: '核心游资', desc: '龙虎榜席位解读', url: '/pages/dragon-tiger/index' },
-  { icon: '🎛️', label: '情绪周期', desc: '市场情绪温度', url: '/pages/emotion-cycle/index' },
-  { icon: '🕐', label: '竞价异动', desc: '早盘·尾盘筛选', url: '/pages/auction-grab/index' },
-  { icon: '🔲', label: '板块异动', desc: '强势板块个股', url: '/pages/sector-grab/index' },
-  { icon: '🛡️', label: '权限中心', desc: '开通/续费VIP', url: '/pages/membership/index', tab: true },
-]
 
 export default function Home() {
   useDidShow(() => {
@@ -39,6 +30,7 @@ export default function Home() {
 
       <MarketBriefBar />
 
+      <Text className='home-section-title'>数据模块</Text>
       <View className='home-grid'>
         {FEATURES.map((item) => (
           <View className='home-cell' key={item.label} onClick={() => go(item)}>
@@ -48,6 +40,9 @@ export default function Home() {
           </View>
         ))}
       </View>
+      <Text className='home-disclaimer'>
+        公开市场统计数据查询工具，不构成投资建议；小程序内不提供会员购买及个股实时走势。
+      </Text>
     </View>
   )
 }

@@ -1,3 +1,3 @@
 export default definePageConfig({
-  navigationBarTitleText: '开通会员',
+  navigationBarTitleText: '会员说明',
 })

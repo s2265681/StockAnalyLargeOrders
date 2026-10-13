@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
 import { api, getToken } from '../../config/api'
@@ -17,12 +17,21 @@ function formatTime(iso) {
   return s.length >= 16 ? s.slice(11, 16) : s
 }
 
+const briefErrorText = (msg) => {
+  const s = String(msg || '')
+  if (s.includes('海外指数') || s.includes('东财') || s.includes('新浪') || s.includes('b_INDEX')) {
+    return '海外指数获取失败，请稍后重试'
+  }
+  if (s.length > 24) return s.slice(0, 24) + '…'
+  return s || '生成失败'
+}
+
 export default function MarketBriefBar() {
   const [brief, setBrief] = useState(null)
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
   const [expanded, setExpanded] = useState(false)
-  const autoGenAttempted = useRef(false)
+  const [errorHint, setErrorHint] = useState('')
 
   const loadBrief = useCallback(async () => {
     const res = await api.get('/api/market-brief/today')
@@ -36,6 +45,7 @@ export default function MarketBriefBar() {
 
   const generateBrief = useCallback(async (force = false) => {
     setGenerating(true)
+    setErrorHint('')
     try {
       const res = await api.post('/api/market-brief/refresh', { force }, { timeout: 120000 })
       if (res.success && res.data?.available) {
@@ -43,9 +53,13 @@ export default function MarketBriefBar() {
         Taro.showToast({ title: '盘前资讯已生成', icon: 'success' })
         return true
       }
-      Taro.showToast({ title: res.message || '生成失败', icon: 'none' })
+      const hint = briefErrorText(res.message)
+      setErrorHint(hint)
+      Taro.showToast({ title: hint, icon: 'none' })
     } catch (e) {
-      Taro.showToast({ title: '生成盘前资讯失败', icon: 'none' })
+      const hint = briefErrorText(e.message)
+      setErrorHint(hint)
+      Taro.showToast({ title: hint, icon: 'none' })
     } finally {
       setGenerating(false)
     }
@@ -56,14 +70,9 @@ export default function MarketBriefBar() {
     let cancelled = false
     ;(async () => {
       setLoading(true)
+      setErrorHint('')
       try {
-        const ok = await loadBrief()
-        if (cancelled) return
-        const hasToken = !!getToken()
-        if (!ok && hasToken && !autoGenAttempted.current) {
-          autoGenAttempted.current = true
-          await generateBrief(false)
-        }
+        await loadBrief()
       } catch (e) {
         /* 静默 */
       } finally {
@@ -71,7 +80,7 @@ export default function MarketBriefBar() {
       }
     })()
     return () => { cancelled = true }
-  }, [loadBrief, generateBrief])
+  }, [loadBrief])
 
   if (loading || generating) {
     return (
@@ -88,9 +97,13 @@ export default function MarketBriefBar() {
     return (
       <View className='brief-card brief-state'>
         <Text className='brief-badge'>盘前参考</Text>
-        <Text className='brief-state-text'>今日尚未生成</Text>
+        <Text className='brief-state-text'>
+          {errorHint || '今日尚未生成'}
+        </Text>
         {hasToken && (
-          <Text className='brief-gen-btn' onClick={() => generateBrief(true)}>立即生成</Text>
+          <Text className='brief-gen-btn' onClick={() => generateBrief(true)}>
+            {errorHint ? '重新生成' : '立即生成'}
+          </Text>
         )}
       </View>
     )

@@ -2,17 +2,8 @@ import { useState } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Text } from '@tarojs/components'
 import { getUser, logout } from '../../services/auth'
+import { FEATURES } from '../../config/features'
 import './index.scss'
-
-const MENU_ITEMS = [
-  { icon: '📈', label: '个股分析', url: '/pages/stock-dashboard/index' },
-  { icon: '🔥', label: '涨停梯队', url: '/pages/limit-up-echelon/index' },
-  { icon: '⚡', label: '核心游资', url: '/pages/dragon-tiger/index' },
-  { icon: '🎛️', label: '情绪周期', url: '/pages/emotion-cycle/index' },
-  { icon: '🕐', label: '竞价异动', url: '/pages/auction-grab/index' },
-  { icon: '🔲', label: '板块异动', url: '/pages/sector-grab/index' },
-  { icon: '🛡️', label: '权限中心', url: '/pages/membership/index', tab: true },
-]
 
 export default function DrawerMenu() {
   const [open, setOpen] = useState(false)
@@ -55,7 +46,7 @@ export default function DrawerMenu() {
             </View>
 
             <View className='drawer-list'>
-              {MENU_ITEMS.map((item) => (
+              {FEATURES.map((item) => (
                 <View className='drawer-item' key={item.label} onClick={() => go(item)}>
                   <Text className='drawer-item-icon'>{item.icon}</Text>
                   <Text className='drawer-item-label'>{item.label}</Text>

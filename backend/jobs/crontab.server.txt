@@ -37,12 +37,8 @@
 # --- 1c. 收盘周期研判兜底（DB 已有则 skip）---
 5 16 * * 1-5 ${NIU_ROOT}/backend/jobs/run_emotion_cycle.sh >> ${NIU_LOG}/emotion_cycle_job.log 2>&1
 
-# --- 2. 龙虎榜 AI（数据出炉后加密重试）---
-0  15 * * 1-5 ${NIU_ROOT}/backend/jobs/run_dragon_tiger.sh >> ${NIU_LOG}/dragon_tiger_job.log 2>&1
-30 15 * * 1-5 ${NIU_ROOT}/backend/jobs/run_dragon_tiger.sh >> ${NIU_LOG}/dragon_tiger_job.log 2>&1
-30 16 * * 1-5 ${NIU_ROOT}/backend/jobs/run_dragon_tiger.sh >> ${NIU_LOG}/dragon_tiger_job.log 2>&1
+# --- 2. 龙虎榜 AI（下午 17:30 数据出炉后运行）---
 30 17 * * 1-5 ${NIU_ROOT}/backend/jobs/run_dragon_tiger.sh >> ${NIU_LOG}/dragon_tiger_job.log 2>&1
-30 18 * * 1-5 ${NIU_ROOT}/backend/jobs/run_dragon_tiger.sh >> ${NIU_LOG}/dragon_tiger_job.log 2>&1
 
 # --- 3. 竞价抢筹 ---
 25,30 9 * * 1-5 ${NIU_ROOT}/backend/jobs/run_auction_grab.sh morning >> ${NIU_LOG}/auction_grab_job.log 2>&1

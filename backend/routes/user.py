@@ -38,7 +38,13 @@ def get_profile():
     )
 
     vip_info = None
-    if sub:
+    if u['role'] == 'admin':
+        # 超级管理员不受会员限制：返回一个永不过期的 VIP
+        vip_info = {
+            'plan_type': 'admin',
+            'end_time': '2099-12-31 23:59:59',
+        }
+    elif sub:
         vip_info = {
             'plan_type': sub[0]['plan_type'],
             'end_time': sub[0]['end_time'].strftime('%Y-%m-%d %H:%M:%S') if sub[0]['end_time'] else None,

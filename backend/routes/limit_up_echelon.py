@@ -1562,13 +1562,16 @@ def _echelon_grouping_complete(dt_clean: str) -> bool:
 def _fetch_zt_pool_and_ths(dt_clean: str):
     """拉取涨停池 + 同花顺热股（离线任务用，非 eventlet 环境）"""
     import akshare as ak
-    from concurrent.futures import ThreadPoolExecutor
+    from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutTimeout
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         fut_zt = pool.submit(ak.stock_zt_pool_em, date=dt_clean)
         fut_ths = pool.submit(_fetch_ths_hot_stocks)
-        df = fut_zt.result()
-        ths_hot_list, ths_hot_map = fut_ths.result()
+        try:
+            df = fut_zt.result(timeout=180)
+            ths_hot_list, ths_hot_map = fut_ths.result(timeout=90)
+        except FutTimeout as e:
+            raise TimeoutError(f"拉取涨停池/热股超时 date={dt_clean}") from e
     return df, ths_hot_list, ths_hot_map
 
 
@@ -1599,19 +1602,26 @@ def _preserve_tags_refresh_pool(dt_clean: str, stocks: list) -> dict:
     return {"labels": labels, "reasons": reasons, "leaders": leaders}
 
 
-def build_echelon_one_date(dt: str, force: bool = False) -> str:
+def build_echelon_one_date(dt: str, force: bool = False, *, refresh: bool = False) -> str:
     """离线生成单日涨停梯队：涨停池 + AI 分组 + 写库。
+
+    - force=True：清库后全量 AI 归纳（补数/收盘兜底）
+    - refresh=True：盘中增量，保留已有标签，仅拉池更新并对新股/未分组做 AI
 
     返回: 'skipped' | 'saved' | 'failed' | 'empty'
     """
     dt_clean = dt.replace("-", "")
-    if not force and _echelon_grouping_complete(dt_clean):
+    if refresh:
+        force = False
+    elif not force and _echelon_grouping_complete(dt_clean):
         logger.info("涨停梯队已有离线分组，跳过 date=%s", dt_clean)
         return "skipped"
 
     if force:
         clear_echelon_date(dt_clean)
         logger.info("force: 已清除 %s 旧分组，将重新拉池并 AI 归纳", dt_clean)
+    elif refresh:
+        logger.info("refresh: 保留 %s 已有分组，拉池增量更新", dt_clean)
 
     try:
         df, ths_hot_list, ths_hot_map = _fetch_zt_pool_and_ths(dt_clean)

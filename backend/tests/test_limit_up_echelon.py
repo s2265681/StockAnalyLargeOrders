@@ -243,6 +243,32 @@ class BuildEchelonOneDateTest(unittest.TestCase):
         from routes.limit_up_echelon import build_echelon_one_date
         self.assertEqual(build_echelon_one_date("20260515", force=False), "skipped")
 
+    @patch("routes.limit_up_echelon.clear_echelon_date")
+    @patch("routes.limit_up_echelon.date_has_manual_tags", return_value=False)
+    @patch("routes.limit_up_echelon.save_ai_grouping_result")
+    @patch("routes.limit_up_echelon._smart_group_stocks")
+    @patch("routes.limit_up_echelon._enrich_stocks_concepts")
+    @patch("routes.limit_up_echelon._fetch_zt_pool_and_ths")
+    @patch("routes.limit_up_echelon._echelon_grouping_complete", return_value=True)
+    def test_refresh_runs_without_clear(
+        self, _complete, mock_fetch, _enrich, mock_group, mock_save, _manual, mock_clear
+    ):
+        import pandas as pd
+        from routes.limit_up_echelon import build_echelon_one_date
+
+        df = pd.DataFrame([{"代码": "000001", "名称": "测试", "连板数": 1, "成交额": 1, "封板资金": 1,
+                            "最新价": 10, "涨跌幅": 10, "流通市值": 1, "换手率": 1,
+                            "首次封板时间": "093000", "最后封板时间": "093000", "炸板次数": 0,
+                            "所属行业": "测试", "涨停统计": "1/1"}])
+        mock_fetch.return_value = (df, [], {})
+        mock_group.return_value = {"labels": {"000001": "机器人"}, "reasons": {}, "leaders": {}}
+
+        result = build_echelon_one_date("20260515", refresh=True)
+        self.assertEqual(result, "saved")
+        mock_clear.assert_not_called()
+        mock_group.assert_called_once()
+        self.assertFalse(mock_group.call_args.kwargs.get("fresh"))
+
 
 class MarketStatsTest(unittest.TestCase):
     @patch("routes.limit_up_echelon._compute_premium_rates")

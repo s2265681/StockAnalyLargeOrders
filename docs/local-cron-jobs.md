@@ -116,6 +116,7 @@ deploy/logrotate-niuniuniu.conf
 | 休市仍跑 | 查 `job_guard` 日志；东财接口失败时仅排除周末 |
 | 竞价表不存在 | 执行 `migrations/20260517_create_auction_grab_tables.sql` |
 | 锁未释放 | `rmdir logs/.intraday.lock`（异常退出时） |
+| intraday/echelon 刚好 30 分钟失败 | 邮件「执行超过 1800s」= `job_lib.sh` 超时；盘中任务勿 `force=True` 清库全量 AI（已改为 `refresh=True` 增量） |
 
 ---
 

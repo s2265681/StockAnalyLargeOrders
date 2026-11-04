@@ -36,7 +36,7 @@ def main() -> int:
     logger.info("===== 盘中刷新开始 date=%s =====", dt)
 
     try:
-        echelon = build_echelon_one_date(dt, force=True)
+        echelon = build_echelon_one_date(dt, refresh=True)
     except Exception as e:
         logger.error("涨停梯队异常: %s", e, exc_info=True)
         return 1

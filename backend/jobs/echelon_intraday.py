@@ -24,7 +24,7 @@ def main() -> int:
     dt = get_valid_trading_date().replace("-", "")
     logger.info("===== 梯队盘中刷新开始 date=%s =====", dt)
 
-    result = build_echelon_one_date(dt, force=True)
+    result = build_echelon_one_date(dt, refresh=True)
     logger.info("涨停梯队: %s", result)
 
     if result == "failed":

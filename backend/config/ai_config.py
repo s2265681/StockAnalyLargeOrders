@@ -31,7 +31,7 @@ GENERAL_BROAD_TAGS_ORDERED = (
 )
 
 _SCENARIO_TEMPLATES: dict[str, tuple[str, int, int, str]] = {
-    "emotion_cycle_realtime": ("sonnet", 2048, 60, "盘中实时情绪分析"),
+    "emotion_cycle_realtime": ("sonnet", 4096, 60, "盘中实时情绪分析"),
     "emotion_cycle_daily": ("opus", 8192, 150, "当天分析含买卖点"),
     "emotion_cycle_batch": ("sonnet", 16000, 180, "历史批量周期研判"),
     "emotion_cycle_single": ("sonnet", 4096, 120, "单日周期研判"),
@@ -41,9 +41,9 @@ _SCENARIO_TEMPLATES: dict[str, tuple[str, int, int, str]] = {
     "limit_up_split": ("sonnet", 8192, 150, "过大标签拆分"),
     "limit_up_stock_theme": ("sonnet", 256, 60, "单股题材"),
     "ai_diagnosis": ("opus", 4096, 180, "诊股报告"),
-    "ai_diagnosis_chat": ("sonnet", 1024, 60, "诊股追问"),
-    "dragon_tiger": ("sonnet", 2048, 90, "龙虎榜解读"),
-    "market_brief": ("sonnet", 1024, 90, "盘前摘要"),
+    "ai_diagnosis_chat": ("sonnet", 2048, 60, "诊股追问"),
+    "dragon_tiger": ("sonnet", 4096, 90, "龙虎榜解读"),
+    "market_brief": ("sonnet", 4096, 90, "盘前摘要"),
     "stock_unmask": ("haiku", 512, 45, "脱敏股票反查"),
 }
 

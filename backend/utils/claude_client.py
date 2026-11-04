@@ -4,12 +4,47 @@ import logging
 import os
 import subprocess
 import tempfile
+import time
 
 from config.ai_accounts import ACCOUNTS, AiAccount, get_active_account, get_active_account_id
 
 logger = logging.getLogger(__name__)
 
 _last_api_error: str = ""
+
+# 熔断：连续失败 N 次后短时间内直接跳过 AI，避免任务被 30 分钟超时强杀。
+_FAIL_FAST_THRESHOLD = int(os.environ.get("AI_FAIL_FAST_AFTER", "3") or 3)
+_FAIL_FAST_COOLDOWN = float(os.environ.get("AI_FAIL_FAST_COOLDOWN", "60") or 60)
+_fail_streak = 0
+_fail_fast_until = 0.0
+
+
+def _thinking_disabled() -> bool:
+    """中转通道可能用 deepseek 等模型顶替 claude：其 thinking 会挤占 max_tokens
+    导致「只返回思考、没有正文」，并显著拖慢调用。AI_THINKING=0 时显式关闭。"""
+    return os.environ.get("AI_THINKING", "").strip().lower() in (
+        "0", "off", "false", "no", "disabled",
+    )
+
+
+def _circuit_open() -> bool:
+    return _fail_fast_until > time.time()
+
+
+def _note_ai_result(ok: bool) -> None:
+    global _fail_streak, _fail_fast_until
+    if ok:
+        _fail_streak = 0
+        _fail_fast_until = 0.0
+        return
+    _fail_streak += 1
+    if _FAIL_FAST_THRESHOLD > 0 and _fail_streak >= _FAIL_FAST_THRESHOLD:
+        if not _circuit_open():
+            logger.error(
+                "AI 连续失败 %s 次，熔断 %ss（后续调用直接跳过）",
+                _fail_streak, int(_FAIL_FAST_COOLDOWN),
+            )
+        _fail_fast_until = time.time() + _FAIL_FAST_COOLDOWN
 
 
 def get_last_api_error() -> str:
@@ -95,11 +130,14 @@ def _invoke_account(
         logger.error(msg)
         return ""
 
-    payload = json.dumps({
+    payload_body = {
         "model": model,
         "messages": [{"role": "user", "content": user_content}],
         "max_tokens": max_tokens,
-    })
+    }
+    if _thinking_disabled():
+        payload_body["thinking"] = {"type": "disabled"}
+    payload = json.dumps(payload_body)
     with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         f.write(payload)
         payload_file = f.name
@@ -206,6 +244,17 @@ def call_claude(
     """调用 AI，返回助手回复文本；主账号空响应/失败时自动尝试备用账号。"""
     if proc_timeout is None:
         proc_timeout = curl_timeout + 5
+    if _circuit_open():
+        msg = (
+            f"AI 熔断中（连续失败 {_fail_streak} 次，"
+            f"{int(_fail_fast_until - time.time())}s 后重试）"
+        )
+        _set_last_error(msg)
+        logger.warning(msg)
+        if raise_on_error:
+            raise RuntimeError(msg)
+        return ""
+
     primary_id = account_id or get_active_account_id()
     account = ACCOUNTS[primary_id]
     use_model = model or account.models.get("haiku", "")
@@ -218,6 +267,7 @@ def call_claude(
         proc_timeout=proc_timeout,
         raise_on_error=False,
     )
+    _note_ai_result(bool(text))
     if text:
         return text
 
@@ -245,6 +295,7 @@ def call_claude(
             proc_timeout=proc_timeout,
             raise_on_error=False,
         )
+        _note_ai_result(bool(text))
         if text:
             logger.info("AI 降级成功: %s/%s", fb_id, fb_model)
             return text

@@ -1559,19 +1559,42 @@ def _echelon_grouping_complete(dt_clean: str) -> bool:
     return tagged >= max(1, len(stocks) // 2)
 
 
+def _call_with_hard_timeout(fn, timeout: float, what: str):
+    """daemon 线程 + join(timeout) 实现硬超时。
+
+    不能用 ThreadPoolExecutor 的 future.result(timeout)：其上下文退出时
+    shutdown(wait=True) 会一直等卡死的线程，超时形同虚设，任务照样被 1800s 强杀。
+    """
+    import threading
+
+    box: dict = {}
+
+    def _target():
+        try:
+            box["value"] = fn()
+        except BaseException as e:  # noqa: BLE001 — 原样抛回调用方
+            box["error"] = e
+
+    t = threading.Thread(target=_target, daemon=True)
+    t.start()
+    t.join(timeout)
+    if t.is_alive():
+        raise TimeoutError(f"{what}超时（>{int(timeout)}s）")
+    if "error" in box:
+        raise box["error"]
+    return box.get("value")
+
+
 def _fetch_zt_pool_and_ths(dt_clean: str):
     """拉取涨停池 + 同花顺热股（离线任务用，非 eventlet 环境）"""
     import akshare as ak
-    from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutTimeout
 
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        fut_zt = pool.submit(ak.stock_zt_pool_em, date=dt_clean)
-        fut_ths = pool.submit(_fetch_ths_hot_stocks)
-        try:
-            df = fut_zt.result(timeout=180)
-            ths_hot_list, ths_hot_map = fut_ths.result(timeout=90)
-        except FutTimeout as e:
-            raise TimeoutError(f"拉取涨停池/热股超时 date={dt_clean}") from e
+    df = _call_with_hard_timeout(
+        lambda: ak.stock_zt_pool_em(date=dt_clean), 180, f"拉取涨停池 date={dt_clean}"
+    )
+    ths_hot_list, ths_hot_map = _call_with_hard_timeout(
+        _fetch_ths_hot_stocks, 90, "拉取同花顺热股"
+    )
     return df, ths_hot_list, ths_hot_map
 
 

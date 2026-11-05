@@ -85,6 +85,7 @@ _pw_loop: Optional[asyncio.AbstractEventLoop] = None
 _pw_thread: Optional[threading.Thread] = None
 _pw_browser = None
 _pw_instance = None  # 保留 playwright 句柄，重建浏览器时先 stop，避免 node 驱动进程堆积
+_pw_fail_until = 0.0  # 启动失败后的冷却截止时间（秒），避免每个请求都重试并拉起 driver
 _pw_start_lock = threading.Lock()
 _pw_proxy: Optional[str] = None
 
@@ -120,9 +121,11 @@ def _submit_nowait(coro) -> None:
 
 
 async def _get_browser_async():
-    global _pw_browser, _pw_instance
+    global _pw_browser, _pw_instance, _pw_fail_until
     if _pw_browser is not None and _pw_browser.is_connected():
         return _pw_browser
+    if time.time() < _pw_fail_until:
+        raise RuntimeError("Playwright 启动失败冷却中，稍后重试")
 
     # 浏览器断开/崩溃后重建：先关旧浏览器、停旧 driver，否则每重连一次就多一个
     # ~40MB 的 node 驱动子进程（曾累积到 35 个，吃满 1.6G 内存）。
@@ -147,7 +150,17 @@ async def _get_browser_async():
     )
     if _pw_proxy:
         kwargs['proxy'] = {'server': _pw_proxy}
-    _pw_browser = await _pw_instance.chromium.launch(**kwargs)
+    try:
+        _pw_browser = await _pw_instance.chromium.launch(**kwargs)
+    except Exception:
+        # 启动失败（缺浏览器/系统库等）也要立刻停掉 driver，避免反复失败拖垮内存
+        try:
+            await _pw_instance.stop()
+        except Exception:
+            pass
+        _pw_instance = None
+        _pw_fail_until = time.time() + 120
+        raise
     logger.info(f"Playwright Chromium 已启动 (proxy={_pw_proxy})")
     return _pw_browser
 

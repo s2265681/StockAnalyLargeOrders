@@ -49,7 +49,7 @@ def list_orders():
     )
     items = []
     for r in rows:
-        plan = PLANS.get(r['plan_type'], {})
+        plan = get_plan(r['plan_type']) or {}
         items.append({
             'order_no': r['order_no'],
             'plan_name': plan.get('name', r['plan_type']),

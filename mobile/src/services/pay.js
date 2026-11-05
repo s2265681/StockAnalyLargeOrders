@@ -3,7 +3,6 @@ import { api } from '../config/api'
 
 // 展示用套餐（与后端 services/order_service.py PLANS 对应）
 export const PLANS = [
-  { type: 'daily', name: '测试VIP 1分', amount: 0.01, days: 1 },
   { type: 'monthly', name: '月度VIP', amount: 380, days: 30 },
   { type: 'quarterly', name: '季度VIP', amount: 900, days: 90 },
   { type: 'semi', name: '半年VIP', amount: 1600, days: 180 },

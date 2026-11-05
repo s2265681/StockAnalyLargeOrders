@@ -6,21 +6,12 @@ import { useAuth } from '../../context/AuthContext';
 import { api } from '../../config/api';
 import './index.css';
 
-const TEST_PLANS = [
-  { key: 'daily',  name: '测试VIP 1分', price: 0.01, unit: '/次', days: 1, badge: '测试' },
-  { key: 'test2',  name: '测试VIP 2分', price: 0.02, unit: '/次', days: 1, badge: '测试' },
-];
-
-const PROD_PLANS = [
+const PLANS = [
   { key: 'monthly',   name: '月度VIP',  price: 380,   unit: '/月',  days: 30 },
   { key: 'quarterly', name: '季度VIP',  price: 900,   unit: '/季',  days: 90,  badge: '热门' },
   { key: 'semi',      name: '半年VIP',  price: 1600,  unit: '/半年', days: 180 },
   { key: 'annual',    name: '年度VIP',  price: 2500,  unit: '/年',  days: 365, badge: '最划算' },
 ];
-
-// 测试阶段默认只展示 1 分 / 2 分套餐；正式上线时把 REACT_APP_PAY_TEST 设为 false
-const PAY_TEST_MODE = process.env.REACT_APP_PAY_TEST !== 'false';
-const PLANS = PAY_TEST_MODE ? TEST_PLANS : [...TEST_PLANS, ...PROD_PLANS];
 
 const POLL_INTERVAL_MS = 2000;
 const POLL_TIMEOUT_MS = 5 * 60 * 1000;
@@ -28,7 +19,7 @@ const POLL_TIMEOUT_MS = 5 * 60 * 1000;
 export default function PermissionCenter() {
   const { user, isVip, refreshUser } = useAuth();
   const navigate = useNavigate();
-  const [selected, setSelected] = useState('daily');
+  const [selected, setSelected] = useState('quarterly');
   const [loading, setLoading] = useState(false);
   const [wechatEnabled, setWechatEnabled] = useState(false);
   const [payModalOpen, setPayModalOpen] = useState(false);

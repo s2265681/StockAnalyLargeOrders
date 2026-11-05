@@ -4,6 +4,7 @@
 """
 import logging
 import math
+import os
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
@@ -70,8 +71,17 @@ def _lookup_yesterday_volume(source, code, dt, *, cache_only=False):
     return None
 
 
+def _playwright_enabled() -> bool:
+    """PLAYWRIGHT_ENABLED=0 时完全跳过 Playwright 回退（服务器无代理/接口不可达时用）。"""
+    return os.environ.get("PLAYWRIGHT_ENABLED", "1").strip().lower() not in (
+        "0", "off", "false", "no",
+    )
+
+
 def _get_playwright_source():
     global _playwright_source
+    if not _playwright_enabled():
+        return None
     if _playwright_source is None:
         try:
             from .eastmoney_playwright import EastMoneyPlaywrightSource

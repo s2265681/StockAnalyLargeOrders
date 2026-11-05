@@ -31,6 +31,13 @@ def _today_compact() -> str:
     return get_valid_trading_date().replace("-", "")
 
 
+def _emotion_refresh_enabled() -> bool:
+    """INTRADAY_EMOTION_REFRESH=0 时只刷梯队；情绪周期交给 emotion_intraday 每小时任务。"""
+    return os.environ.get("INTRADAY_EMOTION_REFRESH", "1").strip().lower() not in (
+        "0", "off", "false", "no",
+    )
+
+
 def main() -> int:
     dt = _today_compact()
     logger.info("===== 盘中刷新开始 date=%s =====", dt)
@@ -43,6 +50,11 @@ def main() -> int:
     logger.info("涨停梯队: %s", echelon)
     if echelon == "failed":
         return 1
+
+    if not _emotion_refresh_enabled():
+        logger.info("情绪周期由 emotion_intraday 定时任务刷新，本次跳过")
+        logger.info("===== 盘中刷新完成（仅梯队）date=%s =====", dt)
+        return 0
 
     try:
         records = _fetch_emotion_records()

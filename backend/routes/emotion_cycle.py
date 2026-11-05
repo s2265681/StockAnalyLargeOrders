@@ -1471,6 +1471,20 @@ def _call_claude_single(context_records: list, target_record: dict) -> dict:
     if same_slot_text:
         user_prompt += f"\n\n{same_slot_text}"
 
+    # 连板溢价参考（连板天梯数据，盘中为实时行情）
+    try:
+        from routes.limit_up_echelon import build_ladder_premium_brief
+
+        ladder_brief = build_ladder_premium_brief(_record_date_key(target_record))
+    except Exception as e:  # noqa: BLE001
+        logger.warning("连板溢价参考生成失败: %s", e)
+        ladder_brief = ""
+    if ladder_brief:
+        user_prompt += (
+            "\n\n【连板溢价参考（请结合判断情绪强弱，写进分析里）】\n"
+            + ladder_brief
+        )
+
     # 把字段说明从 BATCH_ANALYSIS_PROMPT 复用
     field_guide = "\n".join(
         BATCH_ANALYSIS_PROMPT.split("## 六大情绪指标")[0].split("## 数据字段说明")[1].strip().splitlines()

@@ -1901,6 +1901,83 @@ def _collect_ladder_window(days: int) -> list:
     return window
 
 
+def build_ladder_premium_brief(dt_clean: str, days: int = 10) -> str:
+    """连板溢价速览：上一交易日各连板在目标日的溢价/晋级/断板情况。
+
+    供情绪周期 AI 研判引用；目标日不在最近 days 个有梯队数据的交易日内时返回空串。
+    """
+    dt_clean = str(dt_clean or "").replace("-", "")
+    if not dt_clean:
+        return ""
+    try:
+        window = _collect_ladder_window(max(3, min(15, days)))
+    except Exception as e:  # noqa: BLE001
+        logger.warning("连板溢价速览生成失败: %s", e)
+        return ""
+    idx = next((i for i, (d, _) in enumerate(window) if d == dt_clean), None)
+    if idx is None or idx == 0:
+        return ""
+
+    prev_dt, prev_stocks = window[idx - 1]
+    cur_dt, cur_stocks = window[idx]
+    prev_map = {
+        str(s.get("code") or "").zfill(6): s
+        for s in prev_stocks or []
+        if int(s.get("boards") or 0) >= 2
+    }
+    if not prev_map:
+        return ""
+
+    cur_boards = {
+        str(s.get("code") or "").zfill(6): int(s.get("boards") or 0)
+        for s in cur_stocks or []
+    }
+    is_today = cur_dt == _default_echelon_dt()
+    live_map = _fetch_live_change_map(list(prev_map)) if is_today else {}
+    try:
+        change_map = _cached_previous_em_change_map(cur_dt)
+    except Exception as e:  # noqa: BLE001
+        logger.debug("昨日涨停池涨跌幅获取失败 date=%s: %s", cur_dt, e)
+        change_map = {}
+
+    buckets: dict[int, list] = {}
+    for code, s in prev_map.items():
+        prem = live_map.get(code)
+        if prem is None:
+            prem = change_map.get(code)
+        if prem is None:
+            prem = _change_from_stocks(cur_stocks, code)
+        buckets.setdefault(int(s.get("boards") or 0), []).append(
+            (code, s.get("name") or "", prem, cur_boards.get(code))
+        )
+
+    lines = []
+    for boards in sorted(buckets, reverse=True):
+        rows = buckets[boards]
+        adv = sum(1 for _, _, _, b in rows if b == boards + 1)
+        broke = sum(1 for _, _, _, b in rows if b is None or b < boards + 1)
+        vals = [p for _, _, p, _ in rows if p is not None]
+        avg = round(sum(vals) / len(vals), 2) if vals else None
+        avg_text = f"{avg:+.2f}%" if avg is not None else "—"
+        lines.append(
+            f"- 昨日{boards}板 {len(rows)} 只：今日平均溢价 {avg_text}，"
+            f"晋级{boards + 1}板 {adv} 只（{round(adv / len(rows) * 100)}%），断板 {broke} 只"
+        )
+    if not lines:
+        return ""
+
+    prev_max = max((int(s.get("boards") or 0) for s in prev_stocks or []), default=0)
+    cur_max = max(cur_boards.values(), default=0)
+    cur_disp = f"{cur_dt[:4]}-{cur_dt[4:6]}-{cur_dt[6:8]}"
+    prev_disp = f"{prev_dt[:4]}-{prev_dt[4:6]}-{prev_dt[6:8]}"
+    scope = "实时行情" if is_today else "收盘数据"
+    return (
+        f"{cur_disp}（{scope}，对比 {prev_disp}）：\n"
+        + "\n".join(lines)
+        + f"\n- 最高板：{cur_max} 板（上一交易日 {prev_max} 板）"
+    )
+
+
 def _build_ladder(days: int, *, live: bool = False) -> dict:
     window = _collect_ladder_window(days)
     if not window:

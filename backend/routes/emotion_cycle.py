@@ -791,6 +791,42 @@ def _summarize_echelon_context(dt: str) -> str:
         return "（涨停梯队数据暂不可用）"
 
 
+def _get_limit_up_name_set(dt: str) -> set:
+    """当日涨停池股票名集合（用于校验 AI 推荐的备选标的）"""
+    try:
+        from services.theme_service import get_limit_up_stocks_by_date
+
+        stocks = get_limit_up_stocks_by_date(str(dt).replace("-", "")) or []
+        return {str(s.get("name") or "").strip() for s in stocks if s.get("name")}
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"获取涨停池失败 {dt}: {e}")
+        return set()
+
+
+def _filter_recommendations(recs, dt: str):
+    """剔除不在当日涨停池里的「备选标的」，防止 AI 编造股票名。
+
+    涨停池为空（如开盘前）时不过滤，避免把正常结果清空。
+    """
+    if not isinstance(recs, list):
+        return recs
+    names = _get_limit_up_name_set(dt)
+    if not names:
+        return recs
+    kept, dropped = [], []
+    for r in recs:
+        if not isinstance(r, dict):
+            continue
+        name = str(r.get("stock") or "").strip()
+        if name and name in names:
+            kept.append(r)
+        else:
+            dropped.append(name)
+    if dropped:
+        logger.warning(f"{dt} 剔除非涨停池备选标的: {dropped}")
+    return kept
+
+
 def _fetch_hot_sectors() -> str:
     """获取当日热门板块题材，用于丰富分析"""
     try:
@@ -1092,6 +1128,11 @@ def analyze_daily_one_date(
     if result is None:
         logger.error(f"{target_dt} 当天分析 AI 失败: {last_err}")
         return "failed"
+
+    if result.get("recommendations") is not None:
+        result["recommendations"] = _filter_recommendations(
+            result["recommendations"], target_dt
+        )
 
     if not _save_intraday_to_db(target_dt, result):
         logger.error(f"{target_dt} 当天分析存库失败")
@@ -1485,6 +1526,14 @@ def _call_claude_single(context_records: list, target_record: dict) -> dict:
             + ladder_brief
         )
 
+    # 涨停池：备选标的必须来自真实数据，防止 AI 编造股票名
+    target_key = _record_date_key(target_record)
+    pool_text = _summarize_echelon_context(target_key)
+    user_prompt += (
+        "\n\n【目标日期涨停池（recommendations 只能从这里选，选不出就返回空数组）】\n"
+        + pool_text
+    )
+
     # 把字段说明从 BATCH_ANALYSIS_PROMPT 复用
     field_guide = "\n".join(
         BATCH_ANALYSIS_PROMPT.split("## 六大情绪指标")[0].split("## 数据字段说明")[1].strip().splitlines()
@@ -1523,6 +1572,10 @@ def _call_claude_single(context_records: list, target_record: dict) -> dict:
 
     if not isinstance(result, dict):
         raise Exception("AI 返回格式异常")
+    if result.get("recommendations") is not None:
+        result["recommendations"] = _filter_recommendations(
+            result["recommendations"], _record_date_key(target_record)
+        )
     return calibrate_analysis_stage(result, target_record, context_records)
 
 

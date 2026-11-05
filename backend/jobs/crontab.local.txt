@@ -37,6 +37,9 @@
 # --- 1c. 收盘周期研判兜底 ---
 5 16 * * 1-5 ${NIU_ROOT}/backend/jobs/run_emotion_cycle.sh >> ${NIU_LOG}/emotion_cycle_job.log 2>&1
 
+# --- 1d. 情绪周期盘初快刷（09:38，开盘后先刷出当日数据，后续 intraday 继续更新）---
+38 9 * * 1-5 ${NIU_ROOT}/backend/jobs/run_emotion_intraday.sh >> ${NIU_LOG}/emotion_intraday_job.log 2>&1
+
 # --- 2. 龙虎榜 AI（下午 17:30 数据出炉后运行）---
 30 17 * * 1-5 ${NIU_ROOT}/backend/jobs/run_dragon_tiger.sh >> ${NIU_LOG}/dragon_tiger_job.log 2>&1
 

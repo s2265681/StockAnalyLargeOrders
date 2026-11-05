@@ -12,6 +12,7 @@
 | 盘中全量 | `run_intraday.sh` | **14 次/日**（对齐 09:45/10:30/11:30/14:00/14:45 + 开收盘） | 梯队 + 情绪周期 + 买卖指导（`force`） |
 | 梯队补刷 | `run_echelon_intraday.sh` | **13 次/日**（约每 10 分钟，与全量错开） | 仅刷新涨停梯队 |
 | 周期兜底 | `run_emotion_cycle.sh` | **16:05** 1 次 | 收盘周期研判（DB 已有则 skip） |
+| 情绪快刷 | `run_emotion_intraday.sh` | **09:38** 1 次 | 开盘后先刷当日周期研判 + 买卖指导，后续 intraday 继续更新 |
 | 龙虎榜 AI | `run_dragon_tiger.sh` | 15:00–18:30 **5 次** | 补全 AI；齐全则跳过 |
 | 竞价抢筹 | `run_auction_grab.sh` | 早盘 9:25/9:30；尾盘 15:05/15:20/15:35 | 写入 `auction_grab_stocks` + 预计算高级筛选至 `auction_grab_screen_cache` |
 | 盘前资讯 | `run_market_brief.sh` | **8:30** 1 次 | 市场简报 |

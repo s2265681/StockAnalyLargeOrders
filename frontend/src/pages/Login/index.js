@@ -195,17 +195,22 @@ export default function Login() {
     >
       <form
         className="auth-login-form"
+        autoComplete="off"
         onSubmit={e => {
           e.preventDefault();
           handleLogin();
         }}
       >
         <Input
+          name="account"
+          autoComplete="off"
           prefix={<UserOutlined style={{ color: 'var(--auth-text3)' }} />}
           placeholder="用户名"
           value={username}
           onChange={e => setUsername(e.target.value)}
           onKeyDown={e => {
+            // 输入法组字中按回车是“上屏”，此时切换焦点会把未上屏的字母带进密码框
+            if (e.nativeEvent.isComposing || e.keyCode === 229) return;
             if (e.key === 'Enter') {
               e.preventDefault();
               focusPassword();
@@ -214,6 +219,8 @@ export default function Login() {
         />
         <Input.Password
           ref={passwordRef}
+          name="password"
+          autoComplete="new-password"
           prefix={<LockOutlined style={{ color: 'var(--auth-text3)' }} />}
           placeholder="密码"
           value={password}

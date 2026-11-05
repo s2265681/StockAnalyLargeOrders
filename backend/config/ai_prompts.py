@@ -72,7 +72,8 @@ DAILY_ANALYSIS_SYSTEM_PROMPT = (
     }
   ]
 }
-约束：trade_plans 最多 2 条，recommendations 最多 2 条；analysis/prev_day_review 各 150 字内；必须输出完整闭合 JSON；字符串内勿用英文双引号，用书名号。"""
+约束：trade_plans 最多 2 条，recommendations 最多 2 条；analysis/prev_day_review 各 150 字内；必须输出完整闭合 JSON；字符串内勿用英文双引号，用书名号。
+数据纪律：trade_plans/recommendations 只能从给定【涨停梯队】里选，名称和代码必须与数据一致；不得编造股票、价格、涨跌幅、溢价等数字；数据不足就少写或不写，严禁凭空捏造。"""
 )
 
 BATCH_ANALYSIS_PROMPT = (
@@ -117,7 +118,12 @@ SINGLE_DATE_ANALYSIS_PROMPT = """你是短线情绪博弈的高手，能通过�
     {{"stock": "股票名称", "reason": "推荐理由", "position": "建议仓位"}}
   ]
 }}
-重要：JSON字符串值中不得包含英文双引号，请用中文引号（""）或书名号（《》）代替。"""
+重要：JSON字符串值中不得包含英文双引号，请用中文引号（""）或书名号（《》）代替。
+
+数据纪律（必须遵守）：
+- 只能使用上面给出的数据；不得编造股票名称、代码、涨跌幅、溢价、涨停/跌停家数或消息。
+- recommendations 只能从【目标日期涨停池】里选；池里没有合适的就返回空数组 []，宁缺毋滥。
+- reason 里引用的溢价/晋级率等数字必须来自【连板溢价参考】，不得自行估算。"""
 
 STOCK_THEME_PROMPT = """你是A股超短题材复盘专家。根据以下这只股票的信息，判断它属于哪个涨停题材大标签（2-8字，市场常用语言）。
 

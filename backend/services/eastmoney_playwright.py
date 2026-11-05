@@ -84,6 +84,7 @@ window.EventSource.CLOSED = _OrigES.CLOSED;
 _pw_loop: Optional[asyncio.AbstractEventLoop] = None
 _pw_thread: Optional[threading.Thread] = None
 _pw_browser = None
+_pw_instance = None  # 保留 playwright 句柄，重建浏览器时先 stop，避免 node 驱动进程堆积
 _pw_start_lock = threading.Lock()
 _pw_proxy: Optional[str] = None
 
@@ -119,18 +120,34 @@ def _submit_nowait(coro) -> None:
 
 
 async def _get_browser_async():
-    global _pw_browser
+    global _pw_browser, _pw_instance
     if _pw_browser is not None and _pw_browser.is_connected():
         return _pw_browser
+
+    # 浏览器断开/崩溃后重建：先关旧浏览器、停旧 driver，否则每重连一次就多一个
+    # ~40MB 的 node 驱动子进程（曾累积到 35 个，吃满 1.6G 内存）。
+    if _pw_browser is not None:
+        try:
+            await _pw_browser.close()
+        except Exception:
+            pass
+        _pw_browser = None
+    if _pw_instance is not None:
+        try:
+            await _pw_instance.stop()
+        except Exception:
+            pass
+        _pw_instance = None
+
     from playwright.async_api import async_playwright
-    pw = await async_playwright().start()
+    _pw_instance = await async_playwright().start()
     kwargs = dict(
         headless=True,
         args=['--headless=new', '--disable-blink-features=AutomationControlled', '--no-sandbox']
     )
     if _pw_proxy:
         kwargs['proxy'] = {'server': _pw_proxy}
-    _pw_browser = await pw.chromium.launch(**kwargs)
+    _pw_browser = await _pw_instance.chromium.launch(**kwargs)
     logger.info(f"Playwright Chromium 已启动 (proxy={_pw_proxy})")
     return _pw_browser
 
@@ -346,6 +363,7 @@ class LiveFeedManager:
     async def _open_feed(self, code: str, market: int, callback: Callable):
         if code in self._feeds:
             return
+        ctx = None
         try:
             market_prefix = 'sz' if market == 0 else 'sh'
             url = f"https://quote.eastmoney.com/{market_prefix}{code}.html"
@@ -382,6 +400,11 @@ class LiveFeedManager:
         except Exception as e:
             logger.error(f"LiveFeed 启动失败 {code}: {e}")
             self._feeds.pop(code, None)
+            if ctx is not None:
+                try:
+                    await ctx.close()
+                except Exception:
+                    pass
 
     async def _poll_loop(self, code: str):
         """每秒检查 SSE 版本号，有变化时提取数据并通知"""
@@ -402,7 +425,7 @@ class LiveFeedManager:
                 logger.warning(f"LiveFeed poll 异常 {code}: {e}")
                 break
         logger.info(f"LiveFeed poll 循环结束: {code}")
-        self._feeds.pop(code, None)
+        await self._close_feed(code)
 
     async def _extract_and_notify(self, code: str):
         """从页面 JS 内存读取最新 SSE 数据，更新缓存并在线程池中调用回调（避免阻塞 asyncio 循环）"""

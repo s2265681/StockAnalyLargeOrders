@@ -2,815 +2,174 @@
 <html lang="zh-CN" data-theme="light">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>AI炒股指南</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>个人数据看板</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 <link rel="manifest" href="/manifest.json" />
 <meta name="theme-color" content="#d97706" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<meta name="apple-mobile-web-app-title" content="炒股指南" />
-<meta name="description" content="AI炒股指南：实时大单追踪、涨停梯队分析、情绪周期判断、AI个股诊断。专为A股打板党、短线交易者设计的智能分析工具。">
-<meta name="keywords" content="AI炒股,打板神器,涨停分析,短线炒股,大单追踪,情绪周期,AI诊股">
+<meta name="apple-mobile-web-app-title" content="个人数据看板" />
+<meta name="description" content="个人数据看板：把分散的数据汇总到一处，支持图表可视化、自定义指标、定时提醒与数据导出。">
+<meta name="keywords" content="个人数据看板,数据统计,数据可视化,数据管理">
 <style>
-html,body{max-width:100%;overflow-x:hidden}
-:root {
-  --bg:#f8fafc; --bg2:#fff; --bg3:#f1f5f9; --bg4:#e8edf5;
-  --border:#e2e8f0; --border2:#cbd5e1;
-  --text:#0f172a; --text2:#475569; --text3:#94a3b8;
-  --gold:#d97706; --gold2:#f59e0b; --gold3:#fbbf24; --gold-bg:#fffbeb; --gold-border:#fde68a;
-  --red:#dc2626; --red-bg:#fef2f2; --red-border:#fca5a5;
-  --green:#16a34a; --green-bg:#f0fdf4;
-  --blue:#2563eb; --blue-bg:#eff6ff;
-  --purple:#7c3aed; --purple-bg:#f5f3ff;
+:root{
+  --bg:#f8fafc;--bg2:#fff;--bg3:#f1f5f9;--border:#e2e8f0;--text:#0f172a;--text2:#475569;--text3:#94a3b8;
+  --accent:#d97706;--accent2:#f59e0b;--accent-bg:#fffbeb;--accent-border:#fde68a;
   --shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.04);
-  --shadow-lg:0 8px 32px rgba(0,0,0,.10);
-  --nav-bg:rgba(255,255,255,.95);
-  --hero-bg:linear-gradient(150deg,#fffbeb 0%,#f0f7ff 50%,#fdf4ff 100%);
 }
-[data-theme=dark] {
-  --bg:#060c1a; --bg2:#0d1628; --bg3:#111e35; --bg4:#162240;
-  --border:#1e3050; --border2:#2a3f60;
-  --text:#e2e8f0; --text2:#94a3b8; --text3:#4a6080;
-  --gold:#f59e0b; --gold2:#fbbf24; --gold3:#fde68a; --gold-bg:#1a1200; --gold-border:#78450a;
-  --red:#f87171; --red-bg:#1a0505; --red-border:#7f1d1d;
-  --green:#4ade80; --green-bg:#052010;
-  --blue:#60a5fa; --blue-bg:#0c1f3f;
-  --purple:#a78bfa; --purple-bg:#130c2a;
+[data-theme=dark]{
+  --bg:#060c1a;--bg2:#0d1628;--bg3:#111e35;--border:#1e3050;--text:#e2e8f0;--text2:#94a3b8;--text3:#4a6080;
+  --accent:#f59e0b;--accent2:#fbbf24;--accent-bg:#1a1200;--accent-border:#78450a;
   --shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.2);
-  --shadow-lg:0 8px 32px rgba(0,0,0,.4);
-  --nav-bg:rgba(6,12,26,.95);
-  --hero-bg:radial-gradient(ellipse 90% 60% at 50% -10%,rgba(245,158,11,.08) 0%,transparent 60%),linear-gradient(180deg,#060c1a,#0d1628);
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{background:var(--bg);color:var(--text);font-family:'PingFang SC','Helvetica Neue',sans-serif;line-height:1.6;transition:background .3s,color .3s}
-
-/* ── Nav ── */
-.nav{position:sticky;top:0;z-index:100;height:64px;display:flex;align-items:center;padding:0 5%;background:var(--nav-bg);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);gap:32px}
-.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;flex-shrink:0}
-.nav-logomark{width:36px;height:36px}
-.nav-name{font-size:17px;font-weight:800;color:var(--gold);letter-spacing:.5px}
+a{color:inherit}
+.wrap{max-width:1100px;margin:0 auto;padding:0 5%}
+.nav{position:sticky;top:0;z-index:100;height:64px;display:flex;align-items:center;gap:32px;padding:0 5%;background:var(--bg2);border-bottom:1px solid var(--border)}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;font-weight:800;color:var(--accent);font-size:17px;letter-spacing:.5px}
 .nav-links{display:flex;gap:24px;flex:1}
-.nav-links a{color:var(--text2);font-size:13px;text-decoration:none;white-space:nowrap;transition:color .2s}
-.nav-links a:hover{color:var(--gold)}
-.nav-right{display:flex;align-items:center;gap:12px;flex-shrink:0}
-.theme-btn{display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:12px;cursor:pointer;transition:all .2s;white-space:nowrap}
-.theme-btn:hover{border-color:var(--gold);color:var(--gold)}
-.nav-try{padding:8px 20px;background:var(--gold);color:#fff;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;transition:opacity .2s}
-[data-theme=dark] .nav-try{color:#000}
-.nav-try:hover{opacity:.9}
-
-/* ── Hero ── */
-.hero{min-height:92vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 5% 60px;background:var(--hero-bg);position:relative;overflow:hidden}
-.hero::after{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0z' fill='none' stroke='%23d9770608' stroke-width='1'/%3E%3C/svg%3E");pointer-events:none}
-.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;border-radius:20px;background:var(--gold-bg);border:1px solid var(--gold-border);font-size:12px;color:var(--gold);font-weight:600;margin-bottom:28px;position:relative;z-index:1}
-.pulse{width:7px;height:7px;background:var(--gold);border-radius:50%;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.4);opacity:.6}}
-.hero-h1{font-size:clamp(32px,5.5vw,60px);font-weight:900;line-height:1.15;margin-bottom:20px;position:relative;z-index:1}
-.hero-h1 .em{color:var(--gold)}
-.hero-sub{font-size:clamp(14px,1.8vw,18px);color:var(--text2);max-width:600px;margin-bottom:44px;line-height:1.8;position:relative;z-index:1}
-.hero-sub strong{color:var(--text)}
-.hero-cta-group{display:flex;gap:14px;margin-bottom:16px;position:relative;z-index:1;flex-wrap:wrap;justify-content:center}
-.btn-primary{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;background:var(--gold);color:#fff;border-radius:10px;font-size:16px;font-weight:800;text-decoration:none;box-shadow:0 4px 24px rgba(217,119,6,.35);transition:transform .15s,box-shadow .15s}
-[data-theme=dark] .btn-primary{color:#000}
-.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(217,119,6,.45)}
-.btn-outline{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border:1.5px solid var(--border2);border-radius:10px;font-size:15px;color:var(--text2);text-decoration:none;transition:all .2s}
-.btn-outline:hover{border-color:var(--gold);color:var(--gold)}
-.hero-note{font-size:12px;color:var(--text3);position:relative;z-index:1}
-.hero-note a{color:var(--gold);text-decoration:none}
-.hero-stats{display:flex;gap:48px;margin-top:64px;position:relative;z-index:1;flex-wrap:wrap;justify-content:center}
-.hero-stat{text-align:center}
-.hero-stat-num{font-size:32px;font-weight:900;color:var(--gold);line-height:1}
-.hero-stat-num sup{font-size:16px}
-.hero-stat-label{font-size:12px;color:var(--text3);margin-top:4px}
-.hero-stat-divider{width:1px;background:var(--border)}
-
-/* ── Ticker bar ── */
-.ticker{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:20px 5%}
-.ticker-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:0}
-.tick-item{text-align:center;padding:0 16px;border-right:1px solid var(--border)}
-.tick-item:last-child{border-right:none}
-.tick-val{font-size:28px;font-weight:900;color:var(--gold)}
-.tick-unit{font-size:13px;color:var(--gold2)}
-.tick-label{font-size:11px;color:var(--text3);margin-top:2px}
-.tick-sub{font-size:11px;color:var(--green);margin-top:2px}
-
-/* ── Section commons ── */
-.section{padding:88px 5%;max-width:1300px;margin:0 auto}
-.section-alt{background:var(--bg3);padding:88px 5%}
-.section-alt-inner{max-width:1300px;margin:0 auto}
-.section-eyebrow{font-size:11px;font-weight:700;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:10px}
-.section-title{font-size:clamp(24px,3vw,40px);font-weight:900;margin-bottom:14px;line-height:1.2}
-.section-sub{font-size:15px;color:var(--text2);max-width:580px;line-height:1.8}
-.section-sub.center{margin:0 auto;text-align:center}
-.text-center{text-align:center}
-
-/* ── Feature rows ── */
-.feat-row{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;margin-top:80px}
-.feat-row.reverse{direction:rtl}
-.feat-row.reverse > *{direction:ltr}
-.feat-screen{border-radius:14px;overflow:hidden;border:1px solid var(--border);box-shadow:var(--shadow-lg);background:var(--bg2)}
-.feat-screen-header{background:var(--bg3);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:8px}
-.win-dot{width:10px;height:10px;border-radius:50%}
-.feat-screen-title{font-size:12px;color:var(--text3);margin-left:6px;flex:1}
-.feat-screen-live{font-size:10px;color:var(--green);background:var(--green-bg);padding:2px 8px;border-radius:4px}
-.feat-screen-body{padding:16px}
-.feat-label{display:inline-block;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gold);text-transform:uppercase;background:var(--gold-bg);border:1px solid var(--gold-border);padding:3px 10px;border-radius:4px;margin-bottom:14px}
-.feat-title{font-size:clamp(20px,2.5vw,30px);font-weight:900;margin-bottom:12px;line-height:1.3}
-.feat-desc{font-size:14px;color:var(--text2);line-height:1.8;margin-bottom:20px}
-.feat-bullets{list-style:none;display:flex;flex-direction:column;gap:10px}
-.feat-bullets li{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--text2)}
-.feat-bullets li::before{content:'';width:18px;height:18px;border-radius:50%;background:var(--gold-bg);border:1.5px solid var(--gold-border);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 12 12' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2 6l3 3 5-5' stroke='%23d97706' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:center;background-size:10px}
-
-/* ── Mock UI components ── */
-.mock-nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:8px 12px;display:flex;gap:16px;align-items:center}
-.mock-nav-item{font-size:11px;color:var(--text3);padding:4px 0;border-bottom:2px solid transparent}
-.mock-nav-item.active{color:var(--blue);border-color:var(--blue);font-weight:600}
-.mock-chart-area{background:var(--bg3);border-radius:8px;padding:12px;margin-bottom:10px;position:relative;height:120px;overflow:hidden}
-.mock-chart-line{position:absolute;bottom:20px;left:10px;right:10px;height:60px}
-.mock-tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700}
-.tag-red{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
-.tag-green{background:var(--green-bg);color:var(--green)}
-.tag-gold{background:var(--gold-bg);color:var(--gold);border:1px solid var(--gold-border)}
-.tag-blue{background:var(--blue-bg);color:var(--blue)}
-.tag-purple{background:var(--purple-bg);color:var(--purple)}
-.mock-score-ring{width:60px;height:60px;border-radius:50%;border:4px solid var(--red);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:var(--red);flex-shrink:0}
-.mock-kv{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px}
-.mock-kv:last-child{border-bottom:none}
-.mock-kv-key{color:var(--text3)}
-.mock-kv-val{font-weight:600;color:var(--text)}
-.mock-kv-val.up{color:var(--red)}
-.mock-kv-val.down{color:var(--green)}
-.mock-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.mock-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px}
-.mock-card-val{font-size:16px;font-weight:800;color:var(--text)}
-.mock-card-val.up{color:var(--red)}
-.mock-card-val.gold{color:var(--gold)}
-.mock-card-label{font-size:10px;color:var(--text3);margin-top:2px}
-
-/* Radar display */
-.radar-box{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;align-items:center;gap:16px;margin-bottom:10px}
-.radar-main{flex:1}
-.radar-title{font-size:14px;font-weight:800;color:var(--red);margin-bottom:4px}
-.radar-desc{font-size:11px;color:var(--text3);line-height:1.5}
-.radar-tags{display:flex;gap:6px;margin-top:8px}
-
-/* Echelon */
-.echelon-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:12px}
-.echelon-badge{width:40px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
-.badge-6{background:#fef2f2;color:#dc2626;border:1px solid #fca5a5}
-.badge-5{background:#fff7ed;color:#ea580c;border:1px solid #fed7aa}
-.badge-3{background:#fefce8;color:#ca8a04;border:1px solid #fde047}
-.badge-1{background:#f0fdf4;color:#16a34a;border:1px solid #86efac}
-.echelon-name{font-weight:700;color:var(--text);flex:1}
-.echelon-theme{background:var(--gold-bg);border:1px solid var(--gold-border);color:var(--gold);padding:1px 7px;border-radius:4px;font-size:10px}
-.echelon-meta{color:var(--text3);font-size:11px;text-align:right}
-
-/* Emotion chart mock */
-.emo-lines{position:relative;height:100px;background:var(--bg3);border-radius:8px;overflow:hidden;margin-bottom:10px}
-.emo-line{position:absolute;height:2px;border-radius:2px;bottom:50%}
-.period-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:700}
-.period-badge.retreat{background:var(--blue-bg);color:var(--blue)}
-.period-badge.surge{background:var(--red-bg);color:var(--red)}
-.period-badge.warm{background:var(--gold-bg);color:var(--gold)}
-
-/* Auction table mock */
-.mock-table{width:100%;border-collapse:collapse;font-size:11px}
-.mock-table th{color:var(--text3);font-weight:500;padding:6px 8px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap}
-.mock-table th:first-child{text-align:left}
-.mock-table td{padding:7px 8px;border-bottom:1px solid var(--border);text-align:right;color:var(--text2)}
-.mock-table td:first-child{text-align:left;font-weight:600;color:var(--text)}
-.mock-table .up{color:var(--red)}
-.mock-table .dn{color:var(--green)}
-
-/* AI diagnosis mock */
-.ai-tag-row{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
-.ai-result{background:var(--bg3);border-left:3px solid var(--gold);border-radius:0 8px 8px 0;padding:12px;font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:10px}
-.ai-risk-tag{display:inline-block;padding:3px 8px;border-radius:4px;font-size:10px;border:1px solid;margin:3px}
-.risk-orange{background:#fff7ed;color:#c2410c;border-color:#fed7aa}
-.risk-red{background:#fef2f2;color:#dc2626;border-color:#fca5a5}
-.buy-sell-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.buy-box,.sell-box{background:var(--bg3);border-radius:8px;padding:10px}
-.buy-box-title{font-size:11px;font-weight:700;color:var(--red);margin-bottom:6px}
-.sell-box-title{font-size:11px;font-weight:700;color:var(--green);margin-bottom:6px}
-.buy-sell-item{font-size:11px;color:var(--text2);padding:3px 0;border-bottom:1px solid var(--border);line-height:1.5}
-.buy-sell-item:last-child{border:none}
-
-/* ── Why section ── */
-.why-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;margin-top:48px}
-.why-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:28px;box-shadow:var(--shadow);transition:transform .2s,border-color .2s}
-.why-card:hover{transform:translateY(-3px);border-color:var(--gold-border)}
-.why-icon{font-size:32px;margin-bottom:14px}
-.why-title{font-size:17px;font-weight:800;margin-bottom:8px}
-.why-desc{font-size:13px;color:var(--text2);line-height:1.7}
-
-/* ── Who ── */
-.who-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:48px}
-.who-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:32px 24px;text-align:center;box-shadow:var(--shadow)}
-.who-emoji{font-size:40px;margin-bottom:16px}
-.who-title{font-size:17px;font-weight:800;margin-bottom:8px}
-.who-desc{font-size:13px;color:var(--text2);line-height:1.7}
-
-/* ── Try CTA ── */
-.try-section{text-align:center;padding:100px 5%;background:var(--hero-bg)}
-.try-title{font-size:clamp(26px,4vw,48px);font-weight:900;margin-bottom:16px}
-.try-title .em{color:var(--gold)}
-.try-sub{font-size:16px;color:var(--text2);margin-bottom:40px}
-.try-btn{display:inline-flex;align-items:center;gap:10px;padding:18px 48px;background:var(--gold);color:#fff;border-radius:12px;font-size:18px;font-weight:900;text-decoration:none;box-shadow:0 6px 32px rgba(217,119,6,.4);transition:transform .15s}
-[data-theme=dark] .try-btn{color:#000}
-.try-btn:hover{transform:translateY(-3px)}
-.try-note{font-size:12px;color:var(--text3);margin-top:16px}
-
-/* ── Pricing ── */
-.pricing-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:48px}
-.price-card{background:var(--bg2);border:1.5px solid var(--border);border-radius:16px;padding:28px 20px;text-align:center;position:relative;box-shadow:var(--shadow);cursor:pointer;transition:transform .15s,border-color .2s}
-.price-card:hover{transform:translateY(-4px);border-color:var(--gold-border)}
-.price-card.hot{border-color:var(--gold)}
-.price-hot-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--gold);color:#fff;padding:3px 16px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
-[data-theme=dark] .price-hot-badge{color:#000}
-.price-best-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#16a34a;color:#fff;padding:3px 16px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
-.price-tier{font-size:15px;font-weight:700;margin-bottom:16px}
-.price-amt{font-size:42px;font-weight:900;color:var(--gold);line-height:1}
-.price-sym{font-size:20px;vertical-align:top;display:inline-block;margin-top:8px}
-.price-days{font-size:12px;color:var(--text3);margin:6px 0 4px}
-.price-daily{font-size:11px;color:var(--green);font-weight:600;margin-bottom:20px}
-.price-btn{display:block;padding:11px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;text-decoration:none}
-.price-btn-gold{background:var(--gold);color:#fff}
-[data-theme=dark] .price-btn-gold{color:#000}
-.price-btn-outline{border:1.5px solid var(--gold-border);color:var(--gold);background:transparent}
-.pricing-note{text-align:center;margin-top:20px;font-size:12px;color:var(--text3)}
-
-/* ── FAQ ── */
-.faq-list{margin-top:40px;display:flex;flex-direction:column;gap:12px}
-.faq-item{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px 24px;box-shadow:var(--shadow)}
-.faq-q{font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;display:flex;align-items:flex-start;gap:10px}
-.faq-q::before{content:'Q';color:var(--gold);font-size:11px;font-weight:900;background:var(--gold-bg);border:1px solid var(--gold-border);padding:1px 7px;border-radius:4px;flex-shrink:0;margin-top:1px}
-.faq-a{font-size:13px;color:var(--text2);line-height:1.8;padding-left:30px}
-
-/* ── Footer ── */
-.footer{background:var(--bg2);border-top:1px solid var(--border);padding:40px 5%;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
-.footer-left{display:flex;align-items:center;gap:10px}
-.footer-name{color:var(--gold);font-weight:800;font-size:15px}
-.footer-copy{font-size:11px;color:var(--text3)}
-.footer-links{display:flex;gap:20px}
-.footer-links a{font-size:12px;color:var(--text3);text-decoration:none}
-.footer-links a:hover{color:var(--gold)}
-
-/* ── Real product screenshots ── */
-.feat-screen-shot .feat-screen-body{padding:0;background:var(--bg3)}
-.feat-shot{display:block;line-height:0;background:var(--bg3)}
-.feat-shot img{width:100%;height:auto;display:block;vertical-align:middle}
-.feat-screen-shot .feat-screen-header{position:sticky;top:0;z-index:2}
-
-/* ── Features overview grid ── */
-.features-overview{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:48px}
-.fo-card{display:block;text-decoration:none;color:inherit;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px 16px;text-align:center;box-shadow:var(--shadow);transition:transform .2s,border-color .2s}
-.fo-card:hover{transform:translateY(-2px);border-color:var(--gold-border)}
-.fo-icon{font-size:28px;margin-bottom:8px}
-.fo-title{font-size:14px;font-weight:800;margin-bottom:4px}
-.fo-desc{font-size:11px;color:var(--text3);line-height:1.5}
-.features-intro{text-align:center;max-width:1300px;margin:0 auto;padding:56px 5% 0}
-.features-intro .section-sub{margin:0 auto}
-
-/* ── Mobile nav ── */
-.nav-toggle{display:none;align-items:center;justify-content:center;width:40px;height:40px;border:1px solid var(--border);border-radius:8px;background:var(--bg3);color:var(--text2);font-size:18px;cursor:pointer;flex-shrink:0}
-.nav-drawer{display:none;position:fixed;inset:0;z-index:200;background:rgba(15,23,42,.45);backdrop-filter:blur(4px)}
-.nav-drawer.open{display:block}
-.nav-drawer-panel{position:absolute;top:0;right:0;width:min(300px,88vw);height:100%;background:var(--bg2);border-left:1px solid var(--border);padding:72px 24px 24px;box-shadow:var(--shadow-lg);display:flex;flex-direction:column;gap:8px}
-.nav-drawer-panel a{color:var(--text);font-size:15px;text-decoration:none;padding:12px 0;border-bottom:1px solid var(--border)}
-.nav-drawer-close{position:absolute;top:16px;right:16px;width:36px;height:36px;border:none;background:var(--bg3);border-radius:8px;font-size:20px;cursor:pointer;color:var(--text2)}
-
-/* ── Responsive ── */
-@media(max-width:900px){
-  .feat-row,.feat-row.reverse{grid-template-columns:1fr;direction:ltr;gap:32px;margin-top:48px}
-  .section,.section-alt{padding:56px 5%}
-  .features-overview{grid-template-columns:repeat(2,1fr)}
-  .pricing-grid{grid-template-columns:repeat(2,1fr)}
-  .why-grid,.who-grid{grid-template-columns:1fr}
-  .ticker-inner{grid-template-columns:repeat(2,1fr);gap:16px 0}
-  .tick-item:nth-child(2){border-right:none}
+.nav-links a{color:var(--text2);font-size:13px;text-decoration:none}
+.nav-links a:hover{color:var(--accent)}
+.nav-right{display:flex;align-items:center;gap:12px}
+.theme-btn{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:12px;cursor:pointer}
+.nav-cta{padding:8px 18px;border-radius:8px;background:var(--accent);color:#fff;text-decoration:none;font-size:13px;font-weight:600}
+.hero{padding:88px 0 56px;text-align:center;background:linear-gradient(180deg,var(--accent-bg),transparent 70%)}
+.hero h1{font-size:clamp(30px,5vw,50px);font-weight:900;line-height:1.2;margin-bottom:18px}
+.hero h1 .em{color:var(--accent)}
+.hero p{max-width:620px;margin:0 auto 30px;color:var(--text2);font-size:16px}
+.cta{display:inline-block;padding:14px 32px;border-radius:10px;background:var(--accent);color:#fff;text-decoration:none;font-weight:700;box-shadow:var(--shadow)}
+.cta:hover{opacity:.92}
+.section{padding:64px 0}
+.section-alt{background:var(--bg3);padding:64px 0}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:3px;color:var(--accent);margin-bottom:10px}
+.title{font-size:clamp(22px,3vw,34px);font-weight:900;margin-bottom:12px}
+.sub{color:var(--text2);margin-bottom:36px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:26px;box-shadow:var(--shadow)}
+.card .icon{font-size:26px;margin-bottom:12px}
+.card h3{font-size:16px;margin-bottom:8px}
+.card p{color:var(--text2);font-size:14px}
+.faq{max-width:760px;margin:0 auto}
+.faq-item{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px 22px;margin-bottom:12px}
+.faq-q{font-weight:700;margin-bottom:6px}
+.faq-a{color:var(--text2);font-size:14px}
+.cta-band{text-align:center;padding:72px 0;background:var(--bg3)}
+.cta-band h2{font-size:clamp(22px,3vw,32px);font-weight:900;margin-bottom:12px}
+.cta-band p{color:var(--text2);margin-bottom:26px}
+.footer{border-top:1px solid var(--border);padding:28px 5%;display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;align-items:center;color:var(--text3);font-size:13px}
+.footer a{color:inherit;text-decoration:none}
+@media(max-width:720px){
   .nav-links{display:none}
-  .nav-toggle{display:flex}
-  .nav{padding:0 16px;gap:8px}
-  .theme-btn-label{display:none}
-  .theme-btn{padding:6px 10px}
-  .nav-right{margin-left:auto}
-  .nav-name{font-size:15px}
-  .nav-try{padding:7px 14px;font-size:13px;white-space:nowrap}
-  .hero{min-height:auto;padding:56px 5% 40px}
-  .hero-h1 br{display:none}
-  .hero-sub br{display:none}
-}
-@media(max-width:600px){
-  .features-overview{grid-template-columns:1fr}
-  .pricing-grid{grid-template-columns:1fr}
-  .hero-stats{gap:20px}
-  .hero-stat-divider{display:none}
-  .hero-stats{width:100%;justify-content:space-around}
-  .feat-title br{display:none}
-  .try-section{padding:64px 5%}
+  .hero{padding:60px 0 40px}
 }
 </style>
 </head>
 <body>
-
-<!-- ── Navbar ── -->
 <nav class="nav">
-  <a class="nav-logo" href="#">
-    <svg class="nav-logomark" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="18" cy="18" r="17" fill="var(--gold-bg)" stroke="var(--gold)" stroke-width="1.5"/>
-      <path d="M18,10 L4,28 Q18,24 32,28 Z" fill="var(--gold)" opacity="0.25"/>
-      <rect x="14" y="13" width="8" height="14" rx="2" fill="var(--gold)"/>
-      <polygon points="11,13 25,13 23,7 13,7" fill="var(--gold2)"/>
-      <circle cx="18" cy="10" r="3.5" fill="#fff" opacity="0.95"/>
-      <circle cx="18" cy="10" r="2" fill="var(--gold2)"/>
+  <a class="logo" href="/">
+    <svg width="32" height="32" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="18" cy="18" r="17" fill="var(--accent-bg)" stroke="var(--accent)" stroke-width="1.5"/>
+      <rect x="11" y="19" width="4" height="8" rx="1" fill="var(--accent)"/>
+      <rect x="16" y="15" width="4" height="12" rx="1" fill="var(--accent2)"/>
+      <rect x="21" y="11" width="4" height="16" rx="1" fill="var(--accent)"/>
     </svg>
-    <span class="nav-name">AI炒股指南</span>
+    个人数据看板
   </a>
   <div class="nav-links">
-    <a href="#features">功能介绍</a>
-    <a href="#why">核心优势</a>
-    <a href="#who">适合谁</a>
-    <a href="#pricing">VIP定价</a>
+    <a href="#features">功能</a>
+    <a href="#scenes">适用场景</a>
     <a href="#faq">常见问题</a>
   </div>
-  <button class="nav-toggle" type="button" aria-label="打开菜单" onclick="toggleNavDrawer(true)">☰</button>
   <div class="nav-right">
-    <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙 <span class="theme-btn-label">暗色模式</span></button>
-    <a href="/login" class="nav-try" onclick="event.preventDefault();goToApp()">免费试用 →</a>
+    <button class="theme-btn" type="button" onclick="toggleTheme()" id="theme-btn">🌙 暗色</button>
+    <a class="nav-cta" href="/login" onclick="event.preventDefault();goToApp()">进入看板</a>
   </div>
 </nav>
-<div class="nav-drawer" id="nav-drawer" onclick="if(event.target===this)toggleNavDrawer(false)">
-  <div class="nav-drawer-panel">
-    <button class="nav-drawer-close" type="button" aria-label="关闭菜单" onclick="toggleNavDrawer(false)">×</button>
-    <a href="#features" onclick="toggleNavDrawer(false)">功能介绍</a>
-    <a href="#why" onclick="toggleNavDrawer(false)">核心优势</a>
-    <a href="#who" onclick="toggleNavDrawer(false)">适合谁</a>
-    <a href="#pricing" onclick="toggleNavDrawer(false)">VIP定价</a>
-    <a href="#faq" onclick="toggleNavDrawer(false)">常见问题</a>
-    <a href="/login" onclick="event.preventDefault();toggleNavDrawer(false);goToApp()">免费试用 →</a>
-  </div>
-</div>
 
-<!-- ── Hero ── -->
 <section class="hero">
-  <div class="hero-eyebrow">
-    <span class="pulse"></span>
-    内测进行中 · 限量开放席位
-  </div>
-  <h1 class="hero-h1">
-    散户被割的钱<br><span class="em">AI 都能帮你看见</span>
-  </h1>
-  <p class="hero-sub">
-    <strong>AI炒股指南</strong>整合实时大单、涨停梯队、情绪周期、龙虎榜与 AI 诊断——<br>
-    专为 A 股打板党和短线交易者设计，帮你在最关键的时刻做出最正确的决策。
-  </p>
-  <div class="hero-cta-group">
-    <a href="/login" class="btn-primary" onclick="event.preventDefault();goToApp()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-      点击进入，免费试一试
-    </a>
-    <a href="#features" class="btn-outline">查看功能介绍 ↓</a>
-  </div>
-  <p class="hero-note">无需信用卡 · <a href="#pricing">VIP 方案</a> 从 ¥380/月起</p>
-  <div class="hero-stats">
-    <div class="hero-stat"><div class="hero-stat-num">8<sup>大</sup></div><div class="hero-stat-label">核心分析模块</div></div>
-    <div class="hero-stat-divider"></div>
-    <div class="hero-stat"><div class="hero-stat-num">50<sup>ms</sup></div><div class="hero-stat-label">大单实时延迟</div></div>
-    <div class="hero-stat-divider"></div>
-    <div class="hero-stat"><div class="hero-stat-num">AI<sup>驱动</sup></div><div class="hero-stat-label">全链路智能分析</div></div>
-    <div class="hero-stat-divider"></div>
-    <div class="hero-stat"><div class="hero-stat-num">A股<sup>专属</sup></div><div class="hero-stat-label">打板文化深度定制</div></div>
+  <div class="wrap">
+    <h1>把分散的数据<br><span class="em">放到一个看板里</span></h1>
+    <p>个人数据看板帮你汇总日常产生的各类数据，用图表看清变化趋势，按自己的规则设置提醒，需要时随时导出。</p>
+    <a class="cta" href="/login" onclick="event.preventDefault();goToApp()">进入我的看板 →</a>
   </div>
 </section>
 
-<!-- ── Ticker ── -->
-<div class="ticker">
-  <div class="ticker-inner">
-    <div class="tick-item"><div class="tick-val">54<span class="tick-unit"> 板</span></div><div class="tick-label">今日涨停</div><div class="tick-sub">首板 48 · 连板 6</div></div>
-    <div class="tick-item"><div class="tick-val">6<span class="tick-unit"> 连板</span></div><div class="tick-label">最高梯队高度</div><div class="tick-sub">龙头效应显著</div></div>
-    <div class="tick-item"><div class="tick-val">情绪<span class="tick-unit"> 退潮</span></div><div class="tick-label">当前市场情绪</div><div class="tick-sub">建议轻仓观望</div></div>
-    <div class="tick-item"><div class="tick-val">AI<span class="tick-unit"> 实时</span></div><div class="tick-label">大单异动预警</div><div class="tick-sub">50ms 延迟更新</div></div>
+<section class="section" id="features">
+  <div class="wrap">
+    <div class="eyebrow">功能</div>
+    <h2 class="title">常用的数据管理能力</h2>
+    <p class="sub">从汇总到展示，一个页面完成。</p>
+    <div class="grid">
+      <div class="card"><div class="icon">📥</div><h3>数据汇总</h3><p>把多个来源的数据集中到一处，按时间、类别自动归类，不用再翻表格。</p></div>
+      <div class="card"><div class="icon">📊</div><h3>图表可视化</h3><p>折线、柱状、饼图等多种展示方式，变化趋势一眼看清。</p></div>
+      <div class="card"><div class="icon">🎛️</div><h3>自定义指标</h3><p>按自己的口径定义统计指标和分组方式，只看关心的部分。</p></div>
+      <div class="card"><div class="icon">🔔</div><h3>定时提醒</h3><p>给重要数据设置阈值或定时提醒，触发后及时通知，不用一直盯着。</p></div>
+      <div class="card"><div class="icon">📤</div><h3>数据导出</h3><p>支持导出为表格文件，方便备份或在其他工具里继续处理。</p></div>
+      <div class="card"><div class="icon">📱</div><h3>多端访问</h3><p>手机、平板、电脑浏览器均可打开，同一账号数据同步。</p></div>
+    </div>
   </div>
-</div>
+</section>
 
-<!-- ── Features ── -->
-<div id="features">
-<div class="features-intro">
-  <div class="section-eyebrow">产品功能</div>
-  <h2 class="section-title">八大模块，覆盖打板全流程</h2>
-  <p class="section-sub center">从 9:25 竞价到收盘复盘，从大单追踪到 AI 研判——同一套账号，手机与电脑均可使用</p>
-  <div class="features-overview">
-    <a class="fo-card" href="#feat-stock"><div class="fo-icon">📊</div><div class="fo-title">个股分析</div><div class="fo-desc">分时大单标注 · 盘口雷达</div></a>
-    <a class="fo-card" href="#feat-ai"><div class="fo-icon">🤖</div><div class="fo-title">AI 诊股</div><div class="fo-desc">买卖点 · 止损位 · 追问</div></a>
-    <a class="fo-card" href="#feat-echelon"><div class="fo-icon">🔥</div><div class="fo-title">涨停梯队</div><div class="fo-desc">连板高度 · 题材热度</div></a>
-    <a class="fo-card" href="#feat-dragon"><div class="fo-icon">🐉</div><div class="fo-title">核心游资</div><div class="fo-desc">龙虎榜 AI 席位解读</div></a>
-    <a class="fo-card" href="#feat-emotion"><div class="fo-icon">🌊</div><div class="fo-title">情绪周期</div><div class="fo-desc">8 指标 · 仓位建议</div></a>
-    <a class="fo-card" href="#feat-auction"><div class="fo-icon">⏰</div><div class="fo-title">竞价抢筹</div><div class="fo-desc">早盘竞价 · 次日验证</div></a>
-    <a class="fo-card" href="#feat-alert"><div class="fo-icon">🔔</div><div class="fo-title">条件预警</div><div class="fo-desc">涨停/封单/涨跌幅提醒</div></a>
-    <a class="fo-card" href="#why"><div class="fo-icon">⚡</div><div class="fo-title">实时推送</div><div class="fo-desc">大单 50ms · WebSocket</div></a>
+<section class="section-alt" id="scenes">
+  <div class="wrap">
+    <div class="eyebrow">适用场景</div>
+    <h2 class="title">适合这些日常记录</h2>
+    <p class="sub">不限定行业，数据汇总与展示的通用工具。</p>
+    <div class="grid">
+      <div class="card"><div class="icon">🗂️</div><h3>个人日常记录</h3><p>记录收支、习惯、健康等日常数据，按月按年回看变化。</p></div>
+      <div class="card"><div class="icon">📈</div><h3>项目进度跟踪</h3><p>汇总任务完成情况、进度指标，随时掌握项目状态。</p></div>
+      <div class="card"><div class="icon">📚</div><h3>学习与训练</h3><p>记录学习时长、练习次数与正确率，查看长期积累曲线。</p></div>
+    </div>
   </div>
-</div>
+</section>
 
-<!-- F1: 个股分析 -->
-<div class="section" id="feat-stock">
-  <div class="feat-row">
-    <div>
-      <div class="feat-label">个股分析</div>
-      <h2 class="feat-title">大单标注在分时图上<br>主力意图一眼看穿</h2>
-      <p class="feat-desc">分时走势图实时标注 50 万以上大单买卖点位，主力线（橙色）与散户线（绿色）双线对比——主力是在出货还是吸筹，不用猜，直接看。</p>
-      <ul class="feat-bullets">
-        <li>分时图实时大单标注，金额精准到每一笔</li>
-        <li>盘口语言雷达 AI 评分（0–100），涨停封板/极强等信号实时生成</li>
-        <li>D50/D100/D300 大单结构：买单 vs 卖单总额同屏对比</li>
-        <li>五档盘口 + 封成比 + 资金流向 + 题材标签，手机端同样可用</li>
-      </ul>
-    </div>
-    <div class="feat-screen feat-screen-shot">
-      <div class="feat-screen-header">
-        <div class="win-dot" style="background:#ff5f57"></div>
-        <div class="win-dot" style="background:#febc2e"></div>
-        <div class="win-dot" style="background:#28c840"></div>
-        <span class="feat-screen-title">个股分析 · 平安银行 000001</span>
-        <span class="feat-screen-live">● 产品实拍</span>
-      </div>
-      <picture class="feat-shot">
-        <source media="(max-width:768px)" srcset="/landing-screenshots/stock-dashboard-mobile.png">
-        <img src="/landing-screenshots/stock-dashboard.png" alt="个股分析：分时图大单标注与主力散户双线" loading="lazy" width="1280" height="680">
-      </picture>
+<section class="section" id="faq">
+  <div class="wrap">
+    <div class="eyebrow">常见问题</div>
+    <h2 class="title" style="text-align:center">你可能想知道</h2>
+    <div class="faq" style="margin-top:32px">
+      <div class="faq-item"><div class="faq-q">数据会保存多久？</div><div class="faq-a">账号存续期间数据持续保留，也可以随时导出备份。</div></div>
+      <div class="faq-item"><div class="faq-q">支持手机使用吗？</div><div class="faq-a">支持。页面为响应式设计，手机浏览器打开即可查看和操作。</div></div>
+      <div class="faq-item"><div class="faq-q">可以导出吗？</div><div class="faq-a">可以，支持导出为表格文件。</div></div>
+      <div class="faq-item"><div class="faq-q">忘记密码怎么办？</div><div class="faq-a">在登录页使用手机号或邮箱找回即可。</div></div>
     </div>
   </div>
-</div>
+</section>
 
-<!-- F2: AI诊股 -->
-<div class="section-alt" id="feat-ai">
-  <div class="section-alt-inner">
-    <div class="feat-row reverse">
-      <div>
-        <div class="feat-label">AI 诊股</div>
-        <h2 class="feat-title">输入代码<br>买卖点和止损位全给你</h2>
-        <p class="feat-desc">AI 综合情绪周期、大盘环境、短线生态、龙虎榜、板块热点、分时与大单资金，生成完整操作研判——并支持诊股后追问具体操作与风控。</p>
-        <ul class="feat-bullets">
-          <li>综合 6 大维度：行情 + L2 + 资金 + 情绪 + 竞价 + 龙虎榜</li>
-          <li>明确给出具体买点、卖点与止损条件</li>
-          <li>热门股一键诊股，支持强制刷新最新研判</li>
-          <li>诊股完成后可追问，例如「尾盘跌破 5 日线该怎么处理？」</li>
-        </ul>
-      </div>
-      <div class="feat-screen feat-screen-shot">
-        <div class="feat-screen-header">
-          <div class="win-dot" style="background:#ff5f57"></div>
-          <div class="win-dot" style="background:#febc2e"></div>
-          <div class="win-dot" style="background:#28c840"></div>
-          <span class="feat-screen-title">AI 诊股 · 多维度研判</span>
-        </div>
-        <picture class="feat-shot">
-          <img src="/landing-screenshots/ai-diagnosis.png" alt="AI诊股：综合研判与追问交互" loading="lazy" width="1280" height="620">
-        </picture>
-      </div>
-    </div>
+<section class="cta-band">
+  <div class="wrap">
+    <h2>现在开始整理你的数据</h2>
+    <p>注册后即可创建自己的看板。</p>
+    <a class="cta" href="/login" onclick="event.preventDefault();goToApp()">进入我的看板 →</a>
   </div>
-</div>
+</section>
 
-<!-- F3: 涨停梯队 -->
-<div class="section" id="feat-echelon">
-  <div class="feat-row">
-    <div>
-      <div class="feat-label">涨停梯队</div>
-      <h2 class="feat-title">今日 A 股涨停全景图<br>打板前先看梯队高度</h2>
-      <p class="feat-desc">实时展示当日全市场涨停梯队结构：连板/首板/炸板分层列表，配合板块题材归因、封单数据与 AI 评级，帮你快速判断今天适不适合打板、打哪个方向。</p>
-      <ul class="feat-bullets">
-        <li>当日总览：涨停、首板、连板、最高板、炸板率、打板成功率</li>
-        <li>板块热度标签：电力、大消费、房地产等题材分散度清晰</li>
-        <li>每只股票：封单额、封成比、成交额、换手率、首封时间、炸板次数</li>
-        <li>AI 评级与涨停原因说明，手机端横向滑动查看详情</li>
-      </ul>
-    </div>
-    <div class="feat-screen feat-screen-shot">
-      <div class="feat-screen-header">
-        <div class="win-dot" style="background:#ff5f57"></div>
-        <div class="win-dot" style="background:#febc2e"></div>
-        <div class="win-dot" style="background:#28c840"></div>
-        <span class="feat-screen-title">涨停梯队 · 实时全景</span>
-        <span class="feat-screen-live">● 产品实拍</span>
-      </div>
-      <picture class="feat-shot">
-        <source media="(max-width:768px)" srcset="/landing-screenshots/limit-up-echelon-mobile.png">
-        <img src="/landing-screenshots/limit-up-echelon.png" alt="涨停梯队：连板分层与题材热度" loading="lazy" width="1280" height="620">
-      </picture>
-    </div>
-  </div>
-</div>
-
-<!-- F4: 核心游资/龙虎榜 -->
-<div class="section-alt" id="feat-dragon">
-  <div class="section-alt-inner">
-    <div class="feat-row reverse">
-      <div>
-        <div class="feat-label">核心游资 · 龙虎榜</div>
-        <h2 class="feat-title">AI 解读资金意图<br>北向/游资/机构一眼分清</h2>
-        <p class="feat-desc">龙虎榜数据 AI 自动解读，不只给你看数字，而是告诉你北向资金在干什么、游资跟风意愿强不强、机构是否采用对倒策略——真正读懂大资金动向。</p>
-        <ul class="feat-bullets">
-          <li>买入/卖出席位自动标注：北向资金、量化基金、知名游资标签一目了然</li>
-          <li>AI 资金意图解读：分析整体筹码结构、资金行为特征和操作倾向</li>
-          <li>游资跟风意愿评估、机构对倒模式识别、次日走势参考建议</li>
-          <li>点击股票可跳转个股分析，联动大单与分时数据</li>
-        </ul>
-      </div>
-      <div class="feat-screen feat-screen-shot">
-        <div class="feat-screen-header">
-          <div class="win-dot" style="background:#ff5f57"></div>
-          <div class="win-dot" style="background:#febc2e"></div>
-          <div class="win-dot" style="background:#28c840"></div>
-          <span class="feat-screen-title">核心游资 · 龙虎榜 AI 解读</span>
-        </div>
-        <picture class="feat-shot">
-          <img src="/landing-screenshots/dragon-tiger.png" alt="核心游资：龙虎榜席位与AI资金意图" loading="lazy" width="1280" height="620">
-        </picture>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- F5: 情绪周期 -->
-<div class="section" id="feat-emotion">
-  <div class="feat-row">
-    <div>
-      <div class="feat-label">情绪周期</div>
-      <h2 class="feat-title">量化市场情绪<br>知道现在是牛是熊是退潮</h2>
-      <p class="feat-desc">9 条核心指标线同屏展示近 2 个月市场情绪曲线，顶部 AI 摘要同步全球指数——自动判断当前周期阶段并给出仓位操作建议。</p>
-      <ul class="feat-bullets">
-        <li>情绪周期走势图 + 全球指数 AI 摘要同屏</li>
-        <li>周期研判：亢奋期 / 高热期 / 退潮期 / 冰点期及原因说明</li>
-        <li>配套操作建议：退潮期果断控仓，绝不盲目抄底</li>
-        <li>手机端图表与研判卡片纵向排列，阅读不费力</li>
-      </ul>
-    </div>
-    <div class="feat-screen feat-screen-shot">
-      <div class="feat-screen-header">
-        <div class="win-dot" style="background:#ff5f57"></div>
-        <div class="win-dot" style="background:#febc2e"></div>
-        <div class="win-dot" style="background:#28c840"></div>
-        <span class="feat-screen-title">情绪周期 · 多指标走势</span>
-        <span class="feat-screen-live">● 产品实拍</span>
-      </div>
-      <picture class="feat-shot">
-        <source media="(max-width:768px)" srcset="/landing-screenshots/emotion-cycle-mobile.png">
-        <img src="/landing-screenshots/emotion-cycle.png" alt="情绪周期：多指标走势与AI周期研判" loading="lazy" width="1280" height="620">
-      </picture>
-    </div>
-  </div>
-</div>
-
-<!-- F6: 竞价抢筹 -->
-<div class="section-alt" id="feat-auction">
-  <div class="section-alt-inner">
-    <div class="feat-row reverse">
-      <div>
-        <div class="feat-label">竞价抢筹</div>
-        <h2 class="feat-title">9:25 前看完<br>决定今天打哪只</h2>
-        <p class="feat-desc">早盘集合竞价数据实时追踪：竞价涨幅、开盘金额、当日收盘表现、次日涨幅对比——不仅看今天，还能回溯历史竞价数据验证策略胜率。</p>
-        <ul class="feat-bullets">
-          <li>竞价涨幅 + 开盘金额 + 抢筹成交额 + 委托金额完整数据</li>
-          <li>次日涨幅追踪：直接验证「竞价高开次日溢价」策略有效性</li>
-          <li>尾盘抢筹独立模块，收盘前布局次日强势股</li>
-          <li>历史数据可回溯，自己验证选股逻辑，不靠直觉靠数据</li>
-        </ul>
-      </div>
-      <div class="feat-screen feat-screen-shot">
-        <div class="feat-screen-header">
-          <div class="win-dot" style="background:#ff5f57"></div>
-          <div class="win-dot" style="background:#febc2e"></div>
-          <div class="win-dot" style="background:#28c840"></div>
-          <span class="feat-screen-title">竞价抢筹 · 早盘/尾盘</span>
-        </div>
-        <picture class="feat-shot">
-          <img src="/landing-screenshots/auction-grab.png" alt="竞价抢筹：早盘竞价数据与次日验证" loading="lazy" width="1280" height="620">
-        </picture>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- F7: 条件预警 -->
-<div class="section" id="feat-alert">
-  <div class="feat-row">
-    <div>
-      <div class="feat-label">条件预警</div>
-      <h2 class="feat-title">涨停、跌停、封单、涨跌幅<br>触发即推送</h2>
-      <p class="feat-desc">自定义监控规则，交易时段 WebSocket 实时检测。支持涨停/跌停、涨跌幅阈值、涨停封单金额等类型，邮件通知不漏关键信号。</p>
-      <ul class="feat-bullets">
-        <li>四种预警类型：涨停、跌停、涨跌幅、涨停封单</li>
-        <li>监控状态实时展示：交易中/非交易时段/异常</li>
-        <li>规则启用/停用/编辑/删除，支持冷却时间防刷屏</li>
-        <li>手机浏览器同样可管理规则，外出也能盯盘</li>
-      </ul>
-    </div>
-    <div class="feat-screen feat-screen-shot">
-      <div class="feat-screen-header">
-        <div class="win-dot" style="background:#ff5f57"></div>
-        <div class="win-dot" style="background:#febc2e"></div>
-        <div class="win-dot" style="background:#28c840"></div>
-        <span class="feat-screen-title">条件预警 · 规则管理</span>
-      </div>
-      <picture class="feat-shot">
-        <img src="/landing-screenshots/alert.png" alt="条件预警：涨停封单与涨跌幅监控" loading="lazy" width="1280" height="620">
-      </picture>
-    </div>
-  </div>
-</div>
-
-</div><!-- /features -->
-
-<!-- ── Why us ── -->
-<div id="why" class="section">
-  <div class="text-center">
-    <div class="section-eyebrow">核心优势</div>
-    <h2 class="section-title">为什么选 AI炒股指南</h2>
-    <p class="section-sub center">不是通用的炒股工具，而是专门为 A 股短线文化量身打造</p>
-  </div>
-  <div class="why-grid">
-    <div class="why-card">
-      <div class="why-icon">⚡</div>
-      <div class="why-title">大单直接标注在图上</div>
-      <div class="why-desc">不是单独的大单表格，而是每一笔 50万+ 大单直接叠加在分时走势图上，价格对应时间，主力动作一眼看穿。</div>
-    </div>
-    <div class="why-card">
-      <div class="why-icon">🤖</div>
-      <div class="why-title">AI 给具体操作建议</div>
-      <div class="why-desc">不是模糊的「可能上涨」，而是明确的「跌破7.5元时可低吸」「破6.8元立即止损」——具体到价格和条件。</div>
-    </div>
-    <div class="why-card">
-      <div class="why-icon">🌊</div>
-      <div class="why-title">情绪周期决定仓位</div>
-      <div class="why-desc">多数散户亏钱是因为在退潮期满仓追涨。我们用 8 条量化指标实时告诉你现在适不适合出手、该拿几成仓。</div>
-    </div>
-    <div class="why-card">
-      <div class="why-icon">🎯</div>
-      <div class="why-title">A股打板专属设计</div>
-      <div class="why-desc">从竞价抢筹到连板梯队，每个模块都围绕「打板」和「短线」逻辑设计，不是国外量化工具的汉化版。</div>
-    </div>
-    <div class="why-card">
-      <div class="why-icon">🔍</div>
-      <div class="why-title">游资/机构席位解读</div>
-      <div class="why-desc">龙虎榜不只是数字，AI 会告诉你章盟主在操作什么、北向资金是否对倒、量化基金是否在减仓。</div>
-    </div>
-    <div class="why-card">
-      <div class="why-icon">📊</div>
-      <div class="why-title">历史数据可回溯验证</div>
-      <div class="why-desc">竞价策略管不管用？连板溢价率在什么水平下打板胜率最高？用真实历史数据回答，不靠感觉靠数据。</div>
-    </div>
-    <div class="why-card">
-      <div class="why-icon">📱</div>
-      <div class="why-title">手机电脑同一套体验</div>
-      <div class="why-desc">无需安装 App，手机浏览器打开即可看盘、诊股、设预警。外出也能用同一账号跟进情绪周期与涨停梯队。</div>
-    </div>
-    <div class="why-card">
-      <div class="why-icon">🔔</div>
-      <div class="why-title">条件预警实时推送</div>
-      <div class="why-desc">涨停、封单、涨跌幅等规则交易时段自动监控，触发后邮件通知，不用一直盯盘也不会错过关键异动。</div>
-    </div>
-  </div>
-</div>
-
-<!-- ── Who ── -->
-<div id="who" class="section-alt">
-  <div class="section-alt-inner">
-    <div class="text-center">
-      <div class="section-eyebrow">适合谁用</div>
-      <h2 class="section-title">为 A 股短线交易者而生</h2>
-      <p class="section-sub center">不适合做长线价值投资的朋友，专为短线高频交易设计</p>
-    </div>
-    <div class="who-grid">
-      <div class="who-card">
-        <div class="who-emoji">🎯</div>
-        <div class="who-title">打板党</div>
-        <div class="who-desc">每天做集合竞价打板，需要快速判断封板质量、梯队高度、首封时间和次日溢价。竞价抢筹 + 涨停梯队模块专为你设计。</div>
-      </div>
-      <div class="who-card">
-        <div class="who-emoji">⚡</div>
-        <div class="who-title">短线波段</div>
-        <div class="who-desc">做 3–10 天短线，需要大单资金确认趋势、情绪周期判断进出时机。大单追踪 + 情绪周期是你的核心工具。</div>
-      </div>
-      <div class="who-card">
-        <div class="who-emoji">🐉</div>
-        <div class="who-title">游资跟风派</div>
-        <div class="who-desc">喜欢跟着游资、章盟主操作，需要实时识别龙虎榜席位意图，判断游资是真进场还是在带货出货。</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ── Big Try CTA ── -->
-<div class="try-section">
-  <h2 class="try-title">现在试一试<br><span class="em">不需要信用卡</span></h2>
-  <p class="try-sub">注册后即可体验核心功能，感受 AI 分析的真实效果</p>
-  <a href="/login" class="try-btn" onclick="event.preventDefault();goToApp()">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-    点击进入，立即试一试
-  </a>
-  <p class="try-note">注册即可体验 · VIP 解锁全部实时数据</p>
-</div>
-
-<!-- ── Pricing ── -->
-<div id="pricing" class="section-alt">
-  <div class="section-alt-inner">
-    <div class="text-center">
-      <div class="section-eyebrow">VIP 定价</div>
-      <h2 class="section-title">开通 VIP</h2>
-      <p class="section-sub center">所有 VIP 方案包含全部功能，实时数据无延迟</p>
-    </div>
-    <div class="pricing-grid">
-      <div class="price-card">
-        <div class="price-tier">月度VIP</div>
-        <div class="price-amt"><span class="price-sym">¥</span>380</div>
-        <div class="price-days">30 天</div>
-        <div class="price-daily">≈ ¥12.7 / 天</div>
-        <a href="/login" class="price-btn price-btn-outline" onclick="event.preventDefault();goToApp()">立即开通</a>
-      </div>
-      <div class="price-card hot">
-        <div class="price-hot-badge">热门</div>
-        <div class="price-tier">季度VIP</div>
-        <div class="price-amt"><span class="price-sym">¥</span>900</div>
-        <div class="price-days">90 天</div>
-        <div class="price-daily">≈ ¥10 / 天，省 ¥240</div>
-        <a href="/login" class="price-btn price-btn-gold" onclick="event.preventDefault();goToApp()">立即开通</a>
-      </div>
-      <div class="price-card">
-        <div class="price-tier">半年VIP</div>
-        <div class="price-amt"><span class="price-sym">¥</span>1600</div>
-        <div class="price-days">180 天</div>
-        <div class="price-daily">≈ ¥8.9 / 天，省 ¥680</div>
-        <a href="/login" class="price-btn price-btn-outline" onclick="event.preventDefault();goToApp()">立即开通</a>
-      </div>
-      <div class="price-card">
-        <div class="price-best-badge">最划算</div>
-        <div class="price-tier">年度VIP</div>
-        <div class="price-amt"><span class="price-sym">¥</span>2500</div>
-        <div class="price-days">365 天</div>
-        <div class="price-daily">≈ ¥6.8 / 天，省 ¥1060</div>
-        <a href="/login" class="price-btn price-btn-outline" onclick="event.preventDefault();goToApp()">立即开通</a>
-      </div>
-    </div>
-    <p class="pricing-note">支持支付宝 · 微信支付 · 数据仅供参考，不构成投资建议</p>
-  </div>
-</div>
-
-<!-- ── FAQ ── -->
-<div id="faq" class="section">
-  <div class="section-eyebrow">常见问题</div>
-  <h2 class="section-title">你可能想知道</h2>
-  <div class="faq-list">
-    <div class="faq-item"><div class="faq-q">数据是实时的吗？延迟多久？</div><div class="faq-a">VIP 用户大单数据延迟 50ms 以内，涨停梯队和竞价数据实时刷新。注册用户可体验基础功能，部分数据有延迟。</div></div>
-    <div class="faq-item"><div class="faq-q">AI 诊股的建议准确率怎么样？</div><div class="faq-a">AI 综合 5 大维度数据生成分析，给出明确的买卖点和止损位。所有分析仅供参考，最终决策请结合自身判断，不构成投资建议。</div></div>
-    <div class="faq-item"><div class="faq-q">适合新手用吗？</div><div class="faq-a">有一定短线基础会更容易上手，了解「打板」「涨停」「大单」等基本概念即可。AI 的文字解读也会帮助你理解每个指标的含义。</div></div>
-    <div class="faq-item"><div class="faq-q">支持手机端吗？</div><div class="faq-a">支持。官网与产品均为响应式设计，手机浏览器可直接登录使用全部功能；导航采用侧边抽屉，图表与表格会自适应屏幕宽度。PC 大屏可同时查看更多列数据。</div></div>
-    <div class="faq-item"><div class="faq-q">VIP 到期后数据会消失吗？</div><div class="faq-a">VIP 到期后降为普通用户权限，历史分析记录保留，实时数据和高级功能需续费解锁。</div></div>
-  </div>
-</div>
-
-<!-- ── Footer ── -->
-<div class="footer">
-  <div class="footer-left">
-    <svg width="28" height="28" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="14" cy="14" r="13" fill="var(--gold-bg)" stroke="var(--gold)" stroke-width="1.2"/>
-      <rect x="10" y="10" width="7" height="12" rx="2" fill="var(--gold)"/>
-      <polygon points="8,10 20,10 18,5 10,5" fill="var(--gold2)"/>
-      <circle cx="14" cy="8" r="2.5" fill="#fff" opacity="0.9"/>
-    </svg>
-    <span class="footer-name">AI炒股指南</span>
-    <span class="footer-copy" style="margin-left:16px">© 2025 · 数据仅供参考，不构成投资建议</span>
-  </div>
-  <div class="footer-links">
-    <a href="#">使用条款</a>
-    <a href="#">隐私政策</a>
-    <a href="/register">免费注册</a>
-  </div>
-  <div style="margin-top:10px;font-size:12px;color:var(--text-muted,#888);text-align:center;">
-    <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">浙ICP备2026035580号</a>
-  </div>
-</div>
+<footer class="footer">
+  <span>个人数据看板 · 个人数据的汇总、统计与可视化</span>
+  <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener">浙ICP备2026035580号</a>
+</footer>
 
 <script>
 function toggleTheme(){
-  const h=document.documentElement;
-  const dark=h.getAttribute('data-theme')==='dark';
+  var h=document.documentElement;
+  var dark=h.getAttribute('data-theme')==='dark';
   h.setAttribute('data-theme',dark?'light':'dark');
-  const btn=document.getElementById('theme-btn');
-  btn.childNodes[0].textContent=dark?'🌙 ':'☀️ ';
-  const label=btn.querySelector('.theme-btn-label');
-  if(label) label.textContent=dark?'暗色模式':'亮色模式';
+  try{localStorage.setItem('niuniu_theme',dark?'light':'dark')}catch(e){}
+  document.getElementById('theme-btn').textContent=dark?'🌙 暗色':'☀️ 亮色';
 }
+(function(){
+  try{
+    var t=localStorage.getItem('niuniu_theme');
+    if(!t)t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+    document.documentElement.setAttribute('data-theme',t);
+    document.getElementById('theme-btn').textContent=t==='dark'?'☀️ 亮色':'🌙 暗色';
+  }catch(e){}
+})();
 function goToApp(){
   location.href=localStorage.getItem('niuniu_token')?'/stock-dashboard':'/login';
-}
-function toggleNavDrawer(open){
-  const d=document.getElementById('nav-drawer');
-  if(!d)return;
-  d.classList.toggle('open',open);
-  document.body.style.overflow=open?'hidden':'';
 }
 </script>
 <script src="/baidu-tongji-config.js"></script>

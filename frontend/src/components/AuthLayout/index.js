@@ -28,7 +28,7 @@ function AuthLogo({ onClick }) {
         <circle cx="18" cy="10" r="3.5" fill="#fff" opacity="0.95" />
         <circle cx="18" cy="10" r="2" fill="var(--auth-gold2)" />
       </svg>
-      <span className="auth-logo-name">AI炒股指南</span>
+      <span className="auth-logo-name">个人数据看板</span>
     </div>
   );
 }

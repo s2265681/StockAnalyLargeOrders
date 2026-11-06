@@ -1,7 +1,7 @@
 {
-  "name": "AI炒股指南",
-  "short_name": "炒股指南",
-  "description": "AI驱动的A股短线分析工具",
+  "name": "个人数据看板",
+  "short_name": "个人数据看板",
+  "description": "个人数据的汇总、统计与可视化展示",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#fffbeb",

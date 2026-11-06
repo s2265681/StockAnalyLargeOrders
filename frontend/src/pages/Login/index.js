@@ -173,7 +173,7 @@ export default function Login() {
           </div>
         )}
       </div>
-      <p className="auth-aside-hint">使用微信扫一扫登录<br />"AI炒股指南"</p>
+      <p className="auth-aside-hint">使用微信扫一扫登录<br />"个人数据看板"</p>
     </>
   );
 
@@ -190,7 +190,7 @@ export default function Login() {
   return (
     <AuthLayout
       title="欢迎回来"
-      subtitle="登录你的 AI炒股指南 账号"
+      subtitle="登录你的个人数据看板账号"
       footer={<>没有账号？<Link to="/register">立即注册</Link></>}
     >
       <form

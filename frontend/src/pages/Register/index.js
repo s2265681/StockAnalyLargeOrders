@@ -40,7 +40,7 @@ export default function Register() {
   return (
     <AuthLayout
       title="创建账号"
-      subtitle="加入 AI炒股指南，开启智能炒股之旅"
+      subtitle="加入个人数据看板，开始整理你的数据"
       footer={<>已有账号？<Link to="/login">去登录</Link></>}
     >
       <Input

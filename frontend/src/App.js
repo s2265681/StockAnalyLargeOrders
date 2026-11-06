@@ -136,7 +136,7 @@ function AppInner() {
           >
             <NavLogoIcon />
             <span className="nav-logo-name" style={{ fontSize: 15, fontWeight: 800, color: 'var(--color-accent)', letterSpacing: 0.5 }}>
-              AI炒股指南
+              个人数据看板
             </span>
           </div>
 
@@ -206,7 +206,7 @@ function AppInner() {
         title={(
           <div className="mobile-drawer-header-title">
             <NavLogoIcon size={28} />
-            <span>AI炒股指南</span>
+            <span>个人数据看板</span>
           </div>
         )}
         extra={(

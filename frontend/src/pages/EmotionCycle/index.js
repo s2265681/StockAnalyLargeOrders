@@ -313,6 +313,10 @@ function EmotionCycle({ preview = false }) {
   const [intradayAnalysis, setIntradayAnalysis] = useState(preview ? MOCK_INTRADAY_ANALYSIS : null);
   const [selectedDate, setSelectedDate] = useState(() => getLastTradingDayStr());
   const autoRefreshAttemptedRef = useRef(new Set());
+  const [pollTick, setPollTick] = useState(0);
+  const selectedDateRef = useRef(selectedDate);
+  const latestDateRef = useRef(null);
+  const loadedCacheDateRef = useRef(null);
 
   const minDate = records.length > 0 ? records[0].date.replace(/-/g, '') : '20000101';
   const latestDate = getLatestRecordDate(records);
@@ -329,6 +333,14 @@ function EmotionCycle({ preview = false }) {
       setSelectedDate(latestDate);
     }
   }, [records, latestDate, selectedDate]);
+
+  useEffect(() => {
+    selectedDateRef.current = selectedDate;
+  }, [selectedDate]);
+
+  useEffect(() => {
+    latestDateRef.current = latestDate;
+  }, [latestDate]);
 
   const fetchData = useCallback(async () => {
     if (preview) return;
@@ -349,12 +361,46 @@ function EmotionCycle({ preview = false }) {
     fetchData();
   }, [fetchData]);
 
+  // 盘中每 60s 拉一次最新记录：09:30 后当日数据/研判陆续生成，无需手动刷新
+  useEffect(() => {
+    if (preview) return undefined;
+    const timer = setInterval(async () => {
+      const now = new Date();
+      const dow = now.getDay();
+      const hm = now.getHours() * 100 + now.getMinutes();
+      const inSession =
+        dow >= 1 && dow <= 5 &&
+        ((hm >= 925 && hm <= 1135) || (hm >= 1300 && hm <= 1505));
+      if (!inSession || document.hidden) return;
+      try {
+        const res = await apiRequest('/api/v1/emotion-cycle');
+        const nextRecords = res?.data?.records;
+        if (!nextRecords || nextRecords.length === 0) return;
+        const nextLatest = getLatestRecordDate(nextRecords);
+        const followLatest =
+          !selectedDateRef.current ||
+          selectedDateRef.current >= (latestDateRef.current || '');
+        setRecords(nextRecords);
+        if (nextLatest && nextLatest !== latestDateRef.current && followLatest) {
+          setSelectedDate(nextLatest);
+        }
+        setPollTick((n) => n + 1);
+      } catch (_) { /* 轮询失败忽略，下一分钟再试 */ }
+    }, 60000);
+    return () => clearInterval(timer);
+  }, [preview]);
+
   useEffect(() => {
     if (preview) return;
+    // 轮询刷新同一天数据时不清空面板，避免每分钟闪一下
+    const sameDate = loadedCacheDateRef.current === selectedDate;
+    loadedCacheDateRef.current = selectedDate;
     const loadCaches = async () => {
-      setCacheChecked(false);
-      setCycleAnalysis(null);
-      setIntradayAnalysis(null);
+      if (!sameDate) {
+        setCacheChecked(false);
+        setCycleAnalysis(null);
+        setIntradayAnalysis(null);
+      }
       if (records.length === 0) {
         setCacheChecked(true);
         return;
@@ -373,7 +419,7 @@ function EmotionCycle({ preview = false }) {
       }
     };
     loadCaches();
-  }, [selectedDate, records.length, hasSelectedRecord, preview]);
+  }, [selectedDate, records.length, hasSelectedRecord, pollTick, preview]);
 
   const handlePanelRefresh = useCallback(async (options = {}) => {
     const { force = true, silent = false } = options;

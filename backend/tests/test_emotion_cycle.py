@@ -233,7 +233,7 @@ class AnalyzeOneDateTest(unittest.TestCase):
                 "recommendations": [],
             },
         ):
-            with patch("routes.emotion_cycle._call_claude_batch") as call_ai:
+            with patch("routes.emotion_cycle._call_claude_single") as call_ai:
                 with patch("routes.emotion_cycle._save_analysis_to_db") as save:
                     status = analyze_one_date("20260515", self._records())
         self.assertEqual(status, "skipped")
@@ -251,34 +251,47 @@ class AnalyzeOneDateTest(unittest.TestCase):
         }
         with patch("routes.emotion_cycle._get_analysis_from_db", return_value=None):
             with patch(
-                "routes.emotion_cycle._call_claude_batch",
-                return_value=[ai_result],
+                "routes.emotion_cycle._call_claude_single",
+                return_value=ai_result,
             ) as call_ai:
                 with patch(
                     "routes.emotion_cycle._save_analysis_to_db",
                     return_value=True,
                 ) as save:
-                    status = analyze_one_date("20260515", self._records())
+                    with patch("routes.emotion_cycle.save_intraday_snapshot"):
+                        status = analyze_one_date("20260515", self._records())
         self.assertEqual(status, "saved")
-        analyzed = call_ai.call_args.args[0]
+        ctx_records, target_record = call_ai.call_args.args
         self.assertEqual(
-            [r["date"] for r in analyzed],
+            [r["date"] for r in ctx_records],
             ["2026-05-10", "2026-05-11", "2026-05-12",
-             "2026-05-13", "2026-05-14", "2026-05-15"],
+             "2026-05-13", "2026-05-14"],
         )
+        self.assertEqual(target_record["date"], "2026-05-15")
         save.assert_called_once_with("20260515", ai_result)
 
-    def test_returns_failed_when_target_missing_in_ai_result(self):
+    def test_corrects_ai_date_mismatch_to_target(self):
+        """AI 返回别的日期时强制修正为目标日期再入库"""
         from routes.emotion_cycle import analyze_one_date
         with patch("routes.emotion_cycle._get_analysis_from_db", return_value=None):
             with patch(
-                "routes.emotion_cycle._call_claude_batch",
-                return_value=[{"date": "2026-05-14", "stage": "退潮期"}],
+                "routes.emotion_cycle._call_claude_single",
+                return_value={"date": "2026-05-14", "stage": "退潮期"},
             ):
-                with patch("routes.emotion_cycle._save_analysis_to_db") as save:
-                    status = analyze_one_date("20260515", self._records())
+                with patch(
+                    "routes.emotion_cycle._save_analysis_to_db",
+                    return_value=True,
+                ) as save:
+                    with patch("routes.emotion_cycle.save_intraday_snapshot"):
+                        status = analyze_one_date("20260515", self._records())
+        self.assertEqual(status, "saved")
+        self.assertEqual(save.call_args.args[1]["date"], "2026-05-15")
+
+    def test_returns_failed_when_target_missing_in_records(self):
+        from routes.emotion_cycle import analyze_one_date
+        with patch("routes.emotion_cycle._get_analysis_from_db", return_value=None):
+            status = analyze_one_date("20260520", self._records())
         self.assertEqual(status, "failed")
-        save.assert_not_called()
 
     def test_force_true_bypasses_db_skip(self):
         from routes.emotion_cycle import analyze_one_date
@@ -288,18 +301,19 @@ class AnalyzeOneDateTest(unittest.TestCase):
             return_value={"stage": "旧"},
         ):
             with patch(
-                "routes.emotion_cycle._call_claude_batch",
-                return_value=[ai_result],
+                "routes.emotion_cycle._call_claude_single",
+                return_value=dict(ai_result),
             ):
                 with patch(
                     "routes.emotion_cycle._save_analysis_to_db",
                     return_value=True,
                 ) as save:
-                    status = analyze_one_date(
-                        "20260515", self._records(), force=True
-                    )
+                    with patch("routes.emotion_cycle.save_intraday_snapshot"):
+                        status = analyze_one_date(
+                            "20260515", self._records(), force=True
+                        )
         self.assertEqual(status, "saved")
-        save.assert_called_once_with("20260515", ai_result)
+        save.assert_called_once_with("20260515", dict(ai_result))
 
     def test_re_analyzes_when_db_has_placeholder(self):
         """DB 有占位符（待生成）时应该重新分析，不跳过"""
@@ -314,18 +328,19 @@ class AnalyzeOneDateTest(unittest.TestCase):
         with patch(
             "routes.emotion_cycle._get_analysis_from_db",
             return_value={"stage": "待生成"},
-        ) as mock_get:
+        ):
             with patch(
-                "routes.emotion_cycle._call_claude_batch",
-                return_value=[ai_result],
+                "routes.emotion_cycle._call_claude_single",
+                return_value=ai_result,
             ) as mock_claude:
                 with patch(
                     "routes.emotion_cycle._save_analysis_to_db",
                     return_value=True,
                 ) as mock_save:
-                    status = analyze_one_date("20260515", self._records(), force=False)
+                    with patch("routes.emotion_cycle.save_intraday_snapshot"):
+                        status = analyze_one_date("20260515", self._records(), force=False)
         self.assertEqual(status, "saved")
-        mock_claude.assert_called_once()  # 应该被调用，而不是跳过
+        mock_claude.assert_called_once()
         mock_save.assert_called_once_with("20260515", ai_result)
 
 
@@ -359,15 +374,29 @@ class AnalyzeDailyOneDateTest(unittest.TestCase):
             "trade_plans": [],
         }
         with patch("routes.emotion_cycle._get_intraday_from_db", return_value=None):
-            with patch(
-                "routes.emotion_cycle._call_claude_daily_analysis",
-                return_value=ai_result,
-            ):
+            with patch("routes.emotion_cycle._get_analysis_from_db", return_value=None):
                 with patch(
-                    "routes.emotion_cycle._save_intraday_to_db",
-                    return_value=True,
-                ) as save:
-                    status = analyze_daily_one_date("20260516", self._records())
+                    "routes.emotion_cycle._summarize_echelon_context",
+                    return_value="",
+                ):
+                    with patch(
+                        "routes.emotion_cycle._fetch_hot_sectors",
+                        return_value=[],
+                    ):
+                        with patch(
+                            "routes.emotion_cycle.save_intraday_snapshot"
+                        ):
+                            with patch(
+                                "routes.emotion_cycle._call_claude_daily_analysis",
+                                return_value=ai_result,
+                            ):
+                                with patch(
+                                    "routes.emotion_cycle._save_intraday_to_db",
+                                    return_value=True,
+                                ) as save:
+                                    status = analyze_daily_one_date(
+                                        "20260516", self._records()
+                                    )
         self.assertEqual(status, "saved")
         save.assert_called_once_with("20260516", ai_result)
 

@@ -494,8 +494,14 @@ def _fetch_emotion_records():
         return records
     last = records[-1]
 
+    # StockAPI 当日数据通常收盘后才发布：盘中最后一条是上一交易日，
+    # 实时涨跌家数只能补到今天，绝不能写到昨天（会被当成昨日收盘数据存库）。
+    from utils.date_utils import get_valid_trading_date
+    today_compact = get_valid_trading_date().replace("-", "")
+    last_is_today = _record_date_key(last) == today_compact
+
     # 上涨比例：StockAPI 不提供可靠数据，当日用实时接口补取
-    if last.get("rise_ratio") is None:
+    if last_is_today and last.get("rise_ratio") is None:
         breadth = _fetch_market_breadth()
         if breadth:
             _apply_market_breadth(
@@ -513,9 +519,9 @@ def _fetch_emotion_records():
             _persist_breadth(last.get("date", ""), breadth)
             save_intraday_snapshot(last)
 
-    # 涨停/跌停/炸板家数：有任一字段为 None 时用 akshare 涨停池补取
+    # 涨停/跌停/炸板家数：有任一字段为 None 时用 akshare 涨停池补取（仅限当天）
     zt_fields = ("limit_up_count", "limit_down_count", "broken_board_count", "board_hit_rate")
-    if any(last.get(f) is None for f in zt_fields):
+    if last_is_today and any(last.get(f) is None for f in zt_fields):
         zt = _fetch_zt_counts()
         if zt:
             for field in zt_fields:
@@ -552,6 +558,12 @@ def _build_fallback_record(dt_str: str) -> dict:
         "monster_stock": None,
         "broken_board_count": None,
     }
+
+    # 0. 实时涨跌家数（StockAPI 不提供，兜底记录自己补）
+    breadth = _fetch_market_breadth()
+    if breadth:
+        _apply_market_breadth(record, breadth["rise_count"], breadth.get("fall_count") or 0)
+        _persist_breadth(dt_display, breadth)
 
     # 1. akshare 涨停/跌停/炸板池
     try:

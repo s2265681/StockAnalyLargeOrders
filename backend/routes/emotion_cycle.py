@@ -8,7 +8,10 @@ import json
 import logging
 import os
 import subprocess
+from contextlib import contextmanager
 from typing import Optional
+
+import threading
 from flask import Blueprint, request
 
 from utils.response import v1_success_response, v1_error_response
@@ -255,11 +258,45 @@ def _load_breadth_cache() -> dict:
     return {}
 
 
-def _save_breadth_cache(cache: dict) -> None:
-    path = _breadth_cache_path()
+def _atomic_write_json(path: str, data) -> None:
+    """先写临时文件再原子替换，避免并发读到半截 JSON。"""
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(cache, f, ensure_ascii=False, indent=2)
+    tmp = f"{path}.tmp.{os.getpid()}"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, path)
+
+
+_cache_process_locks: dict = {}
+_cache_process_locks_guard = threading.Lock()
+
+
+def _get_process_lock(path: str):
+    with _cache_process_locks_guard:
+        lock = _cache_process_locks.get(path)
+        if lock is None:
+            lock = threading.Lock()
+            _cache_process_locks[path] = lock
+        return lock
+
+
+@contextmanager
+def _cache_write_lock(path: str):
+    """缓存文件互斥：进程内用线程锁（eventlet 下为协程锁），跨进程用 flock。"""
+    import fcntl
+    lock_path = f"{path}.lock"
+    os.makedirs(os.path.dirname(lock_path), exist_ok=True)
+    with _get_process_lock(path):
+        with open(lock_path, "w") as lf:
+            fcntl.flock(lf, fcntl.LOCK_EX)
+            try:
+                yield
+            finally:
+                fcntl.flock(lf, fcntl.LOCK_UN)
+
+
+def _save_breadth_cache(cache: dict) -> None:
+    _atomic_write_json(_breadth_cache_path(), cache)
 
 
 def _normalize_breadth_entry(cached) -> Optional[dict]:
@@ -302,16 +339,18 @@ def _merge_breadth_cache(records: list) -> list:
 
 def _persist_breadth(dt_display: str, breadth: dict) -> None:
     dt = dt_display.replace("-", "")
-    cache = _load_breadth_cache()
     entry = {
         "rise_count": breadth.get("rise_count"),
         "fall_count": breadth.get("fall_count"),
         "rise_ratio": breadth.get("rise_ratio"),
     }
-    if cache.get(dt) == entry:
-        return
-    cache[dt] = entry
-    _save_breadth_cache(cache)
+    path = _breadth_cache_path()
+    with _cache_write_lock(path):
+        cache = _load_breadth_cache()
+        if cache.get(dt) == entry:
+            return
+        cache[dt] = entry
+        _save_breadth_cache(cache)
 
 
 def _persist_rise_count(dt_display: str, rise_count: int) -> None:
@@ -336,10 +375,7 @@ def _load_intraday_snapshots() -> dict:
 
 
 def _save_intraday_snapshots(cache: dict) -> None:
-    path = _intraday_snapshot_path()
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(cache, f, ensure_ascii=False, indent=2)
+    _atomic_write_json(_intraday_snapshot_path(), cache)
 
 
 def _current_intraday_slot(now=None) -> Optional[str]:
@@ -379,19 +415,21 @@ def save_intraday_snapshot(record: dict, slot: Optional[str] = None) -> None:
     slot = slot or _current_intraday_slot()
     if not slot:
         return
-    cache = _load_intraday_snapshots()
-    day = cache.setdefault(dt, {})
-    day[slot] = {
-        k: record.get(k)
-        for k in (
-            "date", "rise_count", "fall_count", "rise_ratio",
-            "consec_limit", "pressure_height", "latest_height",
-            "big_loss_mood", "big_profit_mood", "limit_up_count",
-            "board_hit_rate", "limit_down_count", "broken_board_count",
-            "monster_stock",
-        )
-    }
-    _save_intraday_snapshots(cache)
+    path = _intraday_snapshot_path()
+    with _cache_write_lock(path):
+        cache = _load_intraday_snapshots()
+        day = cache.setdefault(dt, {})
+        day[slot] = {
+            k: record.get(k)
+            for k in (
+                "date", "rise_count", "fall_count", "rise_ratio",
+                "consec_limit", "pressure_height", "latest_height",
+                "big_loss_mood", "big_profit_mood", "limit_up_count",
+                "board_hit_rate", "limit_down_count", "broken_board_count",
+                "monster_stock",
+            )
+        }
+        _save_intraday_snapshots(cache)
     logger.info("情绪同时段快照: %s %s", dt, slot)
 
 
